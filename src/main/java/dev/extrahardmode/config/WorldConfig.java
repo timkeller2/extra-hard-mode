@@ -26,6 +26,10 @@ public final class WorldConfig {
     private boolean torchSoftDeny = true;
     private int torchNoPlacementUnderY = 0;
     private boolean torchYDeny = true;
+    private boolean rainBreaksTorches = true;
+    private boolean rainExtinguishesCampfires = false;
+    private boolean torchFizz = true;
+    private int netherrackFirePercent = 20;
     private boolean enabled = true;
     private boolean enabledPresent;
 
@@ -63,6 +67,22 @@ public final class WorldConfig {
 
     public boolean torchYDeny() {
         return torchYDeny;
+    }
+
+    public boolean rainBreaksTorches() {
+        return rainBreaksTorches;
+    }
+
+    public boolean rainExtinguishesCampfires() {
+        return rainExtinguishesCampfires;
+    }
+
+    public boolean torchFizz() {
+        return torchFizz;
+    }
+
+    public int netherrackFirePercent() {
+        return netherrackFirePercent;
     }
 
     public boolean enabled() {
@@ -142,6 +162,19 @@ public final class WorldConfig {
                     file.set("torches.noPlacementUnderY", 0);
                 }
                 writeDefaultIfMissing(file, "torches.noPlacementOnSoft", "No torches on soft surfaces.", true);
+                writeDefaultIfMissing(
+                        file,
+                        "torches.rainBreaksTorches",
+                        "Rain drops exposed torches as items. Covered torches survive.",
+                        true);
+                writeDefaultIfMissing(
+                        file, "campfires.rainExtinguishes", "Optional. Same rain pass as torches; default off.", false);
+                writeDefaultIfMissing(file, "sounds.torchFizz", "Lava fizz when torch placement is denied.", true);
+                writeDefaultIfMissing(
+                        file,
+                        "worldRules.netherrackFirePercent",
+                        "Chance that breaking netherrack places fire in the empty space. Nylium not included.",
+                        20);
                 if (!file.contains("modules")) {
                     file.setComment("modules", "Runtime per-module toggles for this dimension. Missing keys default true.");
                 }
@@ -182,6 +215,10 @@ public final class WorldConfig {
                 file.set("torches.noPlacement.enable", torchYDeny);
                 file.set("torches.noPlacementUnderY", torchNoPlacementUnderY);
                 file.set("torches.noPlacementOnSoft", torchSoftDeny);
+                file.set("torches.rainBreaksTorches", rainBreaksTorches);
+                file.set("campfires.rainExtinguishes", rainExtinguishesCampfires);
+                file.set("sounds.torchFizz", torchFizz);
+                file.set("worldRules.netherrackFirePercent", netherrackFirePercent);
                 for (Map.Entry<Identifier, Boolean> entry : modules.entrySet()) {
                     file.set(moduleKey(entry.getKey()), entry.getValue());
                 }
@@ -204,6 +241,10 @@ public final class WorldConfig {
         torchYDeny = file.getOrElse("torches.noPlacement.enable", true);
         torchNoPlacementUnderY = file.getOrElse("torches.noPlacementUnderY", 0);
         torchSoftDeny = file.getOrElse("torches.noPlacementOnSoft", true);
+        rainBreaksTorches = file.getOrElse("torches.rainBreaksTorches", true);
+        rainExtinguishesCampfires = file.getOrElse("campfires.rainExtinguishes", false);
+        torchFizz = file.getOrElse("sounds.torchFizz", true);
+        netherrackFirePercent = file.getOrElse("worldRules.netherrackFirePercent", 20);
         modules.clear();
         Object raw = file.get("modules");
         if (raw instanceof Config table) {
@@ -236,6 +277,13 @@ public final class WorldConfig {
     }
 
     private static void writeDefaultIfMissing(CommentedFileConfig file, String path, String comment, boolean value) {
+        if (!file.contains(path)) {
+            file.setComment(path, comment);
+            file.set(path, value);
+        }
+    }
+
+    private static void writeDefaultIfMissing(CommentedFileConfig file, String path, String comment, int value) {
         if (!file.contains(path)) {
             file.setComment(path, comment);
             file.set(path, value);

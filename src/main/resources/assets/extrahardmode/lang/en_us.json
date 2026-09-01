@@ -15,5 +15,8 @@
   "extrahardmode.command.set": "Set %s to %s in %s",
   "extrahardmode.command.set.failed": "Failed to save Extra Hard Mode config for this dimension",
   "extrahardmode.command.module.invalid": "Invalid module id '%s'",
-  "extrahardmode.command.set-world": "Set Extra Hard Mode for %s to %s"
+  "extrahardmode.command.set-world": "Set Extra Hard Mode for %s to %s",
+  "extrahardmode.message.no_torches_here": "There's not enough air flow down here for permanent flames. Use another method to light your way.",
+  "extrahardmode.message.limited_torch_placement": "It's too soft there to fasten a torch.",
+  "extrahardmode.message.realistic_building": "You can't build while in the air."
 }

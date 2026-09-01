@@ -1,13 +1,27 @@
 package dev.extrahardmode.test;
 
 import dev.extrahardmode.config.ConfigManager;
+import dev.extrahardmode.feature.Torches;
 import dev.extrahardmode.world.ExtraHardModeBootData;
 import dev.extrahardmode.world.WorldGate;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 
 public class EhmGameTests {
     @GameTest
@@ -56,6 +70,41 @@ public class EhmGameTests {
         helper.assertTrue(boot.contains(Level.NETHER.identifier()), "nether stamped independently");
         helper.assertTrue(boot.contains(Level.OVERWORLD.identifier()), "overworld still stamped");
         helper.assertTrue(WorldGate.dimensionEnabled(nether), "nether dim flag defaults true (opt-out)");
+        helper.succeed();
+    }
+
+    @GameTest
+    public void torchDenyBelowY0(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        level.getGameRules().set(WorldGate.ENABLED, true, level.getServer());
+        ConfigManager.world(level).setEnabled(true);
+
+        BlockPos abs = helper.absolutePos(BlockPos.ZERO);
+        BlockPos stone = new BlockPos(abs.getX(), -2, abs.getZ());
+        level.setBlock(stone, Blocks.STONE.defaultBlockState(), 3);
+        level.setBlock(stone.above(), Blocks.AIR.defaultBlockState(), 3);
+
+        if (!(helper.makeMockServerPlayer(GameType.SURVIVAL) instanceof ServerPlayer player)) {
+            helper.fail("expected ServerPlayer");
+            return;
+        }
+        BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(stone).add(0, 0.5, 0), Direction.UP, stone, false);
+
+        ItemStack torch = new ItemStack(Items.TORCH);
+        BlockPlaceContext torchContext =
+                new BlockPlaceContext(new UseOnContext(level, player, InteractionHand.MAIN_HAND, torch, hit));
+        helper.assertTrue(
+                torch.getItem() instanceof BlockItem blockItem
+                        && Torches.shouldDeny(level, torchContext, blockItem),
+                "torch denied below Y=0");
+
+        ItemStack redstone = new ItemStack(Items.REDSTONE_TORCH);
+        BlockPlaceContext redstoneContext =
+                new BlockPlaceContext(new UseOnContext(level, player, InteractionHand.MAIN_HAND, redstone, hit));
+        helper.assertFalse(
+                redstone.getItem() instanceof BlockItem redstoneItem
+                        && Torches.shouldDeny(level, redstoneContext, redstoneItem),
+                "redstone torch allowed below Y=0");
         helper.succeed();
     }
 }
