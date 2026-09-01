@@ -12,7 +12,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(FallingBlockEntity.class)
 public abstract class FallingBlockEntityLandMixin {
-    @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
+    /** After {@code move()}, {@code onGround} is this tick's land. Before {@code setBlock}. */
+    @Inject(
+            method = "tick",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/item/FallingBlockEntity;onGround()Z"),
+            cancellable = true)
     private void extrahardmode$flyAutoremove(CallbackInfo ci) {
         FallingBlockEntity self = (FallingBlockEntity) (Object) this;
         if (!FeatureBus.guard(self.level(), Explosions.ID)) {

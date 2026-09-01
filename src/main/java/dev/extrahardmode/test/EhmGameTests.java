@@ -1,11 +1,13 @@
 package dev.extrahardmode.test;
 
 import dev.extrahardmode.api.ExplosionType;
+import dev.extrahardmode.api.event.EhmExplosionEvent;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.feature.CaveIns;
 import dev.extrahardmode.feature.Explosions;
 import dev.extrahardmode.feature.FallingBlocks;
 import dev.extrahardmode.feature.HardenedStone;
+import dev.extrahardmode.feature.MoreTnt;
 import dev.extrahardmode.item.EhmComponents;
 import dev.extrahardmode.module.PhysicsQueue;
 import dev.extrahardmode.player.EhmAttachments;
@@ -25,8 +27,11 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.item.FallingBlockEntity;
+import net.minecraft.world.entity.item.PrimedTnt;
+import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -44,6 +49,16 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 public class EhmGameTests {
+    private static final ThreadLocal<Boolean> CANCEL_NEXT = ThreadLocal.withInitial(() -> Boolean.FALSE);
+
+    static {
+        EhmExplosionEvent.EVENT.register(event -> {
+            if (Boolean.TRUE.equals(CANCEL_NEXT.get())) {
+                event.cancel();
+            }
+        });
+    }
+
     @GameTest
     public void firstApplyPerDimension(GameTestHelper helper) {
         ServerLevel overworld = helper.getLevel();
@@ -346,6 +361,11 @@ public class EhmGameTests {
         ItemStack result = recipe.assemble(input);
         helper.assertValueEqual(3, result.getCount(), "tnt recipe yields 3");
         helper.assertTrue(result.is(Items.TNT), "tnt recipe result is tnt");
+        level.getGameRules().set(WorldGate.ENABLED, true, level.getServer());
+        helper.assertValueEqual(3, MoreTnt.adjustResult(level, new ItemStack(Items.TNT, 3)).getCount(), "module on keeps 3");
+        level.getGameRules().set(WorldGate.ENABLED, false, level.getServer());
+        helper.assertValueEqual(1, MoreTnt.adjustResult(level, new ItemStack(Items.TNT, 3)).getCount(), "gamerule off yields 1");
+        level.getGameRules().set(WorldGate.ENABLED, true, level.getServer());
         helper.succeed();
     }
 
@@ -387,5 +407,106 @@ public class EhmGameTests {
             }
         }
         return false;
+    }
+
+    @GameTest(padding = 8)
+    public void explosionInterceptTurnsStoneToCobble(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        level.getGameRules().set(WorldGate.ENABLED, true, level.getServer());
+        level.getGameRules().set(GameRules.TNT_EXPLODES, true, level.getServer());
+        BlockPos center = new BlockPos(4, 4, 4);
+        fillStoneCube(helper, center);
+        BlockPos abs = helper.absolutePos(center);
+        PrimedTnt tnt = new PrimedTnt(level, abs.getX() + 0.5, abs.getY() + 0.5, abs.getZ() + 0.5, null);
+        level.addFreshEntity(tnt);
+        level.explode(tnt, tnt.getX(), tnt.getY(), tnt.getZ(), 4.0F, false, Level.ExplosionInteraction.TNT);
+        helper.succeedWhen(() -> {
+            helper.assertTrue(explosionProducedCobble(helper, center), "vanilla TNT intercept softened stone");
+        });
+    }
+
+    @GameTest(maxTicks = 40, padding = 8)
+    public void cancelledExplosionDoesNotBreakOrCrater(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        level.getGameRules().set(WorldGate.ENABLED, true, level.getServer());
+        level.getGameRules().set(GameRules.TNT_EXPLODES, true, level.getServer());
+        BlockPos center = new BlockPos(4, 4, 4);
+        fillStoneCube(helper, center);
+        BlockPos abs = helper.absolutePos(center);
+        CANCEL_NEXT.set(Boolean.TRUE);
+        try {
+            PrimedTnt tnt = new PrimedTnt(level, abs.getX() + 0.5, abs.getY() + 0.5, abs.getZ() + 0.5, null);
+            level.addFreshEntity(tnt);
+            level.explode(tnt, tnt.getX(), tnt.getY(), tnt.getZ(), 4.0F, false, Level.ExplosionInteraction.TNT);
+        } finally {
+            CANCEL_NEXT.set(Boolean.FALSE);
+        }
+        helper.runAfterDelay(25, () -> {
+            for (int x = 2; x <= 6; x++) {
+                for (int y = 2; y <= 6; y++) {
+                    for (int z = 2; z <= 6; z++) {
+                        helper.assertBlockPresent(Blocks.STONE, new BlockPos(x, y, z));
+                    }
+                }
+            }
+            helper.succeed();
+        });
+    }
+
+    @GameTest(padding = 8)
+    public void mobGriefingFalseSkipsCreeperWorldDamage(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        level.getGameRules().set(WorldGate.ENABLED, true, level.getServer());
+        level.getGameRules().set(GameRules.MOB_GRIEFING, false, level.getServer());
+        BlockPos center = new BlockPos(4, 4, 4);
+        fillStoneCube(helper, center);
+        BlockPos abs = helper.absolutePos(center);
+        Creeper creeper = EntityTypes.CREEPER.create(level, EntitySpawnReason.COMMAND);
+        if (creeper == null) {
+            helper.fail("creeper create");
+            return;
+        }
+        creeper.snapTo(abs.getX() + 0.5, abs.getY() + 0.5, abs.getZ() + 0.5);
+        level.addFreshEntity(creeper);
+        level.explode(creeper, creeper.getX(), creeper.getY(), creeper.getZ(), 3.0F, false, Level.ExplosionInteraction.MOB);
+        helper.runAfterDelay(5, () -> {
+            helper.assertBlockPresent(Blocks.STONE, center);
+            helper.assertBlockPresent(Blocks.STONE, center.above());
+            level.getGameRules().set(GameRules.MOB_GRIEFING, true, level.getServer());
+            helper.succeed();
+        });
+    }
+
+    @GameTest(maxTicks = 80)
+    public void flyingDebrisAutoremovePastRadius(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        level.getGameRules().set(WorldGate.ENABLED, true, level.getServer());
+        BlockPos floor = new BlockPos(2, 2, 2);
+        helper.setBlock(floor, Blocks.STONE);
+        helper.setBlock(floor.above(), Blocks.AIR);
+        BlockPos spawnRel = new BlockPos(2, 7, 2);
+        helper.setBlock(spawnRel, Blocks.AIR);
+        BlockPos spawn = helper.absolutePos(spawnRel);
+        Vec3 origin = Vec3.atCenterOf(spawn).add(20.0, 0.0, 0.0);
+        FallingBlockEntity falling = FallingBlockEntity.fall(level, spawn, Blocks.COBBLESTONE.defaultBlockState());
+        falling.setDeltaMovement(0.0, 0.0, 0.0);
+        falling.setAttached(EhmAttachments.EHM_OURS, Boolean.TRUE);
+        falling.setAttached(EhmAttachments.EHM_FLY_ORIGIN, origin);
+        helper.succeedWhen(() -> {
+            helper.assertTrue(falling.isRemoved(), "far flying debris discarded on land");
+            helper.assertBlockNotPresent(Blocks.COBBLESTONE, spawnRel);
+            helper.assertBlockNotPresent(Blocks.COBBLESTONE, floor.above());
+            helper.assertBlockPresent(Blocks.STONE, floor);
+        });
+    }
+
+    private static void fillStoneCube(GameTestHelper helper, BlockPos center) {
+        for (int x = 2; x <= 6; x++) {
+            for (int y = 2; y <= 6; y++) {
+                for (int z = 2; z <= 6; z++) {
+                    helper.setBlock(new BlockPos(x, y, z), Blocks.STONE);
+                }
+            }
+        }
     }
 }

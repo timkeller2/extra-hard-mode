@@ -21,5 +21,15 @@ public final class ExplosionSettings {
         return resolve(y, borderY, below, above);
     }
 
+    /** Cancel / {@code worldDamage=false} never plants fire. */
+    public static boolean allowFire(boolean canceled, boolean worldDamage, boolean fire) {
+        return !canceled && worldDamage && fire;
+    }
+
+    /** Extra TNT bursts only when the first blast is allowed to break blocks. */
+    public static boolean shouldScheduleCraters(boolean tntMultiple, boolean allowWorldDamage) {
+        return tntMultiple && allowWorldDamage;
+    }
+
     public record Applied(float power, boolean fire, boolean worldDamage) {}
 }

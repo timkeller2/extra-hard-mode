@@ -8,8 +8,9 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Fired for Extra Hard Mode explosions after any Fabric explosion callback.
- * Cancel to skip block damage (claim mods). Entity damage still runs.
+ * Fired from {@code ServerExplosion.explode} HEAD. Fabric API 0.158 has no explosion callback.
+ * {@link #cancel()} skips block damage, fire, and extra TNT craters (claim mods).
+ * Entity damage still runs.
  */
 public final class EhmExplosionEvent {
     public static final Event<Listener> EVENT = EventFactory.createArrayBacked(Listener.class, listeners -> event -> {

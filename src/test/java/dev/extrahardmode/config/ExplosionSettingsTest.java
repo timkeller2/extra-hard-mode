@@ -51,4 +51,19 @@ class ExplosionSettingsTest {
         assertFalse(effect.fire());
         assertFalse(effect.worldDamage());
     }
+
+    @Test
+    void cancelAndNoWorldDamageExtinguishFire() {
+        assertFalse(ExplosionSettings.allowFire(true, true, true));
+        assertFalse(ExplosionSettings.allowFire(false, false, true));
+        assertTrue(ExplosionSettings.allowFire(false, true, true));
+        assertFalse(ExplosionSettings.allowFire(false, true, false));
+    }
+
+    @Test
+    void cratersOnlyWhenFirstBlastBreaksBlocks() {
+        assertTrue(ExplosionSettings.shouldScheduleCraters(true, true));
+        assertFalse(ExplosionSettings.shouldScheduleCraters(true, false));
+        assertFalse(ExplosionSettings.shouldScheduleCraters(false, true));
+    }
 }

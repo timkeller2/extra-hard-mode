@@ -41,6 +41,7 @@ public final class Explosions implements FeatureModule {
 
     private static final ThreadLocal<ExplosionType> CURRENT = new ThreadLocal<>();
     private static final ThreadLocal<Boolean> REPLACING = new ThreadLocal<>();
+    private static final ThreadLocal<Boolean> ALLOW_WORLD_DAMAGE = new ThreadLocal<>();
     private static final Map<Identifier, ArrayDeque<CreateExplosionTask>> DELAYED = new ConcurrentHashMap<>();
     private static final Map<Identifier, List<OreBreak>> PENDING_ORES = new ConcurrentHashMap<>();
 
@@ -105,9 +106,6 @@ public final class Explosions implements FeatureModule {
         }
         ExplosionType type = classify(source);
         ExplosionConfig config = ConfigManager.world(level).explosions();
-        if (type == null && !config.otherModExplosions()) {
-            return;
-        }
         if (type == null || !config.custom(type)) {
             return;
         }
@@ -120,14 +118,19 @@ public final class Explosions implements FeatureModule {
         if (type.isMob() && !level.getGameRules().get(GameRules.MOB_GRIEFING)) {
             worldDamage = false;
         }
+        boolean fire = ExplosionSettings.allowFire(false, worldDamage, applied.fire());
+        ALLOW_WORLD_DAMAGE.remove();
         REPLACING.set(Boolean.TRUE);
         try {
-            level.explode(source, x, y, z, applied.power(), applied.fire(), interactionFor(type, worldDamage));
+            level.explode(source, x, y, z, applied.power(), fire, interactionFor(type, worldDamage));
         } finally {
             REPLACING.remove();
         }
-        if (type == ExplosionType.TNT && config.tntMultiple()) {
-            scheduleCraters(level, new Vec3(x, y, z), source);
+        boolean allowBlocks = Boolean.TRUE.equals(ALLOW_WORLD_DAMAGE.get());
+        ALLOW_WORLD_DAMAGE.remove();
+        if (ExplosionSettings.shouldScheduleCraters(
+                type == ExplosionType.TNT && config.tntMultiple(), allowBlocks && worldDamage)) {
+            scheduleCraters(level, new Vec3(x, y, z), liveSource(source));
         }
     }
 
@@ -145,15 +148,16 @@ public final class Explosions implements FeatureModule {
         if (type.isMob() && !level.getGameRules().get(GameRules.MOB_GRIEFING)) {
             worldDamage = false;
         }
+        boolean fire = ExplosionSettings.allowFire(false, worldDamage, applied.fire());
         CURRENT.set(type);
         try {
             level.explode(
-                    source,
+                    liveSource(source),
                     origin.x,
                     origin.y,
                     origin.z,
                     applied.power(),
-                    applied.fire(),
+                    fire,
                     interactionFor(type, worldDamage));
         } finally {
             CURRENT.remove();
@@ -180,11 +184,14 @@ public final class Explosions implements FeatureModule {
         EhmExplosionEvent event = new EhmExplosionEvent(
                 level, explosion.center(), type, explosion.radius(), fire, worldDamage, source);
         EhmExplosionEvent.EVENT.invoker().onEhmExplosion(event);
-        if (event.isCanceled() || !event.worldDamage()) {
+        boolean allowBlocks = !event.isCanceled() && event.worldDamage();
+        ALLOW_WORLD_DAMAGE.set(allowBlocks);
+        if (!allowBlocks) {
             ((BlockInteractionMutator) explosion).extrahardmode$setBlockInteraction(Explosion.BlockInteraction.KEEP);
         }
         ((RadiusMutator) explosion).extrahardmode$setRadius(event.power());
-        ((FireMutator) explosion).extrahardmode$setFire(event.fire());
+        ((FireMutator) explosion)
+                .extrahardmode$setFire(ExplosionSettings.allowFire(event.isCanceled(), event.worldDamage(), event.fire()));
     }
 
     public static void beforeBlocks(ServerLevel level, Explosion explosion, List<BlockPos> positions) {
@@ -276,9 +283,14 @@ public final class Explosions implements FeatureModule {
         };
         ArrayDeque<CreateExplosionTask> queue =
                 DELAYED.computeIfAbsent(level.dimension().identifier(), id -> new ArrayDeque<>());
+        Entity live = liveSource(source);
         for (int i = 0; i < nearby.length; i++) {
-            queue.addLast(new CreateExplosionTask(level, nearby[i], ExplosionType.TNT, source, 3 * (i + 1)));
+            queue.addLast(new CreateExplosionTask(level, nearby[i], ExplosionType.TNT, live, 3 * (i + 1)));
         }
+    }
+
+    private static Entity liveSource(Entity source) {
+        return source == null || source.isRemoved() ? null : source;
     }
 
     private static Level.ExplosionInteraction interactionFor(ExplosionType type, boolean worldDamage) {

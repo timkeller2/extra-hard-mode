@@ -45,3 +45,6 @@ replay_*.log
 *-dev.jar
 *.jar
 !gradle/wrapper/gradle-wrapper.jar
+
+logs/
+

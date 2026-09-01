@@ -11,7 +11,9 @@
     "FallingBlockEntityLandMixin",
     "FallingBlockPlaceMixin",
     "ServerExplosionMixin",
-    "ServerLevelExplosionMixin"
+    "ServerLevelExplosionMixin",
+    "CraftingMenuMixin",
+    "CrafterBlockMixin"
   ],
   "client": [
     "client.ClientPlayerDestroySpeedMixin",
