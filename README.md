@@ -77,15 +77,17 @@ The public `EhmApi` is AGPL-viral: any mod that compiles against it is AGPL.
 
 ## GameTests
 
-Fabric GameTests live in `dev.extrahardmode.test.EhmGameTests` (`fabric-gametest` entrypoint). This branch ships first-apply and gamerule-off no-op. Feature tests land with their feature PRs; the acceptance list below is the full v1 suite from [`DESIGN.md`](DESIGN.md) PR 13.
-
-Run them:
+Fabric GameTests are the `fabric-gametest` entrypoint (`dev.extrahardmode.test.EhmGameTests`).
 
 ```bash
 ./gradlew runGameTest
 ```
 
-On Windows: `.\gradlew.bat runGameTest`. JUnit 5 (no Minecraft) is `./gradlew test`.
+Windows: `.\gradlew.bat runGameTest`
+
+That starts Loom's dedicated GameTest server (`gameTest` run config). `./gradlew test` is **not** Minecraft-free JUnit: with `enableGameTests = true`, Loom wires `test.dependsOn(runGameTest)`, so `test` runs JUnit 5 (`src/test/java`) **and** the GameTest server.
+
+`runGameTest` executes the `@GameTest` methods compiled into this jar. The table below is the v1 acceptance **contract** from [`DESIGN.md`](DESIGN.md) PR 13, not a list of methods that command always runs. Feature rows are implemented with their features.
 
 ### Acceptance list
 
