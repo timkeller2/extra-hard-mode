@@ -59,7 +59,7 @@ public final class AntiGrinder implements FeatureModule {
                 || reason == EntitySpawnReason.COMMAND) {
             return true;
         }
-        if (!(mob instanceof Enemy) || isExempt(mob)) {
+        if (isTrialSpawned(mob) || !(mob instanceof Enemy) || isExempt(mob)) {
             return true;
         }
         if (reason == EntitySpawnReason.SPAWNER) {
@@ -80,7 +80,7 @@ public final class AntiGrinder implements FeatureModule {
         if (!WorldGate.isModuleActive(level, ID) || !ConfigManager.world(level).inhibitGrinders()) {
             return false;
         }
-        if (!(entity instanceof Enemy) || isExempt(entity)) {
+        if (isTrialSpawned(entity) || !(entity instanceof Enemy) || isExempt(entity)) {
             return false;
         }
         if (Boolean.TRUE.equals(entity.getAttachedOrElse(EhmAttachments.EHM_LOOTLESS, Boolean.FALSE))) {
@@ -104,7 +104,7 @@ public final class AntiGrinder implements FeatureModule {
 
     static void onAfterDamage(
             LivingEntity entity, DamageSource source, float dealt, float original, boolean blocked) {
-        if (!(entity instanceof Enemy) || isExempt(entity)) {
+        if (isTrialSpawned(entity) || !(entity instanceof Enemy) || isExempt(entity)) {
             return;
         }
         if (!(entity.level() instanceof ServerLevel level)) {
@@ -133,6 +133,14 @@ public final class AntiGrinder implements FeatureModule {
 
     public static void markLootless(LivingEntity entity) {
         entity.setAttached(EhmAttachments.EHM_LOOTLESS, true);
+    }
+
+    public static void markTrialSpawned(LivingEntity entity) {
+        entity.setAttached(EhmAttachments.EHM_TRIAL_SPAWNED, true);
+    }
+
+    public static boolean isTrialSpawned(LivingEntity entity) {
+        return Boolean.TRUE.equals(entity.getAttachedOrElse(EhmAttachments.EHM_TRIAL_SPAWNED, Boolean.FALSE));
     }
 
     private static boolean isEnvironmental(DamageSource source) {

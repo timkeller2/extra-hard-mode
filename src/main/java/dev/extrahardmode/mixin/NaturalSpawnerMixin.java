@@ -78,6 +78,7 @@ public abstract class NaturalSpawnerMixin {
             BlockPos pos,
             NaturalSpawner.SpawnPredicate predicate,
             NaturalSpawner.AfterSpawnCallback callback) {
+        MoreMonsters.markPackCountMixinApplied();
         if (!WorldGate.isModuleActive(level, MoreMonsters.ID)) {
             return data.minCount();
         }
@@ -100,6 +101,7 @@ public abstract class NaturalSpawnerMixin {
             BlockPos pos,
             NaturalSpawner.SpawnPredicate predicate,
             NaturalSpawner.AfterSpawnCallback callback) {
+        MoreMonsters.markPackCountMixinApplied();
         if (!WorldGate.isModuleActive(level, MoreMonsters.ID)) {
             return data.maxCount();
         }
@@ -113,6 +115,7 @@ public abstract class NaturalSpawnerMixin {
             require = 0)
     private static void ehm$warnIfAddRedirectMissing(CallbackInfo ci) {
         SpawnReplaceService.warnIfMixinMissing();
+        MoreMonsters.warnIfPackMixinMissing();
     }
 
     @Inject(
@@ -122,5 +125,6 @@ public abstract class NaturalSpawnerMixin {
             require = 0)
     private static void ehm$warnIfAddRedirectMissingAfterChunk(CallbackInfo ci) {
         SpawnReplaceService.warnIfMixinMissing();
+        MoreMonsters.warnIfPackMixinMissing();
     }
 }

@@ -6,6 +6,7 @@ import dev.extrahardmode.config.WorldConfig;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.world.EhmTags;
 import it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet;
+import java.util.Map;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
@@ -19,6 +20,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.NaturalSpawner;
 import net.minecraft.world.level.block.state.BlockState;
@@ -68,21 +70,39 @@ public final class SpawnInLight implements FeatureModule {
         if (player.getBlockY() >= config.spawnInLightMaxY()) {
             return;
         }
-        long key = SectionPos.asLong(player.blockPosition());
-        LongLinkedOpenHashSet visited = player.getAttachedOrCreate(EhmAttachments.EHM_VISITED_SECTIONS);
-        if (visited.add(key)) {
-            while (visited.size() > VISITED_CAP) {
+        Map<String, LongLinkedOpenHashSet> byDimension =
+                player.getAttachedOrCreate(EhmAttachments.EHM_VISITED_SECTIONS);
+        addVisit(
+                byDimension,
+                dimensionKey(player.level()),
+                SectionPos.asLong(player.blockPosition()),
+                VISITED_CAP);
+        player.setAttached(EhmAttachments.EHM_VISITED_SECTIONS, byDimension);
+    }
+
+    static void addVisit(Map<String, LongLinkedOpenHashSet> byDimension, String dimension, long section, int cap) {
+        LongLinkedOpenHashSet visited = byDimension.computeIfAbsent(dimension, key -> new LongLinkedOpenHashSet());
+        if (visited.add(section)) {
+            while (visited.size() > cap) {
                 visited.removeFirstLong();
             }
-            player.setAttached(EhmAttachments.EHM_VISITED_SECTIONS, visited);
         }
+    }
+
+    static String dimensionKey(Level level) {
+        return level.dimension().identifier().toString();
     }
 
     static void trySpawn(ServerLevel level, ServerPlayer player, WorldConfig config) {
         if (config.spawnInLightPercent() <= 0) {
             return;
         }
-        LongLinkedOpenHashSet visited = player.getAttachedOrElse(EhmAttachments.EHM_VISITED_SECTIONS, null);
+        Map<String, LongLinkedOpenHashSet> byDimension =
+                player.getAttachedOrElse(EhmAttachments.EHM_VISITED_SECTIONS, null);
+        if (byDimension == null) {
+            return;
+        }
+        LongLinkedOpenHashSet visited = byDimension.get(dimensionKey(level));
         if (visited == null || visited.isEmpty()) {
             return;
         }

@@ -49,9 +49,16 @@ public final class EhmAttachments {
         return list;
     });
 
-    public static final AttachmentType<LongLinkedOpenHashSet> EHM_VISITED_SECTIONS = AttachmentRegistry.create(
-            ExtraHardModeMod.id("visited_sections"),
-            builder -> builder.persistent(LONG_LINKED_SET_CODEC).copyOnDeath().initializer(LongLinkedOpenHashSet::new));
+    public static final Codec<Map<String, LongLinkedOpenHashSet>> VISITED_BY_DIMENSION_CODEC =
+            Codec.unboundedMap(Codec.STRING, LONG_LINKED_SET_CODEC);
+
+    /** Per-dimension FIFO of visited section keys. */
+    public static final AttachmentType<Map<String, LongLinkedOpenHashSet>> EHM_VISITED_SECTIONS =
+            AttachmentRegistry.create(
+                    ExtraHardModeMod.id("visited_sections"),
+                    builder -> builder.persistent(VISITED_BY_DIMENSION_CODEC)
+                            .copyOnDeath()
+                            .initializer(HashMap::new));
 
     /** Persistent; stamped before a spawn-replacement roll so chunk reload cannot re-roll. */
     public static final AttachmentType<Boolean> EHM_SPAWN_PROCESSED = AttachmentRegistry.create(
@@ -68,6 +75,10 @@ public final class EhmAttachments {
 
     public static final AttachmentType<Boolean> EHM_LOOTLESS = AttachmentRegistry.create(
             ExtraHardModeMod.id("lootless"),
+            builder -> builder.persistent(Codec.BOOL).initializer(() -> Boolean.FALSE));
+
+    public static final AttachmentType<Boolean> EHM_TRIAL_SPAWNED = AttachmentRegistry.create(
+            ExtraHardModeMod.id("trial_spawned"),
             builder -> builder.persistent(Codec.BOOL).initializer(() -> Boolean.FALSE));
 
     private EhmAttachments() {}
