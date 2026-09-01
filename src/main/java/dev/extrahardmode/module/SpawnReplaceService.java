@@ -65,6 +65,7 @@ public final class SpawnReplaceService {
         }
     }
 
+    /** First non-null type replacement wins. Register order is module bootstrap order. */
     public static void register(EntityType<?> from, ReplaceFn fn) {
         Objects.requireNonNull(from, "from");
         Objects.requireNonNull(fn, "fn");

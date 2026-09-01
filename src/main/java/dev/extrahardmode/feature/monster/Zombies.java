@@ -93,9 +93,14 @@ public final class Zombies implements FeatureModule {
         return (int) ((1.0D / n) * percent);
     }
 
+    /** 3–8 seconds, matching {@code nextInt(6)+3}. {@code nextInt6} is 0–5. */
+    public static int reanimateDelayTicks(int nextInt6) {
+        return (3 + Math.floorMod(nextInt6, 6)) * 20;
+    }
+
     /** 3–8 seconds, matching {@code nextInt(6)+3}. */
     public static int reanimateDelayTicks(RandomSource random) {
-        return (3 + random.nextInt(6)) * 20;
+        return reanimateDelayTicks(random.nextInt(6));
     }
 
     public static boolean isOrdinaryZombie(Entity entity) {
@@ -112,21 +117,6 @@ public final class Zombies implements FeatureModule {
             return;
         }
         EntityHelper.markIgnored(mob);
-    }
-
-    public static void forgetSkull(ServerLevel level, BlockPos skullPos) {
-        if (skullPos == null) {
-            return;
-        }
-        ArrayDeque<RespawnZombieTask> queue = PENDING.get(level.dimension().identifier());
-        if (queue == null) {
-            return;
-        }
-        for (RespawnZombieTask task : queue) {
-            if (skullPos.equals(task.skullPos())) {
-                return;
-            }
-        }
     }
 
     private static void onAfterDamage(

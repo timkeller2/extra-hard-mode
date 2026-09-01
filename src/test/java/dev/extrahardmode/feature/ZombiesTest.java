@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import dev.extrahardmode.feature.monster.Zombies;
 import dev.extrahardmode.module.EntityHelper;
+import dev.extrahardmode.task.CoolCreeperExplosion;
 import org.junit.jupiter.api.Test;
 
 class ZombiesTest {
@@ -25,12 +26,21 @@ class ZombiesTest {
 
     @Test
     void delayIsThreeToEightSeconds() {
-        assertEquals(60, 3 * 20);
-        assertEquals(160, 8 * 20);
+        assertEquals(60, Zombies.reanimateDelayTicks(0));
+        assertEquals(80, Zombies.reanimateDelayTicks(1));
+        assertEquals(160, Zombies.reanimateDelayTicks(5));
         for (int n = 0; n < 6; n++) {
-            int ticks = (3 + n) * 20;
-            assertTrue(ticks >= 60 && ticks <= 160);
+            int ticks = Zombies.reanimateDelayTicks(n);
+            assertTrue(ticks >= 60 && ticks <= 160, "delay ticks " + ticks);
+            assertEquals(0, ticks % 20);
         }
+    }
+
+    @Test
+    void burningCreeperExplodesOnOriginalSuicideOffset() {
+        assertEquals(26, CoolCreeperExplosion.explodeDelayTicks(3));
+        assertEquals(3 + 8, CoolCreeperExplosion.explodeDelayTicks(0));
+        assertEquals(5 + 3 + 8, CoolCreeperExplosion.explodeDelayTicks(1));
     }
 
     @Test

@@ -576,7 +576,7 @@ public class EhmGameTests {
         }
     }
 
-    @GameTest
+    @GameTest(maxTicks = 180)
     public void zombieVillagerDoesNotReanimate(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         level.getGameRules().set(WorldGate.ENABLED, true, level.getServer());
@@ -585,7 +585,8 @@ public class EhmGameTests {
         ZombieVillager villager = helper.spawn(EntityTypes.ZOMBIE_VILLAGER, pos, EntitySpawnReason.COMMAND);
         helper.assertFalse(Zombies.isOrdinaryZombie(villager), "zombie villager is not ordinary");
         villager.kill(level);
-        helper.runAfterDelay(2, () -> {
+        helper.runAfterDelay(165, () -> {
+            helper.assertEntityNotPresent(EntityTypes.ZOMBIE);
             helper.assertBlockNotPresent(Blocks.ZOMBIE_HEAD, pos);
             helper.assertBlockNotPresent(Blocks.ZOMBIE_HEAD, pos.above());
             helper.succeed();
@@ -597,13 +598,12 @@ public class EhmGameTests {
         ServerLevel level = helper.getLevel();
         level.getGameRules().set(WorldGate.ENABLED, true, level.getServer());
         Zombie zombie = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1), EntitySpawnReason.REINFORCEMENT);
-        Zombies.stampReinforcement(zombie, EntitySpawnReason.REINFORCEMENT);
-        helper.assertTrue(EntityHelper.ignored(zombie), "reinforcement stamped EHM_IGNORE");
+        helper.assertTrue(EntityHelper.ignored(zombie), "finalizeSpawn mixin stamped EHM_IGNORE");
         helper.assertTrue(Zombies.isOrdinaryZombie(zombie), "still an ordinary zombie type");
         helper.succeed();
     }
 
-    @GameTest
+    @GameTest(maxTicks = 180)
     public void burningZombieDoesNotPlaceSkull(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         level.getGameRules().set(WorldGate.ENABLED, true, level.getServer());
@@ -613,7 +613,8 @@ public class EhmGameTests {
         zombie.igniteForTicks(8 * 20);
         helper.assertTrue(zombie.getRemainingFireTicks() >= 1 || zombie.isOnFire(), "zombie is on fire");
         zombie.kill(level);
-        helper.runAfterDelay(2, () -> {
+        helper.runAfterDelay(165, () -> {
+            helper.assertEntityNotPresent(EntityTypes.ZOMBIE);
             helper.assertBlockNotPresent(Blocks.ZOMBIE_HEAD, pos);
             helper.assertBlockNotPresent(Blocks.ZOMBIE_HEAD, pos.above());
             helper.succeed();

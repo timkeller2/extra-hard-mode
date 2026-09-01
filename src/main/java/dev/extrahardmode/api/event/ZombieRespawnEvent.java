@@ -5,7 +5,7 @@ import net.fabricmc.fabric.api.event.EventFactory;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.monster.zombie.Zombie;
 
-/** Fired after an Extra Hard Mode zombie reanimates. Cancel to discard the new zombie. */
+/** Fired after the reanimated zombie is added to the world. Cancel to discard it. */
 public final class ZombieRespawnEvent {
     public static final Event<Listener> EVENT = EventFactory.createArrayBacked(Listener.class, listeners -> event -> {
         for (Listener listener : listeners) {

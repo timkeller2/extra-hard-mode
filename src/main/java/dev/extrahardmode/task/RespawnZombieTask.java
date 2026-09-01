@@ -1,7 +1,6 @@
 package dev.extrahardmode.task;
 
 import dev.extrahardmode.api.event.ZombieRespawnEvent;
-import dev.extrahardmode.feature.monster.Zombies;
 import dev.extrahardmode.module.EntityHelper;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
@@ -79,21 +78,20 @@ public final class RespawnZombieTask {
         zombie.setHealth(zombie.getMaxHealth() / 2.0F);
         EntityHelper.markLootless(zombie);
         EntityHelper.setReanimateCount(zombie, reanimateCount);
-        zombie.setPersistenceRequired();
         ServerPlayer target = targetId == null ? null : level.getServer().getPlayerList().getPlayer(targetId);
         if (target != null && target.isAlive() && target.level() == level) {
             zombie.setTarget(target);
+        }
+        if (!level.addFreshEntity(zombie)) {
+            clearSkull();
+            return;
         }
         ZombieRespawnEvent event = new ZombieRespawnEvent(target, zombie);
         ZombieRespawnEvent.EVENT.invoker().onZombieRespawn(event);
         if (event.isCanceled()) {
             zombie.discard();
-            clearSkull();
-            return;
         }
-        level.addFreshEntity(zombie);
         clearSkull();
-        Zombies.forgetSkull(level, skullPos);
     }
 
     private void clearSkull() {
@@ -104,6 +102,5 @@ public final class RespawnZombieTask {
                 && level.getBlockState(skullPos).is(Blocks.ZOMBIE_HEAD)) {
             level.setBlock(skullPos, Blocks.AIR.defaultBlockState(), 3);
         }
-        Zombies.forgetSkull(level, skullPos);
     }
 }

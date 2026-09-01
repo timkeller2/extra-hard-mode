@@ -35,10 +35,12 @@ import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * Charged NATURAL spawn %, charged explode on damage, primed TNT on death,
- * burning creeper fireworks. Custom blasts go through {@link Explosions}.
+ * burning creeper fireworks. Custom blasts go through {@link Explosions} gated
+ * on this module, not {@code extrahardmode:explosions}.
  */
 public final class Creepers implements FeatureModule {
     public static final Identifier ID = ExtraHardModeMod.id("creepers");
@@ -53,8 +55,8 @@ public final class Creepers implements FeatureModule {
     @Override
     public void bootstrap(FeatureBus bus) {
         SpawnReplaceService.register(EntityTypes.CREEPER, Creepers::rollCharged);
-        bus.listen(ServerLivingEntityEvents.ALLOW_DAMAGE, ID, Creepers::onAllowDamage);
         bus.listen(ServerLivingEntityEvents.AFTER_DAMAGE, ID, Creepers::onAfterDamage);
+        bus.listen(ServerLivingEntityEvents.ALLOW_DEATH, ID, Creepers::onAllowDeath);
         bus.listen(ServerLivingEntityEvents.AFTER_DEATH, ID, Creepers::onDeath);
     }
 
@@ -99,31 +101,6 @@ public final class Creepers implements FeatureModule {
         return null;
     }
 
-    private static boolean onAllowDamage(LivingEntity entity, DamageSource source, float amount) {
-        if (!(entity instanceof Creeper creeper) || !(entity.level() instanceof ServerLevel level)) {
-            return true;
-        }
-        if (!enabled(level) || creeper.isRemoved() || !creeper.isPowered()) {
-            return true;
-        }
-        MonsterConfig config = ConfigManager.world(level).monsters();
-        if (!config.chargedExplodeOnDamage()) {
-            return true;
-        }
-        Player player = playerFrom(source);
-        if (player instanceof ServerPlayer serverPlayer && EhmApi.playerBypasses(serverPlayer)) {
-            return true;
-        }
-        if (creeper.getTarget() == null && player == null) {
-            return true;
-        }
-        EntityHelper.markLootless(creeper);
-        var origin = creeper.position();
-        creeper.discard();
-        Explosions.schedule(level, origin, ExplosionType.CREEPER_CHARGED, null, 0);
-        return false;
-    }
-
     private static void onAfterDamage(
             LivingEntity entity, DamageSource source, float baseDamageTaken, float damageTaken, boolean blocked) {
         if (!(entity instanceof Creeper creeper) || !(entity.level() instanceof ServerLevel level)) {
@@ -132,6 +109,49 @@ public final class Creepers implements FeatureModule {
         if (!enabled(level) || creeper.isRemoved()) {
             return;
         }
+        if (tryChargedExplode(creeper, level, source, blocked)) {
+            return;
+        }
+        tryStartFireExplosion(creeper, level, source);
+    }
+
+    private static boolean onAllowDeath(LivingEntity entity, DamageSource source, float amount) {
+        if (!(entity instanceof Creeper creeper) || !(entity.level() instanceof ServerLevel level)) {
+            return true;
+        }
+        if (!enabled(level) || creeper.isRemoved()) {
+            return true;
+        }
+        if (tryChargedExplode(creeper, level, source, false)) {
+            return false;
+        }
+        tryStartFireExplosion(creeper, level, source);
+        return true;
+    }
+
+    private static boolean tryChargedExplode(Creeper creeper, ServerLevel level, DamageSource source, boolean blocked) {
+        if (blocked || !creeper.isPowered()) {
+            return false;
+        }
+        MonsterConfig config = ConfigManager.world(level).monsters();
+        if (!config.chargedExplodeOnDamage()) {
+            return false;
+        }
+        Player player = playerFrom(source);
+        if (player instanceof ServerPlayer serverPlayer && EhmApi.playerBypasses(serverPlayer)) {
+            return false;
+        }
+        if (creeper.getTarget() == null && player == null) {
+            return false;
+        }
+        EntityHelper.markLootless(creeper);
+        Vec3 origin = creeper.position();
+        Explosions.createFromModule(level, ID, origin, ExplosionType.CREEPER_CHARGED, creeper);
+        creeper.discard();
+        return true;
+    }
+
+    private static void tryStartFireExplosion(Creeper creeper, ServerLevel level, DamageSource source) {
         MonsterConfig config = ConfigManager.world(level).monsters();
         if (!config.fireExplosion()) {
             return;
@@ -173,15 +193,15 @@ public final class Creepers implements FeatureModule {
         if (event.isCanceled()) {
             return;
         }
+        if (config.creeperTntWarning()) {
+            level.playSound(null, creeper.blockPosition(), SoundEvents.GHAST_WARN, SoundSource.HOSTILE, 1.0F, 1.0F);
+        }
         PrimedTnt tnt = EntityTypes.TNT.create(level, EntitySpawnReason.EVENT);
         if (tnt == null) {
             return;
         }
         tnt.snapTo(event.location().x, event.location().y, event.location().z);
         level.addFreshEntity(tnt);
-        if (config.creeperTntWarning()) {
-            level.playSound(null, creeper.blockPosition(), SoundEvents.GHAST_WARN, SoundSource.HOSTILE, 1.0F, 1.0F);
-        }
     }
 
     public interface PoweredMutator {

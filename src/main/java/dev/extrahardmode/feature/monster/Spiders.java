@@ -19,7 +19,6 @@ import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.monster.Enemy;
-import net.minecraft.world.entity.monster.spider.Spider;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -95,7 +94,9 @@ public final class Spiders implements FeatureModule {
     }
 
     private static void onDeath(LivingEntity entity, DamageSource source) {
-        if (!(entity instanceof Spider) || !(entity.level() instanceof ServerLevel level) || !enabled(level)) {
+        if (entity.getType() != EntityTypes.SPIDER
+                || !(entity.level() instanceof ServerLevel level)
+                || !enabled(level)) {
             return;
         }
         MonsterConfig config = ConfigManager.world(level).monsters();
@@ -126,12 +127,12 @@ public final class Spiders implements FeatureModule {
                 continue;
             }
             level.setBlock(web, Blocks.COBWEB.defaultBlockState(), 3);
-            data.add(web);
+            data.add(web, level.getGameTime());
         }
         BlockPos atFeet = findWebPos(level, feet);
         if (atFeet != null && level.getBlockState(atFeet).isAir()) {
             level.setBlock(atFeet, Blocks.COBWEB.defaultBlockState(), 3);
-            data.add(atFeet);
+            data.add(atFeet, level.getGameTime());
         }
     }
 
@@ -162,6 +163,9 @@ public final class Spiders implements FeatureModule {
         SpiderWebData data = SpiderWebData.of(level);
         for (BlockPos pos : data.snapshot()) {
             if (pos.getY() < MonsterConfig.CAVE_Y) {
+                continue;
+            }
+            if (data.placedOnTick(pos, level.getGameTime())) {
                 continue;
             }
             if (!level.hasChunk(pos.getX() >> 4, pos.getZ() >> 4)) {

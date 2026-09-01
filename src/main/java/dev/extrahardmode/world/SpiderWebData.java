@@ -5,6 +5,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.config.MonsterConfig;
 import dev.extrahardmode.player.EhmAttachments;
+import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
@@ -27,6 +28,11 @@ public final class SpiderWebData extends SavedData {
             ExtraHardModeMod.id("spider_webs"), SpiderWebData::new, CODEC, DataFixTypes.SAVED_DATA_MAP_INDEX);
 
     private final LongLinkedOpenHashSet positions = new LongLinkedOpenHashSet();
+    private final Long2LongOpenHashMap placedTick = new Long2LongOpenHashMap();
+
+    {
+        placedTick.defaultReturnValue(-1L);
+    }
 
     public SpiderWebData() {}
 
@@ -42,17 +48,25 @@ public final class SpiderWebData extends SavedData {
         return level.getDataStorage().computeIfAbsent(TYPE);
     }
 
-    public void add(BlockPos pos) {
+    public void add(BlockPos pos, long gameTime) {
         long packed = pos.asLong();
         if (!positions.add(packed)) {
+            placedTick.put(packed, gameTime);
             return;
         }
+        placedTick.put(packed, gameTime);
         trim();
         setDirty();
     }
 
+    public boolean placedOnTick(BlockPos pos, long gameTime) {
+        return placedTick.get(pos.asLong()) == gameTime;
+    }
+
     public void remove(BlockPos pos) {
-        if (positions.remove(pos.asLong())) {
+        long packed = pos.asLong();
+        placedTick.remove(packed);
+        if (positions.remove(packed)) {
             setDirty();
         }
     }
@@ -69,7 +83,8 @@ public final class SpiderWebData extends SavedData {
 
     private void trim() {
         while (positions.size() > MonsterConfig.WEB_CAP) {
-            positions.removeFirstLong();
+            long dropped = positions.removeFirstLong();
+            placedTick.remove(dropped);
             setDirty();
         }
     }

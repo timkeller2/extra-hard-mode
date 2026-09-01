@@ -3,11 +3,14 @@ package dev.extrahardmode.task;
 import dev.extrahardmode.api.ExplosionType;
 import dev.extrahardmode.config.MonsterConfig;
 import dev.extrahardmode.feature.Explosions;
+import dev.extrahardmode.feature.monster.Creepers;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
 import net.minecraft.world.item.DyeColor;
@@ -19,37 +22,50 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * Burning creeper: fireworks, launch, then a custom creeper blast.
- * Tick offsets match original CoolCreeperExplosion (5 between fireworks, then rise, then explode).
+ * Offsets match original: fireworks every 5 ticks, catapult +3, suicide +8
+ * from catapult (not after the rise loop). Still explodes if the creeper dies.
  */
 public final class CoolCreeperExplosion {
-    private static final int TICKS_BETWEEN_FIREWORKS = 5;
-    private static final int TICKS_BEFORE_CATAPULT = 3;
-    private static final int TICKS_BEFORE_SUICIDE = 8;
-    private static final int RISE_STEPS = 10;
+    public static final int TICKS_BETWEEN_FIREWORKS = 5;
+    public static final int TICKS_BEFORE_CATAPULT = 3;
+    public static final int TICKS_BEFORE_SUICIDE = 8;
 
     private final ServerLevel level;
     private final Creeper creeper;
-    private final Vec3 origin;
+    private final ExplosionType type;
+    private Vec3 lastPos;
     private final int fireworkCount;
     private final double launchSpeed;
+    private final int launchAt;
+    private final int explodeAt;
     private int age;
-    private int explodeAt = Integer.MAX_VALUE;
-    private boolean launched;
+    private boolean exploded;
 
     public CoolCreeperExplosion(ServerLevel level, Creeper creeper, MonsterConfig config) {
         this.level = level;
         this.creeper = creeper;
-        this.origin = creeper.position();
+        this.type = creeper.isPowered() ? ExplosionType.CREEPER_CHARGED : ExplosionType.CREEPER;
+        this.lastPos = creeper.position();
         this.fireworkCount = Math.max(0, config.fireworkCount());
         this.launchSpeed = config.launchSpeed();
-        int fireworksEnd = fireworkCount * TICKS_BETWEEN_FIREWORKS;
-        int launchAt = fireworksEnd + TICKS_BEFORE_CATAPULT;
-        this.explodeAt = launchAt + riseDuration() + TICKS_BEFORE_SUICIDE;
+        this.launchAt = explodeDelayTicks(fireworkCount) - TICKS_BEFORE_SUICIDE;
+        this.explodeAt = explodeDelayTicks(fireworkCount);
+        if (creeper.isAlive()) {
+            creeper.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, explodeAt + 5, 0, false, false));
+        }
+    }
+
+    /** Fireworks*5 + 3 + 8. Original suicide is scheduled from catapult start, not after rise. */
+    public static int explodeDelayTicks(int fireworkCount) {
+        return Math.max(0, fireworkCount) * TICKS_BETWEEN_FIREWORKS + TICKS_BEFORE_CATAPULT + TICKS_BEFORE_SUICIDE;
     }
 
     public boolean tick() {
-        if (creeper.isRemoved()) {
+        if (exploded) {
             return true;
+        }
+        if (!creeper.isRemoved()) {
+            lastPos = creeper.position();
         }
         age++;
         if (fireworkCount > 0 && age <= fireworkCount * TICKS_BETWEEN_FIREWORKS) {
@@ -57,10 +73,7 @@ public final class CoolCreeperExplosion {
                 spawnFirework();
             }
         }
-        int fireworksEnd = fireworkCount * TICKS_BETWEEN_FIREWORKS;
-        int launchAt = fireworksEnd + TICKS_BEFORE_CATAPULT;
-        if (age >= launchAt && age < launchAt + riseDuration()) {
-            launched = true;
+        if (!creeper.isRemoved() && age >= launchAt && age < explodeAt) {
             creeper.setTarget(null);
             creeper.setDeltaMovement(creeper.getDeltaMovement().x, launchSpeed, creeper.getDeltaMovement().z);
             creeper.hurtMarked = true;
@@ -70,16 +83,6 @@ public final class CoolCreeperExplosion {
         }
         explode();
         return true;
-    }
-
-    private static int riseDuration() {
-        int ticks = 0;
-        int gap = 1;
-        for (int i = 0; i < RISE_STEPS; i++) {
-            ticks += gap;
-            gap += i;
-        }
-        return Math.max(1, ticks);
     }
 
     private void spawnFirework() {
@@ -93,18 +96,20 @@ public final class CoolCreeperExplosion {
                         1,
                         List.of(new FireworkExplosion(
                                 FireworkExplosion.Shape.CREEPER, colors, new IntArrayList(), true, false))));
-        Vec3 pos = creeper.isRemoved() ? origin : creeper.position();
+        Vec3 pos = creeper.isRemoved() ? lastPos : creeper.position();
         FireworkRocketEntity rocket = new FireworkRocketEntity(level, pos.x, pos.y, pos.z, stack);
         level.addFreshEntity(rocket);
     }
 
     private void explode() {
-        Vec3 pos = creeper.isAlive() ? creeper.position() : origin;
-        if (creeper.isAlive()) {
-            Explosions.create(level, pos, ExplosionType.CREEPER, creeper);
+        if (exploded) {
+            return;
+        }
+        exploded = true;
+        Vec3 pos = creeper.isRemoved() ? lastPos : creeper.position();
+        Explosions.createFromModule(level, Creepers.ID, pos, type, creeper);
+        if (!creeper.isRemoved()) {
             creeper.discard();
-        } else {
-            Explosions.create(level, pos, ExplosionType.CREEPER, null);
         }
     }
 }
