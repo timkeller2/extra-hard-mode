@@ -92,6 +92,14 @@ public final class WorldConfig {
     private int caveSpiderPercent = 5;
     private int guardianPercent = 20;
     private int vexPercent = 5;
+    private boolean inhibitGrinders = true;
+    private boolean moreMonstersEnable = true;
+    private int moreMonstersMaxY = 48;
+    private int moreMonstersMultiplier = 2;
+    private boolean spawnInLightEnable = true;
+    private int spawnInLightMaxY = 48;
+    private int spawnInLightMaxLight = 10;
+    private int spawnInLightPercent = 100;
 
     public WorldConfig(Identifier dimensionId) {
         this.dimensionId = dimensionId;
@@ -252,6 +260,24 @@ public final class WorldConfig {
 
     public PlayerSettings player() {
         return player;
+    public boolean inhibitGrinders() {
+        return inhibitGrinders;
+    }
+
+    public boolean moreMonstersEnable() {
+        return moreMonstersEnable;
+    public int moreMonstersMaxY() {
+        return moreMonstersMaxY;
+    public int moreMonstersMultiplier() {
+        return moreMonstersMultiplier;
+    public boolean spawnInLightEnable() {
+        return spawnInLightEnable;
+    public int spawnInLightMaxY() {
+        return spawnInLightMaxY;
+    public int spawnInLightMaxLight() {
+        return spawnInLightMaxLight;
+    public int spawnInLightPercent() {
+        return spawnInLightPercent;
     }
 
     public void setEnabled(boolean enabled) {
@@ -488,6 +514,30 @@ public final class WorldConfig {
                         "NATURAL squid in #extrahardmode:guardian_replace (#minecraft:is_ocean). RootNode 20 (docs 10).",
                         "replacements.vexPercent",
                         "NATURAL bats become vexes. Deep Dark skipped by SpawnReplaceService. RootNode 5.",
+                        "monsters.inhibitGrinders",
+                        "No drops/XP for grinders: unnatural floor, too much env damage, no path to player, water.",
+                        "monsters.more.enable",
+                        "Pack-size multiplier below maxY. Disable with this boolean, not Y=0.",
+                if (!file.contains("monsters.more.maxY")) {
+                    file.setComment("monsters.more.maxY", "original: 55; cave band");
+                    file.set("monsters.more.maxY", 48);
+                if (!file.contains("monsters.more.multiplier")) {
+                            "monsters.more.multiplier",
+                            "Pack size only; does not raise the vanilla monster cap.");
+                    file.set("monsters.more.multiplier", 2);
+                        "monsters.spawnInLight.enable",
+                        "Spawn extra monsters in light<=maxLight below maxY. Disable with this boolean, not Y=0.",
+                if (!file.contains("monsters.spawnInLight.maxY")) {
+                    file.setComment("monsters.spawnInLight.maxY", "original RootNode 50; cave band");
+                    file.set("monsters.spawnInLight.maxY", 48);
+                if (!file.contains("monsters.spawnInLight.maxLight")) {
+                            "monsters.spawnInLight.maxLight",
+                            "0-3 bats, 0-7 vanilla, 8-11 hostile no burn, 12+ burn");
+                    file.set("monsters.spawnInLight.maxLight", 10);
+                if (!file.contains("monsters.spawnInLight.percent")) {
+                            "monsters.spawnInLight.percent",
+                            "Chance per attempt at previously visited cave sections.");
+                    file.set("monsters.spawnInLight.percent", 100);
                 if (!file.contains("modules")) {
                     file.setComment("modules", "Runtime per-module toggles for this dimension. Missing keys default true.");
                 }
@@ -602,6 +652,14 @@ public final class WorldConfig {
                 file.set("replacements.caveSpiderPercent", caveSpiderPercent);
                 file.set("replacements.guardianPercent", guardianPercent);
                 file.set("replacements.vexPercent", vexPercent);
+                file.set("monsters.inhibitGrinders", inhibitGrinders);
+                file.set("monsters.more.enable", moreMonstersEnable);
+                file.set("monsters.more.maxY", moreMonstersMaxY);
+                file.set("monsters.more.multiplier", moreMonstersMultiplier);
+                file.set("monsters.spawnInLight.enable", spawnInLightEnable);
+                file.set("monsters.spawnInLight.maxY", spawnInLightMaxY);
+                file.set("monsters.spawnInLight.maxLight", spawnInLightMaxLight);
+                file.set("monsters.spawnInLight.percent", spawnInLightPercent);
                 for (Map.Entry<Identifier, Boolean> entry : modules.entrySet()) {
                     file.set(moduleKey(entry.getKey()), entry.getValue());
                 }
@@ -708,6 +766,14 @@ public final class WorldConfig {
         caveSpiderPercent = percentOr(file, "replacements.caveSpiderPercent", 5);
         guardianPercent = percentOr(file, "replacements.guardianPercent", 20);
         vexPercent = percentOr(file, "replacements.vexPercent", 5);
+        inhibitGrinders = file.getOrElse("monsters.inhibitGrinders", true);
+        moreMonstersEnable = file.getOrElse("monsters.more.enable", true);
+        moreMonstersMaxY = getInt(file, "monsters.more.maxY", 48);
+        moreMonstersMultiplier = getInt(file, "monsters.more.multiplier", 2);
+        spawnInLightEnable = file.getOrElse("monsters.spawnInLight.enable", true);
+        spawnInLightMaxY = getInt(file, "monsters.spawnInLight.maxY", 48);
+        spawnInLightMaxLight = getInt(file, "monsters.spawnInLight.maxLight", 10);
+        spawnInLightPercent = getInt(file, "monsters.spawnInLight.percent", 100);
         modules.clear();
         Object raw = file.get("modules");
         if (raw instanceof Config table) {

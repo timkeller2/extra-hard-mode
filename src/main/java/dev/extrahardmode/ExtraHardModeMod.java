@@ -21,6 +21,9 @@ import dev.extrahardmode.feature.monster.Endermen;
 import dev.extrahardmode.feature.monster.Horses;
 import dev.extrahardmode.feature.monster.Witches;
 import dev.extrahardmode.feature.monster.BiomeReplacements;
+import dev.extrahardmode.feature.AntiGrinder;
+import dev.extrahardmode.feature.MoreMonsters;
+import dev.extrahardmode.feature.SpawnInLight;
 import dev.extrahardmode.module.SpawnReplaceService;
 import dev.extrahardmode.module.PhysicsQueue;
 import dev.extrahardmode.network.EhmNetworking;
@@ -68,6 +71,9 @@ public class ExtraHardModeMod implements ModInitializer {
         FEATURES.register(new Endermen());
         FEATURES.register(new Witches());
         FEATURES.register(new Horses());
+        FEATURES.register(AntiGrinder.INSTANCE);
+        FEATURES.register(MoreMonsters.INSTANCE);
+        FEATURES.register(SpawnInLight.INSTANCE);
         ServerLevelEvents.LOAD.register((server, level) -> {
             WorldGate.onLevelLoad(server, level);
             FEATURES.onWorldLoad(level);

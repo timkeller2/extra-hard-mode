@@ -20,6 +20,9 @@
     "EnderManMixin",
     "LootlessMixin",
     "ThrownSplashPotionMixin"
+    "MobSpawnRulesMixin",
+    "MonsterLootMixin",
+    "NaturalSpawnerMixin"
   ],
   "client": [
     "client.ClientPlayerDestroySpeedMixin",
