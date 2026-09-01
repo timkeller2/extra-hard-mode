@@ -47,6 +47,9 @@ public final class Blazes implements FeatureModule {
     public static final int DEFAULT_NETHER_SPLIT_PERCENT = 25;
     public static final int DEFAULT_MAGMA_WITH_BLAZE_PERCENT = 100;
 
+    /** Guards MAGMACUBE_FIRE so nearby cubes do not convert (and explode) re-entrantly. */
+    private static final ThreadLocal<Boolean> CONVERTING = ThreadLocal.withInitial(() -> Boolean.FALSE);
+
     @Override
     public Identifier id() {
         return ID;
@@ -57,7 +60,6 @@ public final class Blazes implements FeatureModule {
         SpawnReplaceService.register(EntityTypes.SKELETON, Blazes::rollOverworldSkeleton);
         SpawnReplaceService.register(EntityTypes.ZOMBIFIED_PIGLIN, Blazes::rollNetherBlaze);
         bus.listen(ServerLivingEntityEvents.ALLOW_DAMAGE, ID, Blazes::onAllowDamage);
-        bus.listen(ServerLivingEntityEvents.AFTER_DAMAGE, ID, Blazes::onAfterDamage);
         bus.listen(ServerLivingEntityEvents.AFTER_DEATH, ID, Blazes::onAfterDeath);
         bus.listen(LootTableEvents.MODIFY_DROPS, ID, Blazes::modifyDrops);
     }
@@ -92,7 +94,15 @@ public final class Blazes implements FeatureModule {
         return (int) (1.0D / nextGeneration * basePercent);
     }
 
+    /**
+     * Deep Dark / ancient city / trial chamber are skipped by
+     * {@link SpawnReplaceService} before this roll ({@code #no_spawn_replacements}).
+     */
     static EntityType<?> rollOverworldSkeleton(Mob original, ServerLevel level) {
+        return rollOverworldSkeleton(original, level, ConfigManager.world(level).blazeNearBedrockPercent());
+    }
+
+    public static EntityType<?> rollOverworldSkeleton(Mob original, ServerLevel level, int percent) {
         if (!WorldGate.isModuleActive(level, ID)) {
             return null;
         }
@@ -104,7 +114,7 @@ public final class Blazes implements FeatureModule {
                 original.getBlockY(), config.blazeNearBedrockEnable(), config.blazeNearBedrockMaxY())) {
             return null;
         }
-        if (!percentChance(original.getRandom(), config.blazeNearBedrockPercent())) {
+        if (!percentChance(original.getRandom(), percent)) {
             return null;
         }
         return EntityTypes.BLAZE;
@@ -147,48 +157,55 @@ public final class Blazes implements FeatureModule {
     }
 
     private static boolean onAllowDamage(LivingEntity entity, DamageSource source, float amount) {
-        if (!(entity instanceof MagmaCube cube)) {
-            return true;
-        }
         if (!(entity.level() instanceof ServerLevel level) || !WorldGate.isModuleActive(level, ID)) {
             return true;
         }
+        if (entity instanceof MagmaCube cube) {
+            return !tryGrowIntoBlaze(cube, level);
+        }
+        if (entity instanceof Blaze blaze && ConfigManager.world(level).blazeDropFireOnDamage()) {
+            dropFire(blaze, level);
+        }
+        return true;
+    }
+
+    static boolean tryGrowIntoBlaze(MagmaCube cube, ServerLevel level) {
+        if (Boolean.TRUE.equals(CONVERTING.get())) {
+            return false;
+        }
+        if (!WorldGate.isModuleActive(level, ID)) {
+            return false;
+        }
         if (!ConfigManager.world(level).magmaGrowIntoBlazesOnDamage()) {
-            return true;
+            return false;
         }
         if (cube.isRemoved() || cube.isDeadOrDying()) {
-            return true;
+            return false;
         }
         if (Boolean.TRUE.equals(cube.getAttachedOrElse(EhmAttachments.EHM_IGNORE, Boolean.FALSE))) {
-            return true;
+            return false;
         }
         growIntoBlaze(cube, level);
-        return false;
+        return true;
     }
 
     public static void growIntoBlaze(MagmaCube cube, ServerLevel level) {
         Vec3 origin = cube.position();
+        cube.setAttached(EhmAttachments.EHM_IGNORE, true);
         cube.discard();
-        new CreateExplosionTask(level, origin, ExplosionType.MAGMACUBE_FIRE, null, 0).run();
+        CONVERTING.set(Boolean.TRUE);
+        try {
+            if (ConfigManager.world(level).explosions().custom(ExplosionType.MAGMACUBE_FIRE)) {
+                new CreateExplosionTask(level, origin, ExplosionType.MAGMACUBE_FIRE, null, 0).run();
+            }
+        } finally {
+            CONVERTING.remove();
+        }
         Entity spawned = EntityTypes.BLAZE.spawn(level, BlockPos.containing(origin.x, origin.y + 2.0, origin.z), EntitySpawnReason.EVENT);
         if (spawned != null) {
             spawned.snapTo(origin.x, origin.y + 2.0, origin.z, cube.getYRot(), cube.getXRot());
             spawned.setAttached(EhmAttachments.EHM_SPAWN_PROCESSED, true);
         }
-    }
-
-    private static void onAfterDamage(
-            LivingEntity entity, DamageSource source, float baseDamageTaken, float damageTaken, boolean blocked) {
-        if (!(entity instanceof Blaze blaze) || blocked) {
-            return;
-        }
-        if (!(entity.level() instanceof ServerLevel level) || !WorldGate.isModuleActive(level, ID)) {
-            return;
-        }
-        if (!ConfigManager.world(level).blazeDropFireOnDamage()) {
-            return;
-        }
-        dropFire(blaze, level);
     }
 
     public static boolean shouldDropFire(float health, float maxHealth) {
