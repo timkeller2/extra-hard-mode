@@ -5,11 +5,13 @@
   "mixins": [
     "PlayerDestroySpeedMixin",
     "PlayerHarvestMixin",
-    "PistonStructureMixin"
+    "PistonStructureMixin",
+    "BlockItemPlaceMixin"
   ],
   "client": [
     "client.ClientPlayerDestroySpeedMixin",
-    "client.ClientPlayerHarvestMixin"
+    "client.ClientPlayerHarvestMixin",
+    "client.ClientBlockItemPlaceMixin"
   ],
   "injectors": {
     "defaultRequire": 1

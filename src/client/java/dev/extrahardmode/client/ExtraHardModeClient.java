@@ -5,19 +5,17 @@ import dev.extrahardmode.network.ClientboundToastPayload;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.toasts.SystemToast;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
 public class ExtraHardModeClient implements ClientModInitializer {
@@ -32,18 +30,46 @@ public class ExtraHardModeClient implements ClientModInitializer {
     /** Client destroy-speed / harvest mixins read only {@link ClientboundSyncPayload}. */
     public static boolean denyHardened(Player player, BlockState state) {
         ClientboundSyncPayload sync = lastSync;
-        if (sync == null) {
+        if (sync == null || sync.playerBypass()) {
             return false;
         }
         if (player.hasInfiniteMaterials() || player.isCreative()) {
             return false;
         }
-        Identifier blockId = BuiltInRegistries.BLOCK.getKey(state.getBlock());
+        Identifier blockId = id(state);
         if (blockId == null || !sync.hardenedBlocks().contains(blockId)) {
             return false;
         }
-        Identifier toolId = BuiltInRegistries.ITEM.getKey(player.getMainHandItem().getItem());
+        Identifier toolId = id(player.getMainHandItem());
         return toolId == null || !sync.hardenedPicks().contains(toolId);
+    }
+
+    /** Mirrors server {@code BlockItem.place} deny using payload flags only. */
+    public static boolean denyOrePlacement(BlockPlaceContext context) {
+        ClientboundSyncPayload sync = lastSync;
+        if (sync == null || !sync.blockOreNextToStone() || sync.playerBypass()) {
+            return false;
+        }
+        Player player = context.getPlayer();
+        if (player != null && (player.hasInfiniteMaterials() || player.isCreative())) {
+            return false;
+        }
+        ItemStack stack = context.getItemInHand();
+        if (!(stack.getItem() instanceof BlockItem blockItem)) {
+            return false;
+        }
+        Identifier placed = id(blockItem.getBlock().defaultBlockState());
+        if (placed == null || !sync.caveInOres().contains(placed)) {
+            return false;
+        }
+        return touchesHardened(context.getLevel(), context.getClickedPos(), sync);
+    }
+
+    public static void toast(String messageId) {
+        Minecraft client = Minecraft.getInstance();
+        if (client != null) {
+            client.execute(() -> showToast(client, messageId));
+        }
     }
 
     @Override
@@ -51,34 +77,24 @@ public class ExtraHardModeClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(ClientboundSyncPayload.TYPE, (payload, context) -> lastSync = payload);
         ClientPlayNetworking.registerGlobalReceiver(ClientboundToastPayload.TYPE, ExtraHardModeClient::onToast);
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> lastSync = null);
-        UseBlockCallback.EVENT.register((player, world, hand, hit) -> {
-            if (world instanceof ServerLevel) {
-                return InteractionResult.PASS;
+    }
+
+    private static boolean touchesHardened(Level level, BlockPos pos, ClientboundSyncPayload sync) {
+        for (Direction direction : Direction.values()) {
+            Identifier neighbor = id(level.getBlockState(pos.relative(direction)));
+            if (neighbor != null && sync.hardenedBlocks().contains(neighbor)) {
+                return true;
             }
-            ClientboundSyncPayload sync = lastSync;
-            if (sync == null) {
-                return InteractionResult.PASS;
-            }
-            if (player.hasInfiniteMaterials() || player.isCreative()) {
-                return InteractionResult.PASS;
-            }
-            ItemStack stack = player.getItemInHand(hand);
-            if (!(stack.getItem() instanceof BlockItem blockItem)) {
-                return InteractionResult.PASS;
-            }
-            Identifier placed = BuiltInRegistries.BLOCK.getKey(blockItem.getBlock());
-            if (placed == null || !sync.caveInOres().contains(placed)) {
-                return InteractionResult.PASS;
-            }
-            BlockPos placedAt = hit.getBlockPos().relative(hit.getDirection());
-            for (Direction direction : Direction.values()) {
-                Identifier neighbor = BuiltInRegistries.BLOCK.getKey(world.getBlockState(placedAt.relative(direction)).getBlock());
-                if (neighbor != null && sync.hardenedBlocks().contains(neighbor)) {
-                    return InteractionResult.FAIL;
-                }
-            }
-            return InteractionResult.PASS;
-        });
+        }
+        return false;
+    }
+
+    private static Identifier id(BlockState state) {
+        return state.typeHolder().unwrapKey().map(key -> key.identifier()).orElse(null);
+    }
+
+    private static Identifier id(ItemStack stack) {
+        return stack.typeHolder().unwrapKey().map(key -> key.identifier()).orElse(null);
     }
 
     private static void onToast(ClientboundToastPayload payload, ClientPlayNetworking.Context context) {

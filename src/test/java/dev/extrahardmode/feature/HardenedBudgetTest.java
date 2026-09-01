@@ -23,15 +23,24 @@ class HardenedBudgetTest {
 
     @Test
     void unbreakingDoesNotExtendN() {
-        boolean hasUnbreaking = true;
+        int unbreakingIii = 3;
         int budget = HardenedBudget.IRON;
         int mined = 0;
-        for (int i = 0; i < 128; i++) {
-            mined = HardenedBudget.increment(mined);
+        HardenedBudget.BreakResult last = null;
+        for (int i = 0; i < budget; i++) {
+            last = HardenedBudget.afterHardenedBreak(mined, budget, unbreakingIii);
+            mined = last.mined();
             assertEquals(i + 1, mined, "Unbreaking must not skip the component counter");
+            if (i < budget - 1) {
+                assertFalse(last.consume(), "Unbreaking III must not consume before N");
+            }
         }
-        assertTrue(hasUnbreaking);
-        assertTrue(HardenedBudget.shouldConsume(mined, budget), "Unbreaking does not extend N");
+        assertEquals(128, mined);
+        assertTrue(last.unbreakingSkippedVanillaDamage(), "Unbreaking III applied");
+        assertTrue(last.consume(), "Unbreaking III still consumes the pick at N");
+        assertEquals(
+                HardenedBudget.shouldConsume(budget, budget, 0),
+                HardenedBudget.shouldConsume(budget, budget, unbreakingIii));
     }
 
     @Test

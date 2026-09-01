@@ -185,6 +185,7 @@ public final class EhmCommands {
         ServerPlayer player = context.getSource().getPlayerOrException();
         boolean next = !Boolean.TRUE.equals(player.getAttachedOrElse(EhmAttachments.EHM_BYPASS, Boolean.FALSE));
         player.setAttached(EhmAttachments.EHM_BYPASS, next);
+        EhmNetworking.sendSync(player);
         context.getSource()
                 .sendSuccess(
                         () -> Component.translatableWithFallback(

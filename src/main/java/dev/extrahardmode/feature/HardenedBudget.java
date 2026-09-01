@@ -31,6 +31,27 @@ public final class HardenedBudget {
         return budget > 0 && minedInclusive >= budget;
     }
 
+    /**
+     * Same as {@link #shouldConsume(int, int)}. {@code unbreakingLevel} is accepted so tests can apply
+     * Unbreaking and prove it does not extend N.
+     */
+    public static boolean shouldConsume(int minedInclusive, int budget, int unbreakingLevel) {
+        return shouldConsume(minedInclusive, budget);
+    }
+
+    /**
+     * One hardened break: increment the component (Unbreaking cannot skip this) then consume at N
+     * even if vanilla {@code hurtAndBreak} would have been skipped.
+     */
+    public static BreakResult afterHardenedBreak(int mined, int budget, int unbreakingLevel) {
+        int next = increment(mined);
+        boolean unbreakingSkippedVanillaDamage = unbreakingLevel > 0;
+        boolean consume = shouldConsume(next, budget, unbreakingLevel);
+        return new BreakResult(next, consume, unbreakingSkippedVanillaDamage);
+    }
+
+    public record BreakResult(int mined, boolean consume, boolean unbreakingSkippedVanillaDamage) {}
+
     public record Entry(String itemId, int budget) {}
 
     public static Entry parse(String raw) {

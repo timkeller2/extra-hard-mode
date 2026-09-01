@@ -11,21 +11,19 @@ import dev.extrahardmode.tag.EhmTags;
 import dev.extrahardmode.world.WorldGate;
 import java.util.List;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
-import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.BlockHitResult;
 
 public final class HardenedStone implements FeatureModule {
     public static final Identifier ID = ExtraHardModeMod.id("hardened_stone");
@@ -38,7 +36,6 @@ public final class HardenedStone implements FeatureModule {
     @Override
     public void bootstrap(FeatureBus bus) {
         bus.listen(PlayerBlockBreakEvents.AFTER, ID, HardenedStone::onBreak);
-        bus.listen(UseBlockCallback.EVENT, ID, HardenedStone::onUseBlock);
     }
 
     public static boolean enabled(Level level) {
@@ -67,6 +64,45 @@ public final class HardenedStone implements FeatureModule {
 
     public static void drain(ServerPlayer player, ItemStack tool, BlockState state) {
         applyBudget(player, tool, state);
+    }
+
+    /**
+     * Only {@link net.minecraft.world.item.BlockItem#place} calls this, so chests/doors are not cancelled.
+     * {@link BlockPlaceContext#getClickedPos()} is the replaceable-aware placement pos.
+     */
+    public static InteractionResult denyOrePlacement(BlockPlaceContext context) {
+        Level level = context.getLevel();
+        if (!enabled(level)) {
+            return InteractionResult.PASS;
+        }
+        WorldConfig config = ConfigManager.world((ServerLevel) level);
+        if (!config.blockOreNextToStone()) {
+            return InteractionResult.PASS;
+        }
+        Player player = context.getPlayer();
+        if (player == null) {
+            return InteractionResult.PASS;
+        }
+        if (player.hasInfiniteMaterials() || player.isCreative()) {
+            return InteractionResult.PASS;
+        }
+        if (player instanceof ServerPlayer serverPlayer && EhmApi.playerBypasses(serverPlayer)) {
+            return InteractionResult.PASS;
+        }
+        ItemStack stack = context.getItemInHand();
+        if (!(stack.getItem() instanceof BlockItem blockItem)) {
+            return InteractionResult.PASS;
+        }
+        if (!blockItem.getBlock().defaultBlockState().is(EhmTags.CAVE_IN_ORES)) {
+            return InteractionResult.PASS;
+        }
+        if (touchesHardened(level, context.getClickedPos())) {
+            if (player instanceof ServerPlayer serverPlayer) {
+                EhmNetworking.sendToast(serverPlayer, "no_placing_ore_against_stone");
+            }
+            return InteractionResult.FAIL;
+        }
+        return InteractionResult.PASS;
     }
 
     private static boolean deniesUnlistedTool(Player player, BlockState state) {
@@ -105,35 +141,6 @@ public final class HardenedStone implements FeatureModule {
             return;
         }
         applyBudget(serverPlayer, serverPlayer.getMainHandItem(), state);
-    }
-
-    private static InteractionResult onUseBlock(Player player, Level world, InteractionHand hand, BlockHitResult hit) {
-        if (!(world instanceof ServerLevel level) || !(player instanceof ServerPlayer serverPlayer)) {
-            return InteractionResult.PASS;
-        }
-        if (!WorldGate.isModuleActive(level, ID)) {
-            return InteractionResult.PASS;
-        }
-        WorldConfig config = ConfigManager.world(level);
-        if (!config.hardenedEnable() || !config.blockOreNextToStone()) {
-            return InteractionResult.PASS;
-        }
-        if (serverPlayer.hasInfiniteMaterials() || serverPlayer.isCreative() || EhmApi.playerBypasses(serverPlayer)) {
-            return InteractionResult.PASS;
-        }
-        ItemStack stack = player.getItemInHand(hand);
-        if (!(stack.getItem() instanceof BlockItem blockItem)) {
-            return InteractionResult.PASS;
-        }
-        if (!blockItem.getBlock().defaultBlockState().is(EhmTags.CAVE_IN_ORES)) {
-            return InteractionResult.PASS;
-        }
-        BlockPos placedAt = hit.getBlockPos().relative(hit.getDirection());
-        if (touchesHardened(level, placedAt)) {
-            EhmNetworking.sendToast(serverPlayer, "no_placing_ore_against_stone");
-            return InteractionResult.FAIL;
-        }
-        return InteractionResult.PASS;
     }
 
     private static void applyBudget(ServerPlayer player, ItemStack tool, BlockState state) {

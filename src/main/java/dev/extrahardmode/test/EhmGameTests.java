@@ -6,6 +6,7 @@ import dev.extrahardmode.item.EhmComponents;
 import dev.extrahardmode.world.ExtraHardModeBootData;
 import dev.extrahardmode.world.WorldGate;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -14,6 +15,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
@@ -100,6 +102,31 @@ public class EhmGameTests {
         helper.assertValueEqual(127, pick.getOrDefault(EhmComponents.HARDENED_MINED, 0), "127 hardened breaks counted");
         HardenedStone.drain(player, pick, Blocks.STONE.defaultBlockState());
         helper.assertTrue(pick.isEmpty(), "iron pick consumed on 128th hardened break");
+        helper.succeed();
+    }
+
+    @GameTest
+    public void ironPickWithUnbreakingBreaksAfter128(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        level.getGameRules().set(WorldGate.ENABLED, true, level.getServer());
+        Player mock = helper.makeMockServerPlayer(GameType.SURVIVAL);
+        if (!(mock instanceof ServerPlayer player)) {
+            helper.fail("mock server player");
+            return;
+        }
+        ItemStack pick = new ItemStack(Items.IRON_PICKAXE);
+        var unbreaking = level.registryAccess()
+                .lookupOrThrow(Registries.ENCHANTMENT)
+                .getOrThrow(Enchantments.UNBREAKING);
+        pick.enchant(unbreaking, 3);
+        helper.assertTrue(pick.isEnchanted(), "Unbreaking III applied");
+        player.setItemInHand(InteractionHand.MAIN_HAND, pick);
+        for (int i = 0; i < 127; i++) {
+            HardenedStone.drain(player, pick, Blocks.STONE.defaultBlockState());
+            helper.assertFalse(pick.isEmpty(), "Unbreaking iron pick survives break " + (i + 1));
+        }
+        HardenedStone.drain(player, pick, Blocks.STONE.defaultBlockState());
+        helper.assertTrue(pick.isEmpty(), "Unbreaking III does not extend N; 128th break consumes pick");
         helper.succeed();
     }
 }
