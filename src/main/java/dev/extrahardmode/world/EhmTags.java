@@ -7,6 +7,7 @@ import net.minecraft.world.item.Item;
 
 public final class EhmTags {
     public static final TagKey<Item> DEATH_VALUABLE_TOOLS = item("death_valuable_tools");
+    /** Empty by default. Recommended datapack adds: recovery_compass, totem_of_undying. */
     public static final TagKey<Item> DEATH_ITEM_BLACKLIST = item("death_item_blacklist");
 
     private EhmTags() {}

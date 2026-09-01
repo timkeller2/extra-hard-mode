@@ -209,14 +209,17 @@ public final class PlayerSettings {
         setIfMissing(file, "player.environment.drownMultiplier", 2.0);
         PotionEffectHolder.writeDefaultIfMissing(file, "player.environment.drownEffect", PotionEffectHolder.NONE);
 
-        comment(file, "player.extinguishIgnites", "Punching fire with an empty hand ignites the player.");
+        comment(
+                file,
+                "player.extinguishIgnites",
+                "Punching fire with an empty hand, or smothering it with a block, ignites the player. Water buckets still work.");
         setIfMissing(file, "player.extinguishIgnites", true);
         setIfMissing(file, "player.extinguishBurnTicks", 80);
 
         comment(
                 file,
                 "player.death.forfeitEnable",
-                "Forfeit a percent of item stacks on death. Still runs when keepInventory is true; remaining stacks still drop otherwise.");
+                "Forfeit a percent of item stacks on death. Still runs when keepInventory is true; remaining stacks still drop otherwise. Tag extrahardmode:death_item_blacklist is empty by default; datapack in minecraft:recovery_compass and minecraft:totem_of_undying to keep those.");
         setIfMissing(file, "player.death.forfeitEnable", true);
         setIfMissing(file, "player.death.forfeitPercent", 10);
         setIfMissing(file, "player.death.toolDamagePercent", 30);

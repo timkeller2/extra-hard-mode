@@ -22,15 +22,26 @@ import java.util.UUID;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.animal.equine.AbstractHorse;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.BaseFireBlock;
+import net.minecraft.world.phys.BlockHitResult;
 
 /**
  * Player-triggered Extra Hard Mode rules: death forfeit, weak respawn, environmental
@@ -41,10 +52,11 @@ public final class Players implements FeatureModule {
     public static final Players INSTANCE = new Players();
 
     private static final List<PendingRespawn> PENDING_RESPAWNS = new ArrayList<>();
+    private static final ThreadLocal<Boolean> UNSCALED_DAMAGE = ThreadLocal.withInitial(() -> Boolean.FALSE);
 
     private Players() {}
 
-    private record PendingRespawn(UUID playerId, float health, int food, long readyTick) {}
+    private record PendingRespawn(UUID playerId, float health, int food, int readyTick) {}
 
     @Override
     public Identifier id() {
@@ -56,6 +68,8 @@ public final class Players implements FeatureModule {
         bus.listen(ServerLivingEntityEvents.ALLOW_DAMAGE, ID, Players::onAllowDamage);
         bus.listen(ServerPlayerEvents.AFTER_RESPAWN, ID, Players::onAfterRespawn);
         bus.listen(ServerPlayerEvents.LEAVE, ID, ArmorWeightTask::clear);
+        bus.listen(UseBlockCallback.EVENT, ID, Players::onUseBlock);
+        ServerTickEvents.END_SERVER_TICK.register(Players::flushRespawns);
         ServerTickEvents.END_LEVEL_TICK.register(level -> {
             if (level.getGameTime() % 20 != 0) {
                 return;
@@ -68,7 +82,6 @@ public final class Players implements FeatureModule {
 
     @Override
     public void serverTick(ServerLevel level) {
-        flushRespawns(level);
         if (level.getGameTime() % 20 != 0) {
             return;
         }
@@ -77,20 +90,25 @@ public final class Players implements FeatureModule {
         ArmorWeightTask.run(level, world);
     }
 
-    private static void flushRespawns(ServerLevel level) {
+    /** Server tick count, not per-dimension gameTime — nether/end respawns must not be eaten by overworld. */
+    private static void flushRespawns(MinecraftServer server) {
         if (PENDING_RESPAWNS.isEmpty()) {
             return;
         }
-        long time = level.getGameTime();
+        int tick = server.getTickCount();
         Iterator<PendingRespawn> iterator = PENDING_RESPAWNS.iterator();
         while (iterator.hasNext()) {
             PendingRespawn pending = iterator.next();
-            if (time < pending.readyTick()) {
+            if (tick < pending.readyTick()) {
                 continue;
             }
             iterator.remove();
-            ServerPlayer player = level.getServer().getPlayerList().getPlayer(pending.playerId());
-            if (player == null || player.level() != level) {
+            ServerPlayer player = server.getPlayerList().getPlayer(pending.playerId());
+            if (player == null) {
+                continue;
+            }
+            ServerLevel level = player.level();
+            if (!WorldGate.isModuleActive(level, ID) || EhmApi.playerBypasses(player)) {
                 continue;
             }
             new SetPlayerHealthAndFoodTask(player, pending.health(), pending.food()).run();
@@ -98,6 +116,9 @@ public final class Players implements FeatureModule {
     }
 
     static boolean onAllowDamage(net.minecraft.world.entity.LivingEntity entity, DamageSource source, float amount) {
+        if (isUnscaledDamage()) {
+            return true;
+        }
         if (!(entity instanceof ServerPlayer player)) {
             return true;
         }
@@ -117,6 +138,9 @@ public final class Players implements FeatureModule {
     }
 
     public static float scaleIncomingDamage(ServerPlayer player, DamageSource source, float amount) {
+        if (isUnscaledDamage()) {
+            return amount;
+        }
         PlayerSettings settings = ConfigManager.world(player.level()).player();
         if (!settings.environmentEnable() || EhmApi.playerBypasses(player)) {
             return amount;
@@ -194,8 +218,43 @@ public final class Players implements FeatureModule {
             return;
         }
         float health = newPlayer.getMaxHealth() * settings.respawnHealthPercent() / 100.0f;
-        PENDING_RESPAWNS.add(new PendingRespawn(
-                newPlayer.getUUID(), health, settings.respawnFood(), level.getGameTime() + 1));
+        int food = settings.respawnFood();
+        new SetPlayerHealthAndFoodTask(newPlayer, health, food).run();
+        MinecraftServer server = level.getServer();
+        PENDING_RESPAWNS.add(new PendingRespawn(newPlayer.getUUID(), health, food, server.getTickCount() + 1));
+    }
+
+    public static void hurtUnscaled(ServerPlayer player, DamageSource source, float amount) {
+        UNSCALED_DAMAGE.set(Boolean.TRUE);
+        try {
+            player.hurtServer(player.level(), source, amount);
+        } finally {
+            UNSCALED_DAMAGE.set(Boolean.FALSE);
+        }
+    }
+
+    private static boolean isUnscaledDamage() {
+        return Boolean.TRUE.equals(UNSCALED_DAMAGE.get());
+    }
+
+    static InteractionResult onUseBlock(Player player, Level level, InteractionHand hand, BlockHitResult hit) {
+        if (!(level instanceof ServerLevel serverLevel) || !WorldGate.isModuleActive(serverLevel, ID)) {
+            return InteractionResult.PASS;
+        }
+        if (!(player instanceof ServerPlayer serverPlayer)) {
+            return InteractionResult.PASS;
+        }
+        ItemStack stack = player.getItemInHand(hand);
+        if (stack.isEmpty() || stack.is(Items.WATER_BUCKET) || !(stack.getItem() instanceof BlockItem)) {
+            return InteractionResult.PASS;
+        }
+        BlockPos pos = hit.getBlockPos();
+        boolean fire = level.getBlockState(pos).getBlock() instanceof BaseFireBlock
+                || level.getBlockState(pos.relative(hit.getDirection())).getBlock() instanceof BaseFireBlock;
+        if (fire) {
+            igniteFromFire(serverPlayer);
+        }
+        return InteractionResult.PASS;
     }
 
     public static void onDeath(ServerPlayer player) {
