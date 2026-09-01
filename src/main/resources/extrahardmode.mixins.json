@@ -14,7 +14,11 @@
     "ServerExplosionMixin",
     "ServerLevelExplosionMixin",
     "CraftingMenuMixin",
-    "CrafterBlockMixin"
+    "CrafterBlockMixin",
+    "MobAiStepMixin",
+    "MobFinalizeSpawnMixin",
+    "LivingEntityDropMixin",
+    "CreeperPoweredMixin"
   ],
   "client": [
     "client.ClientPlayerDestroySpeedMixin",

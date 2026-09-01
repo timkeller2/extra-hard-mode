@@ -8,6 +8,8 @@ import dev.extrahardmode.feature.Explosions;
 import dev.extrahardmode.feature.FallingBlocks;
 import dev.extrahardmode.feature.HardenedStone;
 import dev.extrahardmode.feature.MoreTnt;
+import dev.extrahardmode.feature.monster.Zombies;
+import dev.extrahardmode.module.EntityHelper;
 import dev.extrahardmode.item.EhmComponents;
 import dev.extrahardmode.module.PhysicsQueue;
 import dev.extrahardmode.module.SpawnReplaceService;
@@ -36,6 +38,7 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.monster.zombie.Zombie;
+import net.minecraft.world.entity.monster.zombie.ZombieVillager;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
@@ -571,6 +574,74 @@ public class EhmGameTests {
         } finally {
             level.getGameRules().set(WorldGate.ENABLED, previous, server);
         }
+    }
+
+    @GameTest
+    public void zombieVillagerDoesNotReanimate(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        level.getGameRules().set(WorldGate.ENABLED, true, level.getServer());
+        BlockPos pos = new BlockPos(2, 2, 2);
+        helper.setBlock(pos, Blocks.AIR);
+        ZombieVillager villager = helper.spawn(EntityTypes.ZOMBIE_VILLAGER, pos, EntitySpawnReason.COMMAND);
+        helper.assertFalse(Zombies.isOrdinaryZombie(villager), "zombie villager is not ordinary");
+        villager.kill(level);
+        helper.runAfterDelay(2, () -> {
+            helper.assertBlockNotPresent(Blocks.ZOMBIE_HEAD, pos);
+            helper.assertBlockNotPresent(Blocks.ZOMBIE_HEAD, pos.above());
+            helper.succeed();
+        });
+    }
+
+    @GameTest
+    public void reinforcementZombieIsIgnored(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        level.getGameRules().set(WorldGate.ENABLED, true, level.getServer());
+        Zombie zombie = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1), EntitySpawnReason.REINFORCEMENT);
+        Zombies.stampReinforcement(zombie, EntitySpawnReason.REINFORCEMENT);
+        helper.assertTrue(EntityHelper.ignored(zombie), "reinforcement stamped EHM_IGNORE");
+        helper.assertTrue(Zombies.isOrdinaryZombie(zombie), "still an ordinary zombie type");
+        helper.succeed();
+    }
+
+    @GameTest
+    public void burningZombieDoesNotPlaceSkull(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        level.getGameRules().set(WorldGate.ENABLED, true, level.getServer());
+        BlockPos pos = new BlockPos(2, 2, 2);
+        helper.setBlock(pos, Blocks.AIR);
+        Zombie zombie = helper.spawn(EntityTypes.ZOMBIE, pos, EntitySpawnReason.COMMAND);
+        zombie.igniteForTicks(8 * 20);
+        helper.assertTrue(zombie.getRemainingFireTicks() >= 1 || zombie.isOnFire(), "zombie is on fire");
+        zombie.kill(level);
+        helper.runAfterDelay(2, () -> {
+            helper.assertBlockNotPresent(Blocks.ZOMBIE_HEAD, pos);
+            helper.assertBlockNotPresent(Blocks.ZOMBIE_HEAD, pos.above());
+            helper.succeed();
+        });
+    }
+
+    @GameTest
+    public void spiderDeathPlacesCobweb(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        level.getGameRules().set(WorldGate.ENABLED, true, level.getServer());
+        BlockPos floor = new BlockPos(2, 1, 2);
+        helper.setBlock(floor, Blocks.STONE);
+        helper.setBlock(floor.above(), Blocks.AIR);
+        var spider = helper.spawn(EntityTypes.SPIDER, floor.above(), EntitySpawnReason.COMMAND);
+        spider.kill(level);
+        helper.runAfterDelay(2, () -> {
+            boolean found = false;
+            for (int x = 0; x <= 10; x++) {
+                for (int z = 0; z <= 10; z++) {
+                    if (helper.getBlockState(new BlockPos(x, 2, z)).is(Blocks.COBWEB)
+                            || helper.getBlockState(new BlockPos(x, 1, z)).is(Blocks.COBWEB)) {
+                        found = true;
+                    }
+                }
+            }
+            helper.assertTrue(found, "spider death placed cobweb");
+            helper.succeed();
+        });
     }
 
     private static void fillStoneCube(GameTestHelper helper, BlockPos center) {
