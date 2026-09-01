@@ -4,6 +4,7 @@ import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.feature.CaveIns;
 import dev.extrahardmode.feature.FallingBlocks;
 import dev.extrahardmode.feature.HardenedStone;
+import dev.extrahardmode.feature.RealisticChopping;
 import dev.extrahardmode.item.EhmComponents;
 import dev.extrahardmode.module.PhysicsQueue;
 import dev.extrahardmode.player.EhmAttachments;
@@ -29,7 +30,9 @@ import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biomes;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
 import net.minecraft.world.phys.AABB;
 
@@ -309,5 +312,170 @@ public class EhmGameTests {
                 PhysicsSkip.never(level, abs) && !level.getBiome(abs).is(EhmTags.NO_PHYSICS),
                 "empty test platform is not a protected structure piece");
         helper.succeed();
+    }
+
+    @GameTest(maxTicks = 80, padding = 16)
+    public void oakTreeFalls(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        level.getGameRules().set(WorldGate.ENABLED, true, level.getServer());
+        Player mock = helper.makeMockServerPlayer(GameType.SURVIVAL);
+        BlockPos base = new BlockPos(2, 1, 2);
+        for (int y = 1; y <= 5; y++) {
+            helper.setBlock(base.above(y - 1), Blocks.OAK_LOG);
+        }
+        helper.setBlock(new BlockPos(2, 5, 1), Blocks.OAK_LEAVES);
+        helper.setBlock(new BlockPos(2, 5, 3), Blocks.OAK_LEAVES);
+        helper.setBlock(new BlockPos(1, 5, 2), Blocks.OAK_LEAVES);
+        helper.setBlock(new BlockPos(3, 5, 2), Blocks.OAK_LEAVES);
+        breakAndFell(helper, mock, base, Blocks.OAK_LOG.defaultBlockState());
+        helper.succeedWhen(() -> {
+            helper.assertTrue(trunkGone(helper, Blocks.OAK_LOG, trunkColumn(base, 5)), "small oak trunk fell");
+        });
+    }
+
+    @GameTest(maxTicks = 80, padding = 16)
+    public void jungleTwoByTwoFalls(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        level.getGameRules().set(WorldGate.ENABLED, true, level.getServer());
+        Player mock = helper.makeMockServerPlayer(GameType.SURVIVAL);
+        BlockPos[] columns = {
+            new BlockPos(2, 1, 2), new BlockPos(3, 1, 2), new BlockPos(2, 1, 3), new BlockPos(3, 1, 3)
+        };
+        for (BlockPos column : columns) {
+            for (int y = 0; y < 6; y++) {
+                helper.setBlock(column.above(y), Blocks.JUNGLE_LOG);
+            }
+        }
+        helper.setBlock(new BlockPos(2, 6, 1), Blocks.JUNGLE_LEAVES);
+        helper.setBlock(new BlockPos(3, 6, 1), Blocks.JUNGLE_LEAVES);
+        helper.setBlock(new BlockPos(1, 6, 2), Blocks.JUNGLE_LEAVES);
+        helper.setBlock(new BlockPos(1, 6, 3), Blocks.JUNGLE_LEAVES);
+        breakAndFell(helper, mock, columns[0], Blocks.JUNGLE_LOG.defaultBlockState());
+        helper.succeedWhen(() -> {
+            for (BlockPos column : columns) {
+                helper.assertTrue(
+                        trunkGone(helper, Blocks.JUNGLE_LOG, trunkColumn(column, 6)), "2x2 jungle column fell " + column);
+            }
+        });
+    }
+
+    @GameTest(maxTicks = 80, padding = 16)
+    public void acaciaBendFalls(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        level.getGameRules().set(WorldGate.ENABLED, true, level.getServer());
+        Player mock = helper.makeMockServerPlayer(GameType.SURVIVAL);
+        BlockPos base = new BlockPos(2, 1, 2);
+        helper.setBlock(base, Blocks.ACACIA_LOG);
+        helper.setBlock(base.above(), Blocks.ACACIA_LOG);
+        helper.setBlock(new BlockPos(3, 2, 2), Blocks.ACACIA_LOG);
+        helper.setBlock(new BlockPos(4, 2, 2), Blocks.ACACIA_LOG);
+        helper.setBlock(new BlockPos(4, 2, 1), Blocks.ACACIA_LEAVES);
+        helper.setBlock(new BlockPos(4, 2, 3), Blocks.ACACIA_LEAVES);
+        helper.setBlock(new BlockPos(4, 3, 2), Blocks.ACACIA_LEAVES);
+        helper.setBlock(new BlockPos(5, 2, 2), Blocks.ACACIA_LEAVES);
+        breakAndFell(helper, mock, base, Blocks.ACACIA_LOG.defaultBlockState());
+        helper.succeedWhen(() -> {
+            helper.assertTrue(
+                    trunkGone(
+                            helper,
+                            Blocks.ACACIA_LOG,
+                            new BlockPos[] {base, base.above(), new BlockPos(3, 2, 2), new BlockPos(4, 2, 2)}),
+                    "acacia with xz bend fell");
+        });
+    }
+
+    @GameTest(maxTicks = 40, padding = 16)
+    public void logPillarWithNearbyLeafDoesNotFell(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        level.getGameRules().set(WorldGate.ENABLED, true, level.getServer());
+        Player mock = helper.makeMockServerPlayer(GameType.SURVIVAL);
+        BlockPos base = new BlockPos(2, 1, 2);
+        for (int y = 1; y <= 8; y++) {
+            helper.setBlock(base.above(y - 1), Blocks.OAK_LOG);
+        }
+        helper.setBlock(new BlockPos(4, 4, 2), Blocks.OAK_LEAVES);
+        breakAndFell(helper, mock, base, Blocks.OAK_LOG.defaultBlockState());
+        helper.runAfterDelay(8, () -> {
+            for (int y = 2; y <= 8; y++) {
+                helper.assertBlockPresent(Blocks.OAK_LOG, base.above(y - 1));
+            }
+            helper.succeed();
+        });
+    }
+
+    @GameTest
+    public void fallingLogDealsGatedDamage(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        level.getGameRules().set(WorldGate.ENABLED, true, level.getServer());
+        BlockPos rel = new BlockPos(2, 4, 2);
+        helper.setBlock(rel, Blocks.STONE);
+        BlockPos abs = helper.absolutePos(rel);
+        FallingBlockEntity log = FallingBlockEntity.fall(level, abs, Blocks.OAK_LOG.defaultBlockState());
+        log.setAttached(EhmAttachments.EHM_OURS, Boolean.TRUE);
+        helper.assertTrue(FallingBlocks.appliesFallDamage(log), "EHM oak log is gated in");
+        helper.succeed();
+    }
+
+    @GameTest(maxTicks = 40, padding = 8)
+    public void netherStemDoesNotFell(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        level.getGameRules().set(WorldGate.ENABLED, true, level.getServer());
+        Player mock = helper.makeMockServerPlayer(GameType.SURVIVAL);
+        BlockPos base = new BlockPos(2, 1, 2);
+        for (int y = 1; y <= 5; y++) {
+            helper.setBlock(base.above(y - 1), Blocks.CRIMSON_STEM);
+        }
+        helper.setBlock(new BlockPos(2, 5, 1), Blocks.NETHER_WART_BLOCK);
+        helper.setBlock(new BlockPos(2, 5, 3), Blocks.NETHER_WART_BLOCK);
+        helper.setBlock(new BlockPos(1, 5, 2), Blocks.NETHER_WART_BLOCK);
+        helper.setBlock(new BlockPos(3, 5, 2), Blocks.NETHER_WART_BLOCK);
+        breakAndFell(helper, mock, base, Blocks.CRIMSON_STEM.defaultBlockState());
+        helper.runAfterDelay(8, () -> {
+            for (int y = 2; y <= 5; y++) {
+                helper.assertBlockPresent(Blocks.CRIMSON_STEM, base.above(y - 1));
+            }
+            helper.succeed();
+        });
+    }
+
+    private static void breakAndFell(GameTestHelper helper, Player player, BlockPos rel, BlockState broken) {
+        ServerLevel level = helper.getLevel();
+        BlockPos abs = helper.absolutePos(rel);
+        helper.setBlock(rel, Blocks.AIR);
+        RealisticChopping.tryFell(level, player, abs, broken);
+        PhysicsQueue.tick(level);
+    }
+
+    private static BlockPos[] trunkColumn(BlockPos base, int height) {
+        BlockPos[] column = new BlockPos[height];
+        for (int i = 0; i < height; i++) {
+            column[i] = base.above(i);
+        }
+        return column;
+    }
+
+    private static boolean trunkGone(GameTestHelper helper, Block log, BlockPos[] rel) {
+        BlockPos top = rel[0];
+        for (BlockPos pos : rel) {
+            if (pos.getY() > top.getY()) {
+                top = pos;
+            }
+        }
+        if (helper.getBlockState(top).is(log)) {
+            return false;
+        }
+        ServerLevel level = helper.getLevel();
+        AABB box = new AABB(helper.absolutePos(top)).inflate(8.0, 16.0, 8.0);
+        for (FallingBlockEntity falling : level.getEntities(EntityTypes.FALLING_BLOCK, box, entity -> true)) {
+            if (falling.getBlockState().is(log)) {
+                return true;
+            }
+        }
+        for (BlockPos pos : rel) {
+            if (helper.getBlockState(pos).is(log) && pos.getY() == top.getY()) {
+                return false;
+            }
+        }
+        return true;
     }
 }

@@ -27,6 +27,7 @@ public final class WorldConfig {
     private boolean creativeBypasses = true;
     private boolean operatorsBypass = false;
     private boolean limitedBuilding = true;
+    private boolean betterTreeFelling = true;
     private boolean torchSoftDeny = true;
     private int torchNoPlacementUnderY = 0;
     private boolean torchYDeny = true;
@@ -71,6 +72,10 @@ public final class WorldConfig {
 
     public boolean limitedBuilding() {
         return limitedBuilding;
+    }
+
+    public boolean betterTreeFelling() {
+        return betterTreeFelling;
     }
 
     public boolean torchSoftDeny() {
@@ -210,6 +215,11 @@ public final class WorldConfig {
                         true);
                 writeDefaultIfMissing(
                         file,
+                        "worldRules.betterTreeFelling",
+                        "Realistic chopping: BFS same-wood logs fall. Default on; upstream had commented it out.",
+                        true);
+                writeDefaultIfMissing(
+                        file,
                         "torches.noPlacement.enable",
                         "Deny depth-limited lights below noPlacementUnderY. Disable with this boolean, not Y=0.",
                         true);
@@ -305,6 +315,7 @@ public final class WorldConfig {
                 file.set("bypassing.creativeBypasses", creativeBypasses);
                 file.set("bypassing.operatorsBypass", operatorsBypass);
                 file.set("worldRules.limitedBlockPlacement", limitedBuilding);
+                file.set("worldRules.betterTreeFelling", betterTreeFelling);
                 file.set("torches.noPlacement.enable", torchYDeny);
                 file.set("torches.noPlacementUnderY", torchNoPlacementUnderY);
                 file.set("torches.noPlacementOnSoft", torchSoftDeny);
@@ -354,6 +365,7 @@ public final class WorldConfig {
         creativeBypasses = file.getOrElse("bypassing.creativeBypasses", true);
         operatorsBypass = file.getOrElse("bypassing.operatorsBypass", false);
         limitedBuilding = file.getOrElse("worldRules.limitedBlockPlacement", true);
+        betterTreeFelling = file.getOrElse("worldRules.betterTreeFelling", true);
         torchYDeny = file.getOrElse("torches.noPlacement.enable", true);
         torchNoPlacementUnderY = file.getOrElse("torches.noPlacementUnderY", 0);
         torchSoftDeny = file.getOrElse("torches.noPlacementOnSoft", true);

@@ -7,6 +7,7 @@ import dev.extrahardmode.feature.CaveIns;
 import dev.extrahardmode.feature.FallingBlocks;
 import dev.extrahardmode.feature.FeatureRegistry;
 import dev.extrahardmode.feature.HardenedStone;
+import dev.extrahardmode.feature.RealisticChopping;
 import dev.extrahardmode.item.EhmComponents;
 import dev.extrahardmode.module.PhysicsQueue;
 import dev.extrahardmode.network.EhmNetworking;
@@ -39,6 +40,7 @@ public class ExtraHardModeMod implements ModInitializer {
         FEATURES.register(new HardenedStone());
         FEATURES.register(new CaveIns());
         FEATURES.register(new FallingBlocks());
+        FEATURES.register(new RealisticChopping());
         ServerLevelEvents.LOAD.register((server, level) -> {
             WorldGate.onLevelLoad(server, level);
             FEATURES.onWorldLoad(level);
