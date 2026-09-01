@@ -32,7 +32,11 @@ public final class EhmNetworking {
     }
 
     public static void sendToast(ServerPlayer player, String messageId) {
-        ServerPlayNetworking.send(player, new ClientboundToastPayload(messageId));
+        sendToast(player, messageId, "");
+    }
+
+    public static void sendToast(ServerPlayer player, String messageId, String arg) {
+        ServerPlayNetworking.send(player, new ClientboundToastPayload(messageId, arg == null ? "" : arg));
     }
 
     public static void syncAll(MinecraftServer server) {

@@ -29,14 +29,15 @@ public class ExtraHardModeClient implements ClientModInitializer {
     }
 
     private static void onToast(ClientboundToastPayload payload, ClientPlayNetworking.Context context) {
-        context.client().execute(() -> showToast(context.client(), payload.messageId()));
+        context.client().execute(() -> showToast(context.client(), payload.messageId(), payload.arg()));
     }
 
-    private static void showToast(Minecraft client, String messageId) {
+    private static void showToast(Minecraft client, String messageId, String arg) {
         Component title = Component.translatableWithFallback("extrahardmode.toast.title", "Extra Hard Mode");
         Component body = Component.translatableWithFallback(
                 "extrahardmode.toast." + messageId,
-                toastFallback(messageId));
+                toastFallback(messageId, arg),
+                arg == null ? "" : arg);
         SystemToast.addOrUpdate(client.gui.toastManager(), toastId(messageId), title, body);
     }
 
@@ -44,8 +45,12 @@ public class ExtraHardModeClient implements ClientModInitializer {
         return TOAST_IDS.computeIfAbsent(messageId, id -> new SystemToast.SystemToastId(5000L));
     }
 
-    private static String toastFallback(String messageId) {
+    private static String toastFallback(String messageId, String arg) {
         MessageId known = MessageId.byId(messageId);
-        return known != null ? known.fallback() : messageId;
+        String fallback = known != null ? known.fallback() : messageId;
+        if (arg != null && !arg.isEmpty() && fallback.contains("%s")) {
+            return fallback.formatted(arg);
+        }
+        return fallback;
     }
 }

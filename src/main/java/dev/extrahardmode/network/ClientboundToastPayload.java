@@ -6,12 +6,16 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
-public record ClientboundToastPayload(String messageId) implements CustomPacketPayload {
+public record ClientboundToastPayload(String messageId, String arg) implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<ClientboundToastPayload> TYPE =
             new CustomPacketPayload.Type<>(ExtraHardModeMod.id("toast"));
 
     public static final StreamCodec<ByteBuf, ClientboundToastPayload> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.STRING_UTF8, ClientboundToastPayload::messageId, ClientboundToastPayload::new);
+            ByteBufCodecs.STRING_UTF8,
+            ClientboundToastPayload::messageId,
+            ByteBufCodecs.STRING_UTF8,
+            ClientboundToastPayload::arg,
+            ClientboundToastPayload::new);
 
     @Override
     public Type<? extends CustomPacketPayload> type() {

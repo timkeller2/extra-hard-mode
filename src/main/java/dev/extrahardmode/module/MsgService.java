@@ -83,7 +83,7 @@ public final class MsgService {
             return;
         }
         player.setAttached(EhmAttachments.EHM_TUTORIAL, counts);
-        EhmNetworking.sendToast(player, id.id());
+        EhmNetworking.sendToast(player, id.id(), player.getScoreboardName());
     }
 
     public static void broadcast(MinecraftServer server, MessageId id, String playerName) {
