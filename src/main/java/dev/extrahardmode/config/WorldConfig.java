@@ -124,6 +124,27 @@ public final class WorldConfig {
         this.creeperTntWarning = creeperTntWarning;
     }
 
+    public void applyCloth(
+            boolean checkPermission,
+            boolean creativeBypasses,
+            boolean operatorsBypass,
+            boolean limitedBuilding,
+            boolean torchYDeny,
+            boolean torchSoftDeny,
+            int torchNoPlacementUnderY,
+            boolean torchFizz,
+            boolean creeperTntWarning) {
+        this.checkPermission = checkPermission;
+        this.creativeBypasses = creativeBypasses;
+        this.operatorsBypass = operatorsBypass;
+        this.limitedBuilding = limitedBuilding;
+        this.torchYDeny = torchYDeny;
+        this.torchSoftDeny = torchSoftDeny;
+        this.torchNoPlacementUnderY = torchNoPlacementUnderY;
+        this.torchFizz = torchFizz;
+        this.creeperTntWarning = creeperTntWarning;
+    }
+
     public boolean isModuleEnabled(Identifier moduleId) {
         Boolean value = modules.get(moduleId);
         return value == null || value;

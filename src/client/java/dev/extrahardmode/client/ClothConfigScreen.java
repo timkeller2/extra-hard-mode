@@ -4,21 +4,22 @@ import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.config.GlobalConfig;
 import dev.extrahardmode.config.WorldConfig;
 import dev.extrahardmode.network.ClientboundSyncPayload;
-import dev.extrahardmode.network.EhmNetworking;
-import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
+import dev.extrahardmode.network.ServerboundConfigPayload;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 
 /**
  * Optional Cloth Config screen. Classloaded only when Cloth is present.
- * Dedicated servers never load this client class.
+ * Dedicated servers never load this client class. World/global gameplay
+ * settings are applied on the logical server via {@link ServerboundConfigPayload}.
  */
 public final class ClothConfigScreen {
     private ClothConfigScreen() {}
@@ -29,22 +30,19 @@ public final class ClothConfigScreen {
     }
 
     public static Screen create(Screen parent) {
-        GlobalConfig global = ConfigManager.global();
-        boolean[] enabledByDefault = {global.enabledByDefault()};
-        boolean[] debug = {global.debug()};
-        int[] tutorialMaxShows = {global.tutorialMaxShows()};
-
-        MinecraftServer integrated = Minecraft.getInstance().getSingleplayerServer();
-        WorldConfig world = integrated == null ? null : ConfigManager.world(currentLevel(integrated));
-        boolean[] checkPermission = {world == null || world.checkPermission()};
-        boolean[] creativeBypasses = {world == null || world.creativeBypasses()};
-        boolean[] operatorsBypass = {world != null && world.operatorsBypass()};
-        boolean[] limitedBuilding = {world == null || world.limitedBuilding()};
-        boolean[] torchYDeny = {world == null || world.torchYDeny()};
-        boolean[] torchSoftDeny = {world == null || world.torchSoftDeny()};
-        int[] torchY = {world == null ? 0 : world.torchNoPlacementUnderY()};
-        boolean[] torchFizz = {world == null || world.torchFizz()};
-        boolean[] creeperTntWarning = {world == null || world.creeperTntWarning()};
+        Seed seed = Seed.capture();
+        boolean[] enabledByDefault = {seed.enabledByDefault};
+        boolean[] debug = {seed.debug};
+        int[] tutorialMaxShows = {seed.tutorialMaxShows};
+        boolean[] checkPermission = {seed.checkPermission};
+        boolean[] creativeBypasses = {seed.creativeBypasses};
+        boolean[] operatorsBypass = {seed.operatorsBypass};
+        boolean[] limitedBuilding = {seed.limitedBuilding};
+        boolean[] torchYDeny = {seed.torchYDeny};
+        boolean[] torchSoftDeny = {seed.torchSoftDeny};
+        int[] torchY = {seed.torchY};
+        boolean[] torchFizz = {seed.torchFizz};
+        boolean[] creeperTntWarning = {seed.creeperTntWarning};
 
         ConfigBuilder builder = ConfigBuilder.create()
                 .setParentScreen(parent)
@@ -53,7 +51,7 @@ public final class ClothConfigScreen {
                         enabledByDefault[0],
                         debug[0],
                         tutorialMaxShows[0],
-                        world != null,
+                        seed.showWorld,
                         checkPermission[0],
                         creativeBypasses[0],
                         operatorsBypass[0],
@@ -91,11 +89,11 @@ public final class ClothConfigScreen {
                 .setMax(99)
                 .setTooltip(Component.translatableWithFallback(
                         "extrahardmode.config.tutorialMaxShows.tooltip",
-                        "SystemToast first-time mechanics per player. 0 disables toasts. Instant denies still use the action bar."))
+                        "SystemToast first-time mechanics per player, including once-only extras. 0 disables toasts. Instant denies still use the action bar. Connected servers apply this via packet, not the client config file."))
                 .setSaveConsumer(v -> tutorialMaxShows[0] = v)
                 .build());
 
-        if (world != null) {
+        if (seed.showWorld) {
             ConfigCategory current = builder.getOrCreateCategory(
                     Component.translatableWithFallback("extrahardmode.config.world", "This world"));
             current.addEntry(entry.startBooleanToggle(
@@ -159,59 +157,16 @@ public final class ClothConfigScreen {
                     .setDefaultValue(true)
                     .setSaveConsumer(v -> creeperTntWarning[0] = v)
                     .build());
-        } else {
-            ClientboundSyncPayload sync = ExtraHardModeClient.lastSync();
-            if (sync != null) {
-                ConfigCategory synced = builder.getOrCreateCategory(
-                        Component.translatableWithFallback("extrahardmode.config.synced", "Server (read-only)"));
-                synced.addEntry(readOnly(entry.startBooleanToggle(
-                                Component.translatableWithFallback(
-                                        "extrahardmode.config.limitedBuilding", "Limited block placement"),
-                                sync.limitedBuilding())
-                        .setDefaultValue(sync.limitedBuilding())
-                        .build()));
-                synced.addEntry(readOnly(entry.startBooleanToggle(
-                                Component.translatableWithFallback(
-                                        "extrahardmode.config.torchYDeny", "Deny torches below Y"),
-                                sync.torchYDeny())
-                        .setDefaultValue(sync.torchYDeny())
-                        .build()));
-                synced.addEntry(readOnly(entry.startIntField(
-                                Component.translatableWithFallback(
-                                        "extrahardmode.config.torchNoPlacementUnderY", "Torch cutoff Y"),
-                                sync.torchNoPlacementUnderY())
-                        .setDefaultValue(sync.torchNoPlacementUnderY())
-                        .build()));
-                synced.addEntry(readOnly(entry.startBooleanToggle(
-                                Component.translatableWithFallback(
-                                        "extrahardmode.config.torchSoftDeny", "No torches on soft surfaces"),
-                                sync.torchSoftDeny())
-                        .setDefaultValue(sync.torchSoftDeny())
-                        .build()));
-            }
         }
 
         return builder.build();
-    }
-
-    private static AbstractConfigListEntry<?> readOnly(AbstractConfigListEntry<?> entry) {
-        entry.setEditable(false);
-        return entry;
-    }
-
-    private static ServerLevel currentLevel(MinecraftServer server) {
-        if (Minecraft.getInstance().player != null
-                && Minecraft.getInstance().player.level() instanceof ServerLevel level) {
-            return level;
-        }
-        return server.overworld();
     }
 
     private static void save(
             boolean enabledByDefault,
             boolean debug,
             int tutorialMaxShows,
-            boolean hasWorld,
+            boolean applyWorld,
             boolean checkPermission,
             boolean creativeBypasses,
             boolean operatorsBypass,
@@ -221,25 +176,82 @@ public final class ClothConfigScreen {
             int torchY,
             boolean torchFizz,
             boolean creeperTntWarning) {
-        ConfigManager.setGlobal(new GlobalConfig(enabledByDefault, debug, tutorialMaxShows));
-        ConfigManager.saveGlobal();
-        MinecraftServer server = Minecraft.getInstance().getSingleplayerServer();
-        if (!hasWorld || server == null) {
+        Minecraft client = Minecraft.getInstance();
+        boolean connected = client.player != null;
+        if (connected && ClientPlayNetworking.canSend(ServerboundConfigPayload.TYPE)) {
+            ClientPlayNetworking.send(new ServerboundConfigPayload(
+                    enabledByDefault,
+                    debug,
+                    tutorialMaxShows,
+                    applyWorld,
+                    checkPermission,
+                    creativeBypasses,
+                    operatorsBypass,
+                    limitedBuilding,
+                    torchYDeny,
+                    torchSoftDeny,
+                    torchY,
+                    torchFizz,
+                    creeperTntWarning));
             return;
         }
-        server.execute(() -> {
-            WorldConfig world = ConfigManager.world(currentLevel(server));
-            world.setCheckPermission(checkPermission);
-            world.setCreativeBypasses(creativeBypasses);
-            world.setOperatorsBypass(operatorsBypass);
-            world.setLimitedBuilding(limitedBuilding);
-            world.setTorchYDeny(torchYDeny);
-            world.setTorchSoftDeny(torchSoftDeny);
-            world.setTorchNoPlacementUnderY(torchY);
-            world.setTorchFizz(torchFizz);
-            world.setCreeperTntWarning(creeperTntWarning);
-            world.save(server);
-            EhmNetworking.syncAll(server);
-        });
+        if (client.getSingleplayerServer() != null || connected) {
+            return;
+        }
+        ConfigManager.setGlobal(new GlobalConfig(enabledByDefault, debug, tutorialMaxShows));
+        ConfigManager.saveGlobal();
+    }
+
+    private record Seed(
+            boolean showWorld,
+            boolean enabledByDefault,
+            boolean debug,
+            int tutorialMaxShows,
+            boolean checkPermission,
+            boolean creativeBypasses,
+            boolean operatorsBypass,
+            boolean limitedBuilding,
+            boolean torchYDeny,
+            boolean torchSoftDeny,
+            int torchY,
+            boolean torchFizz,
+            boolean creeperTntWarning) {
+        static Seed capture() {
+            GlobalConfig global = ConfigManager.global();
+            Minecraft client = Minecraft.getInstance();
+            MinecraftServer integrated = client.getSingleplayerServer();
+            WorldConfig world = null;
+            if (integrated != null && client.player != null) {
+                ServerPlayer serverPlayer = integrated.getPlayerList().getPlayer(client.player.getUUID());
+                if (serverPlayer != null) {
+                    world = ConfigManager.world(serverPlayer.level());
+                }
+            }
+            ClientboundSyncPayload sync = ExtraHardModeClient.lastSync();
+            ClientboundSyncPayload.DisplayExtras extras = sync == null ? null : sync.extras();
+            boolean showWorld = world != null || sync != null;
+            return new Seed(
+                    showWorld,
+                    extras != null ? extras.enabledByDefault() : global.enabledByDefault(),
+                    extras != null ? extras.debug() : global.debug(),
+                    extras != null ? extras.tutorialMaxShows() : global.tutorialMaxShows(),
+                    world != null
+                            ? world.checkPermission()
+                            : extras != null && extras.checkPermission(),
+                    world != null
+                            ? world.creativeBypasses()
+                            : extras == null || extras.creativeBypasses(),
+                    world != null
+                            ? world.operatorsBypass()
+                            : extras != null && extras.operatorsBypass(),
+                    world != null ? world.limitedBuilding() : sync == null || sync.limitedBuilding(),
+                    world != null ? world.torchYDeny() : sync == null || sync.torchYDeny(),
+                    world != null ? world.torchSoftDeny() : sync == null || sync.torchSoftDeny(),
+                    world != null ? world.torchNoPlacementUnderY() : sync == null ? 0 : sync.torchNoPlacementUnderY(),
+                    world != null ? world.torchFizz() : extras == null || extras.torchFizz(),
+                    world != null
+                            ? world.creeperTntWarning()
+                            : extras == null || extras.creeperTntWarning());
+        }
     }
 }

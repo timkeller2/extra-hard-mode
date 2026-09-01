@@ -25,7 +25,7 @@ public enum MessageId {
     REALISTIC_BUILDING_BENEATH(
             "realistic_building_beneath",
             Kind.ACTION_BAR,
-            true,
+            "silent.realistic_building",
             "You can't place a block directly beneath you."),
     LIMITED_TORCH_PLACEMENT(
             "limited_torch_placement", Kind.ACTION_BAR, true, "It's too soft there to fasten a torch."),
@@ -37,8 +37,8 @@ public enum MessageId {
     NO_CRAFTING_MELON_SEEDS("no_crafting_melon_seeds", Kind.ONCE, false, "That appears to be seedless!"),
     HEAVY_INVENTORY("heavy_inventory", Kind.ONCE, false, "You're carrying too much weight to swim!"),
     ZOMBIE_SLOW("zombie_slow", Kind.ONCE, false, "Zombies slow you down when hit!"),
-    DRAGON_CHALLENGE("dragon_challenge", Kind.BROADCAST, false, "%s is challenging the dragon!"),
-    DRAGON_DEFEAT("dragon_defeat", Kind.BROADCAST, false, "The dragon has been defeated!"),
+    DRAGON_CHALLENGE("dragon_challenge", Kind.ANNOUNCE, false, "%s is challenging the dragon!"),
+    DRAGON_DEFEAT("dragon_defeat", Kind.ANNOUNCE, false, "The dragon has been defeated!"),
     LIMITED_END_BUILDING(
             "limited_end_building",
             Kind.ACTION_BAR,
@@ -78,7 +78,7 @@ public enum MessageId {
     ANTIFARM_DESERT("antifarm_desert", Kind.TOAST, false, "Deserts are really dry and nothing grows here!"),
     ANIMAL_OVERCROWD(
             "animal_overcrowd",
-            Kind.ACTION_BAR,
+            Kind.TOAST,
             false,
             "Animals need space! Consider putting them in a bigger area"),
     NETHER_WARN(
@@ -95,13 +95,17 @@ public enum MessageId {
 
     private final String id;
     private final Kind kind;
-    private final boolean hasSilentNode;
+    private final String silentPath;
     private final String fallback;
 
     MessageId(String id, Kind kind, boolean hasSilentNode, String fallback) {
+        this(id, kind, hasSilentNode ? "silent." + id : null, fallback);
+    }
+
+    MessageId(String id, Kind kind, String silentPath, String fallback) {
         this.id = id;
         this.kind = kind;
-        this.hasSilentNode = hasSilentNode;
+        this.silentPath = silentPath;
         this.fallback = fallback;
     }
 
@@ -114,7 +118,7 @@ public enum MessageId {
     }
 
     public boolean hasSilentNode() {
-        return hasSilentNode;
+        return silentPath != null;
     }
 
     public String fallback() {
@@ -130,7 +134,7 @@ public enum MessageId {
     }
 
     public String silentPermissionPath() {
-        return "silent." + id;
+        return silentPath;
     }
 
     public static MessageId byId(String id) {
@@ -144,6 +148,8 @@ public enum MessageId {
         ACTION_BAR,
         TOAST,
         ONCE,
+        /** Server-wide chat plus a show-once toast. */
+        ANNOUNCE,
         BROADCAST
     }
 }

@@ -22,6 +22,7 @@ import net.minecraft.world.level.Level;
 public final class MsgService {
     private static final long ACTION_BAR_COOLDOWN_MS = 30_000L;
     private static final long TOAST_COOLDOWN_MS = 120_000L;
+    private static final int COOLDOWN_CAP = 256;
     private static final Map<String, Long> COOLDOWNS = new ConcurrentHashMap<>();
 
     private MsgService() {}
@@ -33,6 +34,10 @@ public final class MsgService {
         switch (id.kind()) {
             case ACTION_BAR -> deny(player, id);
             case TOAST, ONCE -> tutorial(player, id);
+            case ANNOUNCE -> {
+                broadcast(player.level().getServer(), id, player.getScoreboardName());
+                tutorial(player, id);
+            }
             case BROADCAST -> broadcast(player.level().getServer(), id, player.getScoreboardName());
         }
     }
@@ -50,7 +55,7 @@ public final class MsgService {
 
     /**
      * First-time mechanic toast. Max N (or once) per player, persisted on {@link EhmAttachments#EHM_TUTORIAL}.
-     * Skipped when the tutorial module is off.
+     * Skipped when the tutorial module is off. {@code tutorial.maxShows = 0} disables ONCE as well as TOAST.
      */
     public static void tutorial(ServerPlayer player, MessageId id) {
         if (player == null || id == null) {
@@ -92,14 +97,10 @@ public final class MsgService {
         server.getPlayerList().broadcastSystemMessage(message, false);
     }
 
-    public static void actionBar(ServerPlayer player, PermissionNode<Boolean> silent, String key, String fallback) {
-        if (player.checkPermission(silent, false)) {
+    public static void lavaFizz(ServerLevel level, BlockPos pos) {
+        if (!ConfigManager.world(level).torchFizz()) {
             return;
         }
-        player.sendOverlayMessage(Component.translatableWithFallback(key, fallback));
-    }
-
-    public static void lavaFizz(ServerLevel level, BlockPos pos) {
         level.playSound(
                 null,
                 pos,
@@ -152,19 +153,30 @@ public final class MsgService {
 
     private static boolean silenced(ServerPlayer player, MessageId id) {
         PermissionNode<Boolean> silent = EhmPermissions.silentNode(id);
-        return silent != null && player.checkPermission(silent, false);
+        if (silent == null) {
+            return false;
+        }
+        if (player.level() instanceof ServerLevel level && !ConfigManager.world(level).checkPermission()) {
+            return false;
+        }
+        return player.checkPermission(silent, false);
     }
 
-    private static int maxShows(MessageId id) {
+    static int maxShows(MessageId id) {
+        int configured = ConfigManager.global().tutorialMaxShows();
         return switch (id.kind()) {
-            case ONCE -> 1;
-            case TOAST -> ConfigManager.global().tutorialMaxShows();
+            case ONCE, ANNOUNCE -> TutorialCounts.effectiveMax(configured, true);
+            case TOAST -> TutorialCounts.effectiveMax(configured, false);
             case ACTION_BAR, BROADCAST -> 0;
         };
     }
 
     private static boolean cooldownElapsed(UUID playerId, String id, long cooldownMs) {
         long now = System.currentTimeMillis();
+        if (COOLDOWNS.size() > COOLDOWN_CAP) {
+            long cutoff = now - Math.max(ACTION_BAR_COOLDOWN_MS, TOAST_COOLDOWN_MS);
+            COOLDOWNS.entrySet().removeIf(entry -> now - entry.getValue() > cutoff);
+        }
         String key = playerId + ":" + id;
         Long last = COOLDOWNS.get(key);
         if (last != null && now - last < cooldownMs) {

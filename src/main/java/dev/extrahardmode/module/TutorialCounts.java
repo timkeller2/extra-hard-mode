@@ -32,4 +32,15 @@ public final class TutorialCounts {
     public static Map<String, Integer> mutableCopy(Map<String, Integer> stored) {
         return stored == null || stored.isEmpty() ? new HashMap<>() : new HashMap<>(stored);
     }
+
+    /**
+     * {@code configured <= 0} disables every toast, including once-only extras.
+     * Once/announce ids cap at 1 when toasts are enabled.
+     */
+    public static int effectiveMax(int configured, boolean once) {
+        if (configured <= 0) {
+            return 0;
+        }
+        return once ? 1 : configured;
+    }
 }

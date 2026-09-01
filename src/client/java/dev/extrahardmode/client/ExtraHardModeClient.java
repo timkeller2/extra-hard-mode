@@ -6,12 +6,14 @@ import dev.extrahardmode.network.ClientboundToastPayload;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.toasts.SystemToast;
 import net.minecraft.network.chat.Component;
 
 public class ExtraHardModeClient implements ClientModInitializer {
-    private static final SystemToast.SystemToastId TOAST_ID = new SystemToast.SystemToastId(5000L);
+    private static final Map<String, SystemToast.SystemToastId> TOAST_IDS = new ConcurrentHashMap<>();
 
     private static volatile ClientboundSyncPayload lastSync;
 
@@ -35,18 +37,15 @@ public class ExtraHardModeClient implements ClientModInitializer {
         Component body = Component.translatableWithFallback(
                 "extrahardmode.toast." + messageId,
                 toastFallback(messageId));
-        SystemToast.addOrUpdate(client.gui.toastManager(), TOAST_ID, title, body);
+        SystemToast.addOrUpdate(client.gui.toastManager(), toastId(messageId), title, body);
+    }
+
+    private static SystemToast.SystemToastId toastId(String messageId) {
+        return TOAST_IDS.computeIfAbsent(messageId, id -> new SystemToast.SystemToastId(5000L));
     }
 
     private static String toastFallback(String messageId) {
         MessageId known = MessageId.byId(messageId);
-        if (known != null) {
-            return known.fallback();
-        }
-        return switch (messageId) {
-            case "enabled_on" -> "Extra Hard Mode is on. /gamerule extrahardmode:enabled";
-            case "enabled_off" -> "Extra Hard Mode is off. /gamerule extrahardmode:enabled";
-            default -> messageId;
-        };
+        return known != null ? known.fallback() : messageId;
     }
 }
