@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "id": "extrahardmode",
+  "version": "${version}",
+  "name": "Extra Hard Mode",
+  "description": "Vanilla Hard only punishes mistakes. Extra Hard Mode changes the rules so experts still have to think.",
+  "authors": [
+    "Ryan 'BigScary' Hamshire (original)",
+    "Diemex",
+    "RoboMWM",
+    "Mitsugaru",
+    "Grok Design (26.2 Fabric port)"
+  ],
+  "license": "AGPL-3.0-or-later",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "dev.extrahardmode.ExtraHardModeMod"
+    ],
+    "client": [
+      "dev.extrahardmode.client.ExtraHardModeClient"
+    ]
+  },
+  "mixins": [
+    "extrahardmode.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "fabric-api": ">=0.157.0+26.2",
+    "minecraft": "26.2",
+    "java": ">=25"
+  },
+  "suggests": {
+    "modmenu": "*",
+    "cloth-config": "*"
+  }
+}

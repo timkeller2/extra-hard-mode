@@ -1,0 +1,22 @@
+Extra Hard Mode (Fabric 26.2 port)
+==================================
+
+This project is a greenfield Fabric reimplementation of Extra Hard Mode
+for Minecraft Java 26.2. It is licensed under GNU AGPL v3.0 or later
+(SPDX: AGPL-3.0-or-later).
+
+It is not a copy of the original `com.extrahardmode.*` Java sources.
+
+Original Extra Hard Mode credits
+--------------------------------
+Ryan "BigScary" Hamshire — original design
+Diemex — long-term maintainer
+RoboMWM
+Mitsugaru
+
+Upstream: https://github.com/MLG-Fortress/ExtraHardMode
+Original license: GNU Affero GPL v3.0 (source headers allow "or later")
+
+26.2 Fabric port
+----------------
+Grok Design
