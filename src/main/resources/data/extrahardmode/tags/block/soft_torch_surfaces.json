@@ -1,4 +1,19 @@
 {
   "replace": false,
-  "values": []
+  "values": [
+    "minecraft:dirt",
+    "minecraft:grass_block",
+    "minecraft:sand",
+    "minecraft:red_sand",
+    "minecraft:gravel",
+    "minecraft:soul_sand",
+    "minecraft:soul_soil",
+    "minecraft:mud",
+    "minecraft:clay",
+    "minecraft:snow_block",
+    "minecraft:moss_block",
+    "minecraft:rooted_dirt",
+    "minecraft:farmland",
+    "minecraft:sulfur"
+  ]
 }

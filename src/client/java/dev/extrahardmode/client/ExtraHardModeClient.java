@@ -1,5 +1,6 @@
 package dev.extrahardmode.client;
 
+import dev.extrahardmode.module.MessageId;
 import dev.extrahardmode.network.ClientboundSyncPayload;
 import dev.extrahardmode.network.ClientboundToastPayload;
 import net.fabricmc.api.ClientModInitializer;
@@ -38,6 +39,10 @@ public class ExtraHardModeClient implements ClientModInitializer {
     }
 
     private static String toastFallback(String messageId) {
+        MessageId known = MessageId.byId(messageId);
+        if (known != null) {
+            return known.fallback();
+        }
         return switch (messageId) {
             case "enabled_on" -> "Extra Hard Mode is on. /gamerule extrahardmode:enabled";
             case "enabled_off" -> "Extra Hard Mode is off. /gamerule extrahardmode:enabled";

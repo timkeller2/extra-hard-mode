@@ -1,5 +1,6 @@
 package dev.extrahardmode.command;
 
+import dev.extrahardmode.module.MessageId;
 import net.fabricmc.fabric.api.permission.v1.PermissionNode;
 
 public final class EhmPermissions {
@@ -21,6 +22,21 @@ public final class EhmPermissions {
     private EhmPermissions() {}
 
     public static void register() {
-        // PermissionNode.of registers the identifier. Silent/bypass.* nodes are unused until later PRs.
+        // PermissionNode.of registers the identifier.
+    }
+
+    /** Only the five plugin.yml silent nodes. Pillar-beneath shares realistic_building. */
+    public static PermissionNode<Boolean> silentNode(MessageId id) {
+        if (id == null) {
+            return null;
+        }
+        return switch (id) {
+            case STONE_MINING_HELP -> SILENT_STONE_MINING_HELP;
+            case NO_PLACING_ORE_AGAINST_STONE -> SILENT_NO_PLACING_ORE_AGAINST_STONE;
+            case REALISTIC_BUILDING, REALISTIC_BUILDING_BENEATH -> SILENT_REALISTIC_BUILDING;
+            case LIMITED_TORCH_PLACEMENT -> SILENT_LIMITED_TORCH_PLACEMENT;
+            case NO_TORCHES_HERE -> SILENT_NO_TORCHES_HERE;
+            default -> null;
+        };
     }
 }

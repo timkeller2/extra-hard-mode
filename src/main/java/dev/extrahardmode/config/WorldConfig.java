@@ -26,6 +26,8 @@ public final class WorldConfig {
     private boolean torchSoftDeny = true;
     private int torchNoPlacementUnderY = 0;
     private boolean torchYDeny = true;
+    private boolean torchFizz = true;
+    private boolean creeperTntWarning = true;
     private boolean enabled = true;
     private boolean enabledPresent;
 
@@ -65,6 +67,14 @@ public final class WorldConfig {
         return torchYDeny;
     }
 
+    public boolean torchFizz() {
+        return torchFizz;
+    }
+
+    public boolean creeperTntWarning() {
+        return creeperTntWarning;
+    }
+
     public boolean enabled() {
         return enabled;
     }
@@ -76,6 +86,42 @@ public final class WorldConfig {
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
         this.enabledPresent = true;
+    }
+
+    public void setCheckPermission(boolean checkPermission) {
+        this.checkPermission = checkPermission;
+    }
+
+    public void setCreativeBypasses(boolean creativeBypasses) {
+        this.creativeBypasses = creativeBypasses;
+    }
+
+    public void setOperatorsBypass(boolean operatorsBypass) {
+        this.operatorsBypass = operatorsBypass;
+    }
+
+    public void setLimitedBuilding(boolean limitedBuilding) {
+        this.limitedBuilding = limitedBuilding;
+    }
+
+    public void setTorchSoftDeny(boolean torchSoftDeny) {
+        this.torchSoftDeny = torchSoftDeny;
+    }
+
+    public void setTorchNoPlacementUnderY(int torchNoPlacementUnderY) {
+        this.torchNoPlacementUnderY = torchNoPlacementUnderY;
+    }
+
+    public void setTorchYDeny(boolean torchYDeny) {
+        this.torchYDeny = torchYDeny;
+    }
+
+    public void setTorchFizz(boolean torchFizz) {
+        this.torchFizz = torchFizz;
+    }
+
+    public void setCreeperTntWarning(boolean creeperTntWarning) {
+        this.creeperTntWarning = creeperTntWarning;
     }
 
     public boolean isModuleEnabled(Identifier moduleId) {
@@ -142,6 +188,9 @@ public final class WorldConfig {
                     file.set("torches.noPlacementUnderY", 0);
                 }
                 writeDefaultIfMissing(file, "torches.noPlacementOnSoft", "No torches on soft surfaces.", true);
+                writeDefaultIfMissing(file, "sounds.torchFizz", "Lava fizz when torch placement is denied.", true);
+                writeDefaultIfMissing(
+                        file, "sounds.creeperTntWarning", "Ghast warn before a creeper drops primed TNT.", true);
                 if (!file.contains("modules")) {
                     file.setComment("modules", "Runtime per-module toggles for this dimension. Missing keys default true.");
                 }
@@ -182,6 +231,8 @@ public final class WorldConfig {
                 file.set("torches.noPlacement.enable", torchYDeny);
                 file.set("torches.noPlacementUnderY", torchNoPlacementUnderY);
                 file.set("torches.noPlacementOnSoft", torchSoftDeny);
+                file.set("sounds.torchFizz", torchFizz);
+                file.set("sounds.creeperTntWarning", creeperTntWarning);
                 for (Map.Entry<Identifier, Boolean> entry : modules.entrySet()) {
                     file.set(moduleKey(entry.getKey()), entry.getValue());
                 }
@@ -204,6 +255,8 @@ public final class WorldConfig {
         torchYDeny = file.getOrElse("torches.noPlacement.enable", true);
         torchNoPlacementUnderY = file.getOrElse("torches.noPlacementUnderY", 0);
         torchSoftDeny = file.getOrElse("torches.noPlacementOnSoft", true);
+        torchFizz = file.getOrElse("sounds.torchFizz", true);
+        creeperTntWarning = file.getOrElse("sounds.creeperTntWarning", true);
         modules.clear();
         Object raw = file.get("modules");
         if (raw instanceof Config table) {

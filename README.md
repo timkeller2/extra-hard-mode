@@ -28,6 +28,12 @@ If `enabledByDefault` is missing, it defaults to `true` in singleplayer and `fal
 
 Per-dimension TOML lives under the overworld save: `data/extrahardmode/<namespace>/<path>.toml` (for example `world/data/extrahardmode/minecraft/overworld.toml` on a dedicated server). Commands: `/ehm`, `/ehm version`, `/ehm enabled [world]`, `/ehm reload`, `/ehm debug`, `/ehm bypass`, `/ehm set <module> <bool>`, `/ehm set-world <bool>`, `/ehm enable`, `/ehm disable`.
 
+## Tutorial
+
+Instant denies (torch, pillaring, ore-next-to-stone, hardened-stone help) use the **action bar**. First-time mechanics use a **SystemToast**, at most `tutorial.maxShows` times per player (default 3; extras such as weight / zombie slow / melon seeds / dragon are once). Shown counts persist on the player as `ehm:tutorial`. Silent permission nodes from the original plugin.yml still work: `extrahardmode.silent.stone_mining_help`, `no_placing_ore_against_stone`, `realistic_building`, `limited_torch_placement`, `no_torches_here`. `/ehm set tutorial false` turns toasts off; action-bar denies still fire.
+
+Dedicated servers do not load client extras. Optional **Cloth Config** + **Mod Menu** add a config screen when those mods are installed (26.2 artifacts `cloth-config-fabric` 26.2.155 and Mod Menu 20.0.1). The published jar does not bundle them.
+
 ## Credits
 
 - Ryan "BigScary" Hamshire (original)

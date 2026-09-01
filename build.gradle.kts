@@ -12,6 +12,14 @@ base {
 
 repositories {
 	mavenCentral()
+	maven {
+		name = "Shedaniel"
+		url = uri("https://maven.shedaniel.me/")
+	}
+	maven {
+		name = "TerraformersMC"
+		url = uri("https://maven.terraformersmc.com/")
+	}
 }
 
 loom {
@@ -45,6 +53,12 @@ dependencies {
 
 	testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+	// Optional client extras. compileOnly so dedicated servers do not need them.
+	compileOnly("me.shedaniel.cloth:cloth-config-fabric:${providers.gradleProperty("cloth_config_version").get()}") {
+		exclude(group = "net.fabricmc.fabric-api")
+	}
+	compileOnly("com.terraformersmc:modmenu:${providers.gradleProperty("modmenu_version").get()}")
 }
 
 tasks.test {

@@ -95,14 +95,48 @@ public final class ConfigManager {
                     config.setComment("debug", "Extra debug logging.");
                     config.set("debug", false);
                 }
+                if (!config.contains("tutorial.maxShows")) {
+                    config.setComment(
+                            "tutorial.maxShows",
+                            "SystemToast first-time mechanics, max times per player. Original limited times = 3. 0 disables toasts.");
+                    config.set("tutorial.maxShows", GlobalConfig.DEFAULT_TUTORIAL_MAX_SHOWS);
+                }
                 config.save();
                 global = new GlobalConfig(
                         config.getOrElse("enabledByDefault", defaultEnabled),
-                        config.getOrElse("debug", false));
+                        config.getOrElse("debug", false),
+                        Math.max(0, config.getIntOrElse("tutorial.maxShows", GlobalConfig.DEFAULT_TUTORIAL_MAX_SHOWS)));
             }
         } catch (Exception e) {
             ExtraHardModeMod.LOGGER.error("Failed to load {}; using defaults", FILE_NAME, e);
-            global = new GlobalConfig(defaultEnabled, false);
+            global = new GlobalConfig(defaultEnabled, false, GlobalConfig.DEFAULT_TUTORIAL_MAX_SHOWS);
+        }
+    }
+
+    public static void setGlobal(GlobalConfig next) {
+        global = next;
+    }
+
+    public static boolean saveGlobal() {
+        Path path = FabricLoader.getInstance().getConfigDir().resolve(FILE_NAME);
+        try {
+            Files.createDirectories(path.getParent());
+            try (CommentedFileConfig config = CommentedFileConfig.builder(path, TomlFormat.instance())
+                    .sync()
+                    .preserveInsertionOrder()
+                    .build()) {
+                if (Files.exists(path)) {
+                    config.load();
+                }
+                config.set("enabledByDefault", global.enabledByDefault());
+                config.set("debug", global.debug());
+                config.set("tutorial.maxShows", global.tutorialMaxShows());
+                config.save();
+            }
+            return true;
+        } catch (Exception e) {
+            ExtraHardModeMod.LOGGER.error("Failed to persist {}", FILE_NAME, e);
+            return false;
         }
     }
 }
