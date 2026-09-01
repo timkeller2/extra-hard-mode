@@ -1,6 +1,7 @@
 package dev.extrahardmode.config;
 
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
+import com.electronwill.nightconfig.toml.TomlFormat;
 import dev.extrahardmode.ExtraHardModeMod;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -22,7 +23,7 @@ public final class ConfigManager {
         boolean defaultEnabled = GlobalConfig.defaultEnabledByDefault();
         try {
             Files.createDirectories(path.getParent());
-            try (CommentedFileConfig config = CommentedFileConfig.builder(path)
+            try (CommentedFileConfig config = CommentedFileConfig.builder(path, TomlFormat.instance())
                     .sync()
                     .preserveInsertionOrder()
                     .build()) {
