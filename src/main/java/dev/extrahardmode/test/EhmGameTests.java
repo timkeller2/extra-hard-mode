@@ -1,7 +1,9 @@
 package dev.extrahardmode.test;
 
+import dev.extrahardmode.api.ExplosionType;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.feature.CaveIns;
+import dev.extrahardmode.feature.Explosions;
 import dev.extrahardmode.feature.FallingBlocks;
 import dev.extrahardmode.feature.HardenedStone;
 import dev.extrahardmode.item.EhmComponents;
@@ -12,10 +14,13 @@ import dev.extrahardmode.world.ExtraHardModeBootData;
 import dev.extrahardmode.world.PhysicsSkip;
 import dev.extrahardmode.world.WorldGate;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
+import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -25,13 +30,18 @@ import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 
 public class EhmGameTests {
     @GameTest
@@ -309,5 +319,73 @@ public class EhmGameTests {
                 PhysicsSkip.never(level, abs) && !level.getBiome(abs).is(EhmTags.NO_PHYSICS),
                 "empty test platform is not a protected structure piece");
         helper.succeed();
+    }
+
+    @GameTest
+    public void tntRecipeMakesThree(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        var key = ResourceKey.create(Registries.RECIPE, Identifier.withDefaultNamespace("tnt"));
+        var holder = level.getServer().getRecipeManager().byKey(key);
+        helper.assertTrue(holder.isPresent(), "minecraft:tnt recipe loaded");
+        RecipeHolder<?> recipeHolder = holder.get();
+        helper.assertTrue(recipeHolder.value() instanceof ShapedRecipe, "tnt is shaped");
+        ShapedRecipe recipe = (ShapedRecipe) recipeHolder.value();
+        CraftingInput input = CraftingInput.of(
+                3,
+                3,
+                List.of(
+                        new ItemStack(Items.GUNPOWDER),
+                        new ItemStack(Items.SAND),
+                        new ItemStack(Items.GUNPOWDER),
+                        new ItemStack(Items.SAND),
+                        new ItemStack(Items.GUNPOWDER),
+                        new ItemStack(Items.SAND),
+                        new ItemStack(Items.GUNPOWDER),
+                        new ItemStack(Items.SAND),
+                        new ItemStack(Items.GUNPOWDER)));
+        ItemStack result = recipe.assemble(input);
+        helper.assertValueEqual(3, result.getCount(), "tnt recipe yields 3");
+        helper.assertTrue(result.is(Items.TNT), "tnt recipe result is tnt");
+        helper.succeed();
+    }
+
+    @GameTest(padding = 8)
+    public void explosionTurnsStoneToCobble(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        level.getGameRules().set(WorldGate.ENABLED, true, level.getServer());
+        level.getGameRules().set(GameRules.TNT_EXPLODES, true, level.getServer());
+        BlockPos center = new BlockPos(4, 4, 4);
+        for (int x = 2; x <= 6; x++) {
+            for (int y = 2; y <= 6; y++) {
+                for (int z = 2; z <= 6; z++) {
+                    helper.setBlock(new BlockPos(x, y, z), Blocks.STONE);
+                }
+            }
+        }
+        BlockPos abs = helper.absolutePos(center);
+        Explosions.create(level, Vec3.atCenterOf(abs), ExplosionType.TNT, null);
+        helper.succeedWhen(() -> {
+            helper.assertTrue(explosionProducedCobble(helper, center), "TNT explosion softened stone to cobble");
+        });
+    }
+
+    private static boolean explosionProducedCobble(GameTestHelper helper, BlockPos center) {
+        for (int x = 2; x <= 6; x++) {
+            for (int y = 2; y <= 6; y++) {
+                for (int z = 2; z <= 6; z++) {
+                    if (helper.getBlockState(new BlockPos(x, y, z)).is(Blocks.COBBLESTONE)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        ServerLevel level = helper.getLevel();
+        AABB box = new AABB(helper.absolutePos(center)).inflate(8.0);
+        for (FallingBlockEntity falling : level.getEntities(EntityTypes.FALLING_BLOCK, box, entity -> true)) {
+            if (falling.getBlockState().is(Blocks.COBBLESTONE)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

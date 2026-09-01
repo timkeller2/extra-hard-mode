@@ -9,7 +9,9 @@
     "BlockItemPlaceMixin",
     "FallingBlockEntityDamageMixin",
     "FallingBlockEntityLandMixin",
-    "FallingBlockPlaceMixin"
+    "FallingBlockPlaceMixin",
+    "ServerExplosionMixin",
+    "ServerLevelExplosionMixin"
   ],
   "client": [
     "client.ClientPlayerDestroySpeedMixin",
