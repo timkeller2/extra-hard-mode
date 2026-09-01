@@ -38,6 +38,7 @@ import dev.extrahardmode.module.SpawnReplaceService;
 import dev.extrahardmode.module.PhysicsQueue;
 import dev.extrahardmode.module.SpawnReplaceService;
 import dev.extrahardmode.feature.Tutorial;
+import dev.extrahardmode.feature.VillagerNerf;
 import dev.extrahardmode.network.EhmNetworking;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.world.WorldGate;
@@ -97,6 +98,7 @@ public class ExtraHardModeMod implements ModInitializer {
         FEATURES.register(new Ghasts());
         FEATURES.register(new Dragon());
         FEATURES.register(new Tutorial());
+        FEATURES.register(new VillagerNerf());
         ServerLevelEvents.LOAD.register((server, level) -> {
             WorldGate.onLevelLoad(server, level);
             FEATURES.onWorldLoad(level);

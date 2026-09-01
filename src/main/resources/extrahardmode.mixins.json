@@ -63,6 +63,7 @@
     "SaplingBlockMixin",
     "MushroomBlockMixin"
     "NaturalSpawnerMixin"
+    "VillagerTradesMixin"
   "client": [],
 
   "injectors": {

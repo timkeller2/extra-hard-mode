@@ -72,6 +72,8 @@ public final class WorldConfig {
     private boolean horseBlockChest = true;
     private int horseBlockChestBelowY = 48;
     private boolean creeperTntWarning = true;
+    private boolean villagerNerfBlockDiamondGear = true;
+    private boolean villagerNerfNoviceMending = true;
     private boolean enabled = true;
     private boolean enabledPresent;
     private final PlayerSettings player = new PlayerSettings();
@@ -327,6 +329,14 @@ public final class WorldConfig {
         return creeperTntWarning;
     }
 
+    public boolean villagerNerfBlockDiamondGear() {
+        return villagerNerfBlockDiamondGear;
+    }
+
+    public boolean villagerNerfNoviceMending() {
+        return villagerNerfNoviceMending;
+    }
+
     public boolean enabled() {
         return enabled;
     }
@@ -437,7 +447,10 @@ public final class WorldConfig {
 
     public boolean isModuleEnabled(Identifier moduleId) {
         Boolean value = modules.get(moduleId);
-        return value == null || value;
+        if (value != null) {
+            return value;
+        }
+        return ExtraHardModeMod.FEATURES.defaultEnabled(moduleId);
     }
 
     public void setModuleEnabled(Identifier moduleId, boolean enabled) {
@@ -698,8 +711,25 @@ public final class WorldConfig {
                 config.dragon.writeDefaults(file);
                         file, "sounds.creeperTntWarning", "Ghast warn before a creeper drops primed TNT.", true);
                 if (!file.contains("modules")) {
-                    file.setComment("modules", "Runtime per-module toggles for this dimension. Missing keys default true.");
+                    file.setComment(
+                            "modules",
+                            "Runtime per-module toggles for this dimension. Missing keys default true except villager_nerf.");
                 }
+                writeDefaultIfMissing(
+                        file,
+                        "modules.extrahardmode.villager_nerf",
+                        "Optional diamond-gear / novice-Mending trade nerf. Not original EHM; default false.",
+                        false);
+                writeDefaultIfMissing(
+                        file,
+                        "villagerNerf.blockDiamondGearTrades",
+                        "When villager_nerf is on, remove trades whose result is diamond/netherite sword, tools, or armor.",
+                        true);
+                writeDefaultIfMissing(
+                        file,
+                        "villagerNerf.nerfNoviceMending",
+                        "When villager_nerf is on, strip Mending from novice-apprentice librarians. Master may sell at 2x emeralds.",
+                        true);
                 file.save();
                 config.read(file);
             }
@@ -842,6 +872,8 @@ public final class WorldConfig {
                 file.set("monsters.spawnInLight.maxLight", spawnInLightMaxLight);
                 file.set("monsters.spawnInLight.percent", spawnInLightPercent);
                 file.set("sounds.creeperTntWarning", creeperTntWarning);
+                file.set("villagerNerf.blockDiamondGearTrades", villagerNerfBlockDiamondGear);
+                file.set("villagerNerf.nerfNoviceMending", villagerNerfNoviceMending);
                 for (Map.Entry<Identifier, Boolean> entry : modules.entrySet()) {
                     file.set(moduleKey(entry.getKey()), entry.getValue());
                 }
@@ -979,6 +1011,8 @@ public final class WorldConfig {
         spawnInLightMaxLight = getInt(file, "monsters.spawnInLight.maxLight", 10);
         spawnInLightPercent = getInt(file, "monsters.spawnInLight.percent", 100);
         creeperTntWarning = file.getOrElse("sounds.creeperTntWarning", true);
+        villagerNerfBlockDiamondGear = file.getOrElse("villagerNerf.blockDiamondGearTrades", true);
+        villagerNerfNoviceMending = file.getOrElse("villagerNerf.nerfNoviceMending", true);
         modules.clear();
         Object raw = file.get("modules");
         if (raw instanceof Config table) {

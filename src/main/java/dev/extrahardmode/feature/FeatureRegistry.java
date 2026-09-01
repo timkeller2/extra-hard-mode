@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 
 public final class FeatureRegistry implements Iterable<FeatureModule> {
@@ -22,6 +23,15 @@ public final class FeatureRegistry implements Iterable<FeatureModule> {
 
     public List<FeatureModule> modules() {
         return Collections.unmodifiableList(modules);
+    }
+
+    public boolean defaultEnabled(Identifier moduleId) {
+        for (FeatureModule module : modules) {
+            if (module.id().equals(moduleId)) {
+                return module.defaultEnabled();
+            }
+        }
+        return true;
     }
 
     @Override

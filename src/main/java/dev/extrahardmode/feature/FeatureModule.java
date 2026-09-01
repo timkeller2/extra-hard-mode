@@ -6,6 +6,11 @@ import net.minecraft.server.level.ServerLevel;
 public interface FeatureModule {
     Identifier id();
 
+    /** Missing world-config keys use this. Most modules default on; villager_nerf is off. */
+    default boolean defaultEnabled() {
+        return true;
+    }
+
     default void bootstrap(FeatureBus bus) {}
 
     default void onWorldLoad(ServerLevel level) {}
