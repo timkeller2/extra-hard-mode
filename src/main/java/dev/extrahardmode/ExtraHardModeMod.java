@@ -20,6 +20,7 @@ import dev.extrahardmode.feature.monster.Skeletons;
 import dev.extrahardmode.feature.monster.Endermen;
 import dev.extrahardmode.feature.monster.Horses;
 import dev.extrahardmode.feature.monster.Witches;
+import dev.extrahardmode.feature.monster.BiomeReplacements;
 import dev.extrahardmode.module.SpawnReplaceService;
 import dev.extrahardmode.module.PhysicsQueue;
 import dev.extrahardmode.network.EhmNetworking;
@@ -47,6 +48,7 @@ public class ExtraHardModeMod implements ModInitializer {
         EhmComponents.register();
         EhmAttachments.register();
         SpawnReplaceService.init();
+        BiomeReplacements.register(FEATURES);
         EhmPermissions.register();
         WorldGate.register();
         EhmNetworking.register();

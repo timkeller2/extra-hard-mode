@@ -87,6 +87,11 @@ public final class WorldConfig {
     private boolean ironGolemNerf = true;
     private boolean overcrowdEnable = true;
     private int overcrowdThreshold = 10;
+    private int killerBunnyPercent = 1;
+    private int vindicatorPercent = 20;
+    private int caveSpiderPercent = 5;
+    private int guardianPercent = 20;
+    private int vexPercent = 5;
 
     public WorldConfig(Identifier dimensionId) {
         this.dimensionId = dimensionId;
@@ -299,6 +304,46 @@ public final class WorldConfig {
         modules.put(moduleId, enabled);
     }
 
+    public int killerBunnyPercent() {
+        return killerBunnyPercent;
+    }
+
+    public void setKillerBunnyPercent(int percent) {
+        killerBunnyPercent = clampPercent(percent);
+    }
+
+    public int vindicatorPercent() {
+        return vindicatorPercent;
+    }
+
+    public void setVindicatorPercent(int percent) {
+        vindicatorPercent = clampPercent(percent);
+    }
+
+    public int caveSpiderPercent() {
+        return caveSpiderPercent;
+    }
+
+    public void setCaveSpiderPercent(int percent) {
+        caveSpiderPercent = clampPercent(percent);
+    }
+
+    public int guardianPercent() {
+        return guardianPercent;
+    }
+
+    public void setGuardianPercent(int percent) {
+        guardianPercent = clampPercent(percent);
+    }
+
+    public int vexPercent() {
+        return vexPercent;
+    }
+
+    public void setVexPercent(int percent) {
+        vexPercent = clampPercent(percent);
+    }
+
     public static Path pathFor(MinecraftServer server, Identifier dimensionId) {
         return server.getWorldPath(LevelResource.ROOT)
                 .resolve("data")
@@ -432,6 +477,17 @@ public final class WorldConfig {
                 if (!file.contains("horses.blockChestBelowY")) {
                     file.setComment("horses.blockChestBelowY", "original: 55; cave band. Integer.MIN_VALUE also disables.");
                     file.set("horses.blockChestBelowY", 48);
+                        "replacements.killerBunnyPercent",
+                        "NATURAL rabbits become killer bunnies. RootNode KillerBunny.Bonus Spawn Percent: 1.",
+                        1);
+                        "replacements.vindicatorPercent",
+                        "NATURAL skeletons in #extrahardmode:vindicator_replace (dark_forest). RootNode 20.",
+                        "replacements.caveSpiderPercent",
+                        "NATURAL spiders in #extrahardmode:cave_spider_replace (swamp, mangrove_swamp). RootNode 5.",
+                        "replacements.guardianPercent",
+                        "NATURAL squid in #extrahardmode:guardian_replace (#minecraft:is_ocean). RootNode 20 (docs 10).",
+                        "replacements.vexPercent",
+                        "NATURAL bats become vexes. Deep Dark skipped by SpawnReplaceService. RootNode 5.",
                 if (!file.contains("modules")) {
                     file.setComment("modules", "Runtime per-module toggles for this dimension. Missing keys default true.");
                 }
@@ -541,6 +597,11 @@ public final class WorldConfig {
                 file.set("witches.bonusSpawnPercent", witchesBonusSpawnPercent);
                 file.set("horses.blockChest.enable", horseBlockChest);
                 file.set("horses.blockChestBelowY", horseBlockChestBelowY);
+                file.set("replacements.killerBunnyPercent", killerBunnyPercent);
+                file.set("replacements.vindicatorPercent", vindicatorPercent);
+                file.set("replacements.caveSpiderPercent", caveSpiderPercent);
+                file.set("replacements.guardianPercent", guardianPercent);
+                file.set("replacements.vexPercent", vexPercent);
                 for (Map.Entry<Identifier, Boolean> entry : modules.entrySet()) {
                     file.set(moduleKey(entry.getKey()), entry.getValue());
                 }
@@ -642,6 +703,11 @@ public final class WorldConfig {
         witchesBonusSpawnPercent = percent(getInt(file, "witches.bonusSpawnPercent", 5));
         horseBlockChest = file.getOrElse("horses.blockChest.enable", true);
         horseBlockChestBelowY = getInt(file, "horses.blockChestBelowY", 48);
+        killerBunnyPercent = percentOr(file, "replacements.killerBunnyPercent", 1);
+        vindicatorPercent = percentOr(file, "replacements.vindicatorPercent", 20);
+        caveSpiderPercent = percentOr(file, "replacements.caveSpiderPercent", 5);
+        guardianPercent = percentOr(file, "replacements.guardianPercent", 20);
+        vexPercent = percentOr(file, "replacements.vexPercent", 5);
         modules.clear();
         Object raw = file.get("modules");
         if (raw instanceof Config table) {
@@ -751,4 +817,13 @@ public final class WorldConfig {
         }
     }
         Object raw = file.get(path);
+
+    private static int percentOr(CommentedFileConfig file, String path, int fallback) {
+        if (raw instanceof Number number) {
+            return clampPercent(number.intValue());
+        }
+        return fallback;
+    }
+    static int clampPercent(int value) {
+        return Math.max(0, Math.min(100, value));
 }

@@ -7,6 +7,7 @@ import dev.extrahardmode.feature.HardenedStone;
 import dev.extrahardmode.item.EhmComponents;
 import dev.extrahardmode.feature.monster.Silverfish;
 import dev.extrahardmode.feature.monster.Skeletons;
+import dev.extrahardmode.config.WorldConfig;
 import dev.extrahardmode.module.SpawnReplaceService;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.module.PhysicsQueue;
@@ -57,6 +58,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.animal.rabbit.Rabbit;
 import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
@@ -524,6 +526,17 @@ public class EhmGameTests {
             helper.fail("merge goal reflect: " + e.getMessage());
         } finally {
             level.getGameRules().set(WorldGate.ENABLED, previous, server);
+    public void killerBunnyReplacesWhenPercent100(GameTestHelper helper) {
+        boolean previousRule = level.getGameRules().get(WorldGate.ENABLED);
+        WorldConfig config = ConfigManager.world(level);
+        int previousPercent = config.killerBunnyPercent();
+        config.setKillerBunnyPercent(100);
+            Rabbit rabbit = helper.spawn(EntityTypes.RABBIT, new BlockPos(1, 2, 1), EntitySpawnReason.NATURAL);
+            SpawnReplaceService.replaceIfNeeded(rabbit, level, EntitySpawnReason.NATURAL);
+            helper.assertTrue(rabbit.getVariant() == Rabbit.Variant.EVIL, "killer bunny variant");
+            helper.assertFalse(rabbit.isBaby(), "adult");
+            config.setKillerBunnyPercent(previousPercent);
+            level.getGameRules().set(WorldGate.ENABLED, previousRule, server);
         }
     }
 
@@ -567,4 +580,17 @@ public class EhmGameTests {
         selected.set(goal, direction);
         goalClass.getMethod("start").invoke(goal);
     }
+    public void killerBunnySkippedWhenPercentZero(GameTestHelper helper) {
+        boolean previousRule = level.getGameRules().get(WorldGate.ENABLED);
+        WorldConfig config = ConfigManager.world(level);
+        int previousPercent = config.killerBunnyPercent();
+        level.getGameRules().set(WorldGate.ENABLED, true, server);
+        config.setKillerBunnyPercent(0);
+            Rabbit rabbit = helper.spawn(EntityTypes.RABBIT, new BlockPos(1, 2, 1), EntitySpawnReason.NATURAL);
+            Rabbit.Variant before = rabbit.getVariant();
+            SpawnReplaceService.replaceIfNeeded(rabbit, level, EntitySpawnReason.NATURAL);
+            helper.assertTrue(rabbit.getVariant() == before, "percent 0 keeps rabbit variant");
+            helper.assertTrue(rabbit.getType() == EntityTypes.RABBIT && !rabbit.isRemoved(), "rabbit kept");
+            config.setKillerBunnyPercent(previousPercent);
+            level.getGameRules().set(WorldGate.ENABLED, previousRule, server);
 }
