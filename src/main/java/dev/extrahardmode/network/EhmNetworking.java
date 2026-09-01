@@ -1,6 +1,5 @@
 package dev.extrahardmode.network;
 
-import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.world.WorldGate;
 import net.fabricmc.fabric.api.entity.event.v1.ServerEntityLevelChangeEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
@@ -22,7 +21,7 @@ public final class EhmNetworking {
     }
 
     public static void sendSync(ServerPlayer player) {
-        ServerPlayNetworking.send(player, ClientboundSyncPayload.from(ConfigManager.world(player.level())));
+        ServerPlayNetworking.send(player, ClientboundSyncPayload.from(player));
     }
 
     public static void sendToast(ServerPlayer player, String messageId) {

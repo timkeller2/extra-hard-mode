@@ -10,6 +10,7 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.config.WorldConfig;
+import dev.extrahardmode.module.PhysicsQueue;
 import dev.extrahardmode.network.EhmNetworking;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.world.WorldGate;
@@ -173,10 +174,21 @@ public final class EhmCommands {
     private static int debug(CommandContext<CommandSourceStack> context) {
         boolean next = !ConfigManager.global().debug();
         ConfigManager.setDebug(next);
+        PhysicsQueue queue = PhysicsQueue.of(context.getSource().getLevel());
+        int depth = queue.queueDepth();
+        int live = queue.liveEntities();
+        int dropped = queue.dropped();
+        int last = queue.conversionsLastTick();
         context.getSource()
                 .sendSuccess(
                         () -> Component.translatableWithFallback(
-                                "extrahardmode.command.debug", "EHM debug %s", next ? "on" : "off"),
+                                "extrahardmode.command.debug",
+                                "EHM debug %s (queue=%s live=%s dropped=%s lastTick=%s)",
+                                next ? "on" : "off",
+                                depth,
+                                live,
+                                dropped,
+                                last),
                         true);
         return Command.SINGLE_SUCCESS;
     }
@@ -185,6 +197,7 @@ public final class EhmCommands {
         ServerPlayer player = context.getSource().getPlayerOrException();
         boolean next = !Boolean.TRUE.equals(player.getAttachedOrElse(EhmAttachments.EHM_BYPASS, Boolean.FALSE));
         player.setAttached(EhmAttachments.EHM_BYPASS, next);
+        EhmNetworking.sendSync(player);
         context.getSource()
                 .sendSuccess(
                         () -> Component.translatableWithFallback(
