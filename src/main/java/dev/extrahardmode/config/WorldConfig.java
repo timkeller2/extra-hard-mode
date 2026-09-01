@@ -28,6 +28,7 @@ public final class WorldConfig {
     private boolean torchYDeny = true;
     private boolean enabled = true;
     private boolean enabledPresent;
+    private final PlayerSettings player = new PlayerSettings();
 
     public WorldConfig(Identifier dimensionId) {
         this.dimensionId = dimensionId;
@@ -71,6 +72,10 @@ public final class WorldConfig {
 
     public boolean hasEnabledKey() {
         return enabledPresent;
+    }
+
+    public PlayerSettings player() {
+        return player;
     }
 
     public void setEnabled(boolean enabled) {
@@ -142,6 +147,7 @@ public final class WorldConfig {
                     file.set("torches.noPlacementUnderY", 0);
                 }
                 writeDefaultIfMissing(file, "torches.noPlacementOnSoft", "No torches on soft surfaces.", true);
+                PlayerSettings.writeDefaults(file);
                 if (!file.contains("modules")) {
                     file.setComment("modules", "Runtime per-module toggles for this dimension. Missing keys default true.");
                 }
@@ -182,6 +188,7 @@ public final class WorldConfig {
                 file.set("torches.noPlacement.enable", torchYDeny);
                 file.set("torches.noPlacementUnderY", torchNoPlacementUnderY);
                 file.set("torches.noPlacementOnSoft", torchSoftDeny);
+                player.write(file);
                 for (Map.Entry<Identifier, Boolean> entry : modules.entrySet()) {
                     file.set(moduleKey(entry.getKey()), entry.getValue());
                 }
@@ -204,6 +211,7 @@ public final class WorldConfig {
         torchYDeny = file.getOrElse("torches.noPlacement.enable", true);
         torchNoPlacementUnderY = file.getOrElse("torches.noPlacementUnderY", 0);
         torchSoftDeny = file.getOrElse("torches.noPlacementOnSoft", true);
+        player.read(file);
         modules.clear();
         Object raw = file.get("modules");
         if (raw instanceof Config table) {

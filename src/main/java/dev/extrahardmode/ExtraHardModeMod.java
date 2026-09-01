@@ -4,6 +4,7 @@ import dev.extrahardmode.command.EhmCommands;
 import dev.extrahardmode.command.EhmPermissions;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.feature.FeatureRegistry;
+import dev.extrahardmode.feature.Players;
 import dev.extrahardmode.network.EhmNetworking;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.world.WorldGate;
@@ -19,6 +20,7 @@ public class ExtraHardModeMod implements ModInitializer {
     public static final String MOD_ID = "extrahardmode";
     public static final Logger LOGGER = LoggerFactory.getLogger("ExtraHardMode");
     public static final FeatureRegistry FEATURES = new FeatureRegistry();
+    public static final Identifier ARMOR_SLOWDOWN = id("armor_slowdown");
 
     @Override
     public void onInitialize() {
@@ -28,6 +30,7 @@ public class ExtraHardModeMod implements ModInitializer {
         WorldGate.register();
         EhmNetworking.register();
         EhmCommands.register();
+        FEATURES.register(Players.INSTANCE);
         ServerLevelEvents.LOAD.register((server, level) -> {
             WorldGate.onLevelLoad(server, level);
             FEATURES.onWorldLoad(level);
