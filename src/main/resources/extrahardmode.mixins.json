@@ -13,6 +13,9 @@
     "FallingBlockPlaceMixin",
     "ServerExplosionMixin",
     "ServerLevelExplosionMixin",
+    "GhastMixin",
+    "GhastXpMixin",
+    "ZombifiedPiglinMixin",
     "CraftingMenuMixin",
     "CrafterBlockMixin"
   ],

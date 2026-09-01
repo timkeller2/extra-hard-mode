@@ -8,6 +8,8 @@ import dev.extrahardmode.feature.Explosions;
 import dev.extrahardmode.feature.FallingBlocks;
 import dev.extrahardmode.feature.HardenedStone;
 import dev.extrahardmode.feature.MoreTnt;
+import dev.extrahardmode.feature.monster.Blazes;
+import dev.extrahardmode.feature.monster.PigMen;
 import dev.extrahardmode.item.EhmComponents;
 import dev.extrahardmode.module.PhysicsQueue;
 import dev.extrahardmode.module.SpawnReplaceService;
@@ -35,7 +37,9 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.monster.cubemob.MagmaCube;
 import net.minecraft.world.entity.monster.zombie.Zombie;
+import net.minecraft.world.entity.monster.zombie.ZombifiedPiglin;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
@@ -571,6 +575,37 @@ public class EhmGameTests {
         } finally {
             level.getGameRules().set(WorldGate.ENABLED, previous, server);
         }
+    }
+
+    @GameTest(padding = 8)
+    public void magmaCubeGrowsIntoBlaze(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        level.getGameRules().set(WorldGate.ENABLED, true, level.getServer());
+        MagmaCube cube = helper.spawn(EntityTypes.MAGMA_CUBE, new BlockPos(1, 2, 1), EntitySpawnReason.COMMAND);
+        cube.setSize(1, true);
+        Blazes.growIntoBlaze(cube, level);
+        helper.assertTrue(cube.isRemoved(), "magma cube discarded on grow");
+        helper.assertEntityPresent(EntityTypes.BLAZE);
+        helper.succeed();
+    }
+
+    @GameTest
+    public void zombifiedPiglinStartsAngry(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        level.getGameRules().set(WorldGate.ENABLED, true, level.getServer());
+        ZombifiedPiglin piglin =
+                helper.spawn(EntityTypes.ZOMBIFIED_PIGLIN, new BlockPos(1, 2, 1), EntitySpawnReason.COMMAND);
+        PigMen.anger(piglin);
+        helper.assertTrue(piglin.isAngry(), "zombified piglin anger timer is set");
+        helper.succeed();
+    }
+
+    @GameTest
+    public void nearBedrockBlazeYGate(GameTestHelper helper) {
+        helper.assertTrue(Blazes.shouldReplaceNearBedrock(-56, true, -56), "Y=-56 is near bedrock");
+        helper.assertFalse(Blazes.shouldReplaceNearBedrock(-55, true, -56), "Y=-55 is above blaze band");
+        helper.assertFalse(Blazes.shouldReplaceNearBedrock(-56, false, -56), "boolean disables Y gate");
+        helper.succeed();
     }
 
     private static void fillStoneCube(GameTestHelper helper, BlockPos center) {

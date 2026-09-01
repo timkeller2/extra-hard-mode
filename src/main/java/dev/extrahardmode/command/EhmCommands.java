@@ -53,6 +53,8 @@ public final class EhmCommands {
         "zombies",
         "endermen",
         "blazes",
+        "pigmen",
+        "ghasts",
         "dragon"
     };
 

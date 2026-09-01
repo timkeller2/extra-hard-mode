@@ -46,6 +46,24 @@ public final class WorldConfig {
     private boolean enabled = true;
     private boolean enabledPresent;
     private final ExplosionConfig explosions = new ExplosionConfig();
+    private boolean blazeNearBedrockEnable = true;
+    private int blazeNearBedrockPercent = 50;
+    private int blazeNearBedrockMaxY = -56;
+    private boolean blazeBlockOverworldDrops = true;
+    private int blazeBonusNetherPercent = 20;
+    private boolean blazeDropFireOnDamage = true;
+    private boolean blazeBonusLoot = true;
+    private int blazeNetherSplitPercent = 25;
+    private int magmaSpawnWithNetherBlazePercent = 100;
+    private boolean magmaGrowIntoBlazesOnDamage = true;
+    private boolean pigmenAlwaysAngry = true;
+    private int pigmenDamagePercent = 70;
+    private boolean pigmenFortressNetherwart = true;
+    private int pigmenElsewhereNetherwartPercent = 25;
+    private boolean pigmenLightningSpawns = true;
+    private int ghastArrowDamagePercent = 20;
+    private int ghastExpMultiplier = 10;
+    private int ghastDropsMultiplier = 5;
 
     public WorldConfig(Identifier dimensionId) {
         this.dimensionId = dimensionId;
@@ -144,6 +162,78 @@ public final class WorldConfig {
 
     public ExplosionConfig explosions() {
         return explosions;
+    }
+
+    public boolean blazeNearBedrockEnable() {
+        return blazeNearBedrockEnable;
+    }
+
+    public int blazeNearBedrockPercent() {
+        return blazeNearBedrockPercent;
+    }
+
+    public int blazeNearBedrockMaxY() {
+        return blazeNearBedrockMaxY;
+    }
+
+    public boolean blazeBlockOverworldDrops() {
+        return blazeBlockOverworldDrops;
+    }
+
+    public int blazeBonusNetherPercent() {
+        return blazeBonusNetherPercent;
+    }
+
+    public boolean blazeDropFireOnDamage() {
+        return blazeDropFireOnDamage;
+    }
+
+    public boolean blazeBonusLoot() {
+        return blazeBonusLoot;
+    }
+
+    public int blazeNetherSplitPercent() {
+        return blazeNetherSplitPercent;
+    }
+
+    public int magmaSpawnWithNetherBlazePercent() {
+        return magmaSpawnWithNetherBlazePercent;
+    }
+
+    public boolean magmaGrowIntoBlazesOnDamage() {
+        return magmaGrowIntoBlazesOnDamage;
+    }
+
+    public boolean pigmenAlwaysAngry() {
+        return pigmenAlwaysAngry;
+    }
+
+    public int pigmenDamagePercent() {
+        return pigmenDamagePercent;
+    }
+
+    public boolean pigmenFortressNetherwart() {
+        return pigmenFortressNetherwart;
+    }
+
+    public int pigmenElsewhereNetherwartPercent() {
+        return pigmenElsewhereNetherwartPercent;
+    }
+
+    public boolean pigmenLightningSpawns() {
+        return pigmenLightningSpawns;
+    }
+
+    public int ghastArrowDamagePercent() {
+        return ghastArrowDamagePercent;
+    }
+
+    public int ghastExpMultiplier() {
+        return ghastExpMultiplier;
+    }
+
+    public int ghastDropsMultiplier() {
+        return ghastDropsMultiplier;
     }
 
     public boolean enabled() {
@@ -274,6 +364,59 @@ public final class WorldConfig {
                         "Drop an item when a falling block cannot place.",
                         false);
                 config.explosions.writeDefaults(file);
+                writeDefaultIfMissing(
+                        file,
+                        "blazes.nearBedrock.enable",
+                        "Replace NATURAL overworld skeletons near bedrock with blazes. Disable with this boolean, not Y=-64.",
+                        true);
+                writeDefaultIfMissing(
+                        file,
+                        "blazes.nearBedrockPercent",
+                        "Chance a near-bedrock skeleton becomes a blaze.",
+                        50);
+                if (!file.contains("blazes.nearBedrockMaxY")) {
+                    file.setComment("blazes.nearBedrockMaxY", "original: ~Y=0. Integer.MIN_VALUE also disables.");
+                    file.set("blazes.nearBedrockMaxY", -56);
+                }
+                writeDefaultIfMissing(file, "blazes.blockOverworldDrops", "No blaze rods from overworld blazes.", true);
+                writeDefaultIfMissing(
+                        file,
+                        "blazes.bonusNetherPercent",
+                        "Replace NATURAL nether zombified piglins outside fortresses with blazes.",
+                        20);
+                writeDefaultIfMissing(file, "blazes.dropFireOnDamage", "Blazes above half health place fire when hit.", true);
+                writeDefaultIfMissing(
+                        file, "blazes.bonusLoot", "Extra gunpowder + blaze rod from nether blazes.", true);
+                writeDefaultIfMissing(
+                        file, "blazes.netherSplitPercent", "Nether blazes may split into two full-HP blazes on death.", 25);
+                writeDefaultIfMissing(
+                        file,
+                        "magmaCubes.spawnWithNetherBlazePercent",
+                        "When a nether piglin is replaced with a blaze, also spawn a size-1 magma cube.",
+                        100);
+                writeDefaultIfMissing(
+                        file,
+                        "magmaCubes.growIntoBlazesOnDamage",
+                        "On damage, magma cubes explode (MAGMACUBE_FIRE) and become blazes.",
+                        true);
+                writeDefaultIfMissing(file, "pigmen.alwaysAngry", "Zombified piglins never calm and aggro players.", true);
+                writeDefaultIfMissing(
+                        file, "pigmen.damagePercent", "Outgoing zombified piglin damage to players. original: 70.", 70);
+                writeDefaultIfMissing(
+                        file, "pigmen.fortressNetherwart", "Always drop nether wart when slain in a fortress.", true);
+                writeDefaultIfMissing(
+                        file,
+                        "pigmen.elsewhereNetherwartPercent",
+                        "Chance to drop nether wart elsewhere in the Nether.",
+                        25);
+                writeDefaultIfMissing(
+                        file,
+                        "pigmen.lightningSpawns",
+                        "Overworld lightning spawns 1-3 angry zombified piglins.",
+                        true);
+                writeDefaultIfMissing(file, "ghasts.arrowDamagePercent", "Incoming arrow damage to ghasts.", 20);
+                writeDefaultIfMissing(file, "ghasts.expMultiplier", "Ghast XP multiplier.", 10);
+                writeDefaultIfMissing(file, "ghasts.dropsMultiplier", "Ghast drop-count multiplier.", 5);
                 if (!file.contains("modules")) {
                     file.setComment("modules", "Runtime per-module toggles for this dimension. Missing keys default true.");
                 }
@@ -334,6 +477,24 @@ public final class WorldConfig {
                 file.set("falling.cascade", fallingCascade);
                 file.set("falling.dropAsItemWhenBlocked", fallingDropAsItemWhenBlocked);
                 explosions.write(file);
+                file.set("blazes.nearBedrock.enable", blazeNearBedrockEnable);
+                file.set("blazes.nearBedrockPercent", blazeNearBedrockPercent);
+                file.set("blazes.nearBedrockMaxY", blazeNearBedrockMaxY);
+                file.set("blazes.blockOverworldDrops", blazeBlockOverworldDrops);
+                file.set("blazes.bonusNetherPercent", blazeBonusNetherPercent);
+                file.set("blazes.dropFireOnDamage", blazeDropFireOnDamage);
+                file.set("blazes.bonusLoot", blazeBonusLoot);
+                file.set("blazes.netherSplitPercent", blazeNetherSplitPercent);
+                file.set("magmaCubes.spawnWithNetherBlazePercent", magmaSpawnWithNetherBlazePercent);
+                file.set("magmaCubes.growIntoBlazesOnDamage", magmaGrowIntoBlazesOnDamage);
+                file.set("pigmen.alwaysAngry", pigmenAlwaysAngry);
+                file.set("pigmen.damagePercent", pigmenDamagePercent);
+                file.set("pigmen.fortressNetherwart", pigmenFortressNetherwart);
+                file.set("pigmen.elsewhereNetherwartPercent", pigmenElsewhereNetherwartPercent);
+                file.set("pigmen.lightningSpawns", pigmenLightningSpawns);
+                file.set("ghasts.arrowDamagePercent", ghastArrowDamagePercent);
+                file.set("ghasts.expMultiplier", ghastExpMultiplier);
+                file.set("ghasts.dropsMultiplier", ghastDropsMultiplier);
                 List<String> budgetEntries = new ArrayList<>();
                 for (Map.Entry<Identifier, Integer> budget : hardenedBudgets.entrySet()) {
                     budgetEntries.add(budget.getKey().toString() + "@" + budget.getValue());
@@ -389,6 +550,24 @@ public final class WorldConfig {
         fallingCascade = file.getOrElse("falling.cascade", true);
         fallingDropAsItemWhenBlocked = file.getOrElse("falling.dropAsItemWhenBlocked", false);
         explosions.read(file);
+        blazeNearBedrockEnable = file.getOrElse("blazes.nearBedrock.enable", true);
+        blazeNearBedrockPercent = percent(getInt(file, "blazes.nearBedrockPercent", 50));
+        blazeNearBedrockMaxY = getInt(file, "blazes.nearBedrockMaxY", -56);
+        blazeBlockOverworldDrops = file.getOrElse("blazes.blockOverworldDrops", true);
+        blazeBonusNetherPercent = percent(getInt(file, "blazes.bonusNetherPercent", 20));
+        blazeDropFireOnDamage = file.getOrElse("blazes.dropFireOnDamage", true);
+        blazeBonusLoot = file.getOrElse("blazes.bonusLoot", true);
+        blazeNetherSplitPercent = percent(getInt(file, "blazes.netherSplitPercent", 25));
+        magmaSpawnWithNetherBlazePercent = percent(getInt(file, "magmaCubes.spawnWithNetherBlazePercent", 100));
+        magmaGrowIntoBlazesOnDamage = file.getOrElse("magmaCubes.growIntoBlazesOnDamage", true);
+        pigmenAlwaysAngry = file.getOrElse("pigmen.alwaysAngry", true);
+        pigmenDamagePercent = percent(getInt(file, "pigmen.damagePercent", 70));
+        pigmenFortressNetherwart = file.getOrElse("pigmen.fortressNetherwart", true);
+        pigmenElsewhereNetherwartPercent = percent(getInt(file, "pigmen.elsewhereNetherwartPercent", 25));
+        pigmenLightningSpawns = file.getOrElse("pigmen.lightningSpawns", true);
+        ghastArrowDamagePercent = percent(getInt(file, "ghasts.arrowDamagePercent", 20));
+        ghastExpMultiplier = Math.max(0, getInt(file, "ghasts.expMultiplier", 10));
+        ghastDropsMultiplier = Math.max(0, getInt(file, "ghasts.dropsMultiplier", 5));
         hardenedBudgets.clear();
         try {
             for (Map.Entry<String, Integer> entry :
@@ -438,6 +617,25 @@ public final class WorldConfig {
             file.setComment(path, comment);
             file.set(path, value);
         }
+    }
+
+    private static void writeDefaultIfMissing(CommentedFileConfig file, String path, String comment, int value) {
+        if (!file.contains(path)) {
+            file.setComment(path, comment);
+            file.set(path, value);
+        }
+    }
+
+    private static int percent(int value) {
+        return Math.clamp(value, 0, 100);
+    }
+
+    private static int getInt(CommentedFileConfig file, String path, int fallback) {
+        Object raw = file.get(path);
+        if (raw instanceof Number number) {
+            return number.intValue();
+        }
+        return fallback;
     }
 
     private static List<String> readStringList(CommentedFileConfig file, String path, List<String> fallback) {

@@ -9,6 +9,9 @@ import dev.extrahardmode.feature.FallingBlocks;
 import dev.extrahardmode.feature.FeatureRegistry;
 import dev.extrahardmode.feature.HardenedStone;
 import dev.extrahardmode.feature.MoreTnt;
+import dev.extrahardmode.feature.monster.Blazes;
+import dev.extrahardmode.feature.monster.Ghasts;
+import dev.extrahardmode.feature.monster.PigMen;
 import dev.extrahardmode.item.EhmComponents;
 import dev.extrahardmode.module.PhysicsQueue;
 import dev.extrahardmode.module.SpawnReplaceService;
@@ -45,6 +48,9 @@ public class ExtraHardModeMod implements ModInitializer {
         FEATURES.register(new FallingBlocks());
         FEATURES.register(new Explosions());
         FEATURES.register(new MoreTnt());
+        FEATURES.register(new Blazes());
+        FEATURES.register(new PigMen());
+        FEATURES.register(new Ghasts());
         ServerLevelEvents.LOAD.register((server, level) -> {
             WorldGate.onLevelLoad(server, level);
             FEATURES.onWorldLoad(level);
