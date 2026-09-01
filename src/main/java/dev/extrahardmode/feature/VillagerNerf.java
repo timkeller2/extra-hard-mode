@@ -4,7 +4,10 @@ import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.config.WorldConfig;
 import dev.extrahardmode.tag.EhmTags;
+import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
@@ -92,21 +95,50 @@ public final class VillagerNerf implements FeatureModule {
         boolean nerfMending = config.villagerNerfNoviceMending();
         Holder<Enchantment> mending = nerfMending ? mending(villager) : null;
 
+        apply(
+                offers,
+                offer -> isDiamondGearResult(offer.getResult()),
+                offer -> isMendingBook(offer.getResult(), mending),
+                villagerLevel,
+                librarian,
+                blockDiamond,
+                nerfMending,
+                () -> masterMendingOffer(mending));
+    }
+
+    /**
+     * Mutates {@code offers} in place. Production {@link #apply(Villager, MerchantOffers, WorldConfig)}
+     * and unit tests share this so diamond-pick / wheat / Mending rows are not tautologies of
+     * {@link #shouldDropOffer}.
+     */
+    public static <T> void apply(
+            List<T> offers,
+            Predicate<T> diamondGear,
+            Predicate<T> mendingBook,
+            int villagerLevel,
+            boolean librarian,
+            boolean blockDiamondGear,
+            boolean nerfNoviceMending,
+            Supplier<T> masterMending) {
+        if (offers == null) {
+            return;
+        }
+        offers.removeIf(offer -> shouldDropOffer(
+                diamondGear.test(offer),
+                mendingBook.test(offer),
+                villagerLevel,
+                librarian,
+                blockDiamondGear,
+                nerfNoviceMending));
         boolean hasMending = false;
-        offers.removeIf(offer -> {
-            ItemStack result = offer.getResult();
-            boolean diamondGear = isDiamondGearResult(result);
-            boolean mendingBook = isMendingBook(result, mending);
-            return shouldDropOffer(diamondGear, mendingBook, villagerLevel, librarian, blockDiamond, nerfMending);
-        });
-        for (MerchantOffer offer : offers) {
-            if (isMendingBook(offer.getResult(), mending)) {
+        for (T offer : offers) {
+            if (mendingBook.test(offer)) {
                 hasMending = true;
                 break;
             }
         }
-        if (shouldOfferMasterMending(librarian, villagerLevel, hasMending, nerfMending) && mending != null) {
-            offers.add(masterMendingOffer(mending));
+        if (shouldOfferMasterMending(librarian, villagerLevel, hasMending, nerfNoviceMending)) {
+            offers.add(masterMending.get());
         }
     }
 
