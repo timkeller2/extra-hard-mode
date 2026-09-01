@@ -4,6 +4,7 @@ import dev.extrahardmode.command.EhmCommands;
 import dev.extrahardmode.command.EhmPermissions;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.feature.FeatureRegistry;
+import dev.extrahardmode.feature.monster.BiomeReplacements;
 import dev.extrahardmode.module.SpawnReplaceService;
 import dev.extrahardmode.network.EhmNetworking;
 import dev.extrahardmode.player.EhmAttachments;
@@ -26,6 +27,7 @@ public class ExtraHardModeMod implements ModInitializer {
         ConfigManager.load();
         EhmAttachments.register();
         SpawnReplaceService.init();
+        BiomeReplacements.register(FEATURES);
         EhmPermissions.register();
         WorldGate.register();
         EhmNetworking.register();

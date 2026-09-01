@@ -28,6 +28,11 @@ public final class WorldConfig {
     private boolean torchYDeny = true;
     private boolean enabled = true;
     private boolean enabledPresent;
+    private int killerBunnyPercent = 1;
+    private int vindicatorPercent = 20;
+    private int caveSpiderPercent = 5;
+    private int guardianPercent = 20;
+    private int vexPercent = 5;
 
     public WorldConfig(Identifier dimensionId) {
         this.dimensionId = dimensionId;
@@ -87,6 +92,46 @@ public final class WorldConfig {
         modules.put(moduleId, enabled);
     }
 
+    public int killerBunnyPercent() {
+        return killerBunnyPercent;
+    }
+
+    public void setKillerBunnyPercent(int percent) {
+        killerBunnyPercent = clampPercent(percent);
+    }
+
+    public int vindicatorPercent() {
+        return vindicatorPercent;
+    }
+
+    public void setVindicatorPercent(int percent) {
+        vindicatorPercent = clampPercent(percent);
+    }
+
+    public int caveSpiderPercent() {
+        return caveSpiderPercent;
+    }
+
+    public void setCaveSpiderPercent(int percent) {
+        caveSpiderPercent = clampPercent(percent);
+    }
+
+    public int guardianPercent() {
+        return guardianPercent;
+    }
+
+    public void setGuardianPercent(int percent) {
+        guardianPercent = clampPercent(percent);
+    }
+
+    public int vexPercent() {
+        return vexPercent;
+    }
+
+    public void setVexPercent(int percent) {
+        vexPercent = clampPercent(percent);
+    }
+
     public static Path pathFor(MinecraftServer server, Identifier dimensionId) {
         return server.getWorldPath(LevelResource.ROOT)
                 .resolve("data")
@@ -142,6 +187,31 @@ public final class WorldConfig {
                     file.set("torches.noPlacementUnderY", 0);
                 }
                 writeDefaultIfMissing(file, "torches.noPlacementOnSoft", "No torches on soft surfaces.", true);
+                writeDefaultIfMissing(
+                        file,
+                        "replacements.killerBunnyPercent",
+                        "NATURAL rabbits become killer bunnies. RootNode KillerBunny.Bonus Spawn Percent: 1.",
+                        1);
+                writeDefaultIfMissing(
+                        file,
+                        "replacements.vindicatorPercent",
+                        "NATURAL skeletons in #extrahardmode:vindicator_replace (dark_forest). RootNode 20.",
+                        20);
+                writeDefaultIfMissing(
+                        file,
+                        "replacements.caveSpiderPercent",
+                        "NATURAL spiders in #extrahardmode:cave_spider_replace (swamp, mangrove_swamp). RootNode 5.",
+                        5);
+                writeDefaultIfMissing(
+                        file,
+                        "replacements.guardianPercent",
+                        "NATURAL squid in #extrahardmode:guardian_replace (#minecraft:is_ocean). RootNode 20 (docs 10).",
+                        20);
+                writeDefaultIfMissing(
+                        file,
+                        "replacements.vexPercent",
+                        "NATURAL bats become vexes. Deep Dark skipped by SpawnReplaceService. RootNode 5.",
+                        5);
                 if (!file.contains("modules")) {
                     file.setComment("modules", "Runtime per-module toggles for this dimension. Missing keys default true.");
                 }
@@ -182,6 +252,11 @@ public final class WorldConfig {
                 file.set("torches.noPlacement.enable", torchYDeny);
                 file.set("torches.noPlacementUnderY", torchNoPlacementUnderY);
                 file.set("torches.noPlacementOnSoft", torchSoftDeny);
+                file.set("replacements.killerBunnyPercent", killerBunnyPercent);
+                file.set("replacements.vindicatorPercent", vindicatorPercent);
+                file.set("replacements.caveSpiderPercent", caveSpiderPercent);
+                file.set("replacements.guardianPercent", guardianPercent);
+                file.set("replacements.vexPercent", vexPercent);
                 for (Map.Entry<Identifier, Boolean> entry : modules.entrySet()) {
                     file.set(moduleKey(entry.getKey()), entry.getValue());
                 }
@@ -204,6 +279,11 @@ public final class WorldConfig {
         torchYDeny = file.getOrElse("torches.noPlacement.enable", true);
         torchNoPlacementUnderY = file.getOrElse("torches.noPlacementUnderY", 0);
         torchSoftDeny = file.getOrElse("torches.noPlacementOnSoft", true);
+        killerBunnyPercent = percentOr(file, "replacements.killerBunnyPercent", 1);
+        vindicatorPercent = percentOr(file, "replacements.vindicatorPercent", 20);
+        caveSpiderPercent = percentOr(file, "replacements.caveSpiderPercent", 5);
+        guardianPercent = percentOr(file, "replacements.guardianPercent", 20);
+        vexPercent = percentOr(file, "replacements.vexPercent", 5);
         modules.clear();
         Object raw = file.get("modules");
         if (raw instanceof Config table) {
@@ -240,5 +320,24 @@ public final class WorldConfig {
             file.setComment(path, comment);
             file.set(path, value);
         }
+    }
+
+    private static void writeDefaultIfMissing(CommentedFileConfig file, String path, String comment, int value) {
+        if (!file.contains(path)) {
+            file.setComment(path, comment);
+            file.set(path, value);
+        }
+    }
+
+    private static int percentOr(CommentedFileConfig file, String path, int fallback) {
+        Object raw = file.get(path);
+        if (raw instanceof Number number) {
+            return clampPercent(number.intValue());
+        }
+        return fallback;
+    }
+
+    static int clampPercent(int value) {
+        return Math.max(0, Math.min(100, value));
     }
 }
