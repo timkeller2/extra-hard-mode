@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -70,11 +69,11 @@ public final class Skeletons implements FeatureModule {
     @Override
     public void bootstrap(FeatureBus bus) {
         bus.listen(ServerLivingEntityEvents.ALLOW_DAMAGE, ID, Skeletons::onAllowDamage);
+        bus.listen(ServerLivingEntityEvents.AFTER_DAMAGE, ID, Skeletons::onAfterDamage);
         bus.listen(ServerLivingEntityEvents.AFTER_DEATH, ID, Skeletons::onAfterDeath);
-        ServerLifecycleEvents.SERVER_STARTED.register(server -> server.execute(Skeletons::warnIfMixinMissing));
     }
 
-    /** Mixin injects call this first. Strays, wither skeletons, and Parched are excluded. */
+    /** Strays, wither skeletons, and Parched are excluded (KD-16). */
     public static boolean isSpecialShooter(Entity entity) {
         return entity instanceof Skeleton || entity instanceof Bogged;
     }
@@ -104,19 +103,40 @@ public final class Skeletons implements FeatureModule {
     }
 
     public static Special roll(AbstractSkeleton skeleton, WorldConfig config) {
-        RandomSource random = skeleton.getRandom();
-        if (config.skeletonSnowballEnable() && percentChance(random, config.skeletonSnowballPercent())) {
+        return roll(
+                skeleton.getRandom(),
+                config.skeletonSnowballEnable(),
+                config.skeletonSnowballPercent(),
+                config.skeletonFireworkEnable(),
+                config.skeletonFireworkPercent(),
+                config.skeletonFireballEnable(),
+                config.skeletonFireballPercent(),
+                config.skeletonSilverfishEnable(),
+                config.skeletonSilverfishPercent(),
+                skeleton.getTarget() instanceof Player);
+    }
+
+    public static Special roll(
+            RandomSource random,
+            boolean snowballEnable,
+            int snowballPercent,
+            boolean fireworkEnable,
+            int fireworkPercent,
+            boolean fireballEnable,
+            int fireballPercent,
+            boolean silverfishEnable,
+            int silverfishPercent,
+            boolean playerTarget) {
+        if (snowballEnable && percentChance(random, snowballPercent)) {
             return Special.SNOWBALL;
         }
-        if (config.skeletonFireworkEnable() && percentChance(random, config.skeletonFireworkPercent())) {
+        if (fireworkEnable && percentChance(random, fireworkPercent)) {
             return Special.FIREWORK;
         }
-        if (config.skeletonFireballEnable() && percentChance(random, config.skeletonFireballPercent())) {
+        if (fireballEnable && percentChance(random, fireballPercent)) {
             return Special.FIREBALL;
         }
-        if (config.skeletonSilverfishEnable()
-                && skeleton.getTarget() instanceof Player
-                && percentChance(random, config.skeletonSilverfishPercent())) {
+        if (silverfishEnable && playerTarget && percentChance(random, silverfishPercent)) {
             return Special.SILVERFISH;
         }
         return Special.NONE;
@@ -156,9 +176,14 @@ public final class Skeletons implements FeatureModule {
         if (!WorldGate.isModuleActive(level, ID)) {
             return false;
         }
+        Boolean decided = arrow.getAttached(EhmAttachments.EHM_ARROW_DEFLECT);
+        if (decided != null) {
+            return decided;
+        }
         WorldConfig config = ConfigManager.world(level);
         int percent = config.skeletonDeflectArrowsPercent();
         if (percent <= 0) {
+            arrow.setAttached(EhmAttachments.EHM_ARROW_DEFLECT, Boolean.FALSE);
             return false;
         }
         ServerPlayer shooter = arrow.getOwner() instanceof ServerPlayer player ? player : null;
@@ -167,7 +192,9 @@ public final class Skeletons implements FeatureModule {
             event.cancel();
         }
         SkeletonDeflectEvent.EVENT.invoker().onSkeletonDeflect(event);
-        return !event.isCanceled();
+        boolean deflect = !event.isCanceled();
+        arrow.setAttached(EhmAttachments.EHM_ARROW_DEFLECT, deflect);
+        return deflect;
     }
 
     public static void applyOnHit(LivingEntity victim, AbstractArrow arrow, WorldConfig config) {
@@ -181,9 +208,9 @@ public final class Skeletons implements FeatureModule {
         }
         switch (special) {
             case SPECIAL_SNOWBALL -> victim.addEffect(
-                    new MobEffectInstance(MobEffects.BLINDNESS, config.skeletonSnowballBlindTicks(), 0), skeleton);
+                    new MobEffectInstance(MobEffects.BLINDNESS, config.skeletonSnowballBlindTicks(), 3), skeleton);
             case SPECIAL_FIREWORK -> applyKnockback(victim, skeleton, arrow, config);
-            case SPECIAL_FIREBALL -> victim.igniteForTicks(config.skeletonFireballFireTicks());
+            case SPECIAL_FIREBALL -> applyFireballTicks(victim, config);
             default -> {
             }
         }
@@ -200,10 +227,21 @@ public final class Skeletons implements FeatureModule {
         if (tryDeflect(arrow, entity)) {
             return false;
         }
-        if (entity instanceof Player) {
-            applyOnHit(entity, arrow, ConfigManager.world(level));
-        }
         return true;
+    }
+
+    private static void onAfterDamage(
+            LivingEntity entity, DamageSource source, float baseDamageTaken, float damageTaken, boolean blocked) {
+        if (!(entity instanceof Player) || !(entity.level() instanceof ServerLevel level)) {
+            return;
+        }
+        if (!WorldGate.isModuleActive(level, ID)) {
+            return;
+        }
+        if (!(source.getDirectEntity() instanceof AbstractArrow arrow)) {
+            return;
+        }
+        applyOnHit(entity, arrow, ConfigManager.world(level));
     }
 
     private static void onAfterDeath(LivingEntity entity, DamageSource source) {
@@ -288,6 +326,12 @@ public final class Skeletons implements FeatureModule {
                 fish -> owner.equals(fish.getAttached(EhmAttachments.EHM_SILVERFISH_OWNER)),
                 found);
         return found;
+    }
+
+    private static void applyFireballTicks(LivingEntity victim, WorldConfig config) {
+        int remaining = victim.getRemainingFireTicks();
+        int withoutArrow = remaining >= 100 ? remaining - 100 : 0;
+        victim.setRemainingFireTicks(withoutArrow + config.skeletonFireballFireTicks());
     }
 
     private static void applyKnockback(

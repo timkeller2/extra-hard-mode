@@ -42,6 +42,10 @@ public abstract class AbstractSkeletonMixin {
 
     @Inject(method = "performRangedAttack", at = @At("RETURN"), require = 0)
     private void ehm$warnIfShotRedirectMissing(CallbackInfo ci) {
+        AbstractSkeleton self = (AbstractSkeleton) (Object) this;
+        if (!(self.level() instanceof ServerLevel level) || !WorldGate.isModuleActive(level, Skeletons.ID)) {
+            return;
+        }
         Skeletons.warnIfMixinMissing();
     }
 }

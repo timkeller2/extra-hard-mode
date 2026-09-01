@@ -62,6 +62,10 @@ public final class EhmAttachments {
     public static final AttachmentType<String> EHM_SKELETON_SPECIAL =
             AttachmentRegistry.create(ExtraHardModeMod.id("skeleton_special"));
 
+    /** Transient; caches the one deflect roll for this arrow so mixin + ALLOW_DAMAGE cannot double-roll. */
+    public static final AttachmentType<Boolean> EHM_ARROW_DEFLECT =
+            AttachmentRegistry.create(ExtraHardModeMod.id("arrow_deflect"));
+
     private EhmAttachments() {}
 
     public static void register() {
