@@ -2,7 +2,9 @@
   "required": true,
   "package": "dev.extrahardmode.mixin",
   "compatibilityLevel": "JAVA_25",
-  "mixins": [],
+  "mixins": [
+    "VillagerTradesMixin"
+  ],
   "client": [],
   "injectors": {
     "defaultRequire": 1

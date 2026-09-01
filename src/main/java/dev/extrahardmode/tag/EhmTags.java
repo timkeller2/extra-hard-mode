@@ -28,6 +28,8 @@ public final class EhmTags {
             TagKey.create(Registries.ITEM, ExtraHardModeMod.id("death_valuable_tools"));
     public static final TagKey<Item> DEATH_ITEM_BLACKLIST =
             TagKey.create(Registries.ITEM, ExtraHardModeMod.id("death_item_blacklist"));
+    public static final TagKey<Item> VILLAGER_NERF_GEAR =
+            TagKey.create(Registries.ITEM, ExtraHardModeMod.id("villager_nerf_gear"));
 
     public static final TagKey<Biome> NO_PHYSICS = TagKey.create(Registries.BIOME, ExtraHardModeMod.id("no_physics"));
     public static final TagKey<Biome> NO_SPAWN_REPLACEMENTS =

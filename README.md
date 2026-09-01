@@ -34,6 +34,10 @@ Instant denies (torch, pillaring, ore-next-to-stone, hardened-stone help, End bu
 
 Dedicated servers do not load client extras. Optional **Cloth Config** + **Mod Menu** add a config screen when those mods are installed (26.2 artifacts `cloth-config-fabric` 26.2.155 and Mod Menu 20.0.1). The published jar does not bundle them.
 
+## Optional villager trade nerf (default off)
+
+Not original Extra Hard Mode. `/ehm set villager_nerf true` (gamerule must also be on) removes villager trades whose **result** is diamond or netherite sword/tools/armor. Librarian Mending books are stripped from novice and apprentice; a Master librarian may still sell Mending at **2×** emeralds (20 + a book). Farmer crop trades, cartographer maps, and copper-age trades are left alone. Missing `modules.extrahardmode.villager_nerf` is **false**.
+
 ## Credits
 
 - Ryan "BigScary" Hamshire (original)

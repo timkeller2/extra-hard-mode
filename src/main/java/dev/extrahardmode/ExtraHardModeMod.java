@@ -5,6 +5,7 @@ import dev.extrahardmode.command.EhmPermissions;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.feature.FeatureRegistry;
 import dev.extrahardmode.feature.Tutorial;
+import dev.extrahardmode.feature.VillagerNerf;
 import dev.extrahardmode.network.EhmNetworking;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.world.WorldGate;
@@ -30,6 +31,7 @@ public class ExtraHardModeMod implements ModInitializer {
         EhmNetworking.register();
         EhmCommands.register();
         FEATURES.register(new Tutorial());
+        FEATURES.register(new VillagerNerf());
         ServerLevelEvents.LOAD.register((server, level) -> {
             WorldGate.onLevelLoad(server, level);
             FEATURES.onWorldLoad(level);
