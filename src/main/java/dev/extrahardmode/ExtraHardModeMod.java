@@ -4,6 +4,7 @@ import dev.extrahardmode.command.EhmCommands;
 import dev.extrahardmode.command.EhmPermissions;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.feature.CaveIns;
+import dev.extrahardmode.feature.Dragon;
 import dev.extrahardmode.feature.Explosions;
 import dev.extrahardmode.feature.FallingBlocks;
 import dev.extrahardmode.feature.FeatureRegistry;
@@ -43,6 +44,7 @@ public class ExtraHardModeMod implements ModInitializer {
         FEATURES.register(new FallingBlocks());
         FEATURES.register(new Explosions());
         FEATURES.register(new MoreTnt());
+        FEATURES.register(new Dragon());
         ServerLevelEvents.LOAD.register((server, level) -> {
             WorldGate.onLevelLoad(server, level);
             FEATURES.onWorldLoad(level);

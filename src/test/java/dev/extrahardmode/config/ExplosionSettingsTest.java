@@ -40,6 +40,10 @@ class ExplosionSettingsTest {
         assertTrue(blaze.fire());
         assertEquals(2.0F, magma.power());
         assertTrue(magma.fire());
+        ExplosionSettings.Applied dragon = ExplosionSettings.resolve(ExplosionType.DRAGON_FIREBALL, 0, 48);
+        assertEquals(2.0F, dragon.power());
+        assertTrue(dragon.fire());
+        assertTrue(dragon.worldDamage());
     }
 
     @Test

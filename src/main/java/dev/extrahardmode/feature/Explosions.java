@@ -272,6 +272,10 @@ public final class Explosions implements FeatureModule {
         return true;
     }
 
+    public static void enqueue(ServerLevel level, CreateExplosionTask task) {
+        DELAYED.computeIfAbsent(level.dimension().identifier(), id -> new ArrayDeque<>()).addLast(task);
+    }
+
     private static void scheduleCraters(ServerLevel level, Vec3 origin, Entity source) {
         BlockPos pos = BlockPos.containing(origin);
         int random1 = Math.floorMod((int) level.getOverworldClockTime() + pos.getZ(), 8);

@@ -13,7 +13,13 @@
     "ServerExplosionMixin",
     "ServerLevelExplosionMixin",
     "CraftingMenuMixin",
-    "CrafterBlockMixin"
+    "CrafterBlockMixin",
+    "EnderDragonMixin",
+    "DragonFireballMixin",
+    "EnderDragonFightAccess",
+    "EnderDragonFightMixin",
+    "MobTargetMixin",
+    "LivingEntityLootMixin"
   ],
   "client": [
     "client.ClientPlayerDestroySpeedMixin",

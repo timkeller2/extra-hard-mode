@@ -1,5 +1,6 @@
 package dev.extrahardmode.client;
 
+import dev.extrahardmode.feature.Dragon;
 import dev.extrahardmode.network.ClientboundSyncPayload;
 import dev.extrahardmode.network.ClientboundToastPayload;
 import net.fabricmc.api.ClientModInitializer;
@@ -65,6 +66,18 @@ public class ExtraHardModeClient implements ClientModInitializer {
         return touchesHardened(context.getLevel(), context.getClickedPos(), sync);
     }
 
+    public static boolean denyEndBuilding(BlockPlaceContext context) {
+        ClientboundSyncPayload sync = lastSync;
+        if (sync == null || !sync.noEndBuilding() || sync.playerBypass()) {
+            return false;
+        }
+        Player player = context.getPlayer();
+        if (player != null && (player.hasInfiniteMaterials() || player.isCreative())) {
+            return false;
+        }
+        return !Dragon.allowPlaceItem(context.getItemInHand());
+    }
+
     public static void toast(String messageId) {
         Minecraft client = Minecraft.getInstance();
         if (client != null) {
@@ -114,6 +127,9 @@ public class ExtraHardModeClient implements ClientModInitializer {
             case "enabled_on" -> "Extra Hard Mode is on. /gamerule extrahardmode:enabled";
             case "enabled_off" -> "Extra Hard Mode is off. /gamerule extrahardmode:enabled";
             case "no_placing_ore_against_stone" -> "You can't place ore against stone.";
+            case "limited_end_building" -> "Sorry, building here is very limited.";
+            case "dragon_fountain_tip" ->
+                "Congratulations on defeating the dragon! If you can't reach the fountain, throw an ender pearl at it.";
             default -> messageId;
         };
     }
