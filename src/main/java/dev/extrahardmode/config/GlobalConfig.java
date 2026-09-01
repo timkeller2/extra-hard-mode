@@ -8,6 +8,10 @@ public record GlobalConfig(boolean enabledByDefault, boolean debug) {
         return new GlobalConfig(defaultEnabledByDefault(), false);
     }
 
+    public GlobalConfig withDebug(boolean debug) {
+        return new GlobalConfig(enabledByDefault, debug);
+    }
+
     /**
      * Missing {@code enabledByDefault} is true on the client (integrated) and false on dedicated.
      */

@@ -24,6 +24,15 @@ loom {
 	}
 }
 
+fabricApi {
+	configureTests {
+		createSourceSet = false
+		enableGameTests = true
+		enableClientGameTests = false
+		eula = true
+	}
+}
+
 dependencies {
 	minecraft("com.mojang:minecraft:${providers.gradleProperty("minecraft_version").get()}")
 	implementation("net.fabricmc:fabric-loader:${providers.gradleProperty("loader_version").get()}")
@@ -33,6 +42,13 @@ dependencies {
 	implementation(nightConfig)
 	include(nightConfig)
 	include("com.electronwill.night-config:core:${providers.gradleProperty("night_config_version").get()}")
+
+	testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
+	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+tasks.test {
+	useJUnitPlatform()
 }
 
 tasks.processResources {

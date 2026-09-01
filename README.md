@@ -20,9 +20,11 @@ On Windows: `.\gradlew.bat build`. Output jars land in `build/libs/`.
 
 ## Enable
 
-World enable via `/gamerule` ships in a later change. Until then the mod loads and registers no gameplay modules.
+The gamerule `extrahardmode:enabled` is the only per-dimension switch. On first load of each dimension, Extra Hard Mode copies `enabledByDefault` from `config/extrahardmode.toml` into that dimension's gamerule and never overwrites it again.
 
-Global defaults live in `config/extrahardmode.toml` (`enabledByDefault`, `debug`). If `enabledByDefault` is missing, it defaults to `true` in singleplayer (client environment) and `false` on dedicated servers.
+If `enabledByDefault` is missing, it defaults to `true` in singleplayer and `false` on dedicated servers. Custom dimensions inherit the overworld gamerule.
+
+Per-dimension TOML lives under the overworld save: `data/extrahardmode/<namespace>/<path>.toml` (for example `world/data/extrahardmode/minecraft/overworld.toml` on a dedicated server). Commands: `/ehm`, `/ehm version`, `/ehm enabled [world]`, `/ehm reload`, `/ehm debug`, `/ehm bypass`, `/ehm set <module> <bool>`.
 
 ## Credits
 

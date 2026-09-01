@@ -1,3 +1,16 @@
 {
-  "extrahardmode.name": "Extra Hard Mode"
+  "extrahardmode.name": "Extra Hard Mode",
+  "gamerule.extrahardmode.enabled": "Extra Hard Mode",
+  "gamerule.extrahardmode.enabled.description": "Whether Extra Hard Mode is active in this dimension.",
+  "extrahardmode.toast.title": "Extra Hard Mode",
+  "extrahardmode.toast.enabled_on": "Extra Hard Mode is on. /gamerule extrahardmode:enabled",
+  "extrahardmode.toast.enabled_off": "Extra Hard Mode is off. /gamerule extrahardmode:enabled",
+  "extrahardmode.command.help": "/ehm help|version|enabled [world]|reload|debug|bypass|set <module> <bool>",
+  "extrahardmode.command.version": "Extra Hard Mode %s (Minecraft %s, Fabric Loader %s)",
+  "extrahardmode.command.enabled.true": "Extra Hard Mode is on in %s",
+  "extrahardmode.command.enabled.false": "Extra Hard Mode is off in %s",
+  "extrahardmode.command.reload": "Reloaded Extra Hard Mode config",
+  "extrahardmode.command.debug": "EHM debug %s",
+  "extrahardmode.command.bypass": "Personal EHM bypass %s",
+  "extrahardmode.command.set": "Set %s to %s in %s"
 }

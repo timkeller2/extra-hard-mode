@@ -19,6 +19,9 @@
     ],
     "client": [
       "dev.extrahardmode.client.ExtraHardModeClient"
+    ],
+    "fabric-gametest": [
+      "dev.extrahardmode.test.EhmGameTests"
     ]
   },
   "mixins": [
