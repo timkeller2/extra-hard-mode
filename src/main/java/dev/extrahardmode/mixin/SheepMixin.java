@@ -17,15 +17,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class SheepMixin {
     @Inject(method = "ate", at = @At("TAIL"))
     private void ehm$regrowWhite(CallbackInfo ci) {
-        Sheep self = (Sheep) (Object) this;
-        if (!(self.level() instanceof ServerLevel level)) {
-            return;
-        }
-        if (!WorldGate.isModuleActive(level, AntiFarming.ID)) {
+        if (!(((Sheep) (Object) this).level() instanceof ServerLevel level)
+                || !WorldGate.isModuleActive(level, AntiFarming.ID)) {
             return;
         }
         if (ConfigManager.world(level).sheepWhiteWool()) {
-            self.setColor(DyeColor.WHITE);
+            ((Sheep) (Object) this).setColor(DyeColor.WHITE);
         }
     }
 

@@ -8,6 +8,7 @@ import net.minecraft.core.dispenser.BlockSource;
 import net.minecraft.core.dispenser.DispenseItemBehavior;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.DispenserBlock;
 import org.spongepowered.asm.mixin.Mixin;
@@ -18,12 +19,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(DispenserBlock.class)
 public abstract class WaterDispenseMixin {
     @Inject(method = "getDispenseMethod", at = @At("RETURN"), cancellable = true)
-    private void ehm$wrapWaterBucket(
-            Level level, ItemStack stack, CallbackInfoReturnable<DispenseItemBehavior> cir) {
-        if (!(level instanceof ServerLevel server)) {
-            return;
-        }
-        if (!WorldGate.isModuleActive(server, Water.ID)) {
+    private void ehm$wrapWaterBucket(Level level, ItemStack stack, CallbackInfoReturnable<DispenseItemBehavior> cir) {
+        if (!(level instanceof ServerLevel server) || !WorldGate.isModuleActive(server, Water.ID)) {
             return;
         }
         if (!Water.enabled(server) || !Water.isWaterBucket(stack.getItem())) {
@@ -34,12 +31,16 @@ public abstract class WaterDispenseMixin {
             return;
         }
         cir.setReturnValue((BlockSource source, ItemStack item) -> {
-            ItemStack result = original.dispense(source, item);
             ServerLevel world = source.level();
-            if (WorldGate.isModuleActive(world, Water.ID) && Water.enabled(world)) {
+            if (!WorldGate.isModuleActive(world, Water.ID) || !Water.enabled(world)) {
+                return original.dispense(source, item);
+            }
+            boolean waterItem = Water.isWaterBucket(item.getItem());
+            ItemStack result = original.dispense(source, item);
+            if (waterItem && (result.isEmpty() || result.getItem() == Items.BUCKET)) {
                 Direction facing = source.state().getValue(DispenserBlock.FACING);
                 BlockPos target = source.pos().relative(facing);
-                Water.convertPlacedWater(world, target);
+                Water.mark(world, target);
             }
             return result;
         });

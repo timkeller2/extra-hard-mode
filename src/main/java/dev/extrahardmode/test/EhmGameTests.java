@@ -14,6 +14,9 @@ import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LiquidBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.material.FluidState;
 
 public class EhmGameTests {
@@ -80,10 +83,22 @@ public class EhmGameTests {
         FluidState immediately = level.getFluidState(abs);
         helper.assertTrue(immediately.is(FluidTags.WATER), "bucket placed water");
         helper.assertFalse(immediately.isSource(), "water from bucket is not a source");
+        helper.assertValueEqual(
+                1, helper.getBlockState(rel).getValue(LiquidBlock.LEVEL), "first write is block LEVEL=1 not 7");
         helper.assertTrue(Water.isMarked(level, abs), "placed water is marked non-source");
+
+        BlockPos slabRel = new BlockPos(2, 2, 1);
+        helper.setBlock(slabRel, Blocks.STONE_SLAB.defaultBlockState());
+        helper.assertTrue(
+                bucket.emptyContents(null, level, helper.absolutePos(slabRel), null), "emptied onto slab");
+        BlockState slab = helper.getBlockState(slabRel);
+        helper.assertTrue(slab.getBlock() == Blocks.STONE_SLAB, "slab was not replaced with water");
+        helper.assertTrue(slab.getValue(BlockStateProperties.WATERLOGGED), "slab stays waterlogged");
+
         helper.runAfterDelay(2, () -> {
             FluidState later = level.getFluidState(abs);
             helper.assertFalse(later.isSource(), "still not a source after ticks");
+            helper.assertValueEqual(1, helper.getBlockState(rel).getValue(LiquidBlock.LEVEL), "still LEVEL=1");
             helper.succeed();
         });
     }

@@ -21,6 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(CraftingMenu.class)
 public abstract class CraftingMenuMixin {
+    /** InventoryMenu.slotsChanged also invokes this static for the 2x2 grid. */
     @Inject(method = "slotChangedCraftingGrid", at = @At("RETURN"))
     private static void ehm$noMelonSeeds(
             AbstractContainerMenu menu,

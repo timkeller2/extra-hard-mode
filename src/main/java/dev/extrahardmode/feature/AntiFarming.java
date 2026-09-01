@@ -5,8 +5,11 @@ import dev.extrahardmode.api.EhmApi;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.config.WorldConfig;
 import dev.extrahardmode.network.EhmNetworking;
+import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.world.EhmTags;
 import dev.extrahardmode.world.WorldGate;
+import java.util.HashMap;
+import java.util.Map;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
@@ -52,10 +55,7 @@ public final class AntiFarming implements FeatureModule {
     }
 
     static InteractionResult onUseBlock(Player player, net.minecraft.world.level.Level level, net.minecraft.world.InteractionHand hand, BlockHitResult hit) {
-        if (!(level instanceof ServerLevel server)) {
-            return InteractionResult.PASS;
-        }
-        if (!WorldGate.isModuleActive(server, ID)) {
+        if (!(level instanceof ServerLevel server) || !WorldGate.isModuleActive(server, ID)) {
             return InteractionResult.PASS;
         }
         if (player instanceof ServerPlayer serverPlayer && EhmApi.playerBypasses(serverPlayer)) {
@@ -71,23 +71,34 @@ public final class AntiFarming implements FeatureModule {
                 && (clickedBlock == Blocks.RED_MUSHROOM || clickedBlock == Blocks.BROWN_MUSHROOM)) {
             return InteractionResult.FAIL;
         }
-        if (cfg.noFarmNetherWart() && item == Items.NETHER_WART) {
+        if (cfg.noFarmNetherWart() && item == Items.NETHER_WART && isNetherWartPlaceAttempt(server, hit)) {
             return InteractionResult.FAIL;
         }
         return InteractionResult.PASS;
     }
 
-    static boolean onAllowDeath(net.minecraft.world.entity.LivingEntity entity, net.minecraft.world.damagesource.DamageSource source, float amount) {
-        if (!(entity.level() instanceof ServerLevel level)) {
-            return true;
-        }
-        if (!WorldGate.isModuleActive(level, ID)) {
+    static boolean onAllowDeath(
+            net.minecraft.world.entity.LivingEntity entity,
+            net.minecraft.world.damagesource.DamageSource source,
+            float amount) {
+        if (!(entity.level() instanceof ServerLevel level) || !WorldGate.isModuleActive(level, ID)) {
             return true;
         }
         if (ConfigManager.world(level).animalXpNerf() && entity instanceof Animal) {
             entity.skipDropExperience();
         }
         return true;
+    }
+
+    static boolean isNetherWartPlaceAttempt(ServerLevel level, BlockHitResult hit) {
+        BlockPos clicked = hit.getBlockPos();
+        Block clickedBlock = level.getBlockState(clicked).getBlock();
+        if (clickedBlock == Blocks.SOUL_SAND) {
+            return true;
+        }
+        BlockPos placed = clicked.relative(hit.getDirection());
+        return level.getBlockState(placed.below()).getBlock() == Blocks.SOUL_SAND
+                && level.getBlockState(placed).canBeReplaced();
     }
 
     static void onModifyDrops(
@@ -195,9 +206,17 @@ public final class AntiFarming implements FeatureModule {
     }
 
     public static void notifyNoMelonSeeds(Player player) {
-        if (player instanceof ServerPlayer serverPlayer) {
-            EhmNetworking.sendToast(serverPlayer, "no_crafting_melon_seeds");
+        if (!(player instanceof ServerPlayer serverPlayer)) {
+            return;
         }
+        Map<String, Integer> shown = new HashMap<>(
+                serverPlayer.getAttachedOrElse(EhmAttachments.EHM_TUTORIAL, Map.of()));
+        if (shown.getOrDefault("no_crafting_melon_seeds", 0) > 0) {
+            return;
+        }
+        shown.put("no_crafting_melon_seeds", 1);
+        serverPlayer.setAttached(EhmAttachments.EHM_TUTORIAL, shown);
+        EhmNetworking.sendToast(serverPlayer, "no_crafting_melon_seeds");
     }
 
     public static boolean isSeedResult(ItemStack stack) {

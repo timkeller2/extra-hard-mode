@@ -45,10 +45,7 @@ public abstract class CropBlockMixin {
 
     @Inject(method = "growCrops", at = @At("RETURN"))
     private void ehm$weakCropsOnGrow(Level level, BlockPos pos, BlockState state, CallbackInfo ci) {
-        if (!(level instanceof ServerLevel server)) {
-            return;
-        }
-        if (!WorldGate.isModuleActive(server, AntiFarming.ID)) {
+        if (!(level instanceof ServerLevel server) || !WorldGate.isModuleActive(server, AntiFarming.ID)) {
             return;
         }
         BlockState now = server.getBlockState(pos);

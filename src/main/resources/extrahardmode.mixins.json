@@ -7,7 +7,6 @@
     "WaterFluidMixin",
     "WaterDispenseMixin",
     "CropBlockMixin",
-    "NetherWartMixin",
     "SheepMixin",
     "CraftingMenuMixin",
     "SaplingBlockMixin",

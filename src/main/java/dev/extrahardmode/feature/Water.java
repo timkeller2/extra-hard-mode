@@ -3,7 +3,6 @@ package dev.extrahardmode.feature;
 import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.api.EhmApi;
 import dev.extrahardmode.config.ConfigManager;
-import dev.extrahardmode.task.EvaporateWaterTask;
 import dev.extrahardmode.world.WorldGate;
 import it.unimi.dsi.fastutil.longs.Long2LongMap;
 import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
@@ -19,11 +18,10 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 
@@ -43,11 +41,11 @@ public final class Water implements FeatureModule {
     }
 
     static InteractionResult onUseBlock(
-            Player player, net.minecraft.world.level.Level level, net.minecraft.world.InteractionHand hand, net.minecraft.world.phys.BlockHitResult hit) {
-        if (!(level instanceof ServerLevel server)) {
+            Player player, Level level, net.minecraft.world.InteractionHand hand, net.minecraft.world.phys.BlockHitResult hit) {
+        if (!(level instanceof ServerLevel server) || !WorldGate.isModuleActive(server, ID)) {
             return InteractionResult.PASS;
         }
-        if (!WorldGate.isModuleActive(server, ID) || !enabled(server)) {
+        if (!enabled(server)) {
             return InteractionResult.PASS;
         }
         if (player instanceof ServerPlayer serverPlayer && EhmApi.playerBypasses(serverPlayer)) {
@@ -82,11 +80,6 @@ public final class Water implements FeatureModule {
             Long2LongMap.Entry entry = it.next();
             if (entry.getLongValue() <= now) {
                 it.remove();
-                continue;
-            }
-            BlockPos pos = BlockPos.of(entry.getLongKey());
-            if (enabled(level) && level.isLoaded(pos)) {
-                EvaporateWaterTask.convertIfSource(level, pos);
             }
         }
     }
@@ -95,8 +88,18 @@ public final class Water implements FeatureModule {
         return WorldGate.isModuleActive(level, ID) && ConfigManager.world(level).bucketsDontMoveSources();
     }
 
+    /**
+     * Server: WorldGate + toggle. Client: rewrite so the first predicted block is LEVEL=1 (no source flicker).
+     */
+    public static boolean rewritePlacement(Level level) {
+        return level instanceof ServerLevel server
+                ? WorldGate.isModuleActive(server, ID) && ConfigManager.world(server).bucketsDontMoveSources()
+                : level.isClientSide();
+    }
+
     public static void mark(ServerLevel level, BlockPos pos) {
-        Long2LongOpenHashMap marks = MARKS.computeIfAbsent(level.dimension().identifier(), id -> new Long2LongOpenHashMap());
+        Long2LongOpenHashMap marks =
+                MARKS.computeIfAbsent(level.dimension().identifier(), id -> new Long2LongOpenHashMap());
         marks.put(pos.asLong(), level.getGameTime() + MARK_TTL_TICKS);
     }
 
@@ -115,25 +118,6 @@ public final class Water implements FeatureModule {
 
     public static FluidState flowingFluid() {
         return Fluids.FLOWING_WATER.getFlowing(7, false);
-    }
-
-    public static void convertPlacedWater(ServerLevel level, BlockPos pos) {
-        if (!enabled(level)) {
-            return;
-        }
-        BlockState state = level.getBlockState(pos);
-        if (state.hasProperty(BlockStateProperties.WATERLOGGED) && state.getValue(BlockStateProperties.WATERLOGGED)) {
-            mark(level, pos);
-            return;
-        }
-        FluidState fluid = state.getFluidState();
-        if (fluid.isEmpty() || !fluid.getType().isSame(Fluids.WATER)) {
-            return;
-        }
-        if (state.getBlock() instanceof LiquidBlock && (fluid.isSource() || fluid.getAmount() >= 8)) {
-            level.setBlock(pos, flowingLevel1(), Block.UPDATE_ALL);
-        }
-        mark(level, pos);
     }
 
     public static boolean isWaterBucket(Item item) {
