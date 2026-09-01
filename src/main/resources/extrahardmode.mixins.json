@@ -14,6 +14,10 @@
     "client.ClientBlockItemPlaceMixin",
     "MultiPlayerGameModeMixin"
   ],
+    "ServerPlayerDeathMixin",
+    "BaseFireBlockMixin",
+    "LivingEntityHurtMixin"
+  "client": [],
   "injectors": {
     "defaultRequire": 1
   },

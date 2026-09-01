@@ -24,5 +24,11 @@ public final class EhmTags {
             holder.unwrapKey().ifPresent(key -> ids.add(key.identifier()));
         }
         return List.copyOf(ids);
+import net.minecraft.world.item.Item;
+    public static final TagKey<Item> DEATH_VALUABLE_TOOLS = item("death_valuable_tools");
+    /** Empty by default. Recommended datapack adds: recovery_compass, totem_of_undying. */
+    public static final TagKey<Item> DEATH_ITEM_BLACKLIST = item("death_item_blacklist");
+    private static TagKey<Item> item(String path) {
+        return TagKey.create(Registries.ITEM, ExtraHardModeMod.id(path));
     }
 }

@@ -39,6 +39,7 @@ public final class WorldConfig {
     private int netherrackFirePercent = 20;
     private boolean enabled = true;
     private boolean enabledPresent;
+    private final PlayerSettings player = new PlayerSettings();
 
     public WorldConfig(Identifier dimensionId) {
         this.dimensionId = dimensionId;
@@ -110,6 +111,10 @@ public final class WorldConfig {
 
     public boolean hasEnabledKey() {
         return enabledPresent;
+    }
+
+    public PlayerSettings player() {
+        return player;
     }
 
     public void setEnabled(boolean enabled) {
@@ -211,6 +216,7 @@ public final class WorldConfig {
                         "worldRules.netherrackFirePercent",
                         "Chance that breaking netherrack places fire in the empty space. Nylium not included.",
                         20);
+                PlayerSettings.writeDefaults(file);
                 if (!file.contains("modules")) {
                     file.setComment("modules", "Runtime per-module toggles for this dimension. Missing keys default true.");
                 }
@@ -266,6 +272,7 @@ public final class WorldConfig {
                 file.set("campfires.rainExtinguishes", rainExtinguishesCampfires);
                 file.set("sounds.torchFizz", torchFizz);
                 file.set("worldRules.netherrackFirePercent", netherrackFirePercent);
+                player.write(file);
                 for (Map.Entry<Identifier, Boolean> entry : modules.entrySet()) {
                     file.set(moduleKey(entry.getKey()), entry.getValue());
                 }
@@ -308,6 +315,7 @@ public final class WorldConfig {
         rainExtinguishesCampfires = file.getOrElse("campfires.rainExtinguishes", false);
         torchFizz = file.getOrElse("sounds.torchFizz", true);
         netherrackFirePercent = file.getOrElse("worldRules.netherrackFirePercent", 20);
+        player.read(file);
         modules.clear();
         Object raw = file.get("modules");
         if (raw instanceof Config table) {
