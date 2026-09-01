@@ -7,7 +7,7 @@ import dev.extrahardmode.world.WorldGate;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
+import java.util.concurrent.atomic.AtomicBoolean;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
@@ -30,6 +30,8 @@ public final class SpawnReplaceService {
             TagKey.create(Registries.STRUCTURE, ExtraHardModeMod.id("no_spawn_replacement_structures"));
 
     private static final Map<EntityType<?>, ReplaceFn> REPLACEMENTS = new ConcurrentHashMap<>();
+    private static final AtomicBoolean MIXIN_APPLIED = new AtomicBoolean();
+    private static final AtomicBoolean MIXIN_MISSING_WARNED = new AtomicBoolean();
 
     @FunctionalInterface
     public interface ReplaceFn {
@@ -41,9 +43,18 @@ public final class SpawnReplaceService {
 
     private SpawnReplaceService() {}
 
-    public static void init() {
-        // Fail-soft when Lithium removes the NaturalSpawner invoke. NATURAL only; never disk load.
-        ServerEntityEvents.ALLOW_LOAD.register(SpawnReplaceService::onAllowLoad);
+    public static void markMixinApplied() {
+        MIXIN_APPLIED.set(true);
+    }
+
+    public static void warnIfMixinMissing() {
+        if (MIXIN_APPLIED.get()) {
+            return;
+        }
+        if (MIXIN_MISSING_WARNED.compareAndSet(false, true)) {
+            ExtraHardModeMod.LOGGER.warn(
+                    "EHM NaturalSpawner spawn inject did not apply; spawn replacements disabled. Lithium or another mixin may have replaced spawnCategoryForPosition.");
+        }
     }
 
     public static void register(EntityType<?> from, ReplaceFn fn) {
@@ -79,18 +90,6 @@ public final class SpawnReplaceService {
             return false;
         }
         return spawnReplacement(mob, level, replacement);
-    }
-
-    private static boolean onAllowLoad(
-            Entity entity, ServerLevel level, EntitySpawnReason reason, boolean loadedFromDisk) {
-        if (loadedFromDisk || reason != EntitySpawnReason.NATURAL) {
-            return true;
-        }
-        if (!(entity instanceof Mob mob)) {
-            return true;
-        }
-        replaceIfNeeded(mob, level, reason);
-        return !mob.isRemoved();
     }
 
     private static boolean spawnReplacement(Mob original, ServerLevel level, EntityType<?> type) {

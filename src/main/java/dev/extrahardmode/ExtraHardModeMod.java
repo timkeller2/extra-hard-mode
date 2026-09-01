@@ -4,7 +4,6 @@ import dev.extrahardmode.command.EhmCommands;
 import dev.extrahardmode.command.EhmPermissions;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.feature.FeatureRegistry;
-import dev.extrahardmode.module.SpawnReplaceService;
 import dev.extrahardmode.network.EhmNetworking;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.world.WorldGate;
@@ -25,7 +24,6 @@ public class ExtraHardModeMod implements ModInitializer {
     public void onInitialize() {
         ConfigManager.load();
         EhmAttachments.register();
-        SpawnReplaceService.init();
         EhmPermissions.register();
         WorldGate.register();
         EhmNetworking.register();
