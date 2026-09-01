@@ -1,11 +1,9 @@
-{
+﻿{
   "replace": false,
   "values": [
     "#minecraft:logs"
   ],
   "remove": [
-    "#minecraft:crimson_stems",
-    "#minecraft:warped_stems"
     "#minecraft:nether_stems"
   ]
 }

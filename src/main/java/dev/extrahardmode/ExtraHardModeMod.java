@@ -34,7 +34,6 @@ import dev.extrahardmode.feature.monster.BiomeReplacements;
 import dev.extrahardmode.feature.AntiGrinder;
 import dev.extrahardmode.feature.MoreMonsters;
 import dev.extrahardmode.feature.SpawnInLight;
-import dev.extrahardmode.module.SpawnReplaceService;
 import dev.extrahardmode.module.PhysicsQueue;
 import dev.extrahardmode.module.SpawnReplaceService;
 import dev.extrahardmode.feature.Tutorial;
