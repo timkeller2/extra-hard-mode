@@ -3,6 +3,8 @@ package dev.extrahardmode;
 import dev.extrahardmode.command.EhmCommands;
 import dev.extrahardmode.command.EhmPermissions;
 import dev.extrahardmode.config.ConfigManager;
+import dev.extrahardmode.feature.AnimalCrowdControl;
+import dev.extrahardmode.feature.AntiFarming;
 import dev.extrahardmode.feature.FeatureRegistry;
 import dev.extrahardmode.feature.HardenedStone;
 import dev.extrahardmode.feature.LimitedBuilding;
@@ -10,6 +12,7 @@ import dev.extrahardmode.feature.NetherrackFire;
 import dev.extrahardmode.feature.Torches;
 import dev.extrahardmode.item.EhmComponents;
 import dev.extrahardmode.feature.Players;
+import dev.extrahardmode.feature.Water;
 import dev.extrahardmode.network.EhmNetworking;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.world.WorldGate;
@@ -41,6 +44,9 @@ public class ExtraHardModeMod implements ModInitializer {
         FEATURES.register(new NetherrackFire());
         FEATURES.register(new LimitedBuilding());
         FEATURES.register(Players.INSTANCE);
+        FEATURES.register(new AntiFarming());
+        FEATURES.register(new Water());
+        FEATURES.register(new AnimalCrowdControl());
         ServerLevelEvents.LOAD.register((server, level) -> {
             WorldGate.onLevelLoad(server, level);
             FEATURES.onWorldLoad(level);

@@ -31,4 +31,7 @@ import net.minecraft.world.item.Item;
     private static TagKey<Item> item(String path) {
         return TagKey.create(Registries.ITEM, ExtraHardModeMod.id(path));
     }
+import net.minecraft.world.level.biome.Biome;
+    public static final TagKey<Biome> DESERT_INFERTILE =
+            TagKey.create(Registries.BIOME, ExtraHardModeMod.id("desert_infertile"));
 }

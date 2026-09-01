@@ -17,6 +17,14 @@
     "ServerPlayerDeathMixin",
     "BaseFireBlockMixin",
     "LivingEntityHurtMixin"
+    "BucketItemMixin",
+    "WaterFluidMixin",
+    "WaterDispenseMixin",
+    "CropBlockMixin",
+    "SheepMixin",
+    "CraftingMenuMixin",
+    "SaplingBlockMixin",
+    "MushroomBlockMixin"
   "client": [],
   "injectors": {
     "defaultRequire": 1
