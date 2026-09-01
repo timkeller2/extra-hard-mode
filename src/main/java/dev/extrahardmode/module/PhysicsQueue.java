@@ -5,6 +5,7 @@ import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.config.GlobalConfig;
 import dev.extrahardmode.config.WorldConfig;
 import dev.extrahardmode.player.EhmAttachments;
+import dev.extrahardmode.tag.EhmTags;
 import dev.extrahardmode.world.PhysicsSkip;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import java.util.ArrayDeque;
@@ -61,20 +62,32 @@ public final class PhysicsQueue {
         return live.size();
     }
 
-    public void enqueueConvert(ServerLevel level, BlockPos pos, BlockState to, boolean applyPhysics) {
-        enqueue(level, pos, to, applyPhysics);
+    public void enqueueConvert(
+            ServerLevel level, BlockPos pos, BlockState from, BlockState to, boolean applyPhysics) {
+        enqueue(level, pos, from, to, applyPhysics);
     }
 
-    public void enqueueFalling(ServerLevel level, BlockPos pos, BlockState state) {
-        enqueue(level, pos, state, true);
+    public void enqueueFalling(ServerLevel level, BlockPos pos, BlockState from, BlockState to) {
+        enqueue(level, pos, from, to, true);
     }
 
     public void markLanded(FallingBlockEntity entity) {
         live.remove(entity.getUUID());
     }
 
-    private void enqueue(ServerLevel level, BlockPos pos, BlockState state, boolean spawnEntity) {
-        if (PhysicsSkip.skip(level, pos)) {
+    /** Reloaded {@code EHM_OURS} falling entities still count against the 128 cap. */
+    public void trackLive(FallingBlockEntity entity) {
+        if (entity == null || entity.isRemoved()) {
+            return;
+        }
+        if (!Boolean.TRUE.equals(entity.getAttachedOrElse(EhmAttachments.EHM_OURS, Boolean.FALSE))) {
+            return;
+        }
+        live.put(entity.getUUID(), entity);
+    }
+
+    private void enqueue(ServerLevel level, BlockPos pos, BlockState from, BlockState to, boolean spawnEntity) {
+        if (PhysicsSkip.never(level, pos)) {
             return;
         }
         long key = pos.asLong();
@@ -88,15 +101,17 @@ public final class PhysicsQueue {
                 queued.remove(oldest.pos.asLong());
             }
             dropped++;
-            ExtraHardModeMod.LOGGER.warn(
-                    "EHM physics queue overflow in {}, dropped={} (max {})",
-                    level.dimension().identifier(),
-                    dropped,
-                    global.maxQueueDepth());
+            if (dropped == 1 || dropped % 64 == 0) {
+                ExtraHardModeMod.LOGGER.warn(
+                        "EHM physics queue overflow in {}, dropped={} (max {})",
+                        level.dimension().identifier(),
+                        dropped,
+                        global.maxQueueDepth());
+            }
         }
-        queue.addLast(new FallRequest(pos.immutable(), state, spawnEntity, 0));
+        queue.addLast(new FallRequest(pos.immutable(), from, to, spawnEntity, 0));
         if (ConfigManager.global().debug()) {
-            ExtraHardModeMod.LOGGER.debug("EHM physics enqueue {} {}", state, pos);
+            ExtraHardModeMod.LOGGER.debug("EHM physics enqueue {} -> {} {}", from, to, pos);
         }
     }
 
@@ -105,26 +120,30 @@ public final class PhysicsQueue {
         pruneLive();
         GlobalConfig global = ConfigManager.global();
         int budget = global.budgetConversionsPerTick();
-        int n = queue.size();
-        for (int i = 0; i < n; i++) {
+        int snapshot = queue.size();
+        int visited = 0;
+        while (visited < snapshot && conversionsLastTick < budget && !queue.isEmpty()) {
             FallRequest request = queue.pollFirst();
             if (request == null) {
                 break;
             }
+            visited++;
             queued.remove(request.pos.asLong());
             if (request.delayTicks > 0) {
                 request.delayTicks--;
                 requeue(request);
                 continue;
             }
-            if (conversionsLastTick >= budget) {
+            if (PhysicsSkip.notReady(level, request.pos)) {
                 requeue(request);
                 continue;
             }
-            if (PhysicsSkip.skip(level, request.pos)) {
+            if (PhysicsSkip.never(level, request.pos)) {
                 continue;
             }
-            convert(level, request, global);
+            if (!convert(level, request, global)) {
+                continue;
+            }
             conversionsLastTick++;
         }
     }
@@ -135,26 +154,34 @@ public final class PhysicsQueue {
         }
     }
 
-    private void convert(ServerLevel level, FallRequest request, GlobalConfig global) {
+    private boolean convert(ServerLevel level, FallRequest request, GlobalConfig global) {
         BlockState current = level.getBlockState(request.pos);
-        if (current.isAir()) {
-            return;
+        if (current.isAir() || current.is(EhmTags.PHYSICS_PROTECTED)) {
+            return false;
         }
-        BlockState place = request.state;
+        if (current.getBlock() != request.from.getBlock()) {
+            return false;
+        }
+        BlockState place = request.to;
         if (!request.spawnEntity) {
             level.setBlock(request.pos, place, Block.UPDATE_ALL);
-            return;
+            return true;
         }
         pruneLive();
         if (PhysicsBudget.overflowToSetBlock(live.size(), global.maxLiveEhmFallingEntities())) {
             level.setBlock(request.pos, place, Block.UPDATE_ALL);
-            return;
+            return true;
         }
         FallingBlockEntity entity = FallingBlockEntity.fall(level, request.pos, place);
         WorldConfig config = ConfigManager.world(level);
         entity.dropItem = config.fallingDropAsItemWhenBlocked();
         entity.setAttached(EhmAttachments.EHM_OURS, Boolean.TRUE);
+        int amount = Math.max(0, config.fallingDamage());
+        if (amount > 0) {
+            entity.setHurtsEntities(amount, amount);
+        }
         live.put(entity.getUUID(), entity);
+        return true;
     }
 
     private void pruneLive() {
@@ -180,13 +207,15 @@ public final class PhysicsQueue {
 
     private static final class FallRequest {
         private final BlockPos pos;
-        private final BlockState state;
+        private final BlockState from;
+        private final BlockState to;
         private final boolean spawnEntity;
         private int delayTicks;
 
-        private FallRequest(BlockPos pos, BlockState state, boolean spawnEntity, int delayTicks) {
+        private FallRequest(BlockPos pos, BlockState from, BlockState to, boolean spawnEntity, int delayTicks) {
             this.pos = pos;
-            this.state = state;
+            this.from = from;
+            this.to = to;
             this.spawnEntity = spawnEntity;
             this.delayTicks = delayTicks;
         }

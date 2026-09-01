@@ -27,4 +27,12 @@ class PhysicsBudgetTest {
         assertEquals(24, PhysicsBudget.conversionsThisTick(24, PhysicsBudget.CONVERSIONS_PER_TICK));
         assertEquals(0, PhysicsBudget.conversionsThisTick(10, 0));
     }
+
+    @Test
+    void oneTickPopDoesNotHurt() {
+        assertFalse(PhysicsBudget.farEnoughToHurt(0.04));
+        assertFalse(PhysicsBudget.farEnoughToHurt(1.0));
+        assertTrue(PhysicsBudget.farEnoughToHurt(1.1));
+        assertTrue(PhysicsBudget.farEnoughToHurt(4.0));
+    }
 }

@@ -47,7 +47,7 @@ public final class CaveIns implements FeatureModule {
         if (!broken.is(EhmTags.CAVE_IN_ORES)) {
             return;
         }
-        if (PhysicsSkip.skip(level, pos)) {
+        if (PhysicsSkip.never(level, pos)) {
             return;
         }
         WorldConfig config = ConfigManager.world(level);
@@ -55,13 +55,16 @@ public final class CaveIns implements FeatureModule {
         boolean ancientDebris = broken.is(Blocks.ANCIENT_DEBRIS);
         for (Direction direction : Direction.values()) {
             BlockPos neighbor = pos.relative(direction);
-            if (PhysicsSkip.skip(level, neighbor)) {
+            if (PhysicsSkip.never(level, neighbor)) {
                 continue;
             }
             if (copper && level.getRandom().nextFloat() >= COPPER_NEIGHBOR_CHANCE) {
                 continue;
             }
             BlockState from = level.getBlockState(neighbor);
+            if (from.is(EhmTags.PHYSICS_PROTECTED)) {
+                continue;
+            }
             if (ancientDebris && !from.is(EhmTags.HARDENED)) {
                 continue;
             }
@@ -69,7 +72,7 @@ public final class CaveIns implements FeatureModule {
             if (to == null) {
                 continue;
             }
-            PhysicsQueue.of(level).enqueueConvert(level, neighbor, to, config.caveInsApplyPhysics());
+            PhysicsQueue.of(level).enqueueConvert(level, neighbor, from, to, config.caveInsApplyPhysics());
         }
     }
 

@@ -22,4 +22,12 @@ public final class PhysicsBudget {
     public static int conversionsThisTick(int ready, int budget) {
         return Math.min(Math.max(ready, 0), Math.max(budget, 0));
     }
+
+    /**
+     * Vanilla {@code causeFallDamage} uses {@code ceil(fallDistance - 1)}. A 1-tick supported pop
+     * (~0.04) must not deal EHM damage; a real drop ({@code fallDistance > 1}) may.
+     */
+    public static boolean farEnoughToHurt(double fallDistance) {
+        return fallDistance > 1.0;
+    }
 }

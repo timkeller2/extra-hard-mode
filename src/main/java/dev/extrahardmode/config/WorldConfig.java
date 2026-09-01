@@ -250,7 +250,7 @@ public final class WorldConfig {
                 writeDefaultIfMissing(
                         file,
                         "falling.enable",
-                        "Extra falling blocks (#extrahardmode:extra_falling) drop when unsupported.",
+                        "Extra falling blocks (#extrahardmode:extra_falling) drop when unsupported. v1 hooks: player break, BlockItem place, EHM land cascade. Piston/other non-player support removal is not scanned.",
                         true);
                 writeDefaultIfMissing(
                         file,

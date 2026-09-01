@@ -2,10 +2,14 @@ package dev.extrahardmode.test;
 
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.feature.CaveIns;
+import dev.extrahardmode.feature.FallingBlocks;
 import dev.extrahardmode.feature.HardenedStone;
 import dev.extrahardmode.item.EhmComponents;
 import dev.extrahardmode.module.PhysicsQueue;
+import dev.extrahardmode.player.EhmAttachments;
+import dev.extrahardmode.tag.EhmTags;
 import dev.extrahardmode.world.ExtraHardModeBootData;
+import dev.extrahardmode.world.PhysicsSkip;
 import dev.extrahardmode.world.WorldGate;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
@@ -26,6 +30,7 @@ import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
 import net.minecraft.world.phys.AABB;
 
 public class EhmGameTests {
@@ -221,5 +226,88 @@ public class EhmGameTests {
             }
         }
         return false;
+    }
+
+    @GameTest
+    public void convertDoesNotOverwriteUnrelatedBlock(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        level.getGameRules().set(WorldGate.ENABLED, true, level.getServer());
+        BlockPos rel = new BlockPos(2, 2, 2);
+        helper.setBlock(rel, Blocks.STONE);
+        BlockPos abs = helper.absolutePos(rel);
+        PhysicsQueue.of(level)
+                .enqueueConvert(
+                        level,
+                        abs,
+                        Blocks.STONE.defaultBlockState(),
+                        Blocks.COBBLESTONE.defaultBlockState(),
+                        true);
+        helper.setBlock(rel, Blocks.CHEST);
+        PhysicsQueue.tick(level);
+        helper.assertBlockPresent(Blocks.CHEST, rel);
+        helper.succeed();
+    }
+
+    @GameTest
+    public void fallingDamageGatedToEhmTags(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        level.getGameRules().set(WorldGate.ENABLED, true, level.getServer());
+        BlockPos rel = new BlockPos(2, 4, 2);
+        helper.setBlock(rel, Blocks.STONE);
+        BlockPos abs = helper.absolutePos(rel);
+
+        FallingBlockEntity cobble = FallingBlockEntity.fall(level, abs, Blocks.COBBLESTONE.defaultBlockState());
+        cobble.setAttached(EhmAttachments.EHM_OURS, Boolean.TRUE);
+        helper.assertTrue(FallingBlocks.appliesFallDamage(cobble), "EHM cobble is gated in");
+
+        helper.setBlock(rel, Blocks.STONE);
+        FallingBlockEntity sand = FallingBlockEntity.fall(level, abs, Blocks.SAND.defaultBlockState());
+        helper.assertFalse(FallingBlocks.appliesFallDamage(sand), "sand/gravel stay vanilla (no extra)");
+
+        helper.setBlock(rel, Blocks.STONE);
+        FallingBlockEntity anvil = FallingBlockEntity.fall(level, abs, Blocks.ANVIL.defaultBlockState());
+        helper.assertFalse(FallingBlocks.appliesFallDamage(anvil), "anvil stays vanilla");
+        helper.assertTrue(FallingBlocks.isVanillaFallDamage(anvil.getBlockState()), "anvil is vanilla fall-damage");
+        helper.succeed();
+    }
+
+    @GameTest
+    public void fallingCobbleDealsDamageAfterRealFall(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        level.getGameRules().set(WorldGate.ENABLED, true, level.getServer());
+        Player mock = helper.makeMockServerPlayer(GameType.SURVIVAL);
+        if (!(mock instanceof ServerPlayer player)) {
+            helper.fail("mock server player");
+            return;
+        }
+        BlockPos rel = new BlockPos(2, 3, 2);
+        helper.setBlock(rel.below(), Blocks.STONE);
+        BlockPos abs = helper.absolutePos(rel);
+        player.snapTo(abs.getX() + 0.5, abs.getY(), abs.getZ() + 0.5);
+        FallingBlockEntity cobble = FallingBlockEntity.fall(level, abs.above(4), Blocks.COBBLESTONE.defaultBlockState());
+        cobble.setAttached(EhmAttachments.EHM_OURS, Boolean.TRUE);
+        cobble.setHurtsEntities(2.0F, 2);
+        cobble.snapTo(player.getX(), player.getY(), player.getZ());
+        float before = player.getHealth();
+        cobble.causeFallDamage(4.0, 1.0F, cobble.damageSources().fallingBlock(cobble));
+        helper.assertTrue(player.getHealth() <= before - 2.0F + 0.001F, "real cobble fall deals 2");
+        helper.succeed();
+    }
+
+    @GameTest
+    public void physicsProtectedStructuresTagContainsAncientCity(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        var structures = level.registryAccess().lookupOrThrow(Registries.STRUCTURE);
+        var tag = structures.get(EhmTags.PHYSICS_PROTECTED_STRUCTURES);
+        helper.assertTrue(tag.isPresent(), "#physics_protected_structures loaded");
+        boolean ancient = tag.get().stream().anyMatch(holder -> holder.is(BuiltinStructures.ANCIENT_CITY));
+        boolean trials = tag.get().stream().anyMatch(holder -> holder.is(BuiltinStructures.TRIAL_CHAMBERS));
+        helper.assertTrue(ancient, "tag includes minecraft:ancient_city");
+        helper.assertTrue(trials, "tag includes minecraft:trial_chambers");
+        BlockPos abs = helper.absolutePos(new BlockPos(2, 2, 2));
+        helper.assertFalse(
+                PhysicsSkip.never(level, abs) && !level.getBiome(abs).is(EhmTags.NO_PHYSICS),
+                "empty test platform is not a protected structure piece");
+        helper.succeed();
     }
 }

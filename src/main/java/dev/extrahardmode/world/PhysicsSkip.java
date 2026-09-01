@@ -7,16 +7,25 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 
-/** Deep Dark biome, protected structures, protected blocks, and unloaded chunks never run physics. */
+/**
+ * Deep Dark / protected structures / {@code #physics_protected} never run physics.
+ * Unloaded chunks are “not yet” and must be requeued, not dropped.
+ */
 public final class PhysicsSkip {
     private PhysicsSkip() {}
 
-    public static boolean skip(ServerLevel level, BlockPos pos) {
+    /** Chunk or entity-ticking not ready. Do not read biome/block; that can load the chunk. */
+    public static boolean notReady(ServerLevel level, BlockPos pos) {
         if (!level.hasChunk(pos.getX() >> 4, pos.getZ() >> 4)) {
             return true;
         }
-        if (!level.areEntitiesLoaded(ChunkPos.pack(pos))) {
-            return true;
+        return !level.areEntitiesLoaded(ChunkPos.pack(pos));
+    }
+
+    /** Permanent skip: biome, structure piece, or protected block. False when the chunk is not loaded. */
+    public static boolean never(ServerLevel level, BlockPos pos) {
+        if (!level.hasChunk(pos.getX() >> 4, pos.getZ() >> 4)) {
+            return false;
         }
         if (level.getBiome(pos).is(EhmTags.NO_PHYSICS)) {
             return true;
@@ -28,5 +37,9 @@ public final class PhysicsSkip {
         }
         BlockState state = level.getBlockState(pos);
         return state.is(EhmTags.PHYSICS_PROTECTED);
+    }
+
+    public static boolean skip(ServerLevel level, BlockPos pos) {
+        return notReady(level, pos) || never(level, pos);
     }
 }

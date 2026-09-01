@@ -4,6 +4,7 @@ import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.config.GlobalConfig;
 import dev.extrahardmode.config.WorldConfig;
+import dev.extrahardmode.module.PhysicsBudget;
 import dev.extrahardmode.module.PhysicsQueue;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.tag.EhmTags;
@@ -75,11 +76,14 @@ public final class FallingBlocks implements FeatureModule {
         }
     }
 
-    public static void applyConfiguredDamage(FallingBlockEntity entity) {
+    public static void applyConfiguredDamage(FallingBlockEntity entity, double fallDistance) {
         if (!(entity.level() instanceof ServerLevel level)) {
             return;
         }
         if (!appliesFallDamage(entity)) {
+            return;
+        }
+        if (!PhysicsBudget.farEnoughToHurt(fallDistance)) {
             return;
         }
         float amount = ConfigManager.world(level).fallingDamage();
@@ -94,7 +98,7 @@ public final class FallingBlocks implements FeatureModule {
     }
 
     /**
-     * Extra damage only for {@code #extra_falling} or EHM-spawned cave-in products.
+     * Extra damage only for {@code #extra_falling} or cave-in cobble/cobbled_deepslate we spawned.
      * Anvils, pointed dripstone, and sulfur spikes stay vanilla.
      */
     public static boolean appliesFallDamage(FallingBlockEntity entity) {
@@ -102,11 +106,16 @@ public final class FallingBlocks implements FeatureModule {
         if (isVanillaFallDamage(state)) {
             return false;
         }
+        boolean tagged = isCaveInProduct(state) || state.is(EhmTags.EXTRA_FALLING);
         boolean ours = Boolean.TRUE.equals(entity.getAttachedOrElse(EhmAttachments.EHM_OURS, Boolean.FALSE));
         if (ours) {
-            return CaveIns.enabled(entity.level()) || enabled(entity.level());
+            return tagged && (CaveIns.enabled(entity.level()) || enabled(entity.level()));
         }
         return enabled(entity.level()) && state.is(EhmTags.EXTRA_FALLING);
+    }
+
+    public static boolean isCaveInProduct(BlockState state) {
+        return state.is(Blocks.COBBLESTONE) || state.is(Blocks.COBBLED_DEEPSLATE);
     }
 
     public static boolean isVanillaFallDamage(BlockState state) {
@@ -158,18 +167,18 @@ public final class FallingBlocks implements FeatureModule {
     }
 
     private static boolean enqueueIfFalling(ServerLevel level, BlockPos pos) {
-        if (PhysicsSkip.skip(level, pos)) {
+        if (PhysicsSkip.never(level, pos)) {
             return false;
         }
         BlockState state = level.getBlockState(pos);
-        if (!state.is(EhmTags.EXTRA_FALLING)) {
+        if (state.is(EhmTags.PHYSICS_PROTECTED) || !state.is(EhmTags.EXTRA_FALLING)) {
             return false;
         }
         if (!PhysicsQueue.canFall(level, pos)) {
             return false;
         }
         WorldConfig config = ConfigManager.world(level);
-        PhysicsQueue.of(level).enqueueFalling(level, pos, fallingState(config, state));
+        PhysicsQueue.of(level).enqueueFalling(level, pos, state, fallingState(config, state));
         return true;
     }
 

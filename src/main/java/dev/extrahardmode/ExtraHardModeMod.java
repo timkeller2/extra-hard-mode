@@ -13,10 +13,12 @@ import dev.extrahardmode.network.EhmNetworking;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.world.WorldGate;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.item.FallingBlockEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,6 +50,11 @@ public class ExtraHardModeMod implements ModInitializer {
         ServerTickEvents.END_LEVEL_TICK.register(level -> {
             FEATURES.serverTick(level);
             PhysicsQueue.tick(level);
+        });
+        ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> {
+            if (entity instanceof FallingBlockEntity falling) {
+                PhysicsQueue.of(level).trackLive(falling);
+            }
         });
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> ConfigManager.clearWorldCache());
         LOGGER.info("EHM loaded, {} modules", FEATURES.count());
