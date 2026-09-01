@@ -13,6 +13,7 @@ import dev.extrahardmode.feature.Torches;
 import dev.extrahardmode.item.EhmComponents;
 import dev.extrahardmode.feature.Players;
 import dev.extrahardmode.feature.Water;
+import dev.extrahardmode.module.SpawnReplaceService;
 import dev.extrahardmode.network.EhmNetworking;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.world.WorldGate;
@@ -35,6 +36,7 @@ public class ExtraHardModeMod implements ModInitializer {
         ConfigManager.load();
         EhmComponents.register();
         EhmAttachments.register();
+        SpawnReplaceService.init();
         EhmPermissions.register();
         WorldGate.register();
         EhmNetworking.register();

@@ -25,6 +25,7 @@
     "CraftingMenuMixin",
     "SaplingBlockMixin",
     "MushroomBlockMixin"
+    "NaturalSpawnerMixin"
   "client": [],
   "injectors": {
     "defaultRequire": 1
