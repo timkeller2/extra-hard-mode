@@ -116,6 +116,12 @@ public final class ConfigManager {
                         "performance.maxQueueDepth",
                         "Drop oldest physics request past this depth; increments ehm_physics_dropped.",
                         PhysicsBudget.MAX_QUEUE_DEPTH);
+                if (!config.contains("tutorial.maxShows")) {
+                    config.setComment(
+                            "tutorial.maxShows",
+                            "SystemToast first-time mechanics, max times per player. Original limited times = 3. 0 disables toasts.");
+                    config.set("tutorial.maxShows", GlobalConfig.DEFAULT_TUTORIAL_MAX_SHOWS);
+                }
                 config.save();
                 global = new GlobalConfig(
                         config.getOrElse("enabledByDefault", defaultEnabled),
@@ -136,6 +142,28 @@ public final class ConfigManager {
         if (!config.contains(path)) {
             config.setComment(path, comment);
             config.set(path, value);
+                        Math.max(0, config.getIntOrElse("tutorial.maxShows", GlobalConfig.DEFAULT_TUTORIAL_MAX_SHOWS)));
+            global = new GlobalConfig(defaultEnabled, false, GlobalConfig.DEFAULT_TUTORIAL_MAX_SHOWS);
+    public static void setGlobal(GlobalConfig next) {
+        global = next;
+    public static boolean saveGlobal() {
+        Path path = FabricLoader.getInstance().getConfigDir().resolve(FILE_NAME);
+        try {
+            Files.createDirectories(path.getParent());
+            try (CommentedFileConfig config = CommentedFileConfig.builder(path, TomlFormat.instance())
+                    .sync()
+                    .preserveInsertionOrder()
+                    .build()) {
+                if (Files.exists(path)) {
+                    config.load();
+                }
+                config.set("enabledByDefault", global.enabledByDefault());
+                config.set("debug", global.debug());
+                config.set("tutorial.maxShows", global.tutorialMaxShows());
+                config.save();
+            return true;
+            ExtraHardModeMod.LOGGER.error("Failed to persist {}", FILE_NAME, e);
+            return false;
         }
     }
 }

@@ -3,6 +3,7 @@ package dev.extrahardmode.network;
 import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.api.EhmApi;
 import dev.extrahardmode.config.ConfigManager;
+import dev.extrahardmode.config.GlobalConfig;
 import dev.extrahardmode.config.WorldConfig;
 import dev.extrahardmode.feature.Dragon;
 import dev.extrahardmode.feature.HardenedStone;
@@ -39,6 +40,7 @@ public record ClientboundSyncPayload(
         List<Identifier> softTorchSurfaces,
         List<Identifier> depthLimitedLights,
         boolean noEndBuilding)
+        DisplayExtras extras)
         implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<ClientboundSyncPayload> TYPE =
             new CustomPacketPayload.Type<>(ExtraHardModeMod.id("sync"));
@@ -79,6 +81,13 @@ public record ClientboundSyncPayload(
     public static ClientboundSyncPayload inactive() {
     public static ClientboundSyncPayload from(ServerLevel level) {
         WorldConfig config = ConfigManager.world(level);
+            DisplayExtras.STREAM_CODEC,
+            ClientboundSyncPayload::extras,
+    public List<Identifier> depthLimitedLights() {
+        return extras.depthLimitedLights();
+    }
+    public static ClientboundSyncPayload from(WorldConfig config) {
+        GlobalConfig global = ConfigManager.global();
         return new ClientboundSyncPayload(
                 false, false, 0, false, false, false, List.of(), List.of(), List.of(), List.of(), List.of());
     }
@@ -158,7 +167,48 @@ public record ClientboundSyncPayload(
                 WorldGate.isModuleActive(level, Horses.ID) && config.horseBlockChest(),
                 config.horseBlockChestBelowY(),
                 List.of(),
-                List.of());
+                new DisplayExtras(
+                        List.of(),
+                        config.checkPermission(),
+                        config.creativeBypasses(),
+                        config.operatorsBypass(),
+                        config.torchFizz(),
+                        config.creeperTntWarning(),
+                        global.enabledByDefault(),
+                        global.debug(),
+                        global.tutorialMaxShows()));
+    }
+
+    public record DisplayExtras(
+            List<Identifier> depthLimitedLights,
+            boolean checkPermission,
+            boolean creativeBypasses,
+            boolean operatorsBypass,
+            boolean torchFizz,
+            boolean creeperTntWarning,
+            boolean enabledByDefault,
+            boolean debug,
+            int tutorialMaxShows) {
+        static final StreamCodec<ByteBuf, DisplayExtras> STREAM_CODEC = StreamCodec.composite(
+                IDENTIFIERS,
+                DisplayExtras::depthLimitedLights,
+                ByteBufCodecs.BOOL,
+                DisplayExtras::checkPermission,
+                ByteBufCodecs.BOOL,
+                DisplayExtras::creativeBypasses,
+                ByteBufCodecs.BOOL,
+                DisplayExtras::operatorsBypass,
+                ByteBufCodecs.BOOL,
+                DisplayExtras::torchFizz,
+                ByteBufCodecs.BOOL,
+                DisplayExtras::creeperTntWarning,
+                ByteBufCodecs.BOOL,
+                DisplayExtras::enabledByDefault,
+                ByteBufCodecs.BOOL,
+                DisplayExtras::debug,
+                ByteBufCodecs.VAR_INT,
+                DisplayExtras::tutorialMaxShows,
+                DisplayExtras::new);
     }
 
     @Override

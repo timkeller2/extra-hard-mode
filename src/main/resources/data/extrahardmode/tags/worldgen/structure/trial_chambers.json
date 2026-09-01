@@ -1,4 +1,7 @@
 {
   "replace": false,
   "values": ["minecraft:trial_chambers"]
+  "values": [
+    "minecraft:trial_chambers"
+  ]
 }

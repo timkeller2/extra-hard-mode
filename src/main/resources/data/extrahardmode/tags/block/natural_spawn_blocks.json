@@ -31,6 +31,7 @@
     "minecraft:mossy_cobblestone",
     "minecraft:obsidian",
     "minecraft:crying_obsidian",
+    "minecraft:cobblestone",
     "minecraft:bedrock",
     "minecraft:sculk",
     "minecraft:sculk_catalyst",
@@ -83,5 +84,6 @@
     "minecraft:green_terracotta",
     "minecraft:red_terracotta",
     "minecraft:black_terracotta"
+    "minecraft:water"
   ]
 }

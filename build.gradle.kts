@@ -12,6 +12,14 @@ base {
 
 repositories {
 	mavenCentral()
+	maven {
+		name = "Shedaniel"
+		url = uri("https://maven.shedaniel.me/")
+	}
+	maven {
+		name = "TerraformersMC"
+		url = uri("https://maven.terraformersmc.com/")
+	}
 }
 
 loom {
@@ -45,6 +53,20 @@ dependencies {
 
 	testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+	// Client-only optional extras. Prefer Loom's remapped client compileOnly so
+	// dedicated/main compile cannot see Cloth types.
+	val cloth = "me.shedaniel.cloth:cloth-config-fabric:${providers.gradleProperty("cloth_config_version").get()}"
+	val modmenu = "com.terraformersmc:modmenu:${providers.gradleProperty("modmenu_version").get()}"
+	val clientOnly = sequenceOf("modClientCompileOnly", "clientCompileOnly")
+			.firstOrNull { configurations.findByName(it) != null }
+	if (clientOnly != null) {
+		add(clientOnly, cloth) { exclude(group = "net.fabricmc.fabric-api") }
+		add(clientOnly, modmenu)
+	} else {
+		compileOnly(cloth) { exclude(group = "net.fabricmc.fabric-api") }
+		compileOnly(modmenu)
+	}
 }
 
 tasks.test {

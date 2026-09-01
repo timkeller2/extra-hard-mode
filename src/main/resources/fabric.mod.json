@@ -20,6 +20,9 @@
     "client": [
       "dev.extrahardmode.client.ExtraHardModeClient"
     ],
+    "modmenu": [
+      "dev.extrahardmode.client.ModMenuIntegration"
+    ],
     "fabric-gametest": [
       "dev.extrahardmode.test.EhmGameTests"
     ]

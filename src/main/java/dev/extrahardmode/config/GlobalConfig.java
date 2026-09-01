@@ -29,6 +29,13 @@ public record GlobalConfig(
                 maxLiveEhmFallingEntities,
                 maxFloodFillPerConversion,
                 maxQueueDepth);
+public record GlobalConfig(boolean enabledByDefault, boolean debug, int tutorialMaxShows) {
+    public static final int DEFAULT_TUTORIAL_MAX_SHOWS = 3;
+        return new GlobalConfig(defaultEnabledByDefault(), false, DEFAULT_TUTORIAL_MAX_SHOWS);
+        return new GlobalConfig(enabledByDefault, debug, tutorialMaxShows);
+    public GlobalConfig withEnabledByDefault(boolean enabledByDefault) {
+    public GlobalConfig withTutorialMaxShows(int tutorialMaxShows) {
+        return new GlobalConfig(enabledByDefault, debug, Math.max(0, tutorialMaxShows));
     }
 
     /**

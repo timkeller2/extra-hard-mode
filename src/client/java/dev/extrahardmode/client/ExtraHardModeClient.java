@@ -3,6 +3,7 @@ package dev.extrahardmode.client;
 import dev.extrahardmode.feature.monster.Horses;
 import dev.extrahardmode.feature.Dragon;
 import dev.extrahardmode.feature.DragonRules;
+import dev.extrahardmode.module.MessageId;
 import dev.extrahardmode.network.ClientboundSyncPayload;
 import dev.extrahardmode.network.ClientboundToastPayload;
 import net.fabricmc.api.ClientModInitializer;
@@ -11,6 +12,8 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.toasts.SystemToast;
 import net.minecraft.core.BlockPos;
@@ -30,7 +33,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.animal.equine.AbstractChestedHorse;
 
 public class ExtraHardModeClient implements ClientModInitializer {
-    private static final SystemToast.SystemToastId TOAST_ID = new SystemToast.SystemToastId(5000L);
+    private static final Map<String, SystemToast.SystemToastId> TOAST_IDS = new ConcurrentHashMap<>();
 
     private static volatile ClientboundSyncPayload lastSync;
 
@@ -149,15 +152,16 @@ public class ExtraHardModeClient implements ClientModInitializer {
     }
 
     private static void onToast(ClientboundToastPayload payload, ClientPlayNetworking.Context context) {
-        context.client().execute(() -> showToast(context.client(), payload.messageId()));
+        context.client().execute(() -> showToast(context.client(), payload.messageId(), payload.arg()));
     }
 
-    private static void showToast(Minecraft client, String messageId) {
+    private static void showToast(Minecraft client, String messageId, String arg) {
         Component title = Component.translatableWithFallback("extrahardmode.toast.title", "Extra Hard Mode");
         Component body = Component.translatableWithFallback(
                 "extrahardmode.toast." + messageId,
-                toastFallback(messageId));
-        SystemToast.addOrUpdate(client.gui.toastManager(), TOAST_ID, title, body);
+                toastFallback(messageId, arg),
+                arg == null ? "" : arg);
+        SystemToast.addOrUpdate(client.gui.toastManager(), toastId(messageId), title, body);
     }
 
     private static String toastFallback(String messageId) {
@@ -171,5 +175,16 @@ public class ExtraHardModeClient implements ClientModInitializer {
                 "Congratulations on defeating the dragon! If you can't reach the fountain, throw an ender pearl at it.";
             default -> messageId;
         };
+    private static SystemToast.SystemToastId toastId(String messageId) {
+        return TOAST_IDS.computeIfAbsent(messageId, id -> new SystemToast.SystemToastId(5000L));
+    }
+
+    private static String toastFallback(String messageId, String arg) {
+        MessageId known = MessageId.byId(messageId);
+        String fallback = known != null ? known.fallback() : messageId;
+        if (arg != null && !arg.isEmpty() && fallback.contains("%s")) {
+            return fallback.formatted(arg);
+        }
+        return fallback;
     }
 }

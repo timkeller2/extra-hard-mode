@@ -24,6 +24,34 @@ public final class EhmTags {
     public static final TagKey<Biome> NO_PHYSICS = TagKey.create(Registries.BIOME, ExtraHardModeMod.id("no_physics"));
     public static final TagKey<Structure> PHYSICS_PROTECTED_STRUCTURES =
             TagKey.create(Registries.STRUCTURE, ExtraHardModeMod.id("physics_protected_structures"));
+    public static final TagKey<Block> FELLABLE_LOGS =
+            TagKey.create(Registries.BLOCK, ExtraHardModeMod.id("fellable_logs"));
+    public static final TagKey<Block> NATURAL_SPAWN_BLOCKS =
+            TagKey.create(Registries.BLOCK, ExtraHardModeMod.id("natural_spawn_blocks"));
+
+    public static final TagKey<Item> HARDENED_MINER = TagKey.create(Registries.ITEM, ExtraHardModeMod.id("hardened_miner"));
+    public static final TagKey<Item> DEATH_VALUABLE_TOOLS =
+            TagKey.create(Registries.ITEM, ExtraHardModeMod.id("death_valuable_tools"));
+    public static final TagKey<Item> DEATH_ITEM_BLACKLIST =
+            TagKey.create(Registries.ITEM, ExtraHardModeMod.id("death_item_blacklist"));
+    public static final TagKey<Biome> NO_SPAWN_REPLACEMENTS =
+            TagKey.create(Registries.BIOME, ExtraHardModeMod.id("no_spawn_replacements"));
+    public static final TagKey<Biome> NO_EXTRA_PACKS =
+            TagKey.create(Registries.BIOME, ExtraHardModeMod.id("no_extra_packs"));
+    public static final TagKey<Biome> NO_SPAWN_IN_LIGHT =
+            TagKey.create(Registries.BIOME, ExtraHardModeMod.id("no_spawn_in_light"));
+    public static final TagKey<Biome> DESERT_INFERTILE =
+            TagKey.create(Registries.BIOME, ExtraHardModeMod.id("desert_infertile"));
+    public static final TagKey<Biome> VINDICATOR_REPLACE =
+            TagKey.create(Registries.BIOME, ExtraHardModeMod.id("vindicator_replace"));
+    public static final TagKey<Biome> CAVE_SPIDER_REPLACE =
+            TagKey.create(Registries.BIOME, ExtraHardModeMod.id("cave_spider_replace"));
+    public static final TagKey<Biome> GUARDIAN_REPLACE =
+            TagKey.create(Registries.BIOME, ExtraHardModeMod.id("guardian_replace"));
+    public static final TagKey<Structure> NO_SPAWN_REPLACEMENT_STRUCTURES =
+            TagKey.create(Registries.STRUCTURE, ExtraHardModeMod.id("no_spawn_replacement_structures"));
+    public static final TagKey<Structure> NO_EXTRA_PACKS_STRUCTURES =
+            TagKey.create(Registries.STRUCTURE, ExtraHardModeMod.id("no_extra_packs_structures"));
 
     private EhmTags() {}
 }

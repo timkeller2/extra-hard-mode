@@ -1,4 +1,8 @@
 {
   "replace": false,
   "values": ["minecraft:swamp", "minecraft:mangrove_swamp"]
+  "values": [
+    "minecraft:swamp",
+    "minecraft:mangrove_swamp"
+  ]
 }

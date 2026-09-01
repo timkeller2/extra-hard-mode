@@ -37,6 +37,7 @@ import dev.extrahardmode.feature.SpawnInLight;
 import dev.extrahardmode.module.SpawnReplaceService;
 import dev.extrahardmode.module.PhysicsQueue;
 import dev.extrahardmode.module.SpawnReplaceService;
+import dev.extrahardmode.feature.Tutorial;
 import dev.extrahardmode.network.EhmNetworking;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.world.WorldGate;
@@ -95,6 +96,7 @@ public class ExtraHardModeMod implements ModInitializer {
         FEATURES.register(new PigMen());
         FEATURES.register(new Ghasts());
         FEATURES.register(new Dragon());
+        FEATURES.register(new Tutorial());
         ServerLevelEvents.LOAD.register((server, level) -> {
             WorldGate.onLevelLoad(server, level);
             FEATURES.onWorldLoad(level);
