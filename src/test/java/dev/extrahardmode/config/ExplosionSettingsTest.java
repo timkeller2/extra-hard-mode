@@ -40,6 +40,10 @@ class ExplosionSettingsTest {
         assertTrue(blaze.fire());
         assertEquals(2.0F, magma.power());
         assertTrue(magma.fire());
+        ExplosionSettings.Applied dragon = ExplosionSettings.resolve(ExplosionType.DRAGON_FIREBALL, 0, 48);
+        assertEquals(2.0F, dragon.power());
+        assertTrue(dragon.fire());
+        assertTrue(dragon.worldDamage());
     }
 
     @Test
@@ -65,5 +69,14 @@ class ExplosionSettingsTest {
         assertTrue(ExplosionSettings.shouldScheduleCraters(true, true));
         assertFalse(ExplosionSettings.shouldScheduleCraters(true, false));
         assertFalse(ExplosionSettings.shouldScheduleCraters(false, true));
+    }
+
+    @Test
+    void dragonBlastIgnoresExplosionsModule() {
+        assertTrue(ExplosionSettings.allowCreate(ExplosionType.DRAGON_FIREBALL, false, true));
+        assertFalse(ExplosionSettings.allowCreate(ExplosionType.DRAGON_FIREBALL, true, false));
+        assertFalse(ExplosionSettings.allowCreate(ExplosionType.DRAGON_FIREBALL, false, false));
+        assertTrue(ExplosionSettings.allowCreate(ExplosionType.TNT, true, false));
+        assertFalse(ExplosionSettings.allowCreate(ExplosionType.TNT, false, true));
     }
 }

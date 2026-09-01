@@ -4,6 +4,7 @@ import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.api.EhmApi;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.config.WorldConfig;
+import dev.extrahardmode.feature.Dragon;
 import dev.extrahardmode.feature.HardenedStone;
 import dev.extrahardmode.tag.EhmTags;
 import dev.extrahardmode.feature.monster.Horses;
@@ -21,6 +22,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.level.Level;
 
 public record ClientboundSyncPayload(
         boolean limitedBuilding,
@@ -35,7 +37,8 @@ public record ClientboundSyncPayload(
         List<Identifier> hardenedPicks,
         List<Identifier> caveInOres,
         List<Identifier> softTorchSurfaces,
-        List<Identifier> depthLimitedLights)
+        List<Identifier> depthLimitedLights,
+        boolean noEndBuilding)
         implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<ClientboundSyncPayload> TYPE =
             new CustomPacketPayload.Type<>(ExtraHardModeMod.id("sync"));
@@ -69,6 +72,8 @@ public record ClientboundSyncPayload(
             ClientboundSyncPayload::softTorchSurfaces,
             IDENTIFIERS,
             ClientboundSyncPayload::depthLimitedLights,
+            ByteBufCodecs.BOOL,
+            ClientboundSyncPayload::noEndBuilding,
             ClientboundSyncPayload::new);
 
     public static ClientboundSyncPayload inactive() {
@@ -135,6 +140,11 @@ public record ClientboundSyncPayload(
                 caveInOres,
                 softTorch,
                 depthLights);
+                List.of(),
+                level != null
+                        && level.dimension() == Level.END
+                        && WorldGate.isModuleActive(level, Dragon.ID)
+                        && config.dragon().noBuilding());
     }
 
     private static <T> List<Identifier> snapshot(HolderLookup.RegistryLookup<T> lookup, TagKey<T> tag) {

@@ -147,6 +147,8 @@ public final class Explosions implements FeatureModule {
     public static void createFromModule(
             ServerLevel level, Identifier moduleId, Vec3 origin, ExplosionType type, Entity source) {
         if (!FeatureBus.guard((Level) level, moduleId)) {
+        if (!ExplosionSettings.allowCreate(
+                type, FeatureBus.guard((Level) level, ID), FeatureBus.guard((Level) level, Dragon.ID))) {
             return;
         }
         explode(level, origin, type, source);
@@ -293,6 +295,10 @@ public final class Explosions implements FeatureModule {
         PhysicsQueue.of(level).markLanded(entity);
         entity.discard();
         return true;
+    }
+
+    public static void enqueue(ServerLevel level, CreateExplosionTask task) {
+        DELAYED.computeIfAbsent(level.dimension().identifier(), id -> new ArrayDeque<>()).addLast(task);
     }
 
     private static void scheduleCraters(ServerLevel level, Vec3 origin, Entity source) {

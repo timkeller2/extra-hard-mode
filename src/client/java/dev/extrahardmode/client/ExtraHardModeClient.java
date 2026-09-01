@@ -1,18 +1,25 @@
 package dev.extrahardmode.client;
 
 import dev.extrahardmode.feature.monster.Horses;
+import dev.extrahardmode.feature.Dragon;
+import dev.extrahardmode.feature.DragonRules;
 import dev.extrahardmode.network.ClientboundSyncPayload;
 import dev.extrahardmode.network.ClientboundToastPayload;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
+import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.toasts.SystemToast;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
@@ -69,6 +76,23 @@ public class ExtraHardModeClient implements ClientModInitializer {
         return touchesHardened(context.getLevel(), context.getClickedPos(), sync);
     }
 
+    public static boolean denyEndBuilding(BlockPlaceContext context) {
+        return denyEndBuilding(context.getPlayer(), context.getItemInHand());
+    }
+
+    public static boolean denyEndBuilding(Player player, ItemStack stack) {
+        ClientboundSyncPayload sync = lastSync;
+        if (sync == null || !sync.noEndBuilding() || sync.playerBypass()) {
+            return false;
+        }
+        if (player != null && (player.hasInfiniteMaterials() || player.isCreative())) {
+            return false;
+        }
+        boolean empty = stack == null || stack.isEmpty();
+        return DragonRules.denyEndUse(
+                true, true, false, empty, Dragon.allowPlaceItem(stack), !empty && Dragon.isPlacementItem(stack.getItem()));
+    }
+
     public static void toast(String messageId) {
         Minecraft client = Minecraft.getInstance();
         if (client != null) {
@@ -94,6 +118,16 @@ public class ExtraHardModeClient implements ClientModInitializer {
             }
             return InteractionResult.PASS;
         });
+        UseBlockCallback.EVENT.register((player, level, hand, hit) -> denyEndUseClient(player, level, hand));
+        UseItemCallback.EVENT.register(ExtraHardModeClient::denyEndUseClient);
+    }
+
+    private static InteractionResult denyEndUseClient(Player player, Level level, InteractionHand hand) {
+        if (level instanceof ServerLevel) {
+        }
+        if (!denyEndBuilding(player, player.getItemInHand(hand))) {
+        toast("limited_end_building");
+        return InteractionResult.FAIL;
     }
 
     private static boolean touchesHardened(Level level, BlockPos pos, ClientboundSyncPayload sync) {
@@ -132,6 +166,9 @@ public class ExtraHardModeClient implements ClientModInitializer {
             case "enabled_off" -> "Extra Hard Mode is off. /gamerule extrahardmode:enabled";
             case "no_placing_ore_against_stone" -> "You can't place ore against stone.";
             case "no_crafting_melon_seeds" -> "You can't craft melon or pumpkin seeds. Find them in the world.";
+            case "limited_end_building" -> "Sorry, building here is very limited.";
+            case "dragon_fountain_tip" ->
+                "Congratulations on defeating the dragon! If you can't reach the fountain, throw an ender pearl at it.";
             default -> messageId;
         };
     }

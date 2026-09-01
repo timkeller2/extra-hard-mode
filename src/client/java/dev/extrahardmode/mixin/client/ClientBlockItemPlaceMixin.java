@@ -21,6 +21,11 @@ public abstract class ClientBlockItemPlaceMixin {
         if (context.getLevel() instanceof ServerLevel) {
             return;
         }
+        if (ExtraHardModeClient.denyEndBuilding(context)) {
+            ExtraHardModeClient.toast("limited_end_building");
+            cir.setReturnValue(InteractionResult.FAIL);
+            return;
+        }
         if (ExtraHardModeClient.denyOrePlacement(context)) {
             ExtraHardModeClient.toast("no_placing_ore_against_stone");
             cir.setReturnValue(InteractionResult.FAIL);

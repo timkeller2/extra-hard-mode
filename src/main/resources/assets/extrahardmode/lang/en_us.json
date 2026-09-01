@@ -21,4 +21,9 @@
   "extrahardmode.message.limited_torch_placement": "It's too soft there to fasten a torch.",
   "extrahardmode.message.realistic_building": "You can't build while in the air."
   "extrahardmode.toast.no_crafting_melon_seeds": "You can't craft melon or pumpkin seeds. Find them in the world."
+  "extrahardmode.toast.limited_end_building": "Sorry, building here is very limited.",
+  "extrahardmode.toast.dragon_fountain_tip": "Congratulations on defeating the dragon! If you can't reach the fountain, throw an ender pearl at it.",
+  "extrahardmode.chat.dragon_challenge": "%s is challenging the dragon!",
+  "extrahardmode.chat.dragon_player_killed": "%s was killed while fighting the dragon!",
+  "extrahardmode.chat.dragon_killed": "The dragon has been defeated! ( By: %s )"
 }

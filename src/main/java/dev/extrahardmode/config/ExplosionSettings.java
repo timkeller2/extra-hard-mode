@@ -31,5 +31,10 @@ public final class ExplosionSettings {
         return tntMultiple && allowWorldDamage;
     }
 
+    /** Dragon fireballs are owned by the dragon module, not {@code explosions}. */
+    public static boolean allowCreate(ExplosionType type, boolean explosionsActive, boolean dragonActive) {
+        return type == ExplosionType.DRAGON_FIREBALL ? dragonActive : explosionsActive;
+    }
+
     public record Applied(float power, boolean fire, boolean worldDamage) {}
 }

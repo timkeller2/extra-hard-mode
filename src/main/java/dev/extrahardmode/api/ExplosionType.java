@@ -11,6 +11,7 @@ public enum ExplosionType {
     GHAST_FIREBALL(2.0F, true, true, 2.0F, true, true),
     OVERWORLD_BLAZE(4.0F, true, true, 4.0F, true, true),
     MAGMACUBE_FIRE(2.0F, true, true, 2.0F, true, true),
+    DRAGON_FIREBALL(2.0F, true, true, 2.0F, true, true),
     EFFECT(0.0F, false, false, 0.0F, false, false);
 
     private final float belowPower;

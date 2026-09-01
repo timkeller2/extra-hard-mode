@@ -38,6 +38,12 @@
     "MobFinalizeSpawnMixin",
     "LivingEntityDropMixin",
     "CreeperPoweredMixin"
+    "EnderDragonMixin",
+    "DragonFireballMixin",
+    "EnderDragonFightAccess",
+    "EnderDragonFightMixin",
+    "MobTargetMixin",
+    "LivingEntityLootMixin"
   ],
   "client": [
     "client.ClientPlayerDestroySpeedMixin",

@@ -6,6 +6,7 @@ import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.feature.AnimalCrowdControl;
 import dev.extrahardmode.feature.AntiFarming;
 import dev.extrahardmode.feature.CaveIns;
+import dev.extrahardmode.feature.Dragon;
 import dev.extrahardmode.feature.Explosions;
 import dev.extrahardmode.feature.FallingBlocks;
 import dev.extrahardmode.feature.FeatureRegistry;
@@ -93,6 +94,7 @@ public class ExtraHardModeMod implements ModInitializer {
         FEATURES.register(new Blazes());
         FEATURES.register(new PigMen());
         FEATURES.register(new Ghasts());
+        FEATURES.register(new Dragon());
         ServerLevelEvents.LOAD.register((server, level) -> {
             WorldGate.onLevelLoad(server, level);
             FEATURES.onWorldLoad(level);

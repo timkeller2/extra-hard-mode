@@ -121,6 +121,7 @@ public final class WorldConfig {
     private int ghastArrowDamagePercent = 20;
     private int ghastExpMultiplier = 10;
     private int ghastDropsMultiplier = 5;
+    private final DragonConfig dragon = new DragonConfig();
 
     public WorldConfig(Identifier dimensionId) {
         this.dimensionId = dimensionId;
@@ -319,6 +320,8 @@ public final class WorldConfig {
         return ghastExpMultiplier;
     public int ghastDropsMultiplier() {
         return ghastDropsMultiplier;
+    public DragonConfig dragon() {
+        return dragon;
     }
 
     public boolean enabled() {
@@ -652,6 +655,7 @@ public final class WorldConfig {
                 writeDefaultIfMissing(file, "ghasts.arrowDamagePercent", "Incoming arrow damage to ghasts.", 20);
                 writeDefaultIfMissing(file, "ghasts.expMultiplier", "Ghast XP multiplier.", 10);
                 writeDefaultIfMissing(file, "ghasts.dropsMultiplier", "Ghast drop-count multiplier.", 5);
+                config.dragon.writeDefaults(file);
                 if (!file.contains("modules")) {
                     file.setComment("modules", "Runtime per-module toggles for this dimension. Missing keys default true.");
                 }
@@ -732,6 +736,7 @@ public final class WorldConfig {
                 file.set("ghasts.arrowDamagePercent", ghastArrowDamagePercent);
                 file.set("ghasts.expMultiplier", ghastExpMultiplier);
                 file.set("ghasts.dropsMultiplier", ghastDropsMultiplier);
+                dragon.write(file);
                 List<String> budgetEntries = new ArrayList<>();
                 for (Map.Entry<Identifier, Integer> budget : hardenedBudgets.entrySet()) {
                     budgetEntries.add(budget.getKey().toString() + "@" + budget.getValue());
@@ -862,6 +867,7 @@ public final class WorldConfig {
         ghastArrowDamagePercent = percent(getInt(file, "ghasts.arrowDamagePercent", 20));
         ghastExpMultiplier = Math.max(0, getInt(file, "ghasts.expMultiplier", 10));
         ghastDropsMultiplier = Math.max(0, getInt(file, "ghasts.dropsMultiplier", 5));
+        dragon.read(file);
         hardenedBudgets.clear();
         try {
             for (Map.Entry<String, Integer> entry :

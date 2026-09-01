@@ -71,7 +71,7 @@ public final class ExplosionConfig {
             case OVERWORLD_BLAZE -> blazeDeath.custom;
             case GHAST_FIREBALL -> ghast.custom;
             case MAGMACUBE_FIRE -> magmaCube.custom;
-            case EFFECT -> false;
+            case DRAGON_FIREBALL, EFFECT -> false;
         };
     }
 
@@ -91,7 +91,7 @@ public final class ExplosionConfig {
             case OVERWORLD_BLAZE -> blazeDeath;
             case GHAST_FIREBALL -> ghast;
             case MAGMACUBE_FIRE -> magmaCube;
-            case EFFECT -> null;
+            case DRAGON_FIREBALL, EFFECT -> null;
         };
     }
 
