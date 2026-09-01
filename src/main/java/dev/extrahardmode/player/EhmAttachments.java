@@ -40,6 +40,11 @@ public final class EhmAttachments {
             ExtraHardModeMod.id("visited_sections"),
             builder -> builder.persistent(LONG_SET_CODEC).copyOnDeath().initializer(LongOpenHashSet::new));
 
+    /** Persistent; stamped before a spawn-replacement roll so chunk reload cannot re-roll. */
+    public static final AttachmentType<Boolean> EHM_SPAWN_PROCESSED = AttachmentRegistry.create(
+            ExtraHardModeMod.id("spawn_processed"),
+            builder -> builder.persistent(Codec.BOOL).initializer(() -> Boolean.FALSE));
+
     private EhmAttachments() {}
 
     public static void register() {
