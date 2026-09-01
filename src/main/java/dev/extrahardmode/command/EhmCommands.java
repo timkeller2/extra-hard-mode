@@ -51,6 +51,8 @@ public final class EhmCommands {
         "skeletons",
         "zombies",
         "endermen",
+        "witches",
+        "horses",
         "blazes",
         "dragon"
     };

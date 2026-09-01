@@ -45,6 +45,15 @@ public final class EhmAttachments {
             ExtraHardModeMod.id("spawn_processed"),
             builder -> builder.persistent(Codec.BOOL).initializer(() -> Boolean.FALSE));
 
+    /** Persistent; EHM-spawned mobs that should not drop loot (witch baby zombies, etc.). */
+    public static final AttachmentType<Boolean> EHM_LOOTLESS = AttachmentRegistry.create(
+            ExtraHardModeMod.id("lootless"),
+            builder -> builder.persistent(Codec.BOOL).initializer(() -> Boolean.FALSE));
+
+    /** Transient game-time of the last enderman-forced player teleport. */
+    public static final AttachmentType<Long> EHM_ENDERMAN_TP_TICK = AttachmentRegistry.create(
+            ExtraHardModeMod.id("enderman_tp_tick"), builder -> builder.initializer(() -> 0L));
+
     private EhmAttachments() {}
 
     public static void register() {

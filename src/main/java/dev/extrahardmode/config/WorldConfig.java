@@ -26,6 +26,10 @@ public final class WorldConfig {
     private boolean torchSoftDeny = true;
     private int torchNoPlacementUnderY = 0;
     private boolean torchYDeny = true;
+    private boolean endermenTeleportPlayers = true;
+    private boolean witchesAdditionalAttacks = true;
+    private int witchesBonusSpawnPercent = 5;
+    private int horseBlockChestBelowY = 48;
     private boolean enabled = true;
     private boolean enabledPresent;
 
@@ -63,6 +67,22 @@ public final class WorldConfig {
 
     public boolean torchYDeny() {
         return torchYDeny;
+    }
+
+    public boolean endermenTeleportPlayers() {
+        return endermenTeleportPlayers;
+    }
+
+    public boolean witchesAdditionalAttacks() {
+        return witchesAdditionalAttacks;
+    }
+
+    public int witchesBonusSpawnPercent() {
+        return witchesBonusSpawnPercent;
+    }
+
+    public int horseBlockChestBelowY() {
+        return horseBlockChestBelowY;
     }
 
     public boolean enabled() {
@@ -142,6 +162,25 @@ public final class WorldConfig {
                     file.set("torches.noPlacementUnderY", 0);
                 }
                 writeDefaultIfMissing(file, "torches.noPlacementOnSoft", "No torches on soft surfaces.", true);
+                writeDefaultIfMissing(
+                        file,
+                        "endermen.teleportPlayers",
+                        "In a fight, an enderman may teleport the player onto it (2-high roof cheese).",
+                        true);
+                writeDefaultIfMissing(
+                        file,
+                        "witches.additionalAttacks",
+                        "30/30/30/10 splash: baby zombie, teleport, explosion+3 magic, vanilla poison on players.",
+                        true);
+                writeDefaultIfMissing(
+                        file,
+                        "witches.bonusSpawnPercent",
+                        "NATURAL overworld zombies on grass_block become witches.",
+                        5);
+                if (!file.contains("horses.blockChestBelowY")) {
+                    file.setComment("horses.blockChestBelowY", "original: 55; cave band. Integer.MIN_VALUE disables.");
+                    file.set("horses.blockChestBelowY", 48);
+                }
                 if (!file.contains("modules")) {
                     file.setComment("modules", "Runtime per-module toggles for this dimension. Missing keys default true.");
                 }
@@ -182,6 +221,10 @@ public final class WorldConfig {
                 file.set("torches.noPlacement.enable", torchYDeny);
                 file.set("torches.noPlacementUnderY", torchNoPlacementUnderY);
                 file.set("torches.noPlacementOnSoft", torchSoftDeny);
+                file.set("endermen.teleportPlayers", endermenTeleportPlayers);
+                file.set("witches.additionalAttacks", witchesAdditionalAttacks);
+                file.set("witches.bonusSpawnPercent", witchesBonusSpawnPercent);
+                file.set("horses.blockChestBelowY", horseBlockChestBelowY);
                 for (Map.Entry<Identifier, Boolean> entry : modules.entrySet()) {
                     file.set(moduleKey(entry.getKey()), entry.getValue());
                 }
@@ -204,6 +247,10 @@ public final class WorldConfig {
         torchYDeny = file.getOrElse("torches.noPlacement.enable", true);
         torchNoPlacementUnderY = file.getOrElse("torches.noPlacementUnderY", 0);
         torchSoftDeny = file.getOrElse("torches.noPlacementOnSoft", true);
+        endermenTeleportPlayers = file.getOrElse("endermen.teleportPlayers", true);
+        witchesAdditionalAttacks = file.getOrElse("witches.additionalAttacks", true);
+        witchesBonusSpawnPercent = percent(getInt(file, "witches.bonusSpawnPercent", 5));
+        horseBlockChestBelowY = getInt(file, "horses.blockChestBelowY", 48);
         modules.clear();
         Object raw = file.get("modules");
         if (raw instanceof Config table) {
@@ -240,5 +287,24 @@ public final class WorldConfig {
             file.setComment(path, comment);
             file.set(path, value);
         }
+    }
+
+    private static void writeDefaultIfMissing(CommentedFileConfig file, String path, String comment, int value) {
+        if (!file.contains(path)) {
+            file.setComment(path, comment);
+            file.set(path, value);
+        }
+    }
+
+    private static int percent(int value) {
+        return Math.clamp(value, 0, 100);
+    }
+
+    private static int getInt(CommentedFileConfig file, String path, int fallback) {
+        Object raw = file.get(path);
+        if (raw instanceof Number number) {
+            return number.intValue();
+        }
+        return fallback;
     }
 }
