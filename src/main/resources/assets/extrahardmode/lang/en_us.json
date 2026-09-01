@@ -1,7 +1,7 @@
 {
   "extrahardmode.name": "Extra Hard Mode",
   "gamerule.extrahardmode.enabled": "Extra Hard Mode",
-  "gamerule.extrahardmode.enabled.description": "Whether Extra Hard Mode is active in this dimension.",
+  "gamerule.extrahardmode.enabled.description": "Master switch for Extra Hard Mode. Off disables every dimension; per-dimension enable is stored separately.",
   "extrahardmode.toast.title": "Extra Hard Mode",
   "extrahardmode.toast.enabled_on": "Extra Hard Mode is on. /gamerule extrahardmode:enabled",
   "extrahardmode.toast.enabled_off": "Extra Hard Mode is off. /gamerule extrahardmode:enabled",
@@ -12,5 +12,7 @@
   "extrahardmode.command.reload": "Reloaded Extra Hard Mode config",
   "extrahardmode.command.debug": "EHM debug %s",
   "extrahardmode.command.bypass": "Personal EHM bypass %s",
-  "extrahardmode.command.set": "Set %s to %s in %s"
+  "extrahardmode.command.set": "Set %s to %s in %s",
+  "extrahardmode.command.set.failed": "Failed to save Extra Hard Mode config for this dimension",
+  "extrahardmode.command.module.invalid": "Invalid module id '%s'"
 }

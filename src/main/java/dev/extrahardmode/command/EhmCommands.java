@@ -187,10 +187,24 @@ public final class EhmCommands {
     private static int setModule(CommandContext<CommandSourceStack> context) {
         ServerLevel level = context.getSource().getLevel();
         Identifier moduleId = parseModule(StringArgumentType.getString(context, "module"));
+        if (moduleId == null) {
+            context.getSource()
+                    .sendFailure(Component.translatableWithFallback(
+                            "extrahardmode.command.module.invalid",
+                            "Invalid module id '%s'",
+                            StringArgumentType.getString(context, "module")));
+            return 0;
+        }
         boolean value = BoolArgumentType.getBool(context, "value");
         WorldConfig config = ConfigManager.world(level);
         config.setModuleEnabled(moduleId, value);
-        ConfigManager.save(level);
+        if (!ConfigManager.save(level)) {
+            ConfigManager.loadWorld(level);
+            context.getSource()
+                    .sendFailure(Component.translatableWithFallback(
+                            "extrahardmode.command.set.failed", "Failed to save Extra Hard Mode config for this dimension"));
+            return 0;
+        }
         ConfigManager.loadWorld(level);
         for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
             if (player.level() == level) {
@@ -211,8 +225,8 @@ public final class EhmCommands {
 
     static Identifier parseModule(String raw) {
         if (raw.indexOf(':') >= 0) {
-            return Identifier.parse(raw);
+            return Identifier.tryParse(raw);
         }
-        return ExtraHardModeMod.id(raw);
+        return Identifier.tryBuild(ExtraHardModeMod.MOD_ID, raw);
     }
 }

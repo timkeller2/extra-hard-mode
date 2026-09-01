@@ -26,9 +26,11 @@ public final class WorldConfig {
     private boolean torchSoftDeny = true;
     private int torchNoPlacementUnderY = 0;
     private boolean torchYDeny = true;
+    private boolean enabled = true;
 
     public WorldConfig(Identifier dimensionId) {
         this.dimensionId = dimensionId;
+        this.enabled = GlobalConfig.defaultEnabledByDefault();
     }
 
     public Identifier dimensionId() {
@@ -63,6 +65,14 @@ public final class WorldConfig {
         return torchYDeny;
     }
 
+    public boolean enabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
     public boolean isModuleEnabled(Identifier moduleId) {
         Boolean value = modules.get(moduleId);
         return value == null || value;
@@ -95,7 +105,9 @@ public final class WorldConfig {
                     file.load();
                 }
                 if (!file.contains("configVersion")) {
-                    file.setComment("configVersion", "EHM world config schema. Enable switch is the gamerule, not this file.");
+                    file.setComment(
+                            "configVersion",
+                            "EHM world config schema. extrahardmode:enabled is a server-global master gamerule; this file's enabled is per-dimension.");
                     file.set("configVersion", CONFIG_VERSION);
                 }
                 writeDefaultIfMissing(
@@ -140,7 +152,7 @@ public final class WorldConfig {
         return config;
     }
 
-    public void save(MinecraftServer server) {
+    public boolean save(MinecraftServer server) {
         Path path = pathFor(server, dimensionId);
         try {
             Files.createDirectories(path.getParent());
@@ -152,6 +164,12 @@ public final class WorldConfig {
                     file.load();
                 }
                 file.set("configVersion", CONFIG_VERSION);
+                if (!file.contains("enabled")) {
+                    file.setComment(
+                            "enabled",
+                            "Per-dimension enable. The gamerule extrahardmode:enabled is a server-wide master switch.");
+                }
+                file.set("enabled", enabled);
                 file.set("bypassing.checkPermission", checkPermission);
                 file.set("bypassing.creativeBypasses", creativeBypasses);
                 file.set("bypassing.operatorsBypass", operatorsBypass);
@@ -164,12 +182,15 @@ public final class WorldConfig {
                 }
                 file.save();
             }
+            return true;
         } catch (Exception e) {
             ExtraHardModeMod.LOGGER.error("Failed to save world config {}", path, e);
+            return false;
         }
     }
 
     private void read(CommentedFileConfig file) {
+        enabled = file.getOrElse("enabled", GlobalConfig.defaultEnabledByDefault());
         checkPermission = file.getOrElse("bypassing.checkPermission", true);
         creativeBypasses = file.getOrElse("bypassing.creativeBypasses", true);
         operatorsBypass = file.getOrElse("bypassing.operatorsBypass", false);

@@ -2,6 +2,7 @@ package dev.extrahardmode.network;
 
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.world.WorldGate;
+import net.fabricmc.fabric.api.entity.event.v1.ServerEntityLevelChangeEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -16,6 +17,8 @@ public final class EhmNetworking {
         PayloadTypeRegistry.clientboundPlay().register(ClientboundSyncPayload.TYPE, ClientboundSyncPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(ClientboundToastPayload.TYPE, ClientboundToastPayload.STREAM_CODEC);
         ServerPlayConnectionEvents.JOIN.register(EhmNetworking::onJoin);
+        ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.register(
+                (player, origin, destination) -> sendSync(player));
     }
 
     public static void sendSync(ServerPlayer player) {
@@ -32,7 +35,10 @@ public final class EhmNetworking {
         }
     }
 
-    private static void onJoin(ServerGamePacketListenerImpl handler, net.fabricmc.fabric.api.networking.v1.PacketSender sender, MinecraftServer server) {
+    private static void onJoin(
+            ServerGamePacketListenerImpl handler,
+            net.fabricmc.fabric.api.networking.v1.PacketSender sender,
+            MinecraftServer server) {
         sendSync(handler.player);
         WorldGate.onPlayerJoin(handler.player);
     }

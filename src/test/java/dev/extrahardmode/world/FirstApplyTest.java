@@ -24,7 +24,7 @@ class FirstApplyTest {
     }
 
     @Test
-    void customDimensionsInheritOverworldGamerule() {
+    void customDimensionsInheritOverworldDimensionFlag() {
         assertFalse(FirstApply.resolveEnabled("custom:dim", true, false));
         assertTrue(FirstApply.resolveEnabled("custom:dim", false, true));
         assertTrue(FirstApply.resolveEnabled("custom:dim", true, null));

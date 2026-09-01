@@ -33,8 +33,8 @@ public final class ConfigManager {
         worlds.put(level.dimension().identifier(), WorldConfig.loadOrCreate(level));
     }
 
-    public static void save(ServerLevel level) {
-        world(level).save(level.getServer());
+    public static boolean save(ServerLevel level) {
+        return world(level).save(level.getServer());
     }
 
     public static void reload(MinecraftServer server) {

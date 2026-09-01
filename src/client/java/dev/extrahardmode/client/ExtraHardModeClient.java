@@ -3,6 +3,7 @@ package dev.extrahardmode.client;
 import dev.extrahardmode.network.ClientboundSyncPayload;
 import dev.extrahardmode.network.ClientboundToastPayload;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.toasts.SystemToast;
@@ -21,6 +22,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
     public void onInitializeClient() {
         ClientPlayNetworking.registerGlobalReceiver(ClientboundSyncPayload.TYPE, (payload, context) -> lastSync = payload);
         ClientPlayNetworking.registerGlobalReceiver(ClientboundToastPayload.TYPE, ExtraHardModeClient::onToast);
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> lastSync = null);
     }
 
     private static void onToast(ClientboundToastPayload payload, ClientPlayNetworking.Context context) {

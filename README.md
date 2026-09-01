@@ -20,9 +20,11 @@ On Windows: `.\gradlew.bat build`. Output jars land in `build/libs/`.
 
 ## Enable
 
-The gamerule `extrahardmode:enabled` is the only per-dimension switch. On first load of each dimension, Extra Hard Mode copies `enabledByDefault` from `config/extrahardmode.toml` into that dimension's gamerule and never overwrites it again.
+The gamerule `extrahardmode:enabled` is a **server-global master switch** (26.2 game rules are not per-dimension). `/gamerule extrahardmode:enabled false` turns Extra Hard Mode off everywhere.
 
-If `enabledByDefault` is missing, it defaults to `true` in singleplayer and `false` on dedicated servers. Custom dimensions inherit the overworld gamerule.
+Each dimension also has its own `enabled` flag, first-applied independently from `config/extrahardmode.toml` `enabledByDefault` (vanilla overworld/nether/end) or inherited from the overworld flag (custom dimensions). That flag is never overwritten once stamped. `WorldGate.isActive` is gamerule AND the dimension flag, so `/ehm enabled [world]` can disagree across dimensions while the gamerule is on.
+
+If `enabledByDefault` is missing, it defaults to `true` in singleplayer and `false` on dedicated servers.
 
 Per-dimension TOML lives under the overworld save: `data/extrahardmode/<namespace>/<path>.toml` (for example `world/data/extrahardmode/minecraft/overworld.toml` on a dedicated server). Commands: `/ehm`, `/ehm version`, `/ehm enabled [world]`, `/ehm reload`, `/ehm debug`, `/ehm bypass`, `/ehm set <module> <bool>`.
 
