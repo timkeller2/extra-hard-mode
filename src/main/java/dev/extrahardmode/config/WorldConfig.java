@@ -98,6 +98,14 @@ public final class WorldConfig {
         this.enabledPresent = true;
     }
 
+    public void setTorchYDeny(boolean torchYDeny) {
+        this.torchYDeny = torchYDeny;
+    }
+
+    public void setNetherrackFirePercent(int netherrackFirePercent) {
+        this.netherrackFirePercent = netherrackFirePercent;
+    }
+
     public boolean isModuleEnabled(Identifier moduleId) {
         Boolean value = modules.get(moduleId);
         return value == null || value;

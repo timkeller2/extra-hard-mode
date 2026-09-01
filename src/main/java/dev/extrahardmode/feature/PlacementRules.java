@@ -23,15 +23,11 @@ public final class PlacementRules {
     }
 
     /**
-     * Jump-place under feet: same column at or below the player's block, while airborne.
+     * Jump-place under feet only: {@code place} equals {@code player.blockPosition().below()}
+     * while airborne. Does not deny the whole column.
      */
-    public static boolean denyPillar(boolean enable, boolean onGround, BlockPos place, BlockPos playerBlock) {
-        if (!enable || onGround) {
-            return false;
-        }
-        return place.getX() == playerBlock.getX()
-                && place.getZ() == playerBlock.getZ()
-                && place.getY() <= playerBlock.getY();
+    public static boolean denyPillar(boolean enable, boolean onGround, BlockPos place, BlockPos underFeet) {
+        return enable && !onGround && place.equals(underFeet);
     }
 
     /**

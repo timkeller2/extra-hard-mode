@@ -95,10 +95,10 @@ public final class LimitedBuilding implements FeatureModule {
             return false;
         }
         BlockPos place = context.getClickedPos();
-        BlockPos playerBlock = player.blockPosition();
-        if (PlacementRules.denyPillar(true, player.onGround(), place, playerBlock)) {
+        BlockPos underFeet = player.blockPosition().below();
+        if (PlacementRules.denyPillar(true, player.onGround(), place, underFeet)) {
             return true;
         }
-        return PlacementRules.denySkyBridge(true, level, place, PlacementRules.againstBlock(context), playerBlock.below());
+        return PlacementRules.denySkyBridge(true, level, place, PlacementRules.againstBlock(context), underFeet);
     }
 }

@@ -4,7 +4,10 @@ import dev.extrahardmode.config.WorldConfig;
 import dev.extrahardmode.world.EhmTags;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CampfireBlock;
@@ -13,30 +16,41 @@ import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
- * Rain pass: exposed torches drop as items; covered (any block above) survive.
- * Campfires unlit when configured (default off). Budgeted to 16 torch drops/tick/world.
+ * Rain pass: one ticking chunk every {@link #CHUNK_STAGGER_TICKS} (storm stagger),
+ * 1% per exposed torch per pass, max 16 drops/tick. Covered (any block above) survive.
  */
 public final class RemoveExposedTorchesTask {
     public static final int MAX_TORCHES_PER_TICK = 16;
+    /** Original scheduled one chunk every 100 ticks when rain starts. */
+    public static final int CHUNK_STAGGER_TICKS = 100;
+
+    private static final Map<Identifier, Stagger> STAGGERS = new ConcurrentHashMap<>();
 
     private RemoveExposedTorchesTask() {}
 
+    public static void clear(ServerLevel level) {
+        STAGGERS.remove(level.dimension().identifier());
+    }
+
     public static int run(ServerLevel level, WorldConfig config, int torchBudget) {
-        if (!level.isRaining()) {
+        Identifier dim = level.dimension().identifier();
+        if (!level.isRaining() || (!config.rainBreaksTorches() && !config.rainExtinguishesCampfires())) {
+            STAGGERS.remove(dim);
             return torchBudget;
         }
-        if (!config.rainBreaksTorches() && !config.rainExtinguishesCampfires()) {
+        Stagger stagger = STAGGERS.computeIfAbsent(dim, id -> new Stagger());
+        if (stagger.cooldown > 0) {
+            stagger.cooldown--;
             return torchBudget;
         }
-        int remaining = torchBudget;
         List<LevelChunk> chunks = new ArrayList<>();
         level.getChunkSource().chunkMap.forEachBlockTickingChunk(chunks::add);
-        for (LevelChunk chunk : chunks) {
-            if (remaining <= 0 && !config.rainExtinguishesCampfires()) {
-                break;
-            }
-            remaining = processChunk(level, chunk, config, remaining);
+        if (chunks.isEmpty()) {
+            return torchBudget;
         }
+        LevelChunk chunk = chunks.get(Math.floorMod(stagger.cursor++, chunks.size()));
+        int remaining = processChunk(level, chunk, config, torchBudget);
+        stagger.cooldown = CHUNK_STAGGER_TICKS - 1;
         return remaining;
     }
 
@@ -59,7 +73,6 @@ public final class RemoveExposedTorchesTask {
                     continue;
                 }
                 if (config.rainBreaksTorches() && remaining > 0 && state.is(EhmTags.DEPTH_LIMITED_LIGHTS)) {
-                    // 1% per exposed torch on this chunk pass
                     if (level.getRandom().nextFloat() < 0.01F) {
                         level.destroyBlock(pos, true);
                         remaining--;
@@ -74,5 +87,10 @@ public final class RemoveExposedTorchesTask {
             }
         }
         return remaining;
+    }
+
+    private static final class Stagger {
+        int cooldown;
+        int cursor;
     }
 }

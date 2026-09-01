@@ -9,10 +9,8 @@ import dev.extrahardmode.task.RemoveExposedTorchesTask;
 import dev.extrahardmode.world.EhmTags;
 import dev.extrahardmode.world.WorldGate;
 import java.util.Collection;
-import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
@@ -25,10 +23,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BaseFireBlock;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.TorchBlock;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 
@@ -43,13 +38,17 @@ public final class Torches implements FeatureModule {
     @Override
     public void bootstrap(FeatureBus bus) {
         bus.listen(UseBlockCallback.EVENT, ID, Torches::onUseBlock);
-        bus.listen(PlayerBlockBreakEvents.AFTER, ID, Torches::onNetherrackBreak);
     }
 
     @Override
     public void serverTick(ServerLevel level) {
         WorldConfig config = ConfigManager.world(level);
         RemoveExposedTorchesTask.run(level, config, RemoveExposedTorchesTask.MAX_TORCHES_PER_TICK);
+    }
+
+    @Override
+    public void onWorldUnload(ServerLevel level) {
+        RemoveExposedTorchesTask.clear(level);
     }
 
     static InteractionResult onUseBlock(Player player, Level level, InteractionHand hand, BlockHitResult hit) {
@@ -132,30 +131,6 @@ public final class Torches implements FeatureModule {
 
     public static boolean shouldDeny(ServerLevel level, BlockPlaceContext context, BlockItem blockItem) {
         return denyReason(level, context, blockItem) != DenyReason.NONE;
-    }
-
-    static void onNetherrackBreak(Level level, Player player, BlockPos pos, BlockState state, BlockEntity blockEntity) {
-        if (!(level instanceof ServerLevel serverLevel) || !(player instanceof ServerPlayer serverPlayer)) {
-            return;
-        }
-        // Netherrack fire is a world rule, not gated by the torches module toggle.
-        if (!WorldGate.isActive(serverLevel) || EhmApi.playerBypasses(serverPlayer)) {
-            return;
-        }
-        if (!state.is(Blocks.NETHERRACK)) {
-            return;
-        }
-        int percent = ConfigManager.world(serverLevel).netherrackFirePercent();
-        if (percent <= 0 || serverLevel.getRandom().nextInt(100) >= percent) {
-            return;
-        }
-        if (!serverLevel.getBlockState(pos).isAir()) {
-            return;
-        }
-        BlockState fire = BaseFireBlock.getState(serverLevel, pos);
-        if (BaseFireBlock.canBePlacedAt(serverLevel, pos, Direction.UP) || fire.canSurvive(serverLevel, pos)) {
-            serverLevel.setBlock(pos, fire, 3);
-        }
     }
 
     static boolean isTorchLike(BlockItem blockItem) {

@@ -56,19 +56,6 @@ public record ClientboundSyncPayload(
                 false, false, 0, false, List.of(), List.of(), List.of(), List.of(), List.of());
     }
 
-    public static ClientboundSyncPayload from(WorldConfig config) {
-        return new ClientboundSyncPayload(
-                config.limitedBuilding(),
-                config.torchSoftDeny(),
-                config.torchNoPlacementUnderY(),
-                config.torchYDeny(),
-                List.of(),
-                List.of(),
-                List.of(),
-                List.of(),
-                List.of());
-    }
-
     public static ClientboundSyncPayload from(ServerLevel level) {
         if (!WorldGate.isActive(level)) {
             return inactive();

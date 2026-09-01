@@ -23,8 +23,12 @@ public class MultiPlayerGameModeMixin {
     @Inject(method = "performUseItemOn", at = @At("HEAD"), cancellable = true)
     private void extrahardmode$cancelPlace(
             LocalPlayer player, InteractionHand hand, BlockHitResult hit, CallbackInfoReturnable<InteractionResult> cir) {
+        // lastSync() null / inactive() is the client WorldGate skip (payload-only, never TOML).
         ClientboundSyncPayload sync = ExtraHardModeClient.lastSync();
         if (sync == null) {
+            return;
+        }
+        if (!sync.torchYDeny() && !sync.torchSoftDeny() && !sync.limitedBuilding()) {
             return;
         }
         ItemStack stack = player.getItemInHand(hand);
