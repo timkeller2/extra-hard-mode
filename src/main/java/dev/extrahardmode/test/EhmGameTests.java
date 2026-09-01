@@ -1,5 +1,6 @@
 package dev.extrahardmode.test;
 
+import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.world.ExtraHardModeBootData;
 import dev.extrahardmode.world.WorldGate;
@@ -9,6 +10,10 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 
+/**
+ * Fabric GameTests. This branch keeps first-apply plus gamerule-off no-op.
+ * Feature tests live on later PRs. Full DESIGN PR 13 acceptance list is in README.md.
+ */
 public class EhmGameTests {
     @GameTest
     public void firstApplyPerDimension(GameTestHelper helper) {
@@ -56,6 +61,22 @@ public class EhmGameTests {
         helper.assertTrue(boot.contains(Level.NETHER.identifier()), "nether stamped independently");
         helper.assertTrue(boot.contains(Level.OVERWORLD.identifier()), "overworld still stamped");
         helper.assertTrue(WorldGate.dimensionEnabled(nether), "nether dim flag defaults true (opt-out)");
+        helper.succeed();
+    }
+
+    @GameTest
+    public void gameruleOffIsNoOp(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        MinecraftServer server = level.getServer();
+        boolean previous = level.getGameRules().get(WorldGate.ENABLED);
+        level.getGameRules().set(WorldGate.ENABLED, false, server);
+        helper.assertFalse(WorldGate.isActive(level), "gamerule off → WorldGate inactive");
+        helper.assertFalse(
+                WorldGate.isModuleActive(level, ExtraHardModeMod.id("hardened_stone")),
+                "gamerule off → modules inactive");
+        helper.assertFalse(
+                WorldGate.isModuleActive(level, ExtraHardModeMod.id("cave_ins")), "gamerule off → cave-ins inactive");
+        level.getGameRules().set(WorldGate.ENABLED, previous, server);
         helper.succeed();
     }
 }

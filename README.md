@@ -1,14 +1,25 @@
 # Extra Hard Mode
 
-Vanilla Hard only punishes mistakes. Extra Hard Mode changes the rules so experts still have to think.
+Vanilla Hard only punishes mistakes. Extra Hard Mode **changes the rules** so experts still have to think. Stone does not yield to cheap picks, caves collapse when you mine ore, torches fail in the deep, water sources cannot be bucket-cloned, and every mob has a trick.
 
-A Fabric mod for **Minecraft Java 26.2** (Java 25). Runs in singleplayer and on dedicated Fabric servers. **Not for Realms** — Fabric mods do not run there.
+A Fabric mod for **Minecraft Java 26.2** (Java 25). Runs in singleplayer (integrated server) and on dedicated Fabric servers. **Not for Realms** — Fabric mods do not run there.
 
-This is a reimplementation of Extra Hard Mode, not a copy of `com.extrahardmode.*`. Licensed **AGPL-3.0-or-later**. See `LICENSE` and `NOTICE`.
+This is a greenfield reimplementation of Extra Hard Mode, not a copy of `com.extrahardmode.*`. Licensed **AGPL-3.0-or-later**. See [`LICENSE`](LICENSE), [`NOTICE`](NOTICE), and [`DESIGN.md`](DESIGN.md) for mechanics, Y remaps, and key decisions.
 
-## Build
+## Install
 
-Requires **JDK 25**.
+Requires:
+
+- **Minecraft Java Edition 26.2** (exact)
+- **Java 25**
+- **Fabric Loader** `>=0.19.3`
+- **Fabric API** `>=0.157.0+26.2` (this repo pins `0.158.0+26.2`)
+
+Put the Extra Hard Mode jar and Fabric API in `mods/`. The published jar does not bundle Fabric API.
+
+Optional client extras: **Cloth Config** and **Mod Menu** are suggested, not required. Dedicated servers load `main` + mixins and skip client extras. If no 26.2 Cloth Config artifact resolves, there is no in-game config screen — edit TOML instead. Do not invent Cloth or Sodium version pins. The mod does not depend on Sodium, Lithium, Iris, GraviTree, WorldGuard, or any other gameplay/render mod.
+
+Build from source (JDK 25):
 
 ```bash
 ./gradlew build
@@ -16,17 +27,87 @@ Requires **JDK 25**.
 
 On Windows: `.\gradlew.bat build`. Output jars land in `build/libs/`.
 
-`./gradlew compileJava compileClientJava` is enough to typecheck without packaging.
+`./gradlew compileJava compileClientJava` typechecks without packaging.
 
 ## Enable
 
-The gamerule `extrahardmode:enabled` is a **server-global master switch** (26.2 game rules are not per-dimension). First-apply copies `enabledByDefault` into that gamerule once (overworld load). `/gamerule extrahardmode:enabled false` turns Extra Hard Mode off everywhere; `/gamerule extrahardmode:enabled true` turns it on in every dimension that has not opted out.
+The gamerule `extrahardmode:enabled` is a **server-global master switch** (26.2 game rules are not per-dimension). First-apply copies `enabledByDefault` from global TOML into that gamerule once (overworld load).
 
-Each dimension has a live `enabled` flag that **defaults true** (opt-out). Custom dimensions inherit the overworld's current live flag so a world that opted Overworld out does not spring EHM on a new datapack dim. `/ehm set-world <bool>` (or `/ehm enable` / `/ehm disable`) toggles the current dimension. `WorldGate.isActive` is gamerule AND the dimension flag.
+```
+/gamerule extrahardmode:enabled true
+/gamerule extrahardmode:enabled false
+```
 
-If `enabledByDefault` is missing, it defaults to `true` in singleplayer and `false` on dedicated servers.
+`/gamerule extrahardmode:enabled false` turns Extra Hard Mode off everywhere. `/gamerule extrahardmode:enabled true` turns it on in every dimension that has not opted out.
 
-Per-dimension TOML lives under the overworld save: `data/extrahardmode/<namespace>/<path>.toml` (for example `world/data/extrahardmode/minecraft/overworld.toml` on a dedicated server). Commands: `/ehm`, `/ehm version`, `/ehm enabled [world]`, `/ehm reload`, `/ehm debug`, `/ehm bypass`, `/ehm set <module> <bool>`, `/ehm set-world <bool>`, `/ehm enable`, `/ehm disable`.
+Each dimension has a live `enabled` flag that **defaults true** (opt-out). Custom dimensions inherit the overworld's current live flag so a world that opted Overworld out does not spring EHM on a new datapack dim. Toggle the current dimension with:
+
+```
+/ehm set-world true
+/ehm set-world false
+```
+
+(`/ehm enable` / `/ehm disable` are aliases.) `WorldGate.isActive` is the gamerule **and** the dimension flag.
+
+If `enabledByDefault` is missing, it defaults to `true` in singleplayer and `false` on dedicated servers. Operators who want new dedicated worlds on by default set `enabledByDefault = true` in `config/extrahardmode.toml` **before** first load.
+
+Per-dimension TOML lives under the overworld save: `data/extrahardmode/<namespace>/<path>.toml` (for example `world/data/extrahardmode/minecraft/overworld.toml` on a dedicated server). Global defaults: `config/extrahardmode.toml`.
+
+Commands: `/ehm`, `/ehm version`, `/ehm enabled [world]`, `/ehm reload`, `/ehm debug`, `/ehm bypass`, `/ehm set <module> <bool>`, `/ehm set-world <bool>`, `/ehm enable`, `/ehm disable`.
+
+`/ehm reload` (`extrahardmode.admin`) reloads TOML on the server thread. Datapack tags still reload with vanilla `/reload`.
+
+## Limitations (v1)
+
+- **Not for Realms.** Fabric mods do not run on Realms. Do not file Realms tickets.
+- **SMP claim plugins.** There is no WorldGuard / claim-mod explosion or cave-in hook in v1. Cave-ins, falling blocks, and EHM explosions can grief claimed land. That is a stated v1 gap, not a promise to respect claims.
+- **Teleport plugins.** Extra Hard Mode does **not** add `/home`, `/back`, or `/tpa`, and authors must not add them. Those commands fight death-forfeit, weight, and environmental injury. Incompatible with typical teleport plugins; do not implement a compatibility layer in v1.
+- **Villager trade nerf** is not in this release (optional, default off, not an original EHM feature).
+- **Create drills** that skip the player break event may not drain hardened-stone budgets. Known gap.
+
+## License (AGPL)
+
+Licensed under **GNU Affero GPL v3.0 or later**. Original Extra Hard Mode authors are listed below; this port is a derivative work.
+
+**§6 (Corresponding Source for the jar).** Shipping or otherwise conveying the compiled jar is conveying object code. You **must** offer Corresponding Source — this public git repo satisfies that when you distribute an unmodified build from it. If you distribute a modified jar, you must offer that modified source the same way.
+
+**§13 (network servers).** If you run a **modified** version that players interact with over a network (a dedicated SMP server with your patches), you must offer those players Corresponding Source for the version they are playing. Unmodified public builds do not trigger a separate §13 duty beyond §6.
+
+The public `EhmApi` is AGPL-viral: any mod that compiles against it is AGPL.
+
+## GameTests
+
+Fabric GameTests live in `dev.extrahardmode.test.EhmGameTests` (`fabric-gametest` entrypoint). This branch ships first-apply and gamerule-off no-op. Feature tests land with their feature PRs; the acceptance list below is the full v1 suite from [`DESIGN.md`](DESIGN.md) PR 13.
+
+Run them:
+
+```bash
+./gradlew runGameTest
+```
+
+On Windows: `.\gradlew.bat runGameTest`. JUnit 5 (no Minecraft) is `./gradlew test`.
+
+### Acceptance list
+
+| Test | Expectation |
+|---|---|
+| Gamerule off | No-op. `WorldGate.isActive` / modules false when `extrahardmode:enabled` is false. |
+| First-apply | Overworld gamerule matches TOML `enabledByDefault`. Nether first-apply does not rewrite the gamerule. Dimension stamps are independent. |
+| Hardened stone | Wooden pick cannot harvest (speed 0, no drop). Iron pick consumed after **128** stone. Tuff is hardened. |
+| Ore / piston | Placing ore next to stone denied. Pistons cannot push hardened blocks or cave-in ores. |
+| Cave-ins | `coal_ore` softens stone → cobble. Deep Dark biome skip. Ancient City skip. Trial Chamber skip. 16-block copper blob: no tick timeout, `physics_dropped == 0` on a quiet world. |
+| Torches | Deny below Y=0. Redstone torches allowed. Covered torch survives rain. |
+| Water | Placed fluid is **not** a source (`LEVEL≠0`, first write `LEVEL=1`). Waterlogged slab is not deleted. |
+| Zombies | Reanimate 3–8s. On-fire no. **Villager no.** **Reinforcement no.** Reanimate count copied. Skull break cancels. |
+| Limited building | Jump-place under feet cancelled. |
+| Spawn replace | Unload/reload chunk does not re-roll (`ehm:spawn_processed` stays). |
+| Trees | Oak falls. 2×2 jungle falls. Player-built log pillar + nearby leaf **does not**. |
+| Anti-grinder | Mob on tuff still drops (tuff is natural). Mob on glass does not. |
+| Deep Dark | No near-bedrock blaze replace. |
+| TNT | Recipe result count 3. |
+| Physics overflow | Queue drop metric increments, no watchdog. |
+
+Villager-trade nerf is **not** in this suite.
 
 ## Credits
 
