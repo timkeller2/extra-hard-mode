@@ -14,6 +14,8 @@ public final class EhmTags {
     public static final TagKey<Block> EXTRA_FALLING = TagKey.create(Registries.BLOCK, ExtraHardModeMod.id("extra_falling"));
     public static final TagKey<Block> PHYSICS_PROTECTED =
             TagKey.create(Registries.BLOCK, ExtraHardModeMod.id("physics_protected"));
+    public static final TagKey<Block> FELLABLE_LOGS =
+            TagKey.create(Registries.BLOCK, ExtraHardModeMod.id("fellable_logs"));
     public static final TagKey<Item> HARDENED_MINER = TagKey.create(Registries.ITEM, ExtraHardModeMod.id("hardened_miner"));
     public static final TagKey<Block> SOFT_TORCH_SURFACES =
             TagKey.create(Registries.BLOCK, ExtraHardModeMod.id("soft_torch_surfaces"));

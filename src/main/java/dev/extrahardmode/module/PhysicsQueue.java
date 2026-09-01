@@ -64,11 +64,16 @@ public final class PhysicsQueue {
 
     public void enqueueConvert(
             ServerLevel level, BlockPos pos, BlockState from, BlockState to, boolean applyPhysics) {
-        enqueue(level, pos, from, to, applyPhysics);
+        enqueue(level, pos, from, to, applyPhysics, 0);
     }
 
     public void enqueueFalling(ServerLevel level, BlockPos pos, BlockState from, BlockState to) {
-        enqueue(level, pos, from, to, true);
+        enqueue(level, pos, from, to, true, 0);
+    }
+
+    public void enqueueFalling(
+            ServerLevel level, BlockPos pos, BlockState from, BlockState to, int delayTicks) {
+        enqueue(level, pos, from, to, true, delayTicks);
     }
 
     public void markLanded(FallingBlockEntity entity) {
@@ -86,7 +91,8 @@ public final class PhysicsQueue {
         live.put(entity.getUUID(), entity);
     }
 
-    private void enqueue(ServerLevel level, BlockPos pos, BlockState from, BlockState to, boolean spawnEntity) {
+    private void enqueue(
+            ServerLevel level, BlockPos pos, BlockState from, BlockState to, boolean spawnEntity, int delayTicks) {
         if (PhysicsSkip.never(level, pos)) {
             return;
         }
@@ -109,9 +115,9 @@ public final class PhysicsQueue {
                         global.maxQueueDepth());
             }
         }
-        queue.addLast(new FallRequest(pos.immutable(), from, to, spawnEntity, 0));
+        queue.addLast(new FallRequest(pos.immutable(), from, to, spawnEntity, Math.max(0, delayTicks)));
         if (ConfigManager.global().debug()) {
-            ExtraHardModeMod.LOGGER.debug("EHM physics enqueue {} -> {} {}", from, to, pos);
+            ExtraHardModeMod.LOGGER.debug("EHM physics enqueue {} -> {} {} delay={}", from, to, pos, delayTicks);
         }
     }
 

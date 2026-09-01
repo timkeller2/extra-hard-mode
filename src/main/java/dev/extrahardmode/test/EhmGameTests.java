@@ -4,6 +4,7 @@ import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.feature.CaveIns;
 import dev.extrahardmode.feature.FallingBlocks;
 import dev.extrahardmode.feature.HardenedStone;
+import dev.extrahardmode.feature.RealisticChopping;
 import dev.extrahardmode.item.EhmComponents;
 import dev.extrahardmode.feature.monster.Silverfish;
 import dev.extrahardmode.feature.monster.Skeletons;
@@ -40,6 +41,7 @@ import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biomes;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -593,4 +595,116 @@ public class EhmGameTests {
             helper.assertTrue(rabbit.getType() == EntityTypes.RABBIT && !rabbit.isRemoved(), "rabbit kept");
             config.setKillerBunnyPercent(previousPercent);
             level.getGameRules().set(WorldGate.ENABLED, previousRule, server);
+    @GameTest(maxTicks = 40, padding = 16)
+    public void oakTreeFalls(GameTestHelper helper) {
+        level.getGameRules().set(WorldGate.ENABLED, true, level.getServer());
+        Player mock = helper.makeMockServerPlayer(GameType.SURVIVAL);
+        BlockPos base = new BlockPos(2, 1, 2);
+        for (int y = 1; y <= 5; y++) {
+            helper.setBlock(base.above(y - 1), Blocks.OAK_LOG);
+        helper.setBlock(new BlockPos(2, 5, 1), Blocks.OAK_LEAVES);
+        helper.setBlock(new BlockPos(2, 5, 3), Blocks.OAK_LEAVES);
+        helper.setBlock(new BlockPos(1, 5, 2), Blocks.OAK_LEAVES);
+        helper.setBlock(new BlockPos(3, 5, 2), Blocks.OAK_LEAVES);
+        BlockPos[] remaining = remainingColumn(base, 5);
+        breakAndFell(helper, mock, base, Blocks.OAK_LOG.defaultBlockState());
+        assertNoPlacedLogs(helper, Blocks.OAK_LOG, remaining);
+        helper.runAfterDelay(2, () -> {
+            assertNoPlacedLogs(helper, Blocks.OAK_LOG, base.above(4));
+        });
+    public void jungleTwoByTwoFalls(GameTestHelper helper) {
+        BlockPos[] columns = {
+            new BlockPos(2, 1, 2), new BlockPos(3, 1, 2), new BlockPos(2, 1, 3), new BlockPos(3, 1, 3)
+        };
+        for (BlockPos column : columns) {
+            for (int y = 0; y < 6; y++) {
+                helper.setBlock(column.above(y), Blocks.JUNGLE_LOG);
+            }
+        helper.setBlock(new BlockPos(2, 6, 1), Blocks.JUNGLE_LEAVES);
+        helper.setBlock(new BlockPos(3, 6, 1), Blocks.JUNGLE_LEAVES);
+        helper.setBlock(new BlockPos(1, 6, 2), Blocks.JUNGLE_LEAVES);
+        helper.setBlock(new BlockPos(1, 6, 3), Blocks.JUNGLE_LEAVES);
+        BlockPos[] remaining = remainingTwoByTwo(columns[0], columns);
+        BlockPos[] crown = {columns[0].above(5), columns[1].above(5), columns[2].above(5), columns[3].above(5)};
+        breakAndFell(helper, mock, columns[0], Blocks.JUNGLE_LOG.defaultBlockState());
+        assertNoPlacedLogs(helper, Blocks.JUNGLE_LOG, remaining);
+            assertNoPlacedLogs(helper, Blocks.JUNGLE_LOG, crown);
+    public void acaciaBendFalls(GameTestHelper helper) {
+        helper.setBlock(base, Blocks.ACACIA_LOG);
+        helper.setBlock(base.above(), Blocks.ACACIA_LOG);
+        helper.setBlock(new BlockPos(3, 2, 2), Blocks.ACACIA_LOG);
+        helper.setBlock(new BlockPos(4, 2, 2), Blocks.ACACIA_LOG);
+        helper.setBlock(new BlockPos(4, 2, 1), Blocks.ACACIA_LEAVES);
+        helper.setBlock(new BlockPos(4, 2, 3), Blocks.ACACIA_LEAVES);
+        helper.setBlock(new BlockPos(4, 3, 2), Blocks.ACACIA_LEAVES);
+        helper.setBlock(new BlockPos(5, 2, 2), Blocks.ACACIA_LEAVES);
+        BlockPos[] remaining = {base.above(), new BlockPos(3, 2, 2), new BlockPos(4, 2, 2)};
+        breakAndFell(helper, mock, base, Blocks.ACACIA_LOG.defaultBlockState());
+        assertNoPlacedLogs(helper, Blocks.ACACIA_LOG, remaining);
+            assertNoPlacedLogs(helper, Blocks.ACACIA_LOG, remaining);
+    public void logPillarWithNearbyLeafDoesNotFell(GameTestHelper helper) {
+        for (int y = 1; y <= 8; y++) {
+        helper.setBlock(new BlockPos(4, 4, 2), Blocks.OAK_LEAVES);
+        helper.runAfterDelay(8, () -> {
+            for (int y = 2; y <= 8; y++) {
+                helper.assertBlockPresent(Blocks.OAK_LOG, base.above(y - 1));
+    public void threeAdjacentLeavesDoNotFell(GameTestHelper helper) {
+            for (int y = 2; y <= 5; y++) {
+    public void worldGateOffDoesNotFell(GameTestHelper helper) {
+        level.getGameRules().set(WorldGate.ENABLED, false, level.getServer());
+    public void fallingLogDealsGatedDamage(GameTestHelper helper) {
+        BlockPos rel = new BlockPos(2, 4, 2);
+        helper.setBlock(rel, Blocks.STONE);
+        BlockPos abs = helper.absolutePos(rel);
+        FallingBlockEntity log = FallingBlockEntity.fall(level, abs, Blocks.OAK_LOG.defaultBlockState());
+        log.setAttached(EhmAttachments.EHM_OURS, Boolean.TRUE);
+        helper.assertTrue(FallingBlocks.appliesFallDamage(log), "EHM oak log is gated in");
+    @GameTest(maxTicks = 40, padding = 8)
+    public void netherStemDoesNotFell(GameTestHelper helper) {
+                Blocks.CRIMSON_STEM.defaultBlockState().is(EhmTags.FELLABLE_LOGS), "crimson stem is not fellable");
+                Blocks.WARPED_STEM.defaultBlockState().is(EhmTags.FELLABLE_LOGS), "warped stem is not fellable");
+                Blocks.CRIMSON_HYPHAE.defaultBlockState().is(EhmTags.FELLABLE_LOGS), "crimson hyphae is not fellable");
+                Blocks.WARPED_HYPHAE.defaultBlockState().is(EhmTags.FELLABLE_LOGS), "warped hyphae is not fellable");
+        helper.assertTrue(Blocks.OAK_LOG.defaultBlockState().is(EhmTags.FELLABLE_LOGS), "oak log is fellable");
+        helper.assertTrue(Blocks.JUNGLE_LOG.defaultBlockState().is(EhmTags.FELLABLE_LOGS), "jungle log is fellable");
+            helper.setBlock(base.above(y - 1), Blocks.CRIMSON_STEM);
+        helper.setBlock(new BlockPos(2, 5, 1), Blocks.JUNGLE_LEAVES);
+        helper.setBlock(new BlockPos(2, 5, 3), Blocks.JUNGLE_LEAVES);
+        helper.setBlock(new BlockPos(1, 5, 2), Blocks.JUNGLE_LEAVES);
+        helper.setBlock(new BlockPos(3, 5, 2), Blocks.JUNGLE_LEAVES);
+        breakAndFell(helper, mock, base, Blocks.CRIMSON_STEM.defaultBlockState());
+                helper.assertBlockPresent(Blocks.CRIMSON_STEM, base.above(y - 1));
+    private static void breakAndFell(GameTestHelper helper, Player player, BlockPos rel, BlockState broken) {
+        helper.setBlock(rel, Blocks.AIR);
+        RealisticChopping.tryFell(level, player, abs, broken);
+        PhysicsQueue.tick(level);
+    private static BlockPos[] remainingColumn(BlockPos base, int height) {
+        BlockPos[] column = new BlockPos[height - 1];
+        for (int i = 1; i < height; i++) {
+            column[i - 1] = base.above(i);
+        return column;
+    private static BlockPos[] remainingTwoByTwo(BlockPos broken, BlockPos[] bases) {
+        int height = 6;
+        BlockPos[] remaining = new BlockPos[bases.length * height - 1];
+        int i = 0;
+        for (BlockPos column : bases) {
+            for (int y = 0; y < height; y++) {
+                BlockPos cell = column.above(y);
+                if (cell.equals(broken)) {
+                    continue;
+                }
+                remaining[i++] = cell;
+        return remaining;
+    private static void assertNoPlacedLogs(GameTestHelper helper, Block log, BlockPos... cells) {
+        for (BlockPos rel : cells) {
+            helper.assertFalse(helper.getBlockState(rel).is(log), "placed log remaining at " + rel);
+            BlockPos abs = helper.absolutePos(rel);
+            boolean fallingHere = false;
+            AABB box = new AABB(abs).inflate(0.1);
+            for (FallingBlockEntity falling : level.getEntities(EntityTypes.FALLING_BLOCK, box, entity -> true)) {
+                if (falling.getBlockState().is(log)) {
+                    fallingHere = true;
+                    break;
+                    helper.getBlockState(rel).isAir() || fallingHere,
+                    "converted log must be air or a falling entity at " + rel);
 }

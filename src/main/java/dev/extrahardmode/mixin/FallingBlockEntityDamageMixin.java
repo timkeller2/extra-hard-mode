@@ -3,6 +3,7 @@ package dev.extrahardmode.mixin;
 import dev.extrahardmode.feature.CaveIns;
 import dev.extrahardmode.feature.FallingBlocks;
 import dev.extrahardmode.feature.FeatureBus;
+import dev.extrahardmode.feature.RealisticChopping;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.item.FallingBlockEntity;
 import org.spongepowered.asm.mixin.Mixin;
@@ -20,7 +21,9 @@ public abstract class FallingBlockEntityDamageMixin {
     private void extrahardmode$fallingDamage(
             double fallDistance, float multiplier, DamageSource source, CallbackInfoReturnable<Boolean> cir) {
         FallingBlockEntity self = (FallingBlockEntity) (Object) this;
-        if (!FeatureBus.guard(self.level(), FallingBlocks.ID) && !FeatureBus.guard(self.level(), CaveIns.ID)) {
+        if (!FeatureBus.guard(self.level(), FallingBlocks.ID)
+                && !FeatureBus.guard(self.level(), CaveIns.ID)
+                && !FeatureBus.guard(self.level(), RealisticChopping.ID)) {
             return;
         }
         if (FallingBlocks.isVanillaFallDamage(self.getBlockState())) {

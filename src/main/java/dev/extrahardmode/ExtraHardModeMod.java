@@ -12,6 +12,7 @@ import dev.extrahardmode.feature.HardenedStone;
 import dev.extrahardmode.feature.LimitedBuilding;
 import dev.extrahardmode.feature.NetherrackFire;
 import dev.extrahardmode.feature.Torches;
+import dev.extrahardmode.feature.RealisticChopping;
 import dev.extrahardmode.item.EhmComponents;
 import dev.extrahardmode.feature.Players;
 import dev.extrahardmode.feature.Water;
@@ -74,6 +75,7 @@ public class ExtraHardModeMod implements ModInitializer {
         FEATURES.register(AntiGrinder.INSTANCE);
         FEATURES.register(MoreMonsters.INSTANCE);
         FEATURES.register(SpawnInLight.INSTANCE);
+        FEATURES.register(new RealisticChopping());
         ServerLevelEvents.LOAD.register((server, level) -> {
             WorldGate.onLevelLoad(server, level);
             FEATURES.onWorldLoad(level);

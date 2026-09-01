@@ -98,16 +98,19 @@ public final class FallingBlocks implements FeatureModule {
     }
 
     /**
-     * Extra damage only for {@code #extra_falling} or cave-in cobble/cobbled_deepslate we spawned.
-     * Anvils, pointed dripstone, and sulfur spikes stay vanilla.
+     * Extra damage only for {@code #extra_falling}, cave-in cobble/cobbled_deepslate, or EHM-spawned
+     * fellable logs. Anvils, pointed dripstone, and sulfur spikes stay vanilla.
      */
     public static boolean appliesFallDamage(FallingBlockEntity entity) {
         BlockState state = entity.getBlockState();
         if (isVanillaFallDamage(state)) {
             return false;
         }
-        boolean tagged = isCaveInProduct(state) || state.is(EhmTags.EXTRA_FALLING);
         boolean ours = Boolean.TRUE.equals(entity.getAttachedOrElse(EhmAttachments.EHM_OURS, Boolean.FALSE));
+        if (ours && state.is(EhmTags.FELLABLE_LOGS) && RealisticChopping.enabled(entity.level())) {
+            return true;
+        }
+        boolean tagged = isCaveInProduct(state) || state.is(EhmTags.EXTRA_FALLING);
         if (ours) {
             return tagged && (CaveIns.enabled(entity.level()) || enabled(entity.level()));
         }
