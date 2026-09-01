@@ -90,7 +90,16 @@ public final class EhmCommands {
                         .then(Commands.argument("module", StringArgumentType.word())
                                 .suggests(MODULE_SUGGESTOR)
                                 .then(Commands.argument("value", BoolArgumentType.bool())
-                                        .executes(EhmCommands::setModule)))));
+                                        .executes(EhmCommands::setModule))))
+                .then(Commands.literal("set-world")
+                        .requires(PermissionPredicates.require(EhmPermissions.ADMIN, PermissionLevel.ADMINS))
+                        .then(Commands.argument("value", BoolArgumentType.bool()).executes(EhmCommands::setWorld)))
+                .then(Commands.literal("enable")
+                        .requires(PermissionPredicates.require(EhmPermissions.ADMIN, PermissionLevel.ADMINS))
+                        .executes(context -> setWorldEnabled(context, true)))
+                .then(Commands.literal("disable")
+                        .requires(PermissionPredicates.require(EhmPermissions.ADMIN, PermissionLevel.ADMINS))
+                        .executes(context -> setWorldEnabled(context, false))));
     }
 
     private static boolean canBypassCommand(CommandSourceStack source) {
@@ -103,7 +112,7 @@ public final class EhmCommands {
                 .sendSuccess(
                         () -> Component.translatableWithFallback(
                                 "extrahardmode.command.help",
-                                "/ehm help|version|enabled [world]|reload|debug|bypass|set <module> <bool>"),
+                                "/ehm help|version|enabled [world]|reload|debug|bypass|set <module> <bool>|set-world <bool>|enable|disable"),
                         false);
         return Command.SINGLE_SUCCESS;
     }
@@ -198,18 +207,11 @@ public final class EhmCommands {
         boolean value = BoolArgumentType.getBool(context, "value");
         WorldConfig config = ConfigManager.world(level);
         config.setModuleEnabled(moduleId, value);
-        if (!ConfigManager.save(level)) {
-            ConfigManager.loadWorld(level);
+        if (!saveAndSync(level)) {
             context.getSource()
                     .sendFailure(Component.translatableWithFallback(
                             "extrahardmode.command.set.failed", "Failed to save Extra Hard Mode config for this dimension"));
             return 0;
-        }
-        ConfigManager.loadWorld(level);
-        for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
-            if (player.level() == level) {
-                EhmNetworking.sendSync(player);
-            }
         }
         context.getSource()
                 .sendSuccess(
@@ -221,6 +223,45 @@ public final class EhmCommands {
                                 level.dimension().identifier().toString()),
                         true);
         return Command.SINGLE_SUCCESS;
+    }
+
+    private static int setWorld(CommandContext<CommandSourceStack> context) {
+        return setWorldEnabled(context, BoolArgumentType.getBool(context, "value"));
+    }
+
+    private static int setWorldEnabled(CommandContext<CommandSourceStack> context, boolean value) {
+        ServerLevel level = context.getSource().getLevel();
+        WorldConfig config = ConfigManager.world(level);
+        config.setEnabled(value);
+        if (!saveAndSync(level)) {
+            context.getSource()
+                    .sendFailure(Component.translatableWithFallback(
+                            "extrahardmode.command.set.failed", "Failed to save Extra Hard Mode config for this dimension"));
+            return 0;
+        }
+        context.getSource()
+                .sendSuccess(
+                        () -> Component.translatableWithFallback(
+                                "extrahardmode.command.set-world",
+                                "Set Extra Hard Mode for %s to %s",
+                                level.dimension().identifier().toString(),
+                                value ? "on" : "off"),
+                        true);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static boolean saveAndSync(ServerLevel level) {
+        if (!ConfigManager.save(level)) {
+            ConfigManager.loadWorld(level);
+            return false;
+        }
+        ConfigManager.loadWorld(level);
+        for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
+            if (player.level() == level) {
+                EhmNetworking.sendSync(player);
+            }
+        }
+        return true;
     }
 
     static Identifier parseModule(String raw) {

@@ -17,18 +17,17 @@ class FirstApplyTest {
     }
 
     @Test
-    void vanillaDimensionsUseToml() {
-        assertTrue(FirstApply.resolveEnabled(FirstApply.OVERWORLD, true, false));
-        assertFalse(FirstApply.resolveEnabled(FirstApply.NETHER, false, true));
-        assertTrue(FirstApply.resolveEnabled(FirstApply.END, true, null));
+    void vanillaDimensionFlagsDefaultTrue() {
+        assertTrue(FirstApply.resolveDimensionEnabled(FirstApply.OVERWORLD, false));
+        assertTrue(FirstApply.resolveDimensionEnabled(FirstApply.NETHER, false));
+        assertTrue(FirstApply.resolveDimensionEnabled(FirstApply.END, null));
     }
 
     @Test
-    void customDimensionsInheritOverworldDimensionFlag() {
-        assertFalse(FirstApply.resolveEnabled("custom:dim", true, false));
-        assertTrue(FirstApply.resolveEnabled("custom:dim", false, true));
-        assertTrue(FirstApply.resolveEnabled("custom:dim", true, null));
-        assertFalse(FirstApply.resolveEnabled("custom:dim", false, null));
+    void customDimensionsInheritOverworldLiveFlag() {
+        assertFalse(FirstApply.resolveDimensionEnabled("custom:dim", false));
+        assertTrue(FirstApply.resolveDimensionEnabled("custom:dim", true));
+        assertTrue(FirstApply.resolveDimensionEnabled("custom:dim", null));
     }
 
     @Test

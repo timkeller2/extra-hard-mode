@@ -20,13 +20,13 @@ On Windows: `.\gradlew.bat build`. Output jars land in `build/libs/`.
 
 ## Enable
 
-The gamerule `extrahardmode:enabled` is a **server-global master switch** (26.2 game rules are not per-dimension). `/gamerule extrahardmode:enabled false` turns Extra Hard Mode off everywhere.
+The gamerule `extrahardmode:enabled` is a **server-global master switch** (26.2 game rules are not per-dimension). First-apply copies `enabledByDefault` into that gamerule once (overworld load). `/gamerule extrahardmode:enabled false` turns Extra Hard Mode off everywhere; `/gamerule extrahardmode:enabled true` turns it on in every dimension that has not opted out.
 
-Each dimension also has its own `enabled` flag, first-applied independently from `config/extrahardmode.toml` `enabledByDefault` (vanilla overworld/nether/end) or inherited from the overworld flag (custom dimensions). That flag is never overwritten once stamped. `WorldGate.isActive` is gamerule AND the dimension flag, so `/ehm enabled [world]` can disagree across dimensions while the gamerule is on.
+Each dimension has a live `enabled` flag that **defaults true** (opt-out). Custom dimensions inherit the overworld's current live flag so a world that opted Overworld out does not spring EHM on a new datapack dim. `/ehm set-world <bool>` (or `/ehm enable` / `/ehm disable`) toggles the current dimension. `WorldGate.isActive` is gamerule AND the dimension flag.
 
 If `enabledByDefault` is missing, it defaults to `true` in singleplayer and `false` on dedicated servers.
 
-Per-dimension TOML lives under the overworld save: `data/extrahardmode/<namespace>/<path>.toml` (for example `world/data/extrahardmode/minecraft/overworld.toml` on a dedicated server). Commands: `/ehm`, `/ehm version`, `/ehm enabled [world]`, `/ehm reload`, `/ehm debug`, `/ehm bypass`, `/ehm set <module> <bool>`.
+Per-dimension TOML lives under the overworld save: `data/extrahardmode/<namespace>/<path>.toml` (for example `world/data/extrahardmode/minecraft/overworld.toml` on a dedicated server). Commands: `/ehm`, `/ehm version`, `/ehm enabled [world]`, `/ehm reload`, `/ehm debug`, `/ehm bypass`, `/ehm set <module> <bool>`, `/ehm set-world <bool>`, `/ehm enable`, `/ehm disable`.
 
 ## Credits
 

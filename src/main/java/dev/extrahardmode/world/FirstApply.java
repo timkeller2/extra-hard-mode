@@ -6,8 +6,10 @@ import java.util.Set;
  * Per-dimension first-apply predicate, extracted so it can be unit-tested
  * without a running Minecraft server.
  *
- * <p>26.2 game rules are server-global. This helper only decides each dimension's
- * own enabled flag, never a shared {@code GameRules.set}.
+ * <p>26.2 game rules are server-global. {@code enabledByDefault} is copied into
+ * the gamerule once (overworld). Dimension {@code enabled} flags default true
+ * (opt-out) so {@code /gamerule extrahardmode:enabled true} can actually enable
+ * EHM. Custom dimensions inherit the overworld's <em>live</em> flag.
  */
 public final class FirstApply {
     public static final String OVERWORLD = "minecraft:overworld";
@@ -25,14 +27,13 @@ public final class FirstApply {
     }
 
     /**
-     * Vanilla overworld/nether/end copy {@code enabledByDefault}. Custom dimensions
-     * inherit the overworld dimension's enabled flag when it is known, otherwise
-     * {@code enabledByDefault}.
+     * Vanilla overworld/nether/end default {@code true} (opt-out). Custom dimensions
+     * inherit the overworld live enabled flag when known, otherwise {@code true}.
      */
-    public static boolean resolveEnabled(String dimensionId, boolean enabledByDefault, Boolean overworldDimensionFlag) {
+    public static boolean resolveDimensionEnabled(String dimensionId, Boolean overworldLiveEnabled) {
         if (isVanillaDimension(dimensionId)) {
-            return enabledByDefault;
+            return true;
         }
-        return overworldDimensionFlag != null ? overworldDimensionFlag : enabledByDefault;
+        return overworldLiveEnabled != null ? overworldLiveEnabled : true;
     }
 }

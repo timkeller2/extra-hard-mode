@@ -55,6 +55,7 @@ public class EhmGameTests {
                 "gamerule unchanged after nether first-apply");
         helper.assertTrue(boot.contains(Level.NETHER.identifier()), "nether stamped independently");
         helper.assertTrue(boot.contains(Level.OVERWORLD.identifier()), "overworld still stamped");
+        helper.assertTrue(WorldGate.dimensionEnabled(nether), "nether dim flag defaults true (opt-out)");
         helper.succeed();
     }
 }

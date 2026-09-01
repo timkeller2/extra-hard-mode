@@ -16,47 +16,60 @@ import net.minecraft.world.level.saveddata.SavedDataType;
 
 /**
  * Overworld SavedData for first-apply. {@code applied} is the set of dimension ids
- * already stamped; {@code enabled} is each dimension's enable flag. The gamerule is
- * not stored here (it is server-global).
+ * already stamped; {@code enabled} is each dimension's opt-out flag. The gamerule is
+ * first-applied once ({@code gameruleApplied}) from TOML {@code enabledByDefault}.
  */
 public final class ExtraHardModeBootData extends SavedData {
     public static final Codec<ExtraHardModeBootData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                     Identifier.CODEC.listOf().optionalFieldOf("applied", List.of()).forGetter(ExtraHardModeBootData::appliedList),
                     Codec.unboundedMap(Identifier.CODEC, Codec.BOOL)
                             .optionalFieldOf("enabled", Map.of())
-                            .forGetter(ExtraHardModeBootData::enabledMap))
+                            .forGetter(ExtraHardModeBootData::enabledMap),
+                    Codec.BOOL.optionalFieldOf("gameruleApplied", false).forGetter(ExtraHardModeBootData::isGameruleApplied))
             .apply(instance, ExtraHardModeBootData::new));
 
     public static final SavedDataType<ExtraHardModeBootData> TYPE = new SavedDataType<>(
             ExtraHardModeMod.id("boot"), ExtraHardModeBootData::new, CODEC, DataFixTypes.SAVED_DATA_MAP_INDEX);
 
+    private static final Identifier OVERWORLD_ID = Identifier.withDefaultNamespace("overworld");
+
     private final Set<Identifier> applied = new LinkedHashSet<>();
     private final Map<Identifier, Boolean> enabled = new LinkedHashMap<>();
+    private boolean gameruleApplied;
 
     public ExtraHardModeBootData() {}
 
-    public ExtraHardModeBootData(List<Identifier> applied, Map<Identifier, Boolean> enabled) {
+    public ExtraHardModeBootData(List<Identifier> applied, Map<Identifier, Boolean> enabled, boolean gameruleApplied) {
         this.applied.addAll(applied);
         this.enabled.putAll(enabled);
         for (Identifier id : this.applied) {
             this.enabled.putIfAbsent(id, Boolean.TRUE);
         }
+        this.gameruleApplied = gameruleApplied || this.applied.contains(OVERWORLD_ID);
     }
 
     public boolean contains(Identifier dimensionId) {
         return applied.contains(dimensionId);
     }
 
+    public boolean isGameruleApplied() {
+        return gameruleApplied || applied.contains(OVERWORLD_ID);
+    }
+
+    public void markGameruleApplied() {
+        if (!gameruleApplied) {
+            gameruleApplied = true;
+            setDirty();
+        }
+    }
+
     /**
      * Per-dimension enable flag. Missing map entries for an applied id are treated
-     * as true (legacy {@code applied}-only saves).
+     * as true (opt-out / legacy {@code applied}-only saves).
      */
     public boolean isDimensionEnabled(Identifier dimensionId) {
         Boolean value = enabled.get(dimensionId);
-        if (value != null) {
-            return value;
-        }
-        return applied.contains(dimensionId);
+        return value == null || value;
     }
 
     public void markApplied(Identifier dimensionId, boolean dimensionEnabled) {

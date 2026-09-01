@@ -15,8 +15,9 @@ public final class EhmApi {
 
     /**
      * True when the server-global {@code extrahardmode:enabled} gamerule is on and
-     * this dimension's enabled flag is on. {@code /gamerule extrahardmode:enabled false}
-     * turns Extra Hard Mode off in every dimension.
+     * this dimension's enabled flag is on (dimension flags default true / opt-out).
+     * {@code /gamerule extrahardmode:enabled false} turns Extra Hard Mode off in
+     * every dimension; {@code /ehm set-world} opts a single dimension out.
      */
     public static boolean isActive(ServerLevel level) {
         return WorldGate.isActive(level);

@@ -18,11 +18,14 @@ import net.minecraft.world.level.storage.LevelResource;
  * Enable gate for Extra Hard Mode.
  *
  * <p>26.2 {@code GameRules} are server-global ({@code ServerLevel.getGameRules()} is
- * {@code MinecraftServer.getGameRules()}). {@link #ENABLED} is a master switch:
- * {@code /gamerule extrahardmode:enabled false} disables every dimension. Each
- * dimension also has its own enabled flag (boot SavedData + world.toml {@code enabled}),
- * first-applied independently. {@link #isActive} is gamerule AND that flag, so
- * {@code /ehm enabled [world]} can disagree across dimensions while the gamerule is on.
+ * {@code MinecraftServer.getGameRules()}). {@link #ENABLED} is a master switch,
+ * first-applied once on overworld from TOML {@code enabledByDefault}.
+ * {@code /gamerule extrahardmode:enabled false} disables every dimension;
+ * {@code /gamerule extrahardmode:enabled true} enables dimensions whose live
+ * {@code enabled} flag is still true (opt-out, default true).
+ *
+ * <p>{@link #isActive} is gamerule AND that dimension's flag, so
+ * {@code /ehm enabled [world]} can disagree after {@code /ehm set-world}.
  *
  * <p>Every mixin inject's first statement must be a WorldGate check.
  */
@@ -40,7 +43,8 @@ public final class WorldGate {
     }
 
     /**
-     * True when the global gamerule is on and this dimension's enabled flag is on.
+     * True when the global gamerule is on and this dimension's enabled flag is on
+     * (dimension flags default true).
      */
     public static boolean isActive(ServerLevel level) {
         if (!level.getGameRules().get(ENABLED)) {
@@ -71,30 +75,36 @@ public final class WorldGate {
         if (boot == null) {
             return;
         }
+        if (level.dimension() == Level.OVERWORLD && !boot.isGameruleApplied()) {
+            boolean enabledByDefault = ConfigManager.global().enabledByDefault();
+            level.getGameRules().set(ENABLED, enabledByDefault, server);
+            boot.markGameruleApplied();
+        }
         Identifier id = level.dimension().identifier();
         if (boot.contains(id)) {
             return;
         }
-        boolean enabledByDefault = ConfigManager.global().enabledByDefault();
-        Boolean overworldFlag = overworldDimensionFlag(boot, server, level);
-        boolean value = FirstApply.resolveEnabled(id.toString(), enabledByDefault, overworldFlag);
-        if (level.dimension() == Level.OVERWORLD) {
-            level.getGameRules().set(ENABLED, value, server);
-        }
-        boot.markApplied(id, value);
+        Boolean overworldLive = overworldLiveEnabled(server, level);
+        boolean value = FirstApply.resolveDimensionEnabled(id.toString(), overworldLive);
         WorldConfig config = ConfigManager.world(level);
-        config.setEnabled(value);
-        config.save(server);
+        if (!config.hasEnabledKey()) {
+            config.setEnabled(value);
+        }
+        if (!config.save(server)) {
+            ExtraHardModeMod.LOGGER.error("EHM first-apply {} skipped stamp; world.toml save failed", id);
+            return;
+        }
+        boot.markApplied(id, config.enabled());
         ExtraHardModeMod.LOGGER.info(
                 "EHM first-apply {} enabled={} (overworld save {})",
                 id,
-                value,
+                config.enabled(),
                 server.getWorldPath(LevelResource.ROOT).toAbsolutePath());
         if (level.dimension() == Level.OVERWORLD) {
             overworldToastPending = true;
-            toastOnlinePlayers(level, value);
+            toastOnlinePlayers(level, isActive(level));
         } else {
-            ExtraHardModeMod.LOGGER.info("EHM enabled={} in {}", value, id);
+            ExtraHardModeMod.LOGGER.info("EHM enabled={} in {}", isActive(level), id);
         }
     }
 
@@ -138,15 +148,11 @@ public final class WorldGate {
         return null;
     }
 
-    private static Boolean overworldDimensionFlag(ExtraHardModeBootData boot, MinecraftServer server, ServerLevel level) {
+    private static Boolean overworldLiveEnabled(MinecraftServer server, ServerLevel level) {
         ServerLevel overworld = server.overworld();
         if (overworld == null || overworld == level) {
             return null;
         }
-        Identifier overworldId = overworld.dimension().identifier();
-        if (!boot.contains(overworldId)) {
-            return null;
-        }
-        return boot.isDimensionEnabled(overworldId);
+        return ConfigManager.world(overworld).enabled();
     }
 }

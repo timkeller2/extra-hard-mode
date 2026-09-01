@@ -27,10 +27,10 @@ public final class WorldConfig {
     private int torchNoPlacementUnderY = 0;
     private boolean torchYDeny = true;
     private boolean enabled = true;
+    private boolean enabledPresent;
 
     public WorldConfig(Identifier dimensionId) {
         this.dimensionId = dimensionId;
-        this.enabled = GlobalConfig.defaultEnabledByDefault();
     }
 
     public Identifier dimensionId() {
@@ -69,8 +69,13 @@ public final class WorldConfig {
         return enabled;
     }
 
+    public boolean hasEnabledKey() {
+        return enabledPresent;
+    }
+
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+        this.enabledPresent = true;
     }
 
     public boolean isModuleEnabled(Identifier moduleId) {
@@ -167,7 +172,7 @@ public final class WorldConfig {
                 if (!file.contains("enabled")) {
                     file.setComment(
                             "enabled",
-                            "Per-dimension enable. The gamerule extrahardmode:enabled is a server-wide master switch.");
+                            "Per-dimension opt-out. Default true. The gamerule extrahardmode:enabled is the server-wide master switch.");
                 }
                 file.set("enabled", enabled);
                 file.set("bypassing.checkPermission", checkPermission);
@@ -190,7 +195,8 @@ public final class WorldConfig {
     }
 
     private void read(CommentedFileConfig file) {
-        enabled = file.getOrElse("enabled", GlobalConfig.defaultEnabledByDefault());
+        enabledPresent = file.contains("enabled");
+        enabled = file.getOrElse("enabled", true);
         checkPermission = file.getOrElse("bypassing.checkPermission", true);
         creativeBypasses = file.getOrElse("bypassing.creativeBypasses", true);
         operatorsBypass = file.getOrElse("bypassing.operatorsBypass", false);
