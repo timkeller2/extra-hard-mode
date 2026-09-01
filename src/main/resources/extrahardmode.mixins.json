@@ -10,6 +10,11 @@
     "FallingBlockEntityDamageMixin",
     "FallingBlockEntityLandMixin",
     "FallingBlockPlaceMixin"
+    "NaturalSpawnerMixin",
+    "AbstractSkeletonMixin",
+    "AbstractArrowMixin",
+    "SilverfishMergeMixin",
+    "SilverfishMixin"
   ],
   "client": [
     "client.ClientPlayerDestroySpeedMixin",

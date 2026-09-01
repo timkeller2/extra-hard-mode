@@ -47,6 +47,24 @@ public final class WorldConfig {
     private boolean fallingTurnGrassToDirt = true;
     private boolean fallingCascade = true;
     private boolean fallingDropAsItemWhenBlocked = false;
+    private boolean skeletonSnowballEnable = true;
+    private int skeletonSnowballPercent = 20;
+    private int skeletonSnowballBlindTicks = 100;
+    private boolean skeletonFireworkEnable = true;
+    private int skeletonFireworkPercent = 30;
+    private double skeletonFireworkKnockback = 1.0;
+    private boolean skeletonFireballEnable = true;
+    private int skeletonFireballPercent = 10;
+    private int skeletonFireballFireTicks = 40;
+    private boolean skeletonSilverfishEnable = true;
+    private int skeletonSilverfishPercent = 20;
+    private int skeletonSilverfishMaxAtOnce = 5;
+    private int skeletonSilverfishMaxTotal = 15;
+    private boolean skeletonKillSilverfishOnDeath = true;
+    private int skeletonDeflectArrowsPercent = 100;
+    private boolean silverfishCantEnterBlocks = true;
+    private boolean silverfishDropCobble = true;
+    private boolean silverfishVisibilityParticles = true;
     private boolean enabled = true;
     private boolean enabledPresent;
     private final PlayerSettings player = new PlayerSettings();
@@ -166,6 +184,42 @@ public final class WorldConfig {
 
     public boolean fallingDropAsItemWhenBlocked() {
         return fallingDropAsItemWhenBlocked;
+    public boolean skeletonSnowballEnable() {
+        return skeletonSnowballEnable;
+    public int skeletonSnowballPercent() {
+        return skeletonSnowballPercent;
+    public int skeletonSnowballBlindTicks() {
+        return skeletonSnowballBlindTicks;
+    public boolean skeletonFireworkEnable() {
+        return skeletonFireworkEnable;
+    public int skeletonFireworkPercent() {
+        return skeletonFireworkPercent;
+    public double skeletonFireworkKnockback() {
+        return skeletonFireworkKnockback;
+    public boolean skeletonFireballEnable() {
+        return skeletonFireballEnable;
+    public int skeletonFireballPercent() {
+        return skeletonFireballPercent;
+    public int skeletonFireballFireTicks() {
+        return skeletonFireballFireTicks;
+    public boolean skeletonSilverfishEnable() {
+        return skeletonSilverfishEnable;
+    public int skeletonSilverfishPercent() {
+        return skeletonSilverfishPercent;
+    public int skeletonSilverfishMaxAtOnce() {
+        return skeletonSilverfishMaxAtOnce;
+    public int skeletonSilverfishMaxTotal() {
+        return skeletonSilverfishMaxTotal;
+    public boolean skeletonKillSilverfishOnDeath() {
+        return skeletonKillSilverfishOnDeath;
+    public int skeletonDeflectArrowsPercent() {
+        return skeletonDeflectArrowsPercent;
+    public boolean silverfishCantEnterBlocks() {
+        return silverfishCantEnterBlocks;
+    public boolean silverfishDropCobble() {
+        return silverfishDropCobble;
+    public boolean silverfishVisibilityParticles() {
+        return silverfishVisibilityParticles;
     }
 
     public boolean enabled() {
@@ -332,6 +386,25 @@ public final class WorldConfig {
                 writeDefaultIfMissing(file, "falling.cascade", "Landed EHM falling blocks can make neighbors fall.", true);
                         "falling.dropAsItemWhenBlocked",
                         "Drop an item when a falling block cannot place.",
+                        "skeletons.snowballEnable",
+                        "Bogged share this table; strays/wither skeletons do not.",
+                writeDefaultIfMissing(file, "skeletons.snowballPercent", "Ordered specials: first success wins.", 20);
+                writeDefaultIfMissing(file, "skeletons.snowballBlindTicks", "Blindness duration on tagged arrow hit.", 100);
+                writeDefaultIfMissing(file, "skeletons.fireworkEnable", true);
+                writeDefaultIfMissing(file, "skeletons.fireworkPercent", 30);
+                writeDefaultIfMissing(file, "skeletons.fireworkKnockback", "Multiply arrow velocity on hit.", 1.0);
+                writeDefaultIfMissing(file, "skeletons.fireballEnable", true);
+                writeDefaultIfMissing(file, "skeletons.fireballPercent", 10);
+                writeDefaultIfMissing(file, "skeletons.fireballFireTicks", 40);
+                writeDefaultIfMissing(file, "skeletons.silverfishEnable", true);
+                writeDefaultIfMissing(file, "skeletons.silverfishPercent", 20);
+                writeDefaultIfMissing(file, "skeletons.silverfishMaxAtOnce", 5);
+                writeDefaultIfMissing(file, "skeletons.silverfishMaxTotal", 15);
+                        file, "skeletons.killSilverfishOnSkeletonDeath", "Discard owner-tagged minions on skeleton death.", true);
+                writeDefaultIfMissing(file, "skeletons.deflectArrowsPercent", "Arrows pass through Skeleton/Bogged.", 100);
+                writeDefaultIfMissing(file, "silverfish.cantEnterBlocks", "Block merge-into-stone.", true);
+                writeDefaultIfMissing(file, "silverfish.dropCobble", true);
+                        file, "silverfish.visibilityParticles", "Portal particles so floor-glitched silverfish stay visible.", true);
                 if (!file.contains("modules")) {
                     file.setComment("modules", "Runtime per-module toggles for this dimension. Missing keys default true.");
                 }
@@ -418,6 +491,24 @@ public final class WorldConfig {
                 file.set("farming.ironGolemNerf", ironGolemNerf);
                 file.set("farming.overcrowd.enable", overcrowdEnable);
                 file.set("farming.overcrowd.threshold", overcrowdThreshold);
+                file.set("skeletons.snowballEnable", skeletonSnowballEnable);
+                file.set("skeletons.snowballPercent", skeletonSnowballPercent);
+                file.set("skeletons.snowballBlindTicks", skeletonSnowballBlindTicks);
+                file.set("skeletons.fireworkEnable", skeletonFireworkEnable);
+                file.set("skeletons.fireworkPercent", skeletonFireworkPercent);
+                file.set("skeletons.fireworkKnockback", skeletonFireworkKnockback);
+                file.set("skeletons.fireballEnable", skeletonFireballEnable);
+                file.set("skeletons.fireballPercent", skeletonFireballPercent);
+                file.set("skeletons.fireballFireTicks", skeletonFireballFireTicks);
+                file.set("skeletons.silverfishEnable", skeletonSilverfishEnable);
+                file.set("skeletons.silverfishPercent", skeletonSilverfishPercent);
+                file.set("skeletons.silverfishMaxAtOnce", skeletonSilverfishMaxAtOnce);
+                file.set("skeletons.silverfishMaxTotal", skeletonSilverfishMaxTotal);
+                file.set("skeletons.killSilverfishOnSkeletonDeath", skeletonKillSilverfishOnDeath);
+                file.set("skeletons.deflectArrowsPercent", skeletonDeflectArrowsPercent);
+                file.set("silverfish.cantEnterBlocks", silverfishCantEnterBlocks);
+                file.set("silverfish.dropCobble", silverfishDropCobble);
+                file.set("silverfish.visibilityParticles", silverfishVisibilityParticles);
                 for (Map.Entry<Identifier, Boolean> entry : modules.entrySet()) {
                     file.set(moduleKey(entry.getKey()), entry.getValue());
                 }
@@ -496,6 +587,24 @@ public final class WorldConfig {
         ironGolemNerf = file.getOrElse("farming.ironGolemNerf", true);
         overcrowdEnable = file.getOrElse("farming.overcrowd.enable", true);
         overcrowdThreshold = file.getOrElse("farming.overcrowd.threshold", 10);
+        skeletonSnowballEnable = file.getOrElse("skeletons.snowballEnable", true);
+        skeletonSnowballPercent = percent(getInt(file, "skeletons.snowballPercent", 20));
+        skeletonSnowballBlindTicks = Math.max(0, getInt(file, "skeletons.snowballBlindTicks", 100));
+        skeletonFireworkEnable = file.getOrElse("skeletons.fireworkEnable", true);
+        skeletonFireworkPercent = percent(getInt(file, "skeletons.fireworkPercent", 30));
+        skeletonFireworkKnockback = getDouble(file, "skeletons.fireworkKnockback", 1.0);
+        skeletonFireballEnable = file.getOrElse("skeletons.fireballEnable", true);
+        skeletonFireballPercent = percent(getInt(file, "skeletons.fireballPercent", 10));
+        skeletonFireballFireTicks = Math.max(0, getInt(file, "skeletons.fireballFireTicks", 40));
+        skeletonSilverfishEnable = file.getOrElse("skeletons.silverfishEnable", true);
+        skeletonSilverfishPercent = percent(getInt(file, "skeletons.silverfishPercent", 20));
+        skeletonSilverfishMaxAtOnce = Math.max(0, getInt(file, "skeletons.silverfishMaxAtOnce", 5));
+        skeletonSilverfishMaxTotal = Math.max(0, getInt(file, "skeletons.silverfishMaxTotal", 15));
+        skeletonKillSilverfishOnDeath = file.getOrElse("skeletons.killSilverfishOnSkeletonDeath", true);
+        skeletonDeflectArrowsPercent = percent(getInt(file, "skeletons.deflectArrowsPercent", 100));
+        silverfishCantEnterBlocks = file.getOrElse("silverfish.cantEnterBlocks", true);
+        silverfishDropCobble = file.getOrElse("silverfish.dropCobble", true);
+        silverfishVisibilityParticles = file.getOrElse("silverfish.visibilityParticles", true);
         modules.clear();
         Object raw = file.get("modules");
         if (raw instanceof Config table) {
@@ -558,7 +667,9 @@ public final class WorldConfig {
 
     private static void writeDefaultIfMissing(CommentedFileConfig file, String path, String comment, boolean value) {
         if (!file.contains(path)) {
-            file.setComment(path, comment);
+            if (comment != null) {
+                file.setComment(path, comment);
+            }
             file.set(path, value);
         }
     }
@@ -581,4 +692,19 @@ public final class WorldConfig {
             file.set(path, value);
         }
     }
+    private static void writeDefaultIfMissing(CommentedFileConfig file, String path, boolean value) {
+        writeDefaultIfMissing(file, path, null, value);
+
+    private static void writeDefaultIfMissing(CommentedFileConfig file, String path, int value) {
+            if (comment != null) {
+                file.setComment(path, comment);
+    private static void writeDefaultIfMissing(CommentedFileConfig file, String path, String comment, double value) {
+    private static int percent(int value) {
+        return Math.clamp(value, 0, 100);
+    private static int getInt(CommentedFileConfig file, String path, int fallback) {
+        if (raw instanceof Number number) {
+            return number.intValue();
+        return fallback;
+    private static double getDouble(CommentedFileConfig file, String path, double fallback) {
+            return number.doubleValue();
 }

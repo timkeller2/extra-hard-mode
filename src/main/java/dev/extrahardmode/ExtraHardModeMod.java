@@ -15,6 +15,8 @@ import dev.extrahardmode.feature.Torches;
 import dev.extrahardmode.item.EhmComponents;
 import dev.extrahardmode.feature.Players;
 import dev.extrahardmode.feature.Water;
+import dev.extrahardmode.feature.monster.Silverfish;
+import dev.extrahardmode.feature.monster.Skeletons;
 import dev.extrahardmode.module.SpawnReplaceService;
 import dev.extrahardmode.module.PhysicsQueue;
 import dev.extrahardmode.network.EhmNetworking;
@@ -56,6 +58,8 @@ public class ExtraHardModeMod implements ModInitializer {
         FEATURES.register(new AnimalCrowdControl());
         FEATURES.register(new CaveIns());
         FEATURES.register(new FallingBlocks());
+        FEATURES.register(new Skeletons());
+        FEATURES.register(new Silverfish());
         ServerLevelEvents.LOAD.register((server, level) -> {
             WorldGate.onLevelLoad(server, level);
             FEATURES.onWorldLoad(level);

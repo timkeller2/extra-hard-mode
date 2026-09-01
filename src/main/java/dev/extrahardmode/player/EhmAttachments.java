@@ -7,8 +7,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
+import net.minecraft.core.UUIDUtil;
 
 public final class EhmAttachments {
     public static final Codec<LongOpenHashSet> LONG_SET_CODEC = Codec.LONG.listOf().xmap(list -> {
@@ -46,6 +48,25 @@ public final class EhmAttachments {
     public static final AttachmentType<Boolean> EHM_OURS = AttachmentRegistry.create(
             ExtraHardModeMod.id("ours"),
             builder -> builder.persistent(Codec.BOOL).initializer(() -> Boolean.FALSE));
+
+    public static final AttachmentType<UUID> EHM_SILVERFISH_OWNER = AttachmentRegistry.create(
+            ExtraHardModeMod.id("silverfish_owner"), builder -> builder.persistent(UUIDUtil.CODEC));
+
+    public static final AttachmentType<Integer> EHM_SILVERFISH_SPAWNED = AttachmentRegistry.create(
+            ExtraHardModeMod.id("silverfish_spawned"),
+            builder -> builder.persistent(Codec.INT).initializer(() -> 0));
+
+    public static final AttachmentType<Boolean> EHM_LOOTLESS = AttachmentRegistry.create(
+            ExtraHardModeMod.id("lootless"),
+            builder -> builder.persistent(Codec.BOOL).initializer(() -> Boolean.FALSE));
+
+    /** Transient shot tag: snowball / firework / fireball. */
+    public static final AttachmentType<String> EHM_SKELETON_SPECIAL =
+            AttachmentRegistry.create(ExtraHardModeMod.id("skeleton_special"));
+
+    /** Transient; caches the one deflect roll for this arrow so mixin + ALLOW_DAMAGE cannot double-roll. */
+    public static final AttachmentType<Boolean> EHM_ARROW_DEFLECT =
+            AttachmentRegistry.create(ExtraHardModeMod.id("arrow_deflect"));
 
     private EhmAttachments() {}
 

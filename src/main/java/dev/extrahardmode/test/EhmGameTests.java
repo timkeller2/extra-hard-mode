@@ -5,6 +5,8 @@ import dev.extrahardmode.feature.CaveIns;
 import dev.extrahardmode.feature.FallingBlocks;
 import dev.extrahardmode.feature.HardenedStone;
 import dev.extrahardmode.item.EhmComponents;
+import dev.extrahardmode.feature.monster.Silverfish;
+import dev.extrahardmode.feature.monster.Skeletons;
 import dev.extrahardmode.module.SpawnReplaceService;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.module.PhysicsQueue;
@@ -57,6 +59,8 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.level.storage.ValueInput;
@@ -463,5 +467,104 @@ public class EhmGameTests {
                 PhysicsSkip.never(level, abs) && !level.getBiome(abs).is(EhmTags.NO_PHYSICS),
                 "empty test platform is not a protected structure piece");
         helper.succeed();
+    }
+
+    @GameTest
+    public void skeletonSpecialShooterFilter(GameTestHelper helper) {
+        BlockPos pos = new BlockPos(1, 2, 1);
+        helper.assertTrue(
+                Skeletons.isSpecialShooter(helper.spawn(EntityTypes.SKELETON, pos, EntitySpawnReason.COMMAND)),
+                "skeleton is special shooter");
+        helper.assertTrue(
+                Skeletons.isSpecialShooter(helper.spawn(EntityTypes.BOGGED, pos, EntitySpawnReason.COMMAND)),
+                "bogged shares skeleton table");
+        helper.assertFalse(
+                Skeletons.isSpecialShooter(helper.spawn(EntityTypes.STRAY, pos, EntitySpawnReason.COMMAND)),
+                "stray excluded");
+        helper.assertFalse(
+                Skeletons.isSpecialShooter(helper.spawn(EntityTypes.WITHER_SKELETON, pos, EntitySpawnReason.COMMAND)),
+                "wither skeleton excluded");
+        helper.assertFalse(
+                Skeletons.isSpecialShooter(helper.spawn(EntityTypes.PARCHED, pos, EntitySpawnReason.COMMAND)),
+                "parched excluded");
+        helper.succeed();
+    }
+
+    @GameTest
+    public void silverfishDropsCobble(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        MinecraftServer server = level.getServer();
+        boolean previous = level.getGameRules().get(WorldGate.ENABLED);
+        level.getGameRules().set(WorldGate.ENABLED, true, server);
+        try {
+            BlockPos pos = new BlockPos(1, 2, 1);
+            var fish = helper.spawn(EntityTypes.SILVERFISH, pos, EntitySpawnReason.COMMAND);
+            helper.kill(fish);
+            helper.succeedWhen(() -> helper.assertItemEntityPresent(net.minecraft.world.item.Items.COBBLESTONE, pos, 3.0));
+        } finally {
+            level.getGameRules().set(WorldGate.ENABLED, previous, server);
+        }
+    }
+
+    @GameTest
+    public void silverfishDoesNotEnterStoneWhenActive(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        MinecraftServer server = level.getServer();
+        boolean previous = level.getGameRules().get(WorldGate.ENABLED);
+        level.getGameRules().set(WorldGate.ENABLED, true, server);
+        try {
+            helper.assertTrue(Silverfish.cantEnterBlocks(level), "cantEnterBlocks when WorldGate on");
+            var fish = helper.spawn(EntityTypes.SILVERFISH, new BlockPos(2, 2, 2), EntitySpawnReason.COMMAND);
+            BlockPos hostPos = hostBeside(fish, Direction.NORTH);
+            level.setBlock(hostPos, Blocks.STONE.defaultBlockState(), 3);
+            invokeMergeStart(fish, Direction.NORTH);
+            helper.assertTrue(level.getBlockState(hostPos).is(Blocks.STONE), "host not infested when active");
+            helper.succeed();
+        } catch (ReflectiveOperationException e) {
+            helper.fail("merge goal reflect: " + e.getMessage());
+        } finally {
+            level.getGameRules().set(WorldGate.ENABLED, previous, server);
+        }
+    }
+
+    @GameTest
+    public void silverfishEntersStoneWhenWorldGateOff(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        MinecraftServer server = level.getServer();
+        boolean previous = level.getGameRules().get(WorldGate.ENABLED);
+        level.getGameRules().set(WorldGate.ENABLED, false, server);
+        try {
+            helper.assertFalse(Silverfish.cantEnterBlocks(level), "cantEnterBlocks off when WorldGate off");
+            var fish = helper.spawn(EntityTypes.SILVERFISH, new BlockPos(2, 2, 2), EntitySpawnReason.COMMAND);
+            BlockPos hostPos = hostBeside(fish, Direction.NORTH);
+            level.setBlock(hostPos, Blocks.STONE.defaultBlockState(), 3);
+            invokeMergeStart(fish, Direction.NORTH);
+            helper.assertTrue(
+                    level.getBlockState(hostPos).is(Blocks.INFESTED_STONE), "vanilla infest when WorldGate off");
+            helper.succeed();
+        } catch (ReflectiveOperationException e) {
+            helper.fail("merge goal reflect: " + e.getMessage());
+        } finally {
+            level.getGameRules().set(WorldGate.ENABLED, previous, server);
+        }
+    }
+
+    private static BlockPos hostBeside(net.minecraft.world.entity.monster.Silverfish fish, Direction direction) {
+        return BlockPos.containing(fish.getX(), fish.getY() + 0.5, fish.getZ()).relative(direction);
+    }
+
+    private static void invokeMergeStart(net.minecraft.world.entity.monster.Silverfish fish, Direction direction)
+            throws ReflectiveOperationException {
+        Class<?> goalClass = Class.forName("net.minecraft.world.entity.monster.Silverfish$SilverfishMergeWithStoneGoal");
+        var ctor = goalClass.getDeclaredConstructor(net.minecraft.world.entity.monster.Silverfish.class);
+        ctor.setAccessible(true);
+        Object goal = ctor.newInstance(fish);
+        var doMerge = goalClass.getDeclaredField("doMerge");
+        doMerge.setAccessible(true);
+        doMerge.setBoolean(goal, true);
+        var selected = goalClass.getDeclaredField("selectedDirection");
+        selected.setAccessible(true);
+        selected.set(goal, direction);
+        goalClass.getMethod("start").invoke(goal);
     }
 }
