@@ -40,6 +40,10 @@ public final class EhmAttachments {
             ExtraHardModeMod.id("visited_sections"),
             builder -> builder.persistent(LONG_SET_CODEC).copyOnDeath().initializer(LongOpenHashSet::new));
 
+    public static final AttachmentType<Boolean> EHM_OURS = AttachmentRegistry.create(
+            ExtraHardModeMod.id("ours"),
+            builder -> builder.persistent(Codec.BOOL).initializer(() -> Boolean.FALSE));
+
     private EhmAttachments() {}
 
     public static void register() {
