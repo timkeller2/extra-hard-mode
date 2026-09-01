@@ -1,6 +1,10 @@
 {
   "replace": false,
   "values": [
-    "#minecraft:logs_that_burn"
+    "#minecraft:logs"
+  ],
+  "remove": [
+    "#minecraft:crimson_stems",
+    "#minecraft:warped_stems"
   ]
 }

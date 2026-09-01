@@ -10,7 +10,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Staggers log converts through {@link PhysicsQueue} so stacked falling entities do not collide.
+ * Enqueues every remaining log with delay 0 so one PhysicsQueue drain converts the whole tree.
+ * Per-layer delay lets 2×2 sibling bases land before the crown converts.
  */
 public final class FallingLogsTask {
     private FallingLogsTask() {}
@@ -24,21 +25,16 @@ public final class FallingLogsTask {
             ordered.add(pos.immutable());
         }
         ordered.sort(Comparator.comparingInt((BlockPos pos) -> pos.getY())
+                .reversed()
                 .thenComparingInt(pos -> pos.getX())
                 .thenComparingInt(pos -> pos.getZ()));
         PhysicsQueue queue = PhysicsQueue.of(level);
-        int delay = 0;
-        int lastY = Integer.MIN_VALUE;
         for (BlockPos pos : ordered) {
-            if (lastY != Integer.MIN_VALUE && pos.getY() != lastY) {
-                delay++;
-            }
-            lastY = pos.getY();
             BlockState state = level.getBlockState(pos);
             if (!state.is(EhmTags.FELLABLE_LOGS)) {
                 continue;
             }
-            queue.enqueueFalling(level, pos, state, PhysicsQueue.unwaterlog(state), delay);
+            queue.enqueueFalling(level, pos, state, PhysicsQueue.unwaterlog(state), 0);
         }
     }
 }

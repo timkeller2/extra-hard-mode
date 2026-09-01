@@ -5,6 +5,7 @@ package dev.extrahardmode.feature;
  * envelope without a running server.
  */
 public final class TreeFellLimits {
+    /** BFS cap. A 2×2 taller than 16 layers can fill this with trunk and then fail the leaf check. */
     public static final int MAX_LOGS = 64;
     public static final int MAX_UP = 30;
     public static final int MAX_DOWN = 2;

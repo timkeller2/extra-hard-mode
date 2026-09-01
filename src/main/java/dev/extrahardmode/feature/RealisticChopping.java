@@ -63,6 +63,7 @@ public final class RealisticChopping implements FeatureModule {
         bus.listen(PlayerBlockBreakEvents.AFTER, ID, RealisticChopping::onBreak);
     }
 
+    /** Module toggle and {@code worldRules.betterTreeFelling} are both required. */
     public static boolean enabled(Level level) {
         return FeatureBus.guard(level, ID)
                 && level instanceof ServerLevel serverLevel
@@ -81,9 +82,6 @@ public final class RealisticChopping implements FeatureModule {
             return;
         }
         if (player instanceof ServerPlayer serverPlayer && EhmApi.playerBypasses(serverPlayer)) {
-            return;
-        }
-        if (player.hasInfiniteMaterials() || player.isCreative()) {
             return;
         }
         TagKey<Block> wood = matchingVanillaLogTag(brokenState);
@@ -115,6 +113,7 @@ public final class RealisticChopping implements FeatureModule {
 
     public static boolean matchingLeaves(BlockState state, TagKey<Block> wood) {
         if (wood == null) {
+            // Datapack logs not in a vanilla species tag never match leaves, so they never fell.
             return false;
         }
         if (wood.equals(OAK_LOGS)) {
@@ -160,6 +159,7 @@ public final class RealisticChopping implements FeatureModule {
         queue.add(origin);
         seen.add(origin.asLong());
         logs.add(origin);
+        // Hitting MAX_LOGS can omit the canopy, so the ≥4 leaf check then refuses the fell.
         while (!queue.isEmpty() && logs.size() < TreeFellLimits.MAX_LOGS) {
             BlockPos current = queue.poll();
             for (Direction direction : Direction.values()) {
