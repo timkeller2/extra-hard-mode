@@ -28,6 +28,14 @@ public final class WorldConfig {
     private boolean torchYDeny = true;
     private boolean enabled = true;
     private boolean enabledPresent;
+    private boolean inhibitGrinders = true;
+    private boolean moreMonstersEnable = true;
+    private int moreMonstersMaxY = 48;
+    private int moreMonstersMultiplier = 2;
+    private boolean spawnInLightEnable = true;
+    private int spawnInLightMaxY = 48;
+    private int spawnInLightMaxLight = 10;
+    private int spawnInLightPercent = 100;
 
     public WorldConfig(Identifier dimensionId) {
         this.dimensionId = dimensionId;
@@ -71,6 +79,38 @@ public final class WorldConfig {
 
     public boolean hasEnabledKey() {
         return enabledPresent;
+    }
+
+    public boolean inhibitGrinders() {
+        return inhibitGrinders;
+    }
+
+    public boolean moreMonstersEnable() {
+        return moreMonstersEnable;
+    }
+
+    public int moreMonstersMaxY() {
+        return moreMonstersMaxY;
+    }
+
+    public int moreMonstersMultiplier() {
+        return moreMonstersMultiplier;
+    }
+
+    public boolean spawnInLightEnable() {
+        return spawnInLightEnable;
+    }
+
+    public int spawnInLightMaxY() {
+        return spawnInLightMaxY;
+    }
+
+    public int spawnInLightMaxLight() {
+        return spawnInLightMaxLight;
+    }
+
+    public int spawnInLightPercent() {
+        return spawnInLightPercent;
     }
 
     public void setEnabled(boolean enabled) {
@@ -142,6 +182,47 @@ public final class WorldConfig {
                     file.set("torches.noPlacementUnderY", 0);
                 }
                 writeDefaultIfMissing(file, "torches.noPlacementOnSoft", "No torches on soft surfaces.", true);
+                writeDefaultIfMissing(
+                        file,
+                        "monsters.inhibitGrinders",
+                        "No drops/XP for grinders: unnatural floor, too much env damage, no path to player, water.",
+                        true);
+                writeDefaultIfMissing(
+                        file,
+                        "monsters.more.enable",
+                        "Pack-size multiplier below maxY. Disable with this boolean, not Y=0.",
+                        true);
+                if (!file.contains("monsters.more.maxY")) {
+                    file.setComment("monsters.more.maxY", "original: 55; cave band");
+                    file.set("monsters.more.maxY", 48);
+                }
+                if (!file.contains("monsters.more.multiplier")) {
+                    file.setComment(
+                            "monsters.more.multiplier",
+                            "Pack size only; does not raise the vanilla monster cap.");
+                    file.set("monsters.more.multiplier", 2);
+                }
+                writeDefaultIfMissing(
+                        file,
+                        "monsters.spawnInLight.enable",
+                        "Spawn extra monsters in light<=maxLight below maxY. Disable with this boolean, not Y=0.",
+                        true);
+                if (!file.contains("monsters.spawnInLight.maxY")) {
+                    file.setComment("monsters.spawnInLight.maxY", "original RootNode 50; cave band");
+                    file.set("monsters.spawnInLight.maxY", 48);
+                }
+                if (!file.contains("monsters.spawnInLight.maxLight")) {
+                    file.setComment(
+                            "monsters.spawnInLight.maxLight",
+                            "0-3 bats, 0-7 vanilla, 8-11 hostile no burn, 12+ burn");
+                    file.set("monsters.spawnInLight.maxLight", 10);
+                }
+                if (!file.contains("monsters.spawnInLight.percent")) {
+                    file.setComment(
+                            "monsters.spawnInLight.percent",
+                            "Chance per attempt at previously visited cave sections.");
+                    file.set("monsters.spawnInLight.percent", 100);
+                }
                 if (!file.contains("modules")) {
                     file.setComment("modules", "Runtime per-module toggles for this dimension. Missing keys default true.");
                 }
@@ -182,6 +263,14 @@ public final class WorldConfig {
                 file.set("torches.noPlacement.enable", torchYDeny);
                 file.set("torches.noPlacementUnderY", torchNoPlacementUnderY);
                 file.set("torches.noPlacementOnSoft", torchSoftDeny);
+                file.set("monsters.inhibitGrinders", inhibitGrinders);
+                file.set("monsters.more.enable", moreMonstersEnable);
+                file.set("monsters.more.maxY", moreMonstersMaxY);
+                file.set("monsters.more.multiplier", moreMonstersMultiplier);
+                file.set("monsters.spawnInLight.enable", spawnInLightEnable);
+                file.set("monsters.spawnInLight.maxY", spawnInLightMaxY);
+                file.set("monsters.spawnInLight.maxLight", spawnInLightMaxLight);
+                file.set("monsters.spawnInLight.percent", spawnInLightPercent);
                 for (Map.Entry<Identifier, Boolean> entry : modules.entrySet()) {
                     file.set(moduleKey(entry.getKey()), entry.getValue());
                 }
@@ -204,6 +293,14 @@ public final class WorldConfig {
         torchYDeny = file.getOrElse("torches.noPlacement.enable", true);
         torchNoPlacementUnderY = file.getOrElse("torches.noPlacementUnderY", 0);
         torchSoftDeny = file.getOrElse("torches.noPlacementOnSoft", true);
+        inhibitGrinders = file.getOrElse("monsters.inhibitGrinders", true);
+        moreMonstersEnable = file.getOrElse("monsters.more.enable", true);
+        moreMonstersMaxY = getInt(file, "monsters.more.maxY", 48);
+        moreMonstersMultiplier = getInt(file, "monsters.more.multiplier", 2);
+        spawnInLightEnable = file.getOrElse("monsters.spawnInLight.enable", true);
+        spawnInLightMaxY = getInt(file, "monsters.spawnInLight.maxY", 48);
+        spawnInLightMaxLight = getInt(file, "monsters.spawnInLight.maxLight", 10);
+        spawnInLightPercent = getInt(file, "monsters.spawnInLight.percent", 100);
         modules.clear();
         Object raw = file.get("modules");
         if (raw instanceof Config table) {
@@ -240,5 +337,13 @@ public final class WorldConfig {
             file.setComment(path, comment);
             file.set(path, value);
         }
+    }
+
+    private static int getInt(CommentedFileConfig file, String path, int fallback) {
+        Object raw = file.get(path);
+        if (raw instanceof Number number) {
+            return number.intValue();
+        }
+        return fallback;
     }
 }

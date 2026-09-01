@@ -2,6 +2,7 @@ package dev.extrahardmode.player;
 
 import com.mojang.serialization.Codec;
 import dev.extrahardmode.ExtraHardModeMod;
+import it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,13 +37,37 @@ public final class EhmAttachments {
     public static final AttachmentType<Double> EHM_WEIGHT_CACHE =
             AttachmentRegistry.create(ExtraHardModeMod.id("weight_cache"), builder -> builder.initializer(() -> 0.0));
 
-    public static final AttachmentType<LongOpenHashSet> EHM_VISITED_SECTIONS = AttachmentRegistry.create(
+    public static final Codec<LongLinkedOpenHashSet> LONG_LINKED_SET_CODEC = Codec.LONG.listOf().xmap(list -> {
+        LongLinkedOpenHashSet set = new LongLinkedOpenHashSet(list.size());
+        for (Long value : list) {
+            set.add(value.longValue());
+        }
+        return set;
+    }, set -> {
+        List<Long> list = new ArrayList<>(set.size());
+        set.forEach((long value) -> list.add(value));
+        return list;
+    });
+
+    public static final AttachmentType<LongLinkedOpenHashSet> EHM_VISITED_SECTIONS = AttachmentRegistry.create(
             ExtraHardModeMod.id("visited_sections"),
-            builder -> builder.persistent(LONG_SET_CODEC).copyOnDeath().initializer(LongOpenHashSet::new));
+            builder -> builder.persistent(LONG_LINKED_SET_CODEC).copyOnDeath().initializer(LongLinkedOpenHashSet::new));
 
     /** Persistent; stamped before a spawn-replacement roll so chunk reload cannot re-roll. */
     public static final AttachmentType<Boolean> EHM_SPAWN_PROCESSED = AttachmentRegistry.create(
             ExtraHardModeMod.id("spawn_processed"),
+            builder -> builder.persistent(Codec.BOOL).initializer(() -> Boolean.FALSE));
+
+    public static final AttachmentType<DamageTracker> EHM_DAMAGE_TRACKER = AttachmentRegistry.create(
+            ExtraHardModeMod.id("damage_tracker"),
+            builder -> builder.persistent(DamageTracker.CODEC).initializer(() -> DamageTracker.EMPTY));
+
+    public static final AttachmentType<Boolean> EHM_UNNATURAL_SPAWN = AttachmentRegistry.create(
+            ExtraHardModeMod.id("unnatural_spawn"),
+            builder -> builder.persistent(Codec.BOOL).initializer(() -> Boolean.FALSE));
+
+    public static final AttachmentType<Boolean> EHM_LOOTLESS = AttachmentRegistry.create(
+            ExtraHardModeMod.id("lootless"),
             builder -> builder.persistent(Codec.BOOL).initializer(() -> Boolean.FALSE));
 
     private EhmAttachments() {}
