@@ -72,6 +72,14 @@ public final class SpawnReplaceService {
         REPLACEMENTS.computeIfAbsent(from, type -> new CopyOnWriteArrayList<>()).add(fn);
     }
 
+    /** Deep Dark biome tag and ancient city / trial chamber structure tags. */
+    public static boolean locationExcluded(ServerLevel level, BlockPos pos) {
+        if (level.getBiome(pos).is(NO_SPAWN_REPLACEMENTS)) {
+            return true;
+        }
+        return level.structureManager().getStructureWithPieceAt(pos, NO_SPAWN_REPLACEMENT_STRUCTURES).isValid();
+    }
+
     public static boolean replaceIfNeeded(Mob mob, ServerLevel level, EntitySpawnReason reason) {
         if (!WorldGate.isActive(level)) {
             return false;
@@ -84,10 +92,7 @@ public final class SpawnReplaceService {
             return false;
         }
         BlockPos pos = mob.blockPosition();
-        if (level.getBiome(pos).is(NO_SPAWN_REPLACEMENTS)) {
-            return false;
-        }
-        if (level.structureManager().getStructureWithPieceAt(pos, NO_SPAWN_REPLACEMENT_STRUCTURES).isValid()) {
+        if (locationExcluded(level, pos)) {
             return false;
         }
         List<ReplaceFn> fns = REPLACEMENTS.get(mob.getType());

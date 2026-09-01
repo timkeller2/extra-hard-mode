@@ -106,6 +106,10 @@ public final class EhmAttachments {
     public static final AttachmentType<Vec3> EHM_FLY_ORIGIN = AttachmentRegistry.create(
             ExtraHardModeMod.id("fly_origin"), builder -> builder.persistent(Vec3.CODEC));
 
+    public static final AttachmentType<Boolean> EHM_LOOTLESS = AttachmentRegistry.create(
+            ExtraHardModeMod.id("lootless"),
+            builder -> builder.persistent(Codec.BOOL).initializer(() -> Boolean.FALSE));
+
     public static final AttachmentType<Boolean> EHM_IGNORE = AttachmentRegistry.create(
             ExtraHardModeMod.id("ignore"),
             builder -> builder.persistent(Codec.BOOL).initializer(() -> Boolean.FALSE));
@@ -115,6 +119,9 @@ public final class EhmAttachments {
     public static final AttachmentType<Integer> EHM_REANIMATE_COUNT = AttachmentRegistry.create(
             ExtraHardModeMod.id("reanimate_count"),
             builder -> builder.persistent(Codec.INT).initializer(() -> 0));
+    public static final AttachmentType<Integer> EHM_BLAZE_SPLIT =
+            AttachmentRegistry.create(ExtraHardModeMod.id("blaze_split"), builder -> builder.initializer(() -> 0));
+
     private EhmAttachments() {}
 
     public static void register() {

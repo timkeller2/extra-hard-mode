@@ -64,6 +64,9 @@ public final class EhmCommands {
         "cave_spider",
         "guardians",
         "vex"
+        "pigmen",
+        "ghasts",
+        "dragon"
     };
 
     private static final SuggestionProvider<CommandSourceStack> MODULE_SUGGESTOR =

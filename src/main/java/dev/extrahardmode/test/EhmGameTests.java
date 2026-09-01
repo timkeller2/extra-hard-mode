@@ -11,6 +11,8 @@ import dev.extrahardmode.feature.RealisticChopping;
 import dev.extrahardmode.feature.MoreTnt;
 import dev.extrahardmode.feature.monster.Zombies;
 import dev.extrahardmode.module.EntityHelper;
+import dev.extrahardmode.feature.monster.Blazes;
+import dev.extrahardmode.feature.monster.PigMen;
 import dev.extrahardmode.item.EhmComponents;
 import dev.extrahardmode.feature.monster.Silverfish;
 import dev.extrahardmode.feature.monster.Skeletons;
@@ -48,8 +50,11 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.monster.cubemob.MagmaCube;
+import net.minecraft.world.entity.monster.skeleton.Skeleton;
 import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.entity.monster.zombie.ZombieVillager;
+import net.minecraft.world.entity.monster.zombie.ZombifiedPiglin;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
@@ -920,6 +925,61 @@ public class EhmGameTests {
                     }
                 }
             helper.assertTrue(found, "spider death placed cobweb");
+        }
+    }
+
+    @GameTest(padding = 8)
+    public void magmaCubeGrowsIntoBlazeOnDamage(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        MagmaCube cube = helper.spawn(EntityTypes.MAGMA_CUBE, new BlockPos(2, 2, 2), EntitySpawnReason.COMMAND);
+        MagmaCube neighbor = helper.spawn(EntityTypes.MAGMA_CUBE, new BlockPos(3, 2, 2), EntitySpawnReason.COMMAND);
+        cube.setSize(1, true);
+        neighbor.setSize(1, true);
+        helper.hurt(cube, level.damageSources().generic(), 1.0F);
+        helper.assertTrue(cube.isRemoved(), "damaged magma cube discarded via ALLOW_DAMAGE");
+        helper.assertEntityPresent(EntityTypes.BLAZE);
+        AABB box = new AABB(helper.absolutePos(new BlockPos(2, 2, 2))).inflate(8.0);
+        int blazes = level.getEntities(EntityTypes.BLAZE, box, entity -> true).size();
+        helper.assertTrue(blazes == 1, "MAGMACUBE_FIRE must not convert neighbor cubes, blazes=" + blazes);
+        helper.succeed();
+    @GameTest
+    public void zombifiedPiglinStaysAngryAtPlayer(GameTestHelper helper) {
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        player.setGameMode(GameType.SURVIVAL);
+        BlockPos pos = helper.absolutePos(new BlockPos(2, 2, 2));
+        player.snapTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5);
+        ZombifiedPiglin piglin =
+                helper.spawn(EntityTypes.ZOMBIFIED_PIGLIN, new BlockPos(2, 2, 3), EntitySpawnReason.COMMAND);
+        piglin.setPersistenceRequired();
+        PigMen.keepAngry(piglin, level);
+        helper.assertTrue(piglin.isAngry(), "unhit piglin is angry");
+        helper.assertTrue(piglin.getTarget() == player || piglin.isAngryAt(player, level), "aggroes nearby player");
+        piglin.stopBeingAngry();
+        helper.assertTrue(piglin.isAngry(), "stopBeingAngry does not clear always-angry piglin");
+        helper.assertTrue(
+                piglin.getTarget() == player || piglin.isAngryAt(player, level), "still angry at the player after calm");
+    public void nearBedrockBlazeYGate(GameTestHelper helper) {
+        helper.assertTrue(Blazes.shouldReplaceNearBedrock(-56, true, -56), "Y=-56 is near bedrock");
+        helper.assertFalse(Blazes.shouldReplaceNearBedrock(-55, true, -56), "Y=-55 is above blaze band");
+        helper.assertFalse(Blazes.shouldReplaceNearBedrock(-56, false, -56), "boolean disables Y gate");
+    public void deepDarkSkipsBlazeReplace(GameTestHelper helper) {
+        var biomes = level.registryAccess().lookupOrThrow(Registries.BIOME);
+                biomes.getOrThrow(Biomes.DEEP_DARK).is(SpawnReplaceService.NO_SPAWN_REPLACEMENTS),
+                "deep_dark is in #no_spawn_replacements; SpawnReplaceService skips before Blazes.roll");
+        helper.setBiome(Biomes.DEEP_DARK);
+        BlockPos here = helper.absolutePos(new BlockPos(1, 2, 1));
+        helper.assertTrue(SpawnReplaceService.locationExcluded(level, here), "Deep Dark location is excluded");
+        Skeleton deep = helper.spawn(EntityTypes.SKELETON, new BlockPos(1, 2, 1), EntitySpawnReason.NATURAL);
+        SpawnReplaceService.replaceIfNeeded(deep, level, EntitySpawnReason.NATURAL);
+        helper.assertTrue(!deep.isRemoved() && deep.getType() == EntityTypes.SKELETON, "Deep Dark skeleton not replaced");
+        helper.setBiome(Biomes.PLAINS);
+        helper.assertFalse(
+                SpawnReplaceService.locationExcluded(level, here), "plains is not excluded so Y<=-56 can roll");
+        Skeleton cave = helper.spawn(EntityTypes.SKELETON, new BlockPos(2, 2, 1), EntitySpawnReason.COMMAND);
+        cave.snapTo(cave.getX(), -56.0, cave.getZ());
+                Blazes.rollOverworldSkeleton(cave, level, 100) == EntityTypes.BLAZE,
+                "Y=-56 outside Deep Dark rolls blaze at 100%");
+    private static void fillStoneCube(GameTestHelper helper, BlockPos center) {
         for (int x = 2; x <= 6; x++) {
             for (int y = 2; y <= 6; y++) {
                 for (int z = 2; z <= 6; z++) {

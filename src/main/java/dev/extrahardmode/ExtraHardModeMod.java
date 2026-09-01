@@ -18,6 +18,9 @@ import dev.extrahardmode.feature.MoreTnt;
 import dev.extrahardmode.feature.monster.Creepers;
 import dev.extrahardmode.feature.monster.Spiders;
 import dev.extrahardmode.feature.monster.Zombies;
+import dev.extrahardmode.feature.monster.Blazes;
+import dev.extrahardmode.feature.monster.Ghasts;
+import dev.extrahardmode.feature.monster.PigMen;
 import dev.extrahardmode.item.EhmComponents;
 import dev.extrahardmode.feature.Players;
 import dev.extrahardmode.feature.Water;
@@ -87,6 +90,9 @@ public class ExtraHardModeMod implements ModInitializer {
         FEATURES.register(new Spiders());
         FEATURES.register(new Creepers());
         FEATURES.register(new Zombies());
+        FEATURES.register(new Blazes());
+        FEATURES.register(new PigMen());
+        FEATURES.register(new Ghasts());
         ServerLevelEvents.LOAD.register((server, level) -> {
             WorldGate.onLevelLoad(server, level);
             FEATURES.onWorldLoad(level);
