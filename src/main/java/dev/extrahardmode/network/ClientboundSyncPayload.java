@@ -1,13 +1,23 @@
 package dev.extrahardmode.network;
 
 import dev.extrahardmode.ExtraHardModeMod;
+import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.config.WorldConfig;
+import dev.extrahardmode.feature.HardenedStone;
+import dev.extrahardmode.tag.EhmTags;
+import dev.extrahardmode.world.WorldGate;
 import io.netty.buffer.ByteBuf;
+import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.core.Holder;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.TagKey;
 
 public record ClientboundSyncPayload(
         boolean limitedBuilding,
@@ -48,16 +58,57 @@ public record ClientboundSyncPayload(
             ClientboundSyncPayload::new);
 
     public static ClientboundSyncPayload from(WorldConfig config) {
+        return from(null, config);
+    }
+
+    public static ClientboundSyncPayload from(ServerLevel level) {
+        return from(level, ConfigManager.world(level));
+    }
+
+    public static ClientboundSyncPayload from(ServerLevel level, WorldConfig config) {
+        boolean hardened = level != null
+                && WorldGate.isModuleActive(level, HardenedStone.ID)
+                && config.hardenedEnable();
+        List<Identifier> hardenedBlocks = List.of();
+        List<Identifier> hardenedPicks = List.of();
+        List<Identifier> caveInOres = List.of();
+        if (hardened) {
+            hardenedBlocks = snapshot(level.registryAccess().lookupOrThrow(Registries.BLOCK), EhmTags.HARDENED);
+            if (hardenedBlocks.isEmpty()) {
+                hardenedBlocks = List.of(
+                        Identifier.withDefaultNamespace("stone"),
+                        Identifier.withDefaultNamespace("deepslate"),
+                        Identifier.withDefaultNamespace("tuff"));
+            }
+            List<Identifier> picks = new ArrayList<>(
+                    snapshot(level.registryAccess().lookupOrThrow(Registries.ITEM), EhmTags.HARDENED_MINER));
+            for (Identifier id : config.hardenedBudgets().keySet()) {
+                if (!picks.contains(id)) {
+                    picks.add(id);
+                }
+            }
+            hardenedPicks = List.copyOf(picks);
+            caveInOres = snapshot(level.registryAccess().lookupOrThrow(Registries.BLOCK), EhmTags.CAVE_IN_ORES);
+        }
         return new ClientboundSyncPayload(
                 config.limitedBuilding(),
                 config.torchSoftDeny(),
                 config.torchNoPlacementUnderY(),
                 config.torchYDeny(),
-                List.of(),
-                List.of(),
-                List.of(),
+                hardenedBlocks,
+                hardenedPicks,
+                caveInOres,
                 List.of(),
                 List.of());
+    }
+
+    private static <T> List<Identifier> snapshot(HolderLookup.RegistryLookup<T> lookup, TagKey<T> tag) {
+        return lookup.get(tag)
+                .map(named -> named.stream()
+                        .map(Holder::getRegisteredName)
+                        .map(Identifier::parse)
+                        .toList())
+                .orElse(List.of());
     }
 
     @Override

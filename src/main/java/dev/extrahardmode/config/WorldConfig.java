@@ -4,9 +4,12 @@ import com.electronwill.nightconfig.core.Config;
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.electronwill.nightconfig.toml.TomlFormat;
 import dev.extrahardmode.ExtraHardModeMod;
+import dev.extrahardmode.feature.HardenedBudget;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
@@ -26,6 +29,10 @@ public final class WorldConfig {
     private boolean torchSoftDeny = true;
     private int torchNoPlacementUnderY = 0;
     private boolean torchYDeny = true;
+    private boolean hardenedEnable = true;
+    private boolean blockOreNextToStone = true;
+    private boolean blockPistonMove = true;
+    private final Map<Identifier, Integer> hardenedBudgets = new LinkedHashMap<>();
     private boolean enabled = true;
     private boolean enabledPresent;
 
@@ -63,6 +70,26 @@ public final class WorldConfig {
 
     public boolean torchYDeny() {
         return torchYDeny;
+    }
+
+    public boolean hardenedEnable() {
+        return hardenedEnable;
+    }
+
+    public boolean blockOreNextToStone() {
+        return blockOreNextToStone;
+    }
+
+    public boolean blockPistonMove() {
+        return blockPistonMove;
+    }
+
+    public int hardenedBudget(Identifier itemId) {
+        return hardenedBudgets.getOrDefault(itemId, 0);
+    }
+
+    public Map<Identifier, Integer> hardenedBudgets() {
+        return hardenedBudgets;
     }
 
     public boolean enabled() {
@@ -142,6 +169,19 @@ public final class WorldConfig {
                     file.set("torches.noPlacementUnderY", 0);
                 }
                 writeDefaultIfMissing(file, "torches.noPlacementOnSoft", "No torches on soft surfaces.", true);
+                writeDefaultIfMissing(
+                        file,
+                        "mining.hardened.enable",
+                        "Hardened stone/deepslate/tuff. Unlisted tools cannot harvest; listed tools last N breaks.",
+                        true);
+                writeDefaultIfMissing(file, "mining.hardened.blockOreNextToStone", "Cancel placing cave-in ores next to hardened blocks.", true);
+                writeDefaultIfMissing(file, "mining.hardened.blockPistonMove", "Cancel pistons pushing hardened blocks or cave-in ores.", true);
+                if (!file.contains("mining.hardened.budgets")) {
+                    file.setComment(
+                            "mining.hardened.budgets",
+                            "Current RootNode: IRON@128 DIAMOND@512 NETHERITE@1024. Copper: Math.round(128 * 190 / 250.0) = 97. Same list for stone, deepslate, tuff.");
+                    file.set("mining.hardened.budgets", new ArrayList<>(HardenedBudget.DEFAULT_ENTRIES));
+                }
                 if (!file.contains("modules")) {
                     file.setComment("modules", "Runtime per-module toggles for this dimension. Missing keys default true.");
                 }
@@ -182,6 +222,17 @@ public final class WorldConfig {
                 file.set("torches.noPlacement.enable", torchYDeny);
                 file.set("torches.noPlacementUnderY", torchNoPlacementUnderY);
                 file.set("torches.noPlacementOnSoft", torchSoftDeny);
+                file.set("mining.hardened.enable", hardenedEnable);
+                file.set("mining.hardened.blockOreNextToStone", blockOreNextToStone);
+                file.set("mining.hardened.blockPistonMove", blockPistonMove);
+                List<String> budgetEntries = new ArrayList<>();
+                for (Map.Entry<Identifier, Integer> budget : hardenedBudgets.entrySet()) {
+                    budgetEntries.add(budget.getKey().toString() + "@" + budget.getValue());
+                }
+                if (budgetEntries.isEmpty()) {
+                    budgetEntries.addAll(HardenedBudget.DEFAULT_ENTRIES);
+                }
+                file.set("mining.hardened.budgets", budgetEntries);
                 for (Map.Entry<Identifier, Boolean> entry : modules.entrySet()) {
                     file.set(moduleKey(entry.getKey()), entry.getValue());
                 }
@@ -204,6 +255,22 @@ public final class WorldConfig {
         torchYDeny = file.getOrElse("torches.noPlacement.enable", true);
         torchNoPlacementUnderY = file.getOrElse("torches.noPlacementUnderY", 0);
         torchSoftDeny = file.getOrElse("torches.noPlacementOnSoft", true);
+        hardenedEnable = file.getOrElse("mining.hardened.enable", true);
+        blockOreNextToStone = file.getOrElse("mining.hardened.blockOreNextToStone", true);
+        blockPistonMove = file.getOrElse("mining.hardened.blockPistonMove", true);
+        hardenedBudgets.clear();
+        try {
+            for (Map.Entry<String, Integer> entry :
+                    HardenedBudget.parseAll(readStringList(file, "mining.hardened.budgets", HardenedBudget.DEFAULT_ENTRIES))
+                            .entrySet()) {
+                hardenedBudgets.put(Identifier.parse(entry.getKey()), entry.getValue());
+            }
+        } catch (RuntimeException e) {
+            ExtraHardModeMod.LOGGER.warn("Invalid mining.hardened.budgets; using defaults", e);
+            for (Map.Entry<String, Integer> entry : HardenedBudget.parseAll(HardenedBudget.DEFAULT_ENTRIES).entrySet()) {
+                hardenedBudgets.put(Identifier.parse(entry.getKey()), entry.getValue());
+            }
+        }
         modules.clear();
         Object raw = file.get("modules");
         if (raw instanceof Config table) {
@@ -240,5 +307,19 @@ public final class WorldConfig {
             file.setComment(path, comment);
             file.set(path, value);
         }
+    }
+
+    private static List<String> readStringList(CommentedFileConfig file, String path, List<String> fallback) {
+        Object raw = file.get(path);
+        if (!(raw instanceof List<?> list) || list.isEmpty()) {
+            return fallback;
+        }
+        List<String> values = new ArrayList<>(list.size());
+        for (Object value : list) {
+            if (value != null) {
+                values.add(value.toString());
+            }
+        }
+        return values.isEmpty() ? fallback : values;
     }
 }
