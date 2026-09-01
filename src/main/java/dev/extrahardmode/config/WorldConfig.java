@@ -102,6 +102,7 @@ public final class WorldConfig {
     private int spawnInLightMaxLight = 10;
     private int spawnInLightPercent = 100;
     private final ExplosionConfig explosions = new ExplosionConfig();
+    private final MonsterConfig monsters = new MonsterConfig();
 
     public WorldConfig(Identifier dimensionId) {
         this.dimensionId = dimensionId;
@@ -258,6 +259,10 @@ public final class WorldConfig {
 
     public ExplosionConfig explosions() {
         return explosions;
+    }
+
+    public MonsterConfig monsters() {
+        return monsters;
     }
 
     public boolean enabled() {
@@ -555,6 +560,7 @@ public final class WorldConfig {
                     file.set("monsters.spawnInLight.percent", 100);
                         false);
                 config.explosions.writeDefaults(file);
+                config.monsters.writeDefaults(file);
                 if (!file.contains("modules")) {
                     file.setComment("modules", "Runtime per-module toggles for this dimension. Missing keys default true.");
                 }
@@ -616,6 +622,7 @@ public final class WorldConfig {
                 file.set("falling.cascade", fallingCascade);
                 file.set("falling.dropAsItemWhenBlocked", fallingDropAsItemWhenBlocked);
                 explosions.write(file);
+                monsters.write(file);
                 List<String> budgetEntries = new ArrayList<>();
                 for (Map.Entry<Identifier, Integer> budget : hardenedBudgets.entrySet()) {
                     budgetEntries.add(budget.getKey().toString() + "@" + budget.getValue());
@@ -727,6 +734,7 @@ public final class WorldConfig {
         fallingCascade = file.getOrElse("falling.cascade", true);
         fallingDropAsItemWhenBlocked = file.getOrElse("falling.dropAsItemWhenBlocked", false);
         explosions.read(file);
+        monsters.read(file);
         hardenedBudgets.clear();
         try {
             for (Map.Entry<String, Integer> entry :

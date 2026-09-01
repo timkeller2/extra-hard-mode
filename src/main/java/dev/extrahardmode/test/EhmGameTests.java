@@ -9,10 +9,13 @@ import dev.extrahardmode.feature.FallingBlocks;
 import dev.extrahardmode.feature.HardenedStone;
 import dev.extrahardmode.feature.RealisticChopping;
 import dev.extrahardmode.feature.MoreTnt;
+import dev.extrahardmode.feature.monster.Zombies;
+import dev.extrahardmode.module.EntityHelper;
 import dev.extrahardmode.item.EhmComponents;
 import dev.extrahardmode.feature.monster.Silverfish;
 import dev.extrahardmode.feature.monster.Skeletons;
 import dev.extrahardmode.config.WorldConfig;
+import dev.extrahardmode.module.PhysicsQueue;
 import dev.extrahardmode.module.SpawnReplaceService;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.module.PhysicsQueue;
@@ -20,9 +23,9 @@ import dev.extrahardmode.tag.EhmTags;
 import dev.extrahardmode.world.ExtraHardModeBootData;
 import dev.extrahardmode.world.PhysicsSkip;
 import dev.extrahardmode.world.WorldGate;
-import java.util.UUID;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import java.util.List;
+import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
@@ -39,8 +42,18 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.monster.zombie.Zombie;
+import net.minecraft.world.entity.monster.zombie.ZombieVillager;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.entity.item.PrimedTnt;
 import net.minecraft.world.entity.monster.Creeper;
@@ -819,4 +832,96 @@ public class EhmGameTests {
             helper.assertBlockNotPresent(Blocks.COBBLESTONE, floor.above());
             helper.assertBlockPresent(Blocks.STONE, floor);
     private static void fillStoneCube(GameTestHelper helper, BlockPos center) {
+        });
+    }
+
+    @GameTest
+    public void spawnProcessedSurvivesChunkReload(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        BlockPos pos = new BlockPos(1, 2, 1);
+        Zombie zombie = helper.spawn(EntityTypes.ZOMBIE, pos, EntitySpawnReason.COMMAND);
+        zombie.setPersistenceRequired();
+        zombie.setAttached(EhmAttachments.EHM_SPAWN_PROCESSED, true);
+        UUID id = zombie.getUUID();
+        ChunkPos chunkPos = ChunkPos.containing(zombie.blockPosition());
+        level.getChunkSource().save(true);
+        TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, level.registryAccess());
+        if (!zombie.save(output)) {
+            helper.fail("processed zombie did not save");
+            return;
+        }
+        CompoundTag tag = output.buildResult();
+        zombie.discard();
+        ValueInput input = TagValueInput.create(ProblemReporter.DISCARDING, level.registryAccess(), tag);
+        Entity loaded = EntityType.loadEntityRecursive(input, level, EntitySpawnReason.LOAD, entity -> {
+            if (!level.addFreshEntity(entity)) {
+                return null;
+            }
+            return entity;
+        if (!(loaded instanceof Zombie reloaded)) {
+            helper.fail("reloaded entity was not a zombie");
+        helper.assertValueEqual(id, reloaded.getUUID(), "uuid");
+        helper.assertTrue(
+                Boolean.TRUE.equals(reloaded.getAttached(EhmAttachments.EHM_SPAWN_PROCESSED)),
+                "spawn_processed persisted across chunk reload");
+                level.getChunkSource().getChunkNow(chunkPos.x(), chunkPos.z()) != null, "chunk reloaded");
+        SpawnReplaceService.replaceIfNeeded(reloaded, level, EntitySpawnReason.NATURAL);
+        helper.assertTrue(reloaded.getType() == EntityTypes.ZOMBIE && !reloaded.isRemoved(), "not replaced again");
+        helper.assertEntityNotPresent(EntityTypes.WITCH);
+        helper.succeed();
+    public void spawnReplaceSkippedWhenWorldGateInactive(GameTestHelper helper) {
+        MinecraftServer server = level.getServer();
+        boolean previous = level.getGameRules().get(WorldGate.ENABLED);
+        level.getGameRules().set(WorldGate.ENABLED, false, server);
+        try {
+            Zombie zombie = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1), EntitySpawnReason.NATURAL);
+            SpawnReplaceService.replaceIfNeeded(zombie, level, EntitySpawnReason.NATURAL);
+            helper.assertFalse(
+                    Boolean.TRUE.equals(
+                            zombie.getAttachedOrElse(EhmAttachments.EHM_SPAWN_PROCESSED, Boolean.FALSE)),
+                    "spawn_processed not stamped when inactive");
+            helper.assertTrue(zombie.getType() == EntityTypes.ZOMBIE, "zombie not replaced when inactive");
+            helper.succeed();
+        } finally {
+            level.getGameRules().set(WorldGate.ENABLED, previous, server);
+    @GameTest(maxTicks = 180)
+    public void zombieVillagerDoesNotReanimate(GameTestHelper helper) {
+        level.getGameRules().set(WorldGate.ENABLED, true, level.getServer());
+        BlockPos pos = new BlockPos(2, 2, 2);
+        helper.setBlock(pos, Blocks.AIR);
+        ZombieVillager villager = helper.spawn(EntityTypes.ZOMBIE_VILLAGER, pos, EntitySpawnReason.COMMAND);
+        helper.assertFalse(Zombies.isOrdinaryZombie(villager), "zombie villager is not ordinary");
+        villager.kill(level);
+        helper.runAfterDelay(165, () -> {
+            helper.assertEntityNotPresent(EntityTypes.ZOMBIE);
+            helper.assertBlockNotPresent(Blocks.ZOMBIE_HEAD, pos);
+            helper.assertBlockNotPresent(Blocks.ZOMBIE_HEAD, pos.above());
+    public void reinforcementZombieIsIgnored(GameTestHelper helper) {
+        Zombie zombie = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1), EntitySpawnReason.REINFORCEMENT);
+        helper.assertTrue(EntityHelper.ignored(zombie), "finalizeSpawn mixin stamped EHM_IGNORE");
+        helper.assertTrue(Zombies.isOrdinaryZombie(zombie), "still an ordinary zombie type");
+    public void burningZombieDoesNotPlaceSkull(GameTestHelper helper) {
+        zombie.igniteForTicks(8 * 20);
+        helper.assertTrue(zombie.getRemainingFireTicks() >= 1 || zombie.isOnFire(), "zombie is on fire");
+        zombie.kill(level);
+    public void spiderDeathPlacesCobweb(GameTestHelper helper) {
+        BlockPos floor = new BlockPos(2, 1, 2);
+        helper.setBlock(floor, Blocks.STONE);
+        helper.setBlock(floor.above(), Blocks.AIR);
+        var spider = helper.spawn(EntityTypes.SPIDER, floor.above(), EntitySpawnReason.COMMAND);
+        spider.kill(level);
+        helper.runAfterDelay(2, () -> {
+            boolean found = false;
+            for (int x = 0; x <= 10; x++) {
+                for (int z = 0; z <= 10; z++) {
+                    if (helper.getBlockState(new BlockPos(x, 2, z)).is(Blocks.COBWEB)
+                            || helper.getBlockState(new BlockPos(x, 1, z)).is(Blocks.COBWEB)) {
+                        found = true;
+                    }
+                }
+            helper.assertTrue(found, "spider death placed cobweb");
+        for (int x = 2; x <= 6; x++) {
+            for (int y = 2; y <= 6; y++) {
+                for (int z = 2; z <= 6; z++) {
+                    helper.setBlock(new BlockPos(x, y, z), Blocks.STONE);
 }

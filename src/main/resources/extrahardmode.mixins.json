@@ -3,6 +3,7 @@
   "package": "dev.extrahardmode.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
+    "NaturalSpawnerMixin",
     "PlayerDestroySpeedMixin",
     "PlayerHarvestMixin",
     "PistonStructureMixin",
@@ -27,7 +28,11 @@
     "ServerExplosionMixin",
     "ServerLevelExplosionMixin",
     "CraftingMenuMixin",
-    "CrafterBlockMixin"
+    "CrafterBlockMixin",
+    "MobAiStepMixin",
+    "MobFinalizeSpawnMixin",
+    "LivingEntityDropMixin",
+    "CreeperPoweredMixin"
   ],
   "client": [
     "client.ClientPlayerDestroySpeedMixin",
@@ -48,6 +53,7 @@
     "MushroomBlockMixin"
     "NaturalSpawnerMixin"
   "client": [],
+
   "injectors": {
     "defaultRequire": 1
   },

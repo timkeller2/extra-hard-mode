@@ -134,11 +134,25 @@ public final class Explosions implements FeatureModule {
         }
     }
 
-    /** Later modules (blazes, witches) and TNT crater tasks call this. */
+    /** Later modules (creepers, blazes, witches) and TNT crater tasks call this. */
     public static void create(ServerLevel level, Vec3 origin, ExplosionType type, Entity source) {
-        if (!FeatureBus.guard((Level) level, ID)) {
+        createFromModule(level, ID, origin, type, source);
+    }
+
+    /**
+     * Custom blast gated on {@code moduleId} (e.g. creepers charged-on-damage), not
+     * {@link #ID}. Passes {@code source} even if already removed so the event can
+     * name the creeper.
+     */
+    public static void createFromModule(
+            ServerLevel level, Identifier moduleId, Vec3 origin, ExplosionType type, Entity source) {
+        if (!FeatureBus.guard((Level) level, moduleId)) {
             return;
         }
+        explode(level, origin, type, source);
+    }
+
+    private static void explode(ServerLevel level, Vec3 origin, ExplosionType type, Entity source) {
         if (type == ExplosionType.TNT && !level.getGameRules().get(GameRules.TNT_EXPLODES)) {
             return;
         }
@@ -152,7 +166,7 @@ public final class Explosions implements FeatureModule {
         CURRENT.set(type);
         try {
             level.explode(
-                    liveSource(source),
+                    source,
                     origin.x,
                     origin.y,
                     origin.z,
@@ -162,6 +176,15 @@ public final class Explosions implements FeatureModule {
         } finally {
             CURRENT.remove();
         }
+    }
+
+    public static void schedule(ServerLevel level, Vec3 origin, ExplosionType type, Entity source, int delayTicks) {
+        if (delayTicks <= 0) {
+            create(level, origin, type, source);
+            return;
+        }
+        DELAYED.computeIfAbsent(level.dimension().identifier(), id -> new ArrayDeque<>())
+                .addLast(new CreateExplosionTask(level, origin, type, liveSource(source), delayTicks));
     }
 
     /**

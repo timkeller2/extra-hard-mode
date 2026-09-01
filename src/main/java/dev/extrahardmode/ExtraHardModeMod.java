@@ -15,6 +15,9 @@ import dev.extrahardmode.feature.NetherrackFire;
 import dev.extrahardmode.feature.Torches;
 import dev.extrahardmode.feature.RealisticChopping;
 import dev.extrahardmode.feature.MoreTnt;
+import dev.extrahardmode.feature.monster.Creepers;
+import dev.extrahardmode.feature.monster.Spiders;
+import dev.extrahardmode.feature.monster.Zombies;
 import dev.extrahardmode.item.EhmComponents;
 import dev.extrahardmode.feature.Players;
 import dev.extrahardmode.feature.Water;
@@ -29,6 +32,7 @@ import dev.extrahardmode.feature.MoreMonsters;
 import dev.extrahardmode.feature.SpawnInLight;
 import dev.extrahardmode.module.SpawnReplaceService;
 import dev.extrahardmode.module.PhysicsQueue;
+import dev.extrahardmode.module.SpawnReplaceService;
 import dev.extrahardmode.network.EhmNetworking;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.world.WorldGate;
@@ -80,6 +84,9 @@ public class ExtraHardModeMod implements ModInitializer {
         FEATURES.register(new RealisticChopping());
         FEATURES.register(new Explosions());
         FEATURES.register(new MoreTnt());
+        FEATURES.register(new Spiders());
+        FEATURES.register(new Creepers());
+        FEATURES.register(new Zombies());
         ServerLevelEvents.LOAD.register((server, level) -> {
             WorldGate.onLevelLoad(server, level);
             FEATURES.onWorldLoad(level);

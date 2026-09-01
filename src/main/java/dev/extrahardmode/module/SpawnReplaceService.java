@@ -4,9 +4,11 @@ import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.world.WorldGate;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.core.BlockPos;
@@ -30,7 +32,7 @@ public final class SpawnReplaceService {
     public static final TagKey<Structure> NO_SPAWN_REPLACEMENT_STRUCTURES =
             TagKey.create(Registries.STRUCTURE, ExtraHardModeMod.id("no_spawn_replacement_structures"));
 
-    private static final Map<EntityType<?>, ReplaceFn> REPLACEMENTS = new ConcurrentHashMap<>();
+    private static final Map<EntityType<?>, List<ReplaceFn>> REPLACEMENTS = new ConcurrentHashMap<>();
     private static final AtomicBoolean MIXIN_APPLIED = new AtomicBoolean();
     private static final AtomicBoolean MIXIN_MISSING_WARNED = new AtomicBoolean();
 
@@ -63,10 +65,11 @@ public final class SpawnReplaceService {
         }
     }
 
+    /** First non-null type replacement wins. Register order is module bootstrap order. */
     public static void register(EntityType<?> from, ReplaceFn fn) {
         Objects.requireNonNull(from, "from");
         Objects.requireNonNull(fn, "fn");
-        REPLACEMENTS.put(from, fn);
+        REPLACEMENTS.computeIfAbsent(from, type -> new CopyOnWriteArrayList<>()).add(fn);
     }
 
     public static boolean replaceIfNeeded(Mob mob, ServerLevel level, EntitySpawnReason reason) {
@@ -87,15 +90,17 @@ public final class SpawnReplaceService {
         if (level.structureManager().getStructureWithPieceAt(pos, NO_SPAWN_REPLACEMENT_STRUCTURES).isValid()) {
             return false;
         }
-        ReplaceFn fn = REPLACEMENTS.get(mob.getType());
-        if (fn == null) {
+        List<ReplaceFn> fns = REPLACEMENTS.get(mob.getType());
+        if (fns == null || fns.isEmpty()) {
             return false;
         }
-        EntityType<?> replacement = fn.roll(mob, level);
-        if (replacement == null || replacement == mob.getType()) {
-            return false;
+        for (ReplaceFn fn : fns) {
+            EntityType<?> replacement = fn.roll(mob, level);
+            if (replacement != null && replacement != mob.getType()) {
+                return spawnReplacement(mob, level, replacement);
+            }
         }
-        return spawnReplacement(mob, level, replacement);
+        return false;
     }
 
     private static boolean spawnReplacement(Mob original, ServerLevel level, EntityType<?> type) {
