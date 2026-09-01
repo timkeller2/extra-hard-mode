@@ -1,6 +1,8 @@
 package dev.extrahardmode.feature.monster;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -15,5 +17,13 @@ class WitchesTest {
         assertEquals(Witches.SplashAttack.EXPLODE, Witches.attackFor(89));
         assertEquals(Witches.SplashAttack.VANILLA_POISON, Witches.attackFor(90));
         assertEquals(Witches.SplashAttack.VANILLA_POISON, Witches.attackFor(99));
+    }
+
+    @Test
+    void vanillaPoisonDoesNotCancelSplash() {
+        assertFalse(Witches.cancelsVanillaSplash(Witches.SplashAttack.VANILLA_POISON));
+        assertTrue(Witches.cancelsVanillaSplash(Witches.SplashAttack.BABY_OR_EXPLODE));
+        assertTrue(Witches.cancelsVanillaSplash(Witches.SplashAttack.TELEPORT));
+        assertTrue(Witches.cancelsVanillaSplash(Witches.SplashAttack.EXPLODE));
     }
 }

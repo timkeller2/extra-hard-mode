@@ -29,6 +29,7 @@ public final class WorldConfig {
     private boolean endermenTeleportPlayers = true;
     private boolean witchesAdditionalAttacks = true;
     private int witchesBonusSpawnPercent = 5;
+    private boolean horseBlockChest = true;
     private int horseBlockChestBelowY = 48;
     private boolean enabled = true;
     private boolean enabledPresent;
@@ -79,6 +80,10 @@ public final class WorldConfig {
 
     public int witchesBonusSpawnPercent() {
         return witchesBonusSpawnPercent;
+    }
+
+    public boolean horseBlockChest() {
+        return horseBlockChest;
     }
 
     public int horseBlockChestBelowY() {
@@ -170,15 +175,20 @@ public final class WorldConfig {
                 writeDefaultIfMissing(
                         file,
                         "witches.additionalAttacks",
-                        "30/30/30/10 splash: baby zombie, teleport, explosion+3 magic, vanilla poison on players.",
+                        "30/30/30/10 splash: baby zombie, teleport, explosion+3 generic, vanilla poison (non-players intensity 0).",
                         true);
                 writeDefaultIfMissing(
                         file,
                         "witches.bonusSpawnPercent",
                         "NATURAL overworld zombies on grass_block become witches.",
                         5);
+                writeDefaultIfMissing(
+                        file,
+                        "horses.blockChest.enable",
+                        "Block chested-horse inventory below blockChestBelowY. Disable with this boolean, not Y=0.",
+                        true);
                 if (!file.contains("horses.blockChestBelowY")) {
-                    file.setComment("horses.blockChestBelowY", "original: 55; cave band. Integer.MIN_VALUE disables.");
+                    file.setComment("horses.blockChestBelowY", "original: 55; cave band. Integer.MIN_VALUE also disables.");
                     file.set("horses.blockChestBelowY", 48);
                 }
                 if (!file.contains("modules")) {
@@ -224,6 +234,7 @@ public final class WorldConfig {
                 file.set("endermen.teleportPlayers", endermenTeleportPlayers);
                 file.set("witches.additionalAttacks", witchesAdditionalAttacks);
                 file.set("witches.bonusSpawnPercent", witchesBonusSpawnPercent);
+                file.set("horses.blockChest.enable", horseBlockChest);
                 file.set("horses.blockChestBelowY", horseBlockChestBelowY);
                 for (Map.Entry<Identifier, Boolean> entry : modules.entrySet()) {
                     file.set(moduleKey(entry.getKey()), entry.getValue());
@@ -250,6 +261,7 @@ public final class WorldConfig {
         endermenTeleportPlayers = file.getOrElse("endermen.teleportPlayers", true);
         witchesAdditionalAttacks = file.getOrElse("witches.additionalAttacks", true);
         witchesBonusSpawnPercent = percent(getInt(file, "witches.bonusSpawnPercent", 5));
+        horseBlockChest = file.getOrElse("horses.blockChest.enable", true);
         horseBlockChestBelowY = getInt(file, "horses.blockChestBelowY", 48);
         modules.clear();
         Object raw = file.get("modules");

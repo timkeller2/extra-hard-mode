@@ -3,6 +3,7 @@ package dev.extrahardmode.feature.monster;
 import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.api.EhmApi;
 import dev.extrahardmode.config.ConfigManager;
+import dev.extrahardmode.config.WorldConfig;
 import dev.extrahardmode.feature.FeatureBus;
 import dev.extrahardmode.feature.FeatureModule;
 import dev.extrahardmode.world.WorldGate;
@@ -52,20 +53,33 @@ public final class Horses implements FeatureModule {
         if (!(entity instanceof AbstractChestedHorse horse)) {
             return InteractionResult.PASS;
         }
-        if (!shouldBlockChest(horse, ConfigManager.world(serverLevel).horseBlockChestBelowY())) {
-            return InteractionResult.PASS;
-        }
-        ItemStack stack = player.getItemInHand(hand);
-        boolean attaching = !horse.hasChest() && stack.getItem() == Items.CHEST;
-        boolean opening = horse.hasChest() && player.isSecondaryUseActive();
-        if (attaching || opening) {
+        WorldConfig config = ConfigManager.world(serverLevel);
+        if (denyChestInteract(horse, player, hand, config.horseBlockChest(), config.horseBlockChestBelowY())) {
             return InteractionResult.FAIL;
         }
         return InteractionResult.PASS;
     }
 
-    public static boolean shouldBlockChest(AbstractChestedHorse horse, int belowY) {
-        return belowChestLimit(horse.getBlockY(), belowY);
+    public static boolean denyChestInteract(
+            AbstractChestedHorse horse, Player player, InteractionHand hand, boolean enable, int belowY) {
+        if (!shouldBlockChest(horse.getBlockY(), enable, belowY)) {
+            return false;
+        }
+        ItemStack stack = player.getItemInHand(hand);
+        boolean attaching = !horse.hasChest() && stack.getItem() == Items.CHEST;
+        boolean opening = horse.hasChest() && player.isSecondaryUseActive();
+        return attaching || opening;
+    }
+
+    public static boolean shouldBlockChest(AbstractChestedHorse horse, WorldConfig config) {
+        return shouldBlockChest(horse.getBlockY(), config.horseBlockChest(), config.horseBlockChestBelowY());
+    }
+
+    public static boolean shouldBlockChest(int y, boolean enable, int belowY) {
+        if (!enable) {
+            return false;
+        }
+        return belowChestLimit(y, belowY);
     }
 
     /**

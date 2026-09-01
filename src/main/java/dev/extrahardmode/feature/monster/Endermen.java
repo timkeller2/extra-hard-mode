@@ -16,7 +16,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Relative;
 import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluids;
@@ -42,6 +41,9 @@ public final class Endermen implements FeatureModule {
         if (!WorldGate.isModuleActive(level, ID)) {
             return;
         }
+        if (!enderman.isAlive() || enderman.isRemoved()) {
+            return;
+        }
         if (!ConfigManager.world(level).endermenTeleportPlayers()) {
             return;
         }
@@ -60,7 +62,7 @@ public final class Endermen implements FeatureModule {
         }
         long now = level.getGameTime();
         long last = player.getAttachedOrElse(EhmAttachments.EHM_ENDERMAN_TP_TICK, 0L);
-        if (now - last < COOLDOWN_TICKS) {
+        if (onCooldown(now, last)) {
             return;
         }
         BlockPos landing = findLanding(level, enderman, player);
@@ -90,12 +92,20 @@ public final class Endermen implements FeatureModule {
                 enderman, to.x, to.y, to.z, SoundEvents.ENDERMAN_TELEPORT, SoundSource.HOSTILE, 1.0F, 1.0F);
     }
 
+    public static boolean onCooldown(long now, long last) {
+        return now - last < COOLDOWN_TICKS;
+    }
+
+    static boolean isTwoHighRoof(boolean losBlocked, boolean above1Blocks, boolean above2Blocks) {
+        return losBlocked || above1Blocks || above2Blocks;
+    }
+
     static boolean isCheese(ServerLevel level, EnderMan enderman, ServerPlayer player) {
-        if (!enderman.hasLineOfSight(player)) {
-            return true;
-        }
         BlockPos feet = player.blockPosition();
-        return blocksPath(level, feet.above(1)) || blocksPath(level, feet.above(2));
+        return isTwoHighRoof(
+                !enderman.hasLineOfSight(player),
+                blocksPath(level, feet.above(1)),
+                blocksPath(level, feet.above(2)));
     }
 
     static BlockPos findLanding(ServerLevel level, EnderMan enderman, ServerPlayer player) {

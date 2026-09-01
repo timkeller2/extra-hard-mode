@@ -1,19 +1,25 @@
 package dev.extrahardmode.network;
 
 import dev.extrahardmode.ExtraHardModeMod;
+import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.config.WorldConfig;
+import dev.extrahardmode.feature.monster.Horses;
+import dev.extrahardmode.world.WorldGate;
 import io.netty.buffer.ByteBuf;
 import java.util.List;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
 
 public record ClientboundSyncPayload(
         boolean limitedBuilding,
         boolean torchSoftDeny,
         int torchNoPlacementUnderY,
         boolean torchYDeny,
+        boolean horseBlockChest,
+        int horseBlockChestBelowY,
         List<Identifier> hardenedBlocks,
         List<Identifier> hardenedPicks,
         List<Identifier> caveInOres,
@@ -35,6 +41,10 @@ public record ClientboundSyncPayload(
             ClientboundSyncPayload::torchNoPlacementUnderY,
             ByteBufCodecs.BOOL,
             ClientboundSyncPayload::torchYDeny,
+            ByteBufCodecs.BOOL,
+            ClientboundSyncPayload::horseBlockChest,
+            ByteBufCodecs.VAR_INT,
+            ClientboundSyncPayload::horseBlockChestBelowY,
             IDENTIFIERS,
             ClientboundSyncPayload::hardenedBlocks,
             IDENTIFIERS,
@@ -47,12 +57,15 @@ public record ClientboundSyncPayload(
             ClientboundSyncPayload::depthLimitedLights,
             ClientboundSyncPayload::new);
 
-    public static ClientboundSyncPayload from(WorldConfig config) {
+    public static ClientboundSyncPayload from(ServerLevel level) {
+        WorldConfig config = ConfigManager.world(level);
         return new ClientboundSyncPayload(
                 config.limitedBuilding(),
                 config.torchSoftDeny(),
                 config.torchNoPlacementUnderY(),
                 config.torchYDeny(),
+                WorldGate.isModuleActive(level, Horses.ID) && config.horseBlockChest(),
+                config.horseBlockChestBelowY(),
                 List.of(),
                 List.of(),
                 List.of(),

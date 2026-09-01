@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(LivingEntity.class)
 public abstract class LootlessMixin {
@@ -27,6 +28,20 @@ public abstract class LootlessMixin {
         LivingEntity self = (LivingEntity) (Object) this;
         if (Boolean.TRUE.equals(self.getAttachedOrElse(EhmAttachments.EHM_LOOTLESS, Boolean.FALSE))) {
             ci.cancel();
+        }
+    }
+
+    @Inject(method = "shouldDropExperience", at = @At("HEAD"), cancellable = true)
+    private void ehm$skipLootlessXp(CallbackInfoReturnable<Boolean> cir) {
+        LivingEntity self = (LivingEntity) (Object) this;
+        if (!(self.level() instanceof ServerLevel level)) {
+            return;
+        }
+        if (!WorldGate.isActive(level)) {
+            return;
+        }
+        if (Boolean.TRUE.equals(self.getAttachedOrElse(EhmAttachments.EHM_LOOTLESS, Boolean.FALSE))) {
+            cir.setReturnValue(false);
         }
     }
 }

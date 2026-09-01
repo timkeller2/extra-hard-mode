@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
@@ -20,22 +19,17 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.effect.MobEffect;
-import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.Relative;
 import net.minecraft.world.entity.monster.Witch;
 import net.minecraft.world.entity.monster.zombie.ZombieVillager;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownSplashPotion;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
@@ -45,13 +39,14 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * Extra witch splash attacks matching original {@code Witches.java}: 30/30/30/10
- * baby-or-explode / teleport / visual explosion + 3 armor-ignoring damage /
- * vanilla effects on players only. Bonus 5% grass-zombie → witch via
+ * baby-or-explode / teleport / visual explosion + 3 generic damage / vanilla
+ * splash with non-player intensity 0. Bonus 5% grass-zombie → witch via
  * {@link SpawnReplaceService}.
  */
 public final class Witches implements FeatureModule {
     public static final Identifier ID = ExtraHardModeMod.id("witches");
     public static final float EXPLOSION_DAMAGE = 3.0F;
+    private static final ThreadLocal<Boolean> VANILLA_PLAYERS_ONLY = ThreadLocal.withInitial(() -> Boolean.FALSE);
 
     public enum SplashAttack {
         BABY_OR_EXPLODE,
@@ -81,6 +76,18 @@ public final class Witches implements FeatureModule {
             return SplashAttack.EXPLODE;
         }
         return SplashAttack.VANILLA_POISON;
+    }
+
+    public static boolean cancelsVanillaSplash(SplashAttack attack) {
+        return attack != SplashAttack.VANILLA_POISON;
+    }
+
+    public static boolean vanillaSplashPlayersOnly() {
+        return Boolean.TRUE.equals(VANILLA_PLAYERS_ONLY.get());
+    }
+
+    public static void endVanillaSplashPlayersOnly() {
+        VANILLA_PLAYERS_ONLY.remove();
     }
 
     /**
@@ -116,8 +123,8 @@ public final class Witches implements FeatureModule {
                 yield true;
             }
             case VANILLA_POISON -> {
-                applyVanillaToPlayers(potion, level, stack, splash);
-                yield true;
+                VANILLA_PLAYERS_ONLY.set(Boolean.TRUE);
+                yield false;
             }
         };
     }
@@ -153,7 +160,6 @@ public final class Witches implements FeatureModule {
         zombie.setBaby(true);
         zombie.setAttached(EhmAttachments.EHM_SPAWN_PROCESSED, true);
         zombie.setAttached(EhmAttachments.EHM_LOOTLESS, true);
-        zombie.skipDropExperience();
         LivingEntity target = witch.getTarget();
         if (target != null && target.isAlive()) {
             zombie.setTarget(target);
@@ -177,30 +183,10 @@ public final class Witches implements FeatureModule {
         level.playSound(
                 witch, at.x, at.y, at.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 1.0F, 1.0F);
         level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, at.x, at.y, at.z, 1, 0.0, 0.0, 0.0, 0.0);
-        DamageSource magic = level.damageSources().indirectMagic(potion, witch);
+        DamageSource generic = level.damageSources().generic();
         for (LivingEntity target : splash) {
             if (target instanceof ServerPlayer player && player.isAlive()) {
-                player.hurtServer(level, magic, EXPLOSION_DAMAGE);
-            }
-        }
-    }
-
-    static void applyVanillaToPlayers(
-            ThrownSplashPotion potion, ServerLevel level, ItemStack stack, List<LivingEntity> splash) {
-        PotionContents contents = stack.getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY);
-        Entity source = potion.getEffectSource();
-        for (LivingEntity target : splash) {
-            if (!(target instanceof Player) || !target.isAffectedByPotions()) {
-                continue;
-            }
-            for (MobEffectInstance instance : contents.getAllEffects()) {
-                MobEffect effect = instance.getEffect().value();
-                if (effect.isInstantaneous()) {
-                    effect.applyInstantaneousEffect(
-                            level, potion, potion.getOwner(), target, instance.getAmplifier(), 1.0);
-                } else {
-                    target.addEffect(new MobEffectInstance(instance), source);
-                }
+                player.hurtServer(level, generic, EXPLOSION_DAMAGE);
             }
         }
     }
@@ -214,7 +200,7 @@ public final class Witches implements FeatureModule {
             if (!entity.isAffectedByPotions()) {
                 continue;
             }
-            if (potionBox.inflate(margin).distanceToSqr(entity.getBoundingBox()) < 16.0) {
+            if (potionBox.distanceToSqr(entity.getBoundingBox().inflate(margin)) < 16.0) {
                 out.add(entity);
             }
         }
