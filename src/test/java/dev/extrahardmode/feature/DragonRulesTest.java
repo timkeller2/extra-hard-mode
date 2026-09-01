@@ -42,6 +42,17 @@ class DragonRulesTest {
     }
 
     @Test
+    void endNoBuildDeniesBucketsAndBlocksAllowsCrystal() {
+        assertTrue(DragonRules.denyEndUse(true, true, false, false, false, true));
+        assertFalse(DragonRules.denyEndUse(true, true, false, false, true, true));
+        assertFalse(DragonRules.denyEndUse(true, true, false, true, false, false));
+        assertFalse(DragonRules.denyEndUse(true, true, true, false, false, true));
+        assertFalse(DragonRules.denyEndUse(true, false, false, false, false, true));
+        assertFalse(DragonRules.denyEndUse(false, true, false, false, false, true));
+        assertFalse(DragonRules.denyEndUse(true, true, false, false, false, false));
+    }
+
+    @Test
     void defaultMinionTable() {
         assertEquals(DragonRules.MinionRoll.BLAZE, DragonRules.roll(0, false));
         assertEquals(DragonRules.MinionRoll.BLAZE, DragonRules.roll(39, false));

@@ -136,7 +136,8 @@ public final class Explosions implements FeatureModule {
 
     /** Later modules (blazes, witches) and TNT crater tasks call this. */
     public static void create(ServerLevel level, Vec3 origin, ExplosionType type, Entity source) {
-        if (!FeatureBus.guard((Level) level, ID)) {
+        if (!ExplosionSettings.allowCreate(
+                type, FeatureBus.guard((Level) level, ID), FeatureBus.guard((Level) level, Dragon.ID))) {
             return;
         }
         if (type == ExplosionType.TNT && !level.getGameRules().get(GameRules.TNT_EXPLODES)) {

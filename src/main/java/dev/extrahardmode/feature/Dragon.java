@@ -18,6 +18,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.fabricmc.fabric.api.entity.event.v1.ServerEntityLevelChangeEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
+import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -25,6 +27,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -45,8 +48,19 @@ import net.minecraft.world.entity.monster.zombie.ZombieVillager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.projectile.hurtingprojectile.DragonFireball;
+import net.minecraft.world.item.ArmorStandItem;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.BoatItem;
+import net.minecraft.world.item.BucketItem;
+import net.minecraft.world.item.EndCrystalItem;
+import net.minecraft.world.item.FireChargeItem;
+import net.minecraft.world.item.FlintAndSteelItem;
+import net.minecraft.world.item.HangingEntityItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.MinecartItem;
+import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -63,6 +77,7 @@ public final class Dragon implements FeatureModule {
 
     private static final Map<Identifier, ArrayDeque<DragonAttackTask>> ATTACKS = new ConcurrentHashMap<>();
     private static final Map<Identifier, ArrayDeque<DragonAttackPatternTask>> PATTERNS = new ConcurrentHashMap<>();
+    private static final Map<Identifier, ArrayDeque<CreateExplosionTask>> BLASTS = new ConcurrentHashMap<>();
     private static final Map<UUID, String> FIGHTERS = new ConcurrentHashMap<>();
     private static final Map<UUID, Boolean> HEALED = new ConcurrentHashMap<>();
     private static final Map<UUID, Boolean> LOOTED = new ConcurrentHashMap<>();
@@ -76,15 +91,26 @@ public final class Dragon implements FeatureModule {
     public void bootstrap(FeatureBus bus) {
         bus.listen(ServerEntityEvents.ENTITY_LOAD, ID, Dragon::onEntityLoad);
         bus.listen(ServerLivingEntityEvents.AFTER_DEATH, ID, Dragon::onDeath);
+        bus.listen(UseBlockCallback.EVENT, ID, (player, level, hand, hit) -> denyUse(player, level, hand));
+        bus.listen(UseItemCallback.EVENT, ID, Dragon::denyUse);
         bus.listen(
                 ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL,
                 ID,
-                (player, origin, destination) -> onPlayerChangeLevel(player, origin));
-        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+                (player, origin, destination) -> {
+                    if (!enabled(origin)) {
+                        return;
+                    }
+                    onPlayerChangeLevel(player, origin);
+                });
+        bus.listen(ServerPlayConnectionEvents.DISCONNECT, ID, (handler, server) -> {
             ServerPlayer player = handler.player;
-            if (player.level() instanceof ServerLevel level) {
-                onPlayerChangeLevel(player, level);
+            if (!(player.level() instanceof ServerLevel level)) {
+                return;
             }
+            if (!enabled(level)) {
+                return;
+            }
+            onPlayerChangeLevel(player, level);
         });
     }
 
@@ -93,11 +119,25 @@ public final class Dragon implements FeatureModule {
         Identifier id = level.dimension().identifier();
         ATTACKS.remove(id);
         PATTERNS.remove(id);
+        BLASTS.remove(id);
     }
 
     @Override
     public void serverTick(ServerLevel level) {
         Identifier id = level.dimension().identifier();
+        ArrayDeque<CreateExplosionTask> blasts = BLASTS.get(id);
+        if (blasts != null && !blasts.isEmpty()) {
+            int snapshot = blasts.size();
+            for (int i = 0; i < snapshot && !blasts.isEmpty(); i++) {
+                CreateExplosionTask task = blasts.pollFirst();
+                if (task == null) {
+                    break;
+                }
+                if (!task.tick()) {
+                    blasts.addLast(task);
+                }
+            }
+        }
         ArrayDeque<DragonAttackTask> attacks = ATTACKS.get(id);
         if (attacks != null && !attacks.isEmpty()) {
             int snapshot = attacks.size();
@@ -141,31 +181,29 @@ public final class Dragon implements FeatureModule {
         return FeatureBus.guard(level, ID);
     }
 
-    public static InteractionResult denyPlacement(BlockPlaceContext context) {
-        Level level = context.getLevel();
-        if (!enabled(level) || level.dimension() != Level.END) {
+    public static InteractionResult denyUse(Player player, Level level, InteractionHand hand) {
+        if (!enabled(level) || !(level instanceof ServerLevel serverLevel)) {
             return InteractionResult.PASS;
         }
-        if (!(level instanceof ServerLevel serverLevel)) {
-            return InteractionResult.PASS;
-        }
-        if (!ConfigManager.world(serverLevel).dragon().noBuilding()) {
-            return InteractionResult.PASS;
-        }
-        Player player = context.getPlayer();
-        if (player != null) {
-            if (player.hasInfiniteMaterials() || player.isCreative()) {
-                return InteractionResult.PASS;
-            }
-            if (player instanceof ServerPlayer serverPlayer && EhmApi.playerBypasses(serverPlayer)) {
-                return InteractionResult.PASS;
-            }
-        }
-        ItemStack stack = context.getItemInHand();
-        if (allowPlaceItem(stack)) {
+        ItemStack stack = player.getItemInHand(hand);
+        if (!shouldDenyEndUse(serverLevel, player, stack)) {
             return InteractionResult.PASS;
         }
         if (player instanceof ServerPlayer serverPlayer) {
+            EhmNetworking.sendToast(serverPlayer, "limited_end_building");
+        }
+        return InteractionResult.FAIL;
+    }
+
+    public static InteractionResult denyPlacement(BlockPlaceContext context) {
+        Level level = context.getLevel();
+        if (!enabled(level) || !(level instanceof ServerLevel serverLevel)) {
+            return InteractionResult.PASS;
+        }
+        if (!shouldDenyEndUse(serverLevel, context.getPlayer(), context.getItemInHand())) {
+            return InteractionResult.PASS;
+        }
+        if (context.getPlayer() instanceof ServerPlayer serverPlayer) {
             EhmNetworking.sendToast(serverPlayer, "limited_end_building");
         }
         return InteractionResult.FAIL;
@@ -175,7 +213,44 @@ public final class Dragon implements FeatureModule {
         if (stack == null || stack.isEmpty()) {
             return false;
         }
-        return stack.is(Items.END_CRYSTAL) || stack.is(Items.ENDER_CHEST) || stack.is(Items.CHORUS_FLOWER);
+        String id = stack.typeHolder()
+                .unwrapKey()
+                .map(key -> key.identifier().toString())
+                .orElse("");
+        return DragonRules.allowEndPlace(id);
+    }
+
+    public static boolean isPlacementItem(Item item) {
+        return item instanceof BlockItem
+                || item instanceof BucketItem
+                || item instanceof EndCrystalItem
+                || item instanceof FlintAndSteelItem
+                || item instanceof FireChargeItem
+                || item instanceof SpawnEggItem
+                || item instanceof ArmorStandItem
+                || item instanceof HangingEntityItem
+                || item instanceof BoatItem
+                || item instanceof MinecartItem;
+    }
+
+    static boolean shouldDenyEndUse(ServerLevel level, Player player, ItemStack stack) {
+        if (level.dimension() != Level.END) {
+            return false;
+        }
+        boolean bypass = false;
+        if (player != null) {
+            bypass = player.hasInfiniteMaterials()
+                    || player.isCreative()
+                    || (player instanceof ServerPlayer serverPlayer && EhmApi.playerBypasses(serverPlayer));
+        }
+        boolean empty = stack == null || stack.isEmpty();
+        return DragonRules.denyEndUse(
+                ConfigManager.world(level).dragon().noBuilding(),
+                true,
+                bypass,
+                empty,
+                allowPlaceItem(stack),
+                !empty && isPlacementItem(stack.getItem()));
     }
 
     public static void applyHealth(EnderDragon dragon, ServerLevel level) {
@@ -246,7 +321,8 @@ public final class Dragon implements FeatureModule {
         }
         Vec3 origin = hit.getLocation();
         Entity source = dragon.isRemoved() ? fireball : dragon;
-        Explosions.enqueue(level, new CreateExplosionTask(level, origin, ExplosionType.DRAGON_FIREBALL, source, 1));
+        BLASTS.computeIfAbsent(level.dimension().identifier(), id -> new ArrayDeque<>())
+                .addLast(new CreateExplosionTask(level, origin, ExplosionType.DRAGON_FIREBALL, source, 1));
         spawnShrapnel(level, origin);
         spawnMinions(level, origin, config.alternativeMinions());
     }
@@ -282,6 +358,7 @@ public final class Dragon implements FeatureModule {
         Identifier id = level.dimension().identifier();
         ATTACKS.remove(id);
         PATTERNS.remove(id);
+        BLASTS.remove(id);
     }
 
     public static boolean blocksTarget(LivingEntity target, Level level) {
@@ -326,6 +403,9 @@ public final class Dragon implements FeatureModule {
     }
 
     private static void onPlayerChangeLevel(ServerPlayer player, ServerLevel origin) {
+        if (!enabled(origin)) {
+            return;
+        }
         if (origin.dimension() != Level.END) {
             return;
         }
@@ -375,6 +455,7 @@ public final class Dragon implements FeatureModule {
         Identifier id = level.dimension().identifier();
         ATTACKS.remove(id);
         PATTERNS.remove(id);
+        BLASTS.remove(id);
     }
 
     private static void spawnMinions(ServerLevel level, Vec3 origin, boolean alternative) {

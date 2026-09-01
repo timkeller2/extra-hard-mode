@@ -41,6 +41,26 @@ public final class DragonRules {
         return END_CRYSTAL.equals(itemId) || ENDER_CHEST.equals(itemId) || CHORUS_FLOWER.equals(itemId);
     }
 
+    /**
+     * End no-build. Empty hand and allowlisted items pass so crystals/chests still work.
+     * {@code placementItem} includes BlockItem, buckets/fluids, flint and steel, boats, eggs, etc.
+     */
+    public static boolean denyEndUse(
+            boolean noBuilding,
+            boolean inEnd,
+            boolean bypass,
+            boolean emptyHand,
+            boolean allowlisted,
+            boolean placementItem) {
+        if (!noBuilding || !inEnd || bypass) {
+            return false;
+        }
+        if (emptyHand || allowlisted) {
+            return false;
+        }
+        return placementItem;
+    }
+
     public enum MinionRoll {
         BLAZE,
         ZOMBIE_VILLAGERS,

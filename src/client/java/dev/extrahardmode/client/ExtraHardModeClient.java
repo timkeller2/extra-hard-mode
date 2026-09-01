@@ -1,17 +1,23 @@
 package dev.extrahardmode.client;
 
 import dev.extrahardmode.feature.Dragon;
+import dev.extrahardmode.feature.DragonRules;
 import dev.extrahardmode.network.ClientboundSyncPayload;
 import dev.extrahardmode.network.ClientboundToastPayload;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.toasts.SystemToast;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
@@ -67,15 +73,20 @@ public class ExtraHardModeClient implements ClientModInitializer {
     }
 
     public static boolean denyEndBuilding(BlockPlaceContext context) {
+        return denyEndBuilding(context.getPlayer(), context.getItemInHand());
+    }
+
+    public static boolean denyEndBuilding(Player player, ItemStack stack) {
         ClientboundSyncPayload sync = lastSync;
         if (sync == null || !sync.noEndBuilding() || sync.playerBypass()) {
             return false;
         }
-        Player player = context.getPlayer();
         if (player != null && (player.hasInfiniteMaterials() || player.isCreative())) {
             return false;
         }
-        return !Dragon.allowPlaceItem(context.getItemInHand());
+        boolean empty = stack == null || stack.isEmpty();
+        return DragonRules.denyEndUse(
+                true, true, false, empty, Dragon.allowPlaceItem(stack), !empty && Dragon.isPlacementItem(stack.getItem()));
     }
 
     public static void toast(String messageId) {
@@ -90,6 +101,19 @@ public class ExtraHardModeClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(ClientboundSyncPayload.TYPE, (payload, context) -> lastSync = payload);
         ClientPlayNetworking.registerGlobalReceiver(ClientboundToastPayload.TYPE, ExtraHardModeClient::onToast);
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> lastSync = null);
+        UseBlockCallback.EVENT.register((player, level, hand, hit) -> denyEndUseClient(player, level, hand));
+        UseItemCallback.EVENT.register(ExtraHardModeClient::denyEndUseClient);
+    }
+
+    private static InteractionResult denyEndUseClient(Player player, Level level, InteractionHand hand) {
+        if (level instanceof ServerLevel) {
+            return InteractionResult.PASS;
+        }
+        if (!denyEndBuilding(player, player.getItemInHand(hand))) {
+            return InteractionResult.PASS;
+        }
+        toast("limited_end_building");
+        return InteractionResult.FAIL;
     }
 
     private static boolean touchesHardened(Level level, BlockPos pos, ClientboundSyncPayload sync) {

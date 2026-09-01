@@ -70,4 +70,13 @@ class ExplosionSettingsTest {
         assertFalse(ExplosionSettings.shouldScheduleCraters(true, false));
         assertFalse(ExplosionSettings.shouldScheduleCraters(false, true));
     }
+
+    @Test
+    void dragonBlastIgnoresExplosionsModule() {
+        assertTrue(ExplosionSettings.allowCreate(ExplosionType.DRAGON_FIREBALL, false, true));
+        assertFalse(ExplosionSettings.allowCreate(ExplosionType.DRAGON_FIREBALL, true, false));
+        assertFalse(ExplosionSettings.allowCreate(ExplosionType.DRAGON_FIREBALL, false, false));
+        assertTrue(ExplosionSettings.allowCreate(ExplosionType.TNT, true, false));
+        assertFalse(ExplosionSettings.allowCreate(ExplosionType.TNT, false, true));
+    }
 }
