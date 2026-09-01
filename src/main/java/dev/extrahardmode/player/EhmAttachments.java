@@ -43,6 +43,8 @@ public final class EhmAttachments {
     /** Persistent; stamped before a spawn-replacement roll so chunk reload cannot re-roll. */
     public static final AttachmentType<Boolean> EHM_SPAWN_PROCESSED = AttachmentRegistry.create(
             ExtraHardModeMod.id("spawn_processed"),
+    public static final AttachmentType<Boolean> EHM_OURS = AttachmentRegistry.create(
+            ExtraHardModeMod.id("ours"),
             builder -> builder.persistent(Codec.BOOL).initializer(() -> Boolean.FALSE));
 
     private EhmAttachments() {}

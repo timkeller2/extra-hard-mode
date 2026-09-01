@@ -3,6 +3,7 @@ package dev.extrahardmode.config;
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.electronwill.nightconfig.toml.TomlFormat;
 import dev.extrahardmode.ExtraHardModeMod;
+import dev.extrahardmode.module.PhysicsBudget;
 import dev.extrahardmode.network.EhmNetworking;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -95,14 +96,46 @@ public final class ConfigManager {
                     config.setComment("debug", "Extra debug logging.");
                     config.set("debug", false);
                 }
+                writeIntIfMissing(
+                        config,
+                        "performance.budgetConversionsPerTick",
+                        "Max PhysicsQueue conversions per tick per world. Overflow remaining wait in the queue.",
+                        PhysicsBudget.CONVERSIONS_PER_TICK);
+                writeIntIfMissing(
+                        config,
+                        "performance.maxLiveEhmFallingEntities",
+                        "Live EHM FallingBlockEntity cap. Overflow uses instant setBlock (no entity, no damage).",
+                        PhysicsBudget.MAX_LIVE_EHM_FALLING);
+                writeIntIfMissing(
+                        config,
+                        "performance.maxFloodFillPerConversion",
+                        "Max extra-falling neighbors enqueued from one conversion/land.",
+                        PhysicsBudget.MAX_FLOOD_FILL);
+                writeIntIfMissing(
+                        config,
+                        "performance.maxQueueDepth",
+                        "Drop oldest physics request past this depth; increments ehm_physics_dropped.",
+                        PhysicsBudget.MAX_QUEUE_DEPTH);
                 config.save();
                 global = new GlobalConfig(
                         config.getOrElse("enabledByDefault", defaultEnabled),
-                        config.getOrElse("debug", false));
+                        config.getOrElse("debug", false),
+                        config.getIntOrElse("performance.budgetConversionsPerTick", PhysicsBudget.CONVERSIONS_PER_TICK),
+                        config.getIntOrElse(
+                                "performance.maxLiveEhmFallingEntities", PhysicsBudget.MAX_LIVE_EHM_FALLING),
+                        config.getIntOrElse("performance.maxFloodFillPerConversion", PhysicsBudget.MAX_FLOOD_FILL),
+                        config.getIntOrElse("performance.maxQueueDepth", PhysicsBudget.MAX_QUEUE_DEPTH));
             }
         } catch (Exception e) {
             ExtraHardModeMod.LOGGER.error("Failed to load {}; using defaults", FILE_NAME, e);
-            global = new GlobalConfig(defaultEnabled, false);
+            global = GlobalConfig.defaults();
+        }
+    }
+
+    private static void writeIntIfMissing(CommentedFileConfig config, String path, String comment, int value) {
+        if (!config.contains(path)) {
+            config.setComment(path, comment);
+            config.set(path, value);
         }
     }
 }

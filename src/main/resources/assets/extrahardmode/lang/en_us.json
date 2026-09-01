@@ -10,7 +10,7 @@
   "extrahardmode.command.enabled.true": "Extra Hard Mode is on in %s",
   "extrahardmode.command.enabled.false": "Extra Hard Mode is off in %s",
   "extrahardmode.command.reload": "Reloaded Extra Hard Mode config",
-  "extrahardmode.command.debug": "EHM debug %s",
+  "extrahardmode.command.debug": "EHM debug %s (queue=%s live=%s dropped=%s lastTick=%s)",
   "extrahardmode.command.bypass": "Personal EHM bypass %s",
   "extrahardmode.command.set": "Set %s to %s in %s",
   "extrahardmode.command.set.failed": "Failed to save Extra Hard Mode config for this dimension",

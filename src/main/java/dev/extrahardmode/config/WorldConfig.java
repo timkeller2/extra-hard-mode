@@ -5,6 +5,7 @@ import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.electronwill.nightconfig.toml.TomlFormat;
 import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.feature.HardenedBudget;
+import dev.extrahardmode.feature.SoftenMap;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -37,6 +38,15 @@ public final class WorldConfig {
     private boolean rainExtinguishesCampfires = false;
     private boolean torchFizz = true;
     private int netherrackFirePercent = 20;
+    private boolean caveInsEnable = true;
+    private boolean caveInsApplyPhysics = true;
+    private final Map<Identifier, Identifier> softenMap = new LinkedHashMap<>();
+    private boolean fallingEnable = true;
+    private boolean fallingBreakTorches = false;
+    private int fallingDamage = 2;
+    private boolean fallingTurnGrassToDirt = true;
+    private boolean fallingCascade = true;
+    private boolean fallingDropAsItemWhenBlocked = false;
     private boolean enabled = true;
     private boolean enabledPresent;
     private final PlayerSettings player = new PlayerSettings();
@@ -57,6 +67,9 @@ public final class WorldConfig {
 
     public WorldConfig(Identifier dimensionId) {
         this.dimensionId = dimensionId;
+        for (Map.Entry<String, String> entry : SoftenMap.parseAll(SoftenMap.DEFAULT_ENTRIES).entrySet()) {
+            softenMap.put(Identifier.parse(entry.getKey()), Identifier.parse(entry.getValue()));
+        }
     }
 
     public Identifier dimensionId() {
@@ -117,6 +130,42 @@ public final class WorldConfig {
         return torchFizz;
     public int netherrackFirePercent() {
         return netherrackFirePercent;
+    }
+
+    public boolean caveInsEnable() {
+        return caveInsEnable;
+    }
+
+    public boolean caveInsApplyPhysics() {
+        return caveInsApplyPhysics;
+    }
+
+    public Identifier softenTo(Identifier from) {
+        return softenMap.get(from);
+    }
+
+    public boolean fallingEnable() {
+        return fallingEnable;
+    }
+
+    public boolean fallingBreakTorches() {
+        return fallingBreakTorches;
+    }
+
+    public int fallingDamage() {
+        return fallingDamage;
+    }
+
+    public boolean fallingTurnGrassToDirt() {
+        return fallingTurnGrassToDirt;
+    }
+
+    public boolean fallingCascade() {
+        return fallingCascade;
+    }
+
+    public boolean fallingDropAsItemWhenBlocked() {
+        return fallingDropAsItemWhenBlocked;
     }
 
     public boolean enabled() {
@@ -260,6 +309,29 @@ public final class WorldConfig {
                         20);
                 PlayerSettings.writeDefaults(file);
                 writeFarmingDefaults(file);
+                        "mining.caveIns.enable",
+                        "Mining cave-in ores softens 6 neighbors (stone→cobble, deepslate→cobbled deepslate).",
+                        true);
+                        "mining.caveIns.applyPhysics",
+                        "Converted neighbors become FallingBlockEntity (budgeted). False only sets the block.",
+                if (!file.contains("mining.caveIns.softenMap")) {
+                    file.setComment(
+                            "mining.caveIns.softenMap",
+                            "from>to. Copper ore neighbors roll 50%. Ancient debris only softens #hardened neighbors.");
+                    file.set("mining.caveIns.softenMap", new ArrayList<>(SoftenMap.DEFAULT_ENTRIES));
+                }
+                        "falling.enable",
+                        "Extra falling blocks (#extrahardmode:extra_falling) drop when unsupported. v1 hooks: player break, BlockItem place, EHM land cascade. Piston/other non-player support removal is not scanned.",
+                        "falling.breakTorches",
+                        "Implemented, default off (upstream buggy).",
+                        false);
+                if (!file.contains("falling.damage")) {
+                    file.setComment("falling.damage", "KD-18: restore docs-era falling-block player damage. Gated to extra_falling ∪ EHM_OURS.");
+                    file.set("falling.damage", 2);
+                writeDefaultIfMissing(file, "falling.turnGrassToDirt", "Grass/mycelium/podzol land as dirt.", true);
+                writeDefaultIfMissing(file, "falling.cascade", "Landed EHM falling blocks can make neighbors fall.", true);
+                        "falling.dropAsItemWhenBlocked",
+                        "Drop an item when a falling block cannot place.",
                 if (!file.contains("modules")) {
                     file.setComment("modules", "Runtime per-module toggles for this dimension. Missing keys default true.");
                 }
@@ -303,6 +375,22 @@ public final class WorldConfig {
                 file.set("mining.hardened.enable", hardenedEnable);
                 file.set("mining.hardened.blockOreNextToStone", blockOreNextToStone);
                 file.set("mining.hardened.blockPistonMove", blockPistonMove);
+                file.set("mining.caveIns.enable", caveInsEnable);
+                file.set("mining.caveIns.applyPhysics", caveInsApplyPhysics);
+                List<String> softenEntries = new ArrayList<>();
+                for (Map.Entry<Identifier, Identifier> entry : softenMap.entrySet()) {
+                    softenEntries.add(entry.getKey() + ">" + entry.getValue());
+                }
+                if (softenEntries.isEmpty()) {
+                    softenEntries.addAll(SoftenMap.DEFAULT_ENTRIES);
+                }
+                file.set("mining.caveIns.softenMap", softenEntries);
+                file.set("falling.enable", fallingEnable);
+                file.set("falling.breakTorches", fallingBreakTorches);
+                file.set("falling.damage", fallingDamage);
+                file.set("falling.turnGrassToDirt", fallingTurnGrassToDirt);
+                file.set("falling.cascade", fallingCascade);
+                file.set("falling.dropAsItemWhenBlocked", fallingDropAsItemWhenBlocked);
                 List<String> budgetEntries = new ArrayList<>();
                 for (Map.Entry<Identifier, Integer> budget : hardenedBudgets.entrySet()) {
                     budgetEntries.add(budget.getKey().toString() + "@" + budget.getValue());
@@ -355,6 +443,27 @@ public final class WorldConfig {
         hardenedEnable = file.getOrElse("mining.hardened.enable", true);
         blockOreNextToStone = file.getOrElse("mining.hardened.blockOreNextToStone", true);
         blockPistonMove = file.getOrElse("mining.hardened.blockPistonMove", true);
+        caveInsEnable = file.getOrElse("mining.caveIns.enable", true);
+        caveInsApplyPhysics = file.getOrElse("mining.caveIns.applyPhysics", true);
+        softenMap.clear();
+        try {
+            for (Map.Entry<String, String> entry :
+                    SoftenMap.parseAll(readStringList(file, "mining.caveIns.softenMap", SoftenMap.DEFAULT_ENTRIES))
+                            .entrySet()) {
+                softenMap.put(Identifier.parse(entry.getKey()), Identifier.parse(entry.getValue()));
+            }
+        } catch (RuntimeException e) {
+            ExtraHardModeMod.LOGGER.warn("Invalid mining.caveIns.softenMap; using defaults", e);
+            for (Map.Entry<String, String> entry : SoftenMap.parseAll(SoftenMap.DEFAULT_ENTRIES).entrySet()) {
+                softenMap.put(Identifier.parse(entry.getKey()), Identifier.parse(entry.getValue()));
+            }
+        }
+        fallingEnable = file.getOrElse("falling.enable", true);
+        fallingBreakTorches = file.getOrElse("falling.breakTorches", false);
+        fallingDamage = file.getIntOrElse("falling.damage", 2);
+        fallingTurnGrassToDirt = file.getOrElse("falling.turnGrassToDirt", true);
+        fallingCascade = file.getOrElse("falling.cascade", true);
+        fallingDropAsItemWhenBlocked = file.getOrElse("falling.dropAsItemWhenBlocked", false);
         hardenedBudgets.clear();
         try {
             for (Map.Entry<String, Integer> entry :

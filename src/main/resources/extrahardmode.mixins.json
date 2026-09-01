@@ -6,7 +6,10 @@
     "PlayerDestroySpeedMixin",
     "PlayerHarvestMixin",
     "PistonStructureMixin",
-    "BlockItemPlaceMixin"
+    "BlockItemPlaceMixin",
+    "FallingBlockEntityDamageMixin",
+    "FallingBlockEntityLandMixin",
+    "FallingBlockPlaceMixin"
   ],
   "client": [
     "client.ClientPlayerDestroySpeedMixin",
