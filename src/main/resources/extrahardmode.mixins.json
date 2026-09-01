@@ -3,7 +3,11 @@
   "package": "dev.extrahardmode.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
-    "NaturalSpawnerMixin"
+    "NaturalSpawnerMixin",
+    "AbstractSkeletonMixin",
+    "AbstractArrowMixin",
+    "SilverfishMergeMixin",
+    "SilverfishMixin"
   ],
   "client": [],
   "injectors": {

@@ -4,6 +4,8 @@ import dev.extrahardmode.command.EhmCommands;
 import dev.extrahardmode.command.EhmPermissions;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.feature.FeatureRegistry;
+import dev.extrahardmode.feature.monster.Silverfish;
+import dev.extrahardmode.feature.monster.Skeletons;
 import dev.extrahardmode.module.SpawnReplaceService;
 import dev.extrahardmode.network.EhmNetworking;
 import dev.extrahardmode.player.EhmAttachments;
@@ -30,6 +32,8 @@ public class ExtraHardModeMod implements ModInitializer {
         WorldGate.register();
         EhmNetworking.register();
         EhmCommands.register();
+        FEATURES.register(new Skeletons());
+        FEATURES.register(new Silverfish());
         ServerLevelEvents.LOAD.register((server, level) -> {
             WorldGate.onLevelLoad(server, level);
             FEATURES.onWorldLoad(level);

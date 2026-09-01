@@ -1,6 +1,7 @@
 package dev.extrahardmode.test;
 
 import dev.extrahardmode.config.ConfigManager;
+import dev.extrahardmode.feature.monster.Skeletons;
 import dev.extrahardmode.module.SpawnReplaceService;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.world.ExtraHardModeBootData;
@@ -131,6 +132,40 @@ public class EhmGameTests {
                     "spawn_processed not stamped when inactive");
             helper.assertTrue(zombie.getType() == EntityTypes.ZOMBIE, "zombie not replaced when inactive");
             helper.succeed();
+        } finally {
+            level.getGameRules().set(WorldGate.ENABLED, previous, server);
+        }
+    }
+
+    @GameTest
+    public void skeletonSpecialShooterFilter(GameTestHelper helper) {
+        BlockPos pos = new BlockPos(1, 2, 1);
+        helper.assertTrue(
+                Skeletons.isSpecialShooter(helper.spawn(EntityTypes.SKELETON, pos, EntitySpawnReason.COMMAND)),
+                "skeleton is special shooter");
+        helper.assertTrue(
+                Skeletons.isSpecialShooter(helper.spawn(EntityTypes.BOGGED, pos, EntitySpawnReason.COMMAND)),
+                "bogged shares skeleton table");
+        helper.assertFalse(
+                Skeletons.isSpecialShooter(helper.spawn(EntityTypes.STRAY, pos, EntitySpawnReason.COMMAND)),
+                "stray excluded");
+        helper.assertFalse(
+                Skeletons.isSpecialShooter(helper.spawn(EntityTypes.WITHER_SKELETON, pos, EntitySpawnReason.COMMAND)),
+                "wither skeleton excluded");
+        helper.succeed();
+    }
+
+    @GameTest
+    public void silverfishDropsCobble(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        MinecraftServer server = level.getServer();
+        boolean previous = level.getGameRules().get(WorldGate.ENABLED);
+        level.getGameRules().set(WorldGate.ENABLED, true, server);
+        try {
+            BlockPos pos = new BlockPos(1, 2, 1);
+            var fish = helper.spawn(EntityTypes.SILVERFISH, pos, EntitySpawnReason.COMMAND);
+            helper.kill(fish);
+            helper.succeedWhen(() -> helper.assertItemEntityPresent(net.minecraft.world.item.Items.COBBLESTONE, pos, 3.0));
         } finally {
             level.getGameRules().set(WorldGate.ENABLED, previous, server);
         }

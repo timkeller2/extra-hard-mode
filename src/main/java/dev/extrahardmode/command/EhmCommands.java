@@ -49,6 +49,7 @@ public final class EhmCommands {
         "spiders",
         "creepers",
         "skeletons",
+        "silverfish",
         "zombies",
         "endermen",
         "blazes",
