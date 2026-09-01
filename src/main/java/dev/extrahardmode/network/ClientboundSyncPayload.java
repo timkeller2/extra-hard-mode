@@ -6,6 +6,7 @@ import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.config.WorldConfig;
 import dev.extrahardmode.feature.HardenedStone;
 import dev.extrahardmode.tag.EhmTags;
+import dev.extrahardmode.feature.monster.Horses;
 import dev.extrahardmode.world.WorldGate;
 import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
@@ -28,6 +29,8 @@ public record ClientboundSyncPayload(
         boolean torchYDeny,
         boolean blockOreNextToStone,
         boolean playerBypass,
+        boolean horseBlockChest,
+        int horseBlockChestBelowY,
         List<Identifier> hardenedBlocks,
         List<Identifier> hardenedPicks,
         List<Identifier> caveInOres,
@@ -53,6 +56,9 @@ public record ClientboundSyncPayload(
             ClientboundSyncPayload::blockOreNextToStone,
             ByteBufCodecs.BOOL,
             ClientboundSyncPayload::playerBypass,
+            ClientboundSyncPayload::horseBlockChest,
+            ByteBufCodecs.VAR_INT,
+            ClientboundSyncPayload::horseBlockChestBelowY,
             IDENTIFIERS,
             ClientboundSyncPayload::hardenedBlocks,
             IDENTIFIERS,
@@ -66,6 +72,8 @@ public record ClientboundSyncPayload(
             ClientboundSyncPayload::new);
 
     public static ClientboundSyncPayload inactive() {
+    public static ClientboundSyncPayload from(ServerLevel level) {
+        WorldConfig config = ConfigManager.world(level);
         return new ClientboundSyncPayload(
                 false, false, 0, false, false, false, List.of(), List.of(), List.of(), List.of(), List.of());
     }
@@ -136,6 +144,11 @@ public record ClientboundSyncPayload(
                         .map(Identifier::parse)
                         .toList())
                 .orElse(List.of());
+                config.torchYDeny(),
+                WorldGate.isModuleActive(level, Horses.ID) && config.horseBlockChest(),
+                config.horseBlockChestBelowY(),
+                List.of(),
+                List.of());
     }
 
     @Override

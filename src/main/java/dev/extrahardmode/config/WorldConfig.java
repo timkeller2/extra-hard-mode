@@ -65,6 +65,11 @@ public final class WorldConfig {
     private boolean silverfishCantEnterBlocks = true;
     private boolean silverfishDropCobble = true;
     private boolean silverfishVisibilityParticles = true;
+    private boolean endermenTeleportPlayers = true;
+    private boolean witchesAdditionalAttacks = true;
+    private int witchesBonusSpawnPercent = 5;
+    private boolean horseBlockChest = true;
+    private int horseBlockChestBelowY = 48;
     private boolean enabled = true;
     private boolean enabledPresent;
     private final PlayerSettings player = new PlayerSettings();
@@ -220,6 +225,16 @@ public final class WorldConfig {
         return silverfishDropCobble;
     public boolean silverfishVisibilityParticles() {
         return silverfishVisibilityParticles;
+    public boolean endermenTeleportPlayers() {
+        return endermenTeleportPlayers;
+    public boolean witchesAdditionalAttacks() {
+        return witchesAdditionalAttacks;
+    public int witchesBonusSpawnPercent() {
+        return witchesBonusSpawnPercent;
+    public boolean horseBlockChest() {
+        return horseBlockChest;
+    public int horseBlockChestBelowY() {
+        return horseBlockChestBelowY;
     }
 
     public boolean enabled() {
@@ -405,6 +420,18 @@ public final class WorldConfig {
                 writeDefaultIfMissing(file, "silverfish.cantEnterBlocks", "Block merge-into-stone.", true);
                 writeDefaultIfMissing(file, "silverfish.dropCobble", true);
                         file, "silverfish.visibilityParticles", "Portal particles so floor-glitched silverfish stay visible.", true);
+                        "endermen.teleportPlayers",
+                        "In a fight, an enderman may teleport the player onto it (2-high roof cheese).",
+                        "witches.additionalAttacks",
+                        "30/30/30/10 splash: baby zombie, teleport, explosion+3 generic, vanilla poison (non-players intensity 0).",
+                        "witches.bonusSpawnPercent",
+                        "NATURAL overworld zombies on grass_block become witches.",
+                        5);
+                        "horses.blockChest.enable",
+                        "Block chested-horse inventory below blockChestBelowY. Disable with this boolean, not Y=0.",
+                if (!file.contains("horses.blockChestBelowY")) {
+                    file.setComment("horses.blockChestBelowY", "original: 55; cave band. Integer.MIN_VALUE also disables.");
+                    file.set("horses.blockChestBelowY", 48);
                 if (!file.contains("modules")) {
                     file.setComment("modules", "Runtime per-module toggles for this dimension. Missing keys default true.");
                 }
@@ -509,6 +536,11 @@ public final class WorldConfig {
                 file.set("silverfish.cantEnterBlocks", silverfishCantEnterBlocks);
                 file.set("silverfish.dropCobble", silverfishDropCobble);
                 file.set("silverfish.visibilityParticles", silverfishVisibilityParticles);
+                file.set("endermen.teleportPlayers", endermenTeleportPlayers);
+                file.set("witches.additionalAttacks", witchesAdditionalAttacks);
+                file.set("witches.bonusSpawnPercent", witchesBonusSpawnPercent);
+                file.set("horses.blockChest.enable", horseBlockChest);
+                file.set("horses.blockChestBelowY", horseBlockChestBelowY);
                 for (Map.Entry<Identifier, Boolean> entry : modules.entrySet()) {
                     file.set(moduleKey(entry.getKey()), entry.getValue());
                 }
@@ -605,6 +637,11 @@ public final class WorldConfig {
         silverfishCantEnterBlocks = file.getOrElse("silverfish.cantEnterBlocks", true);
         silverfishDropCobble = file.getOrElse("silverfish.dropCobble", true);
         silverfishVisibilityParticles = file.getOrElse("silverfish.visibilityParticles", true);
+        endermenTeleportPlayers = file.getOrElse("endermen.teleportPlayers", true);
+        witchesAdditionalAttacks = file.getOrElse("witches.additionalAttacks", true);
+        witchesBonusSpawnPercent = percent(getInt(file, "witches.bonusSpawnPercent", 5));
+        horseBlockChest = file.getOrElse("horses.blockChest.enable", true);
+        horseBlockChestBelowY = getInt(file, "horses.blockChestBelowY", 48);
         modules.clear();
         Object raw = file.get("modules");
         if (raw instanceof Config table) {
@@ -707,4 +744,11 @@ public final class WorldConfig {
         return fallback;
     private static double getDouble(CommentedFileConfig file, String path, double fallback) {
             return number.doubleValue();
+    private static void writeDefaultIfMissing(CommentedFileConfig file, String path, String comment, int value) {
+        if (!file.contains(path)) {
+            file.setComment(path, comment);
+            file.set(path, value);
+        }
+    }
+        Object raw = file.get(path);
 }

@@ -17,6 +17,9 @@ import dev.extrahardmode.feature.Players;
 import dev.extrahardmode.feature.Water;
 import dev.extrahardmode.feature.monster.Silverfish;
 import dev.extrahardmode.feature.monster.Skeletons;
+import dev.extrahardmode.feature.monster.Endermen;
+import dev.extrahardmode.feature.monster.Horses;
+import dev.extrahardmode.feature.monster.Witches;
 import dev.extrahardmode.module.SpawnReplaceService;
 import dev.extrahardmode.module.PhysicsQueue;
 import dev.extrahardmode.network.EhmNetworking;
@@ -60,6 +63,9 @@ public class ExtraHardModeMod implements ModInitializer {
         FEATURES.register(new FallingBlocks());
         FEATURES.register(new Skeletons());
         FEATURES.register(new Silverfish());
+        FEATURES.register(new Endermen());
+        FEATURES.register(new Witches());
+        FEATURES.register(new Horses());
         ServerLevelEvents.LOAD.register((server, level) -> {
             WorldGate.onLevelLoad(server, level);
             FEATURES.onWorldLoad(level);

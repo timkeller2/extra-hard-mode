@@ -55,6 +55,8 @@ public final class EhmCommands {
         "silverfish",
         "zombies",
         "endermen",
+        "witches",
+        "horses",
         "blazes",
         "dragon"
     };

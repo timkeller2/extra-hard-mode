@@ -15,6 +15,11 @@
     "AbstractArrowMixin",
     "SilverfishMergeMixin",
     "SilverfishMixin"
+    "AbstractHorseMixin",
+    "AbstractMountInventoryMenuMixin",
+    "EnderManMixin",
+    "LootlessMixin",
+    "ThrownSplashPotionMixin"
   ],
   "client": [
     "client.ClientPlayerDestroySpeedMixin",

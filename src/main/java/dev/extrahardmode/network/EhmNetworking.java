@@ -22,6 +22,7 @@ public final class EhmNetworking {
 
     public static void sendSync(ServerPlayer player) {
         ServerPlayNetworking.send(player, ClientboundSyncPayload.from(player));
+        ServerPlayNetworking.send(player, ClientboundSyncPayload.from(player.level()));
     }
 
     public static void sendToast(ServerPlayer player, String messageId) {

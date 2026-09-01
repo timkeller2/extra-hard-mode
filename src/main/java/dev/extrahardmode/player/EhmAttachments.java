@@ -56,6 +56,7 @@ public final class EhmAttachments {
             ExtraHardModeMod.id("silverfish_spawned"),
             builder -> builder.persistent(Codec.INT).initializer(() -> 0));
 
+    /** Persistent; EHM-spawned mobs that should not drop loot (witch baby zombies, etc.). */
     public static final AttachmentType<Boolean> EHM_LOOTLESS = AttachmentRegistry.create(
             ExtraHardModeMod.id("lootless"),
             builder -> builder.persistent(Codec.BOOL).initializer(() -> Boolean.FALSE));
@@ -67,6 +68,9 @@ public final class EhmAttachments {
     /** Transient; caches the one deflect roll for this arrow so mixin + ALLOW_DAMAGE cannot double-roll. */
     public static final AttachmentType<Boolean> EHM_ARROW_DEFLECT =
             AttachmentRegistry.create(ExtraHardModeMod.id("arrow_deflect"));
+    /** Transient game-time of the last enderman-forced player teleport. */
+    public static final AttachmentType<Long> EHM_ENDERMAN_TP_TICK = AttachmentRegistry.create(
+            ExtraHardModeMod.id("enderman_tp_tick"), builder -> builder.initializer(() -> 0L));
 
     private EhmAttachments() {}
 
