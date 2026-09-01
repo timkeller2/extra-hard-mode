@@ -1,13 +1,20 @@
 package dev.extrahardmode.test;
 
 import dev.extrahardmode.config.ConfigManager;
+import dev.extrahardmode.feature.Water;
 import dev.extrahardmode.world.ExtraHardModeBootData;
 import dev.extrahardmode.world.WorldGate;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
+import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.FluidTags;
+import net.minecraft.world.item.BucketItem;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.material.FluidState;
 
 public class EhmGameTests {
     @GameTest
@@ -57,5 +64,27 @@ public class EhmGameTests {
         helper.assertTrue(boot.contains(Level.OVERWORLD.identifier()), "overworld still stamped");
         helper.assertTrue(WorldGate.dimensionEnabled(nether), "nether dim flag defaults true (opt-out)");
         helper.succeed();
+    }
+
+    @GameTest
+    public void waterFromBucketIsNotSource(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        level.getGameRules().set(WorldGate.ENABLED, true, level.getServer());
+        ConfigManager.world(level).setEnabled(true);
+        BlockPos rel = new BlockPos(1, 2, 1);
+        helper.setBlock(rel.below(), Blocks.STONE);
+        helper.setBlock(rel, Blocks.AIR);
+        BlockPos abs = helper.absolutePos(rel);
+        BucketItem bucket = (BucketItem) Items.WATER_BUCKET;
+        helper.assertTrue(bucket.emptyContents(null, level, abs, null), "emptied water bucket");
+        FluidState immediately = level.getFluidState(abs);
+        helper.assertTrue(immediately.is(FluidTags.WATER), "bucket placed water");
+        helper.assertFalse(immediately.isSource(), "water from bucket is not a source");
+        helper.assertTrue(Water.isMarked(level, abs), "placed water is marked non-source");
+        helper.runAfterDelay(2, () -> {
+            FluidState later = level.getFluidState(abs);
+            helper.assertFalse(later.isSource(), "still not a source after ticks");
+            helper.succeed();
+        });
     }
 }

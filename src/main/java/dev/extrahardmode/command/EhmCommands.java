@@ -39,6 +39,7 @@ public final class EhmCommands {
         "players",
         "anti_farming",
         "water_sources",
+        "animal_crowd_control",
         "explosions",
         "more_tnt",
         "anti_grinder",

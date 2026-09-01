@@ -2,7 +2,17 @@
   "required": true,
   "package": "dev.extrahardmode.mixin",
   "compatibilityLevel": "JAVA_25",
-  "mixins": [],
+  "mixins": [
+    "BucketItemMixin",
+    "WaterFluidMixin",
+    "WaterDispenseMixin",
+    "CropBlockMixin",
+    "NetherWartMixin",
+    "SheepMixin",
+    "CraftingMenuMixin",
+    "SaplingBlockMixin",
+    "MushroomBlockMixin"
+  ],
   "client": [],
   "injectors": {
     "defaultRequire": 1

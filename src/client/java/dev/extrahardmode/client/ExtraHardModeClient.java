@@ -41,6 +41,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
         return switch (messageId) {
             case "enabled_on" -> "Extra Hard Mode is on. /gamerule extrahardmode:enabled";
             case "enabled_off" -> "Extra Hard Mode is off. /gamerule extrahardmode:enabled";
+            case "no_crafting_melon_seeds" -> "You can't craft melon or pumpkin seeds. Find them in the world.";
             default -> messageId;
         };
     }

@@ -28,6 +28,20 @@ public final class WorldConfig {
     private boolean torchYDeny = true;
     private boolean enabled = true;
     private boolean enabledPresent;
+    private boolean weakCrops = true;
+    private int lossRate = 25;
+    private boolean infertileDeserts = true;
+    private boolean snowBreaksCrops = true;
+    private boolean cantCraftMelonSeeds = true;
+    private boolean noBonemealOnMushrooms = true;
+    private boolean noFarmNetherWart = true;
+    private boolean sheepWhiteWool = true;
+    private boolean squidOceanOnly = true;
+    private boolean bucketsDontMoveSources = true;
+    private boolean animalXpNerf = true;
+    private boolean ironGolemNerf = true;
+    private boolean overcrowdEnable = true;
+    private int overcrowdThreshold = 10;
 
     public WorldConfig(Identifier dimensionId) {
         this.dimensionId = dimensionId;
@@ -76,6 +90,62 @@ public final class WorldConfig {
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
         this.enabledPresent = true;
+    }
+
+    public boolean weakCrops() {
+        return weakCrops;
+    }
+
+    public int lossRate() {
+        return lossRate;
+    }
+
+    public boolean infertileDeserts() {
+        return infertileDeserts;
+    }
+
+    public boolean snowBreaksCrops() {
+        return snowBreaksCrops;
+    }
+
+    public boolean cantCraftMelonSeeds() {
+        return cantCraftMelonSeeds;
+    }
+
+    public boolean noBonemealOnMushrooms() {
+        return noBonemealOnMushrooms;
+    }
+
+    public boolean noFarmNetherWart() {
+        return noFarmNetherWart;
+    }
+
+    public boolean sheepWhiteWool() {
+        return sheepWhiteWool;
+    }
+
+    public boolean squidOceanOnly() {
+        return squidOceanOnly;
+    }
+
+    public boolean bucketsDontMoveSources() {
+        return bucketsDontMoveSources;
+    }
+
+    public boolean animalXpNerf() {
+        return animalXpNerf;
+    }
+
+    public boolean ironGolemNerf() {
+        return ironGolemNerf;
+    }
+
+    public boolean overcrowdEnable() {
+        return overcrowdEnable;
+    }
+
+    public int overcrowdThreshold() {
+        return overcrowdThreshold;
     }
 
     public boolean isModuleEnabled(Identifier moduleId) {
@@ -142,6 +212,7 @@ public final class WorldConfig {
                     file.set("torches.noPlacementUnderY", 0);
                 }
                 writeDefaultIfMissing(file, "torches.noPlacementOnSoft", "No torches on soft surfaces.", true);
+                writeFarmingDefaults(file);
                 if (!file.contains("modules")) {
                     file.setComment("modules", "Runtime per-module toggles for this dimension. Missing keys default true.");
                 }
@@ -182,6 +253,20 @@ public final class WorldConfig {
                 file.set("torches.noPlacement.enable", torchYDeny);
                 file.set("torches.noPlacementUnderY", torchNoPlacementUnderY);
                 file.set("torches.noPlacementOnSoft", torchSoftDeny);
+                file.set("farming.weakCrops", weakCrops);
+                file.set("farming.lossRate", lossRate);
+                file.set("farming.infertileDeserts", infertileDeserts);
+                file.set("farming.snowBreaksCrops", snowBreaksCrops);
+                file.set("farming.cantCraftMelonSeeds", cantCraftMelonSeeds);
+                file.set("farming.noBonemealOnMushrooms", noBonemealOnMushrooms);
+                file.set("farming.noFarmNetherWart", noFarmNetherWart);
+                file.set("farming.sheepWhiteWool", sheepWhiteWool);
+                file.set("farming.squidOceanOnly", squidOceanOnly);
+                file.set("farming.bucketsDontMoveSources", bucketsDontMoveSources);
+                file.set("farming.animalXpNerf", animalXpNerf);
+                file.set("farming.ironGolemNerf", ironGolemNerf);
+                file.set("farming.overcrowd.enable", overcrowdEnable);
+                file.set("farming.overcrowd.threshold", overcrowdThreshold);
                 for (Map.Entry<Identifier, Boolean> entry : modules.entrySet()) {
                     file.set(moduleKey(entry.getKey()), entry.getValue());
                 }
@@ -204,6 +289,20 @@ public final class WorldConfig {
         torchYDeny = file.getOrElse("torches.noPlacement.enable", true);
         torchNoPlacementUnderY = file.getOrElse("torches.noPlacementUnderY", 0);
         torchSoftDeny = file.getOrElse("torches.noPlacementOnSoft", true);
+        weakCrops = file.getOrElse("farming.weakCrops", true);
+        lossRate = file.getOrElse("farming.lossRate", 25);
+        infertileDeserts = file.getOrElse("farming.infertileDeserts", true);
+        snowBreaksCrops = file.getOrElse("farming.snowBreaksCrops", true);
+        cantCraftMelonSeeds = file.getOrElse("farming.cantCraftMelonSeeds", true);
+        noBonemealOnMushrooms = file.getOrElse("farming.noBonemealOnMushrooms", true);
+        noFarmNetherWart = file.getOrElse("farming.noFarmNetherWart", true);
+        sheepWhiteWool = file.getOrElse("farming.sheepWhiteWool", true);
+        squidOceanOnly = file.getOrElse("farming.squidOceanOnly", true);
+        bucketsDontMoveSources = file.getOrElse("farming.bucketsDontMoveSources", true);
+        animalXpNerf = file.getOrElse("farming.animalXpNerf", true);
+        ironGolemNerf = file.getOrElse("farming.ironGolemNerf", true);
+        overcrowdEnable = file.getOrElse("farming.overcrowd.enable", true);
+        overcrowdThreshold = file.getOrElse("farming.overcrowd.threshold", 10);
         modules.clear();
         Object raw = file.get("modules");
         if (raw instanceof Config table) {
@@ -235,7 +334,43 @@ public final class WorldConfig {
         return Identifier.fromNamespaceAndPath(key.substring(0, dot), key.substring(dot + 1).replace('.', '/'));
     }
 
+    private static void writeFarmingDefaults(CommentedFileConfig file) {
+        writeDefaultIfMissing(
+                file,
+                "farming.weakCrops",
+                "Crops may die at full growth. 25% even when tended; dark always dies; no separate needWater toggle.",
+                true);
+        writeDefaultIfMissing(file, "farming.lossRate", "Base death percent at full growth (original 25).", 25);
+        writeDefaultIfMissing(file, "farming.infertileDeserts", "Desert biomes add +50% crop death; trees/mushrooms will not grow.", true);
+        writeDefaultIfMissing(file, "farming.snowBreaksCrops", "Snow-covered crops die on random tick.", true);
+        writeDefaultIfMissing(file, "farming.cantCraftMelonSeeds", "Melon and pumpkin seed recipes are uncraftable.", true);
+        writeDefaultIfMissing(file, "farming.noBonemealOnMushrooms", "Bone meal does not grow mushrooms.", true);
+        writeDefaultIfMissing(
+                file,
+                "farming.noFarmNetherWart",
+                "Cannot place nether wart; breaking always drops exactly 1. Find it in fortresses or piglin drops.",
+                true);
+        writeDefaultIfMissing(file, "farming.sheepWhiteWool", "Sheep regrow and breed white. Dyeing is one-shot.", true);
+        writeDefaultIfMissing(file, "farming.squidOceanOnly", "Natural squid only spawn in #minecraft:is_ocean. Glow squid unchanged.", true);
+        writeDefaultIfMissing(
+                file,
+                "farming.bucketsDontMoveSources",
+                "Buckets place flowing water LEVEL=1 (not a source). Does not disable canConvertToSource globally.",
+                true);
+        writeDefaultIfMissing(file, "farming.animalXpNerf", "Animals drop no experience.", true);
+        writeDefaultIfMissing(file, "farming.ironGolemNerf", "Iron golems drop nothing (anti iron farm).", true);
+        writeDefaultIfMissing(file, "farming.overcrowd.enable", "Animals over the threshold in a 3x3x3 take damage.", true);
+        writeDefaultIfMissing(file, "farming.overcrowd.threshold", "Maximum animals in 3x3x3 before damage. Original 10.", 10);
+    }
+
     private static void writeDefaultIfMissing(CommentedFileConfig file, String path, String comment, boolean value) {
+        if (!file.contains(path)) {
+            file.setComment(path, comment);
+            file.set(path, value);
+        }
+    }
+
+    private static void writeDefaultIfMissing(CommentedFileConfig file, String path, String comment, int value) {
         if (!file.contains(path)) {
             file.setComment(path, comment);
             file.set(path, value);
