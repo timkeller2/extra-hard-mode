@@ -1,7 +1,6 @@
 {
   "required": true,
   "package": "dev.extrahardmode.mixin",
-  "plugin": "dev.extrahardmode.mixin.EhmMixinPlugin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
     "NaturalSpawnerMixin"

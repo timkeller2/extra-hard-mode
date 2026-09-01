@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
@@ -42,6 +43,11 @@ public final class SpawnReplaceService {
     }
 
     private SpawnReplaceService() {}
+
+    public static void init() {
+        ServerLifecycleEvents.SERVER_STARTED.register(
+                server -> server.execute(SpawnReplaceService::warnIfMixinMissing));
+    }
 
     public static void markMixinApplied() {
         MIXIN_APPLIED.set(true);
