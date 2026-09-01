@@ -22,6 +22,7 @@ import dev.extrahardmode.module.SpawnReplaceService;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.module.PhysicsQueue;
 import dev.extrahardmode.tag.EhmTags;
+import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.world.ExtraHardModeBootData;
 import dev.extrahardmode.world.PhysicsSkip;
 import dev.extrahardmode.world.WorldGate;
@@ -104,6 +105,9 @@ import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
+/**
+ * Fabric GameTests. DESIGN PR 13 acceptance contract is documented in README.md.
+ */
 public class EhmGameTests {
     private static final ThreadLocal<Boolean> CANCEL_NEXT = ThreadLocal.withInitial(() -> Boolean.FALSE);
 
@@ -984,4 +988,19 @@ public class EhmGameTests {
             for (int y = 2; y <= 6; y++) {
                 for (int z = 2; z <= 6; z++) {
                     helper.setBlock(new BlockPos(x, y, z), Blocks.STONE);
+    public void gameruleOffIsNoOp(GameTestHelper helper) {
+        boolean previousGamerule = level.getGameRules().get(WorldGate.ENABLED);
+        boolean previousDim = config.enabled();
+            config.setEnabled(true);
+            level.getGameRules().set(WorldGate.ENABLED, true, server);
+            helper.assertTrue(WorldGate.isActive(level), "gamerule on + dim on → WorldGate active");
+                    WorldGate.isModuleActive(level, ExtraHardModeMod.id("hardened_stone")),
+                    "gamerule on → modules active");
+            level.getGameRules().set(WorldGate.ENABLED, false, server);
+            helper.assertFalse(WorldGate.isActive(level), "gamerule off → WorldGate inactive");
+                    "gamerule off → modules inactive");
+                    WorldGate.isModuleActive(level, ExtraHardModeMod.id("cave_ins")),
+                    "gamerule off → cave-ins inactive");
+            level.getGameRules().set(WorldGate.ENABLED, previousGamerule, server);
+            config.setEnabled(previousDim);
 }
