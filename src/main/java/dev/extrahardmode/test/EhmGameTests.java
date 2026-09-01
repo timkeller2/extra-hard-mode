@@ -1,10 +1,14 @@
 package dev.extrahardmode.test;
 
+import dev.extrahardmode.api.ExplosionType;
+import dev.extrahardmode.api.event.EhmExplosionEvent;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.feature.CaveIns;
+import dev.extrahardmode.feature.Explosions;
 import dev.extrahardmode.feature.FallingBlocks;
 import dev.extrahardmode.feature.HardenedStone;
 import dev.extrahardmode.feature.RealisticChopping;
+import dev.extrahardmode.feature.MoreTnt;
 import dev.extrahardmode.item.EhmComponents;
 import dev.extrahardmode.feature.monster.Silverfish;
 import dev.extrahardmode.feature.monster.Skeletons;
@@ -18,6 +22,7 @@ import dev.extrahardmode.world.PhysicsSkip;
 import dev.extrahardmode.world.WorldGate;
 import java.util.UUID;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
+import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
@@ -28,15 +33,23 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.item.FallingBlockEntity;
+import net.minecraft.world.entity.item.PrimedTnt;
+import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
@@ -68,10 +81,22 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 
 public class EhmGameTests {
+    private static final ThreadLocal<Boolean> CANCEL_NEXT = ThreadLocal.withInitial(() -> Boolean.FALSE);
+
+    static {
+        EhmExplosionEvent.EVENT.register(event -> {
+            if (Boolean.TRUE.equals(CANCEL_NEXT.get())) {
+                event.cancel();
+            }
+        });
+    }
+
     @GameTest
     public void firstApplyPerDimension(GameTestHelper helper) {
         ServerLevel overworld = helper.getLevel();
@@ -707,4 +732,91 @@ public class EhmGameTests {
                     break;
                     helper.getBlockState(rel).isAir() || fallingHere,
                     "converted log must be air or a falling entity at " + rel);
+    public void tntRecipeMakesThree(GameTestHelper helper) {
+        var key = ResourceKey.create(Registries.RECIPE, Identifier.withDefaultNamespace("tnt"));
+        var holder = level.getServer().getRecipeManager().byKey(key);
+        helper.assertTrue(holder.isPresent(), "minecraft:tnt recipe loaded");
+        RecipeHolder<?> recipeHolder = holder.get();
+        helper.assertTrue(recipeHolder.value() instanceof ShapedRecipe, "tnt is shaped");
+        ShapedRecipe recipe = (ShapedRecipe) recipeHolder.value();
+        CraftingInput input = CraftingInput.of(
+                3,
+                List.of(
+                        new ItemStack(Items.GUNPOWDER),
+                        new ItemStack(Items.SAND),
+                        new ItemStack(Items.GUNPOWDER)));
+        ItemStack result = recipe.assemble(input);
+        helper.assertValueEqual(3, result.getCount(), "tnt recipe yields 3");
+        helper.assertTrue(result.is(Items.TNT), "tnt recipe result is tnt");
+        helper.assertValueEqual(3, MoreTnt.adjustResult(level, new ItemStack(Items.TNT, 3)).getCount(), "module on keeps 3");
+        helper.assertValueEqual(1, MoreTnt.adjustResult(level, new ItemStack(Items.TNT, 3)).getCount(), "gamerule off yields 1");
+    @GameTest(padding = 8)
+    public void explosionTurnsStoneToCobble(GameTestHelper helper) {
+        level.getGameRules().set(GameRules.TNT_EXPLODES, true, level.getServer());
+        BlockPos center = new BlockPos(4, 4, 4);
+        for (int x = 2; x <= 6; x++) {
+            for (int y = 2; y <= 6; y++) {
+                for (int z = 2; z <= 6; z++) {
+                    helper.setBlock(new BlockPos(x, y, z), Blocks.STONE);
+        BlockPos abs = helper.absolutePos(center);
+        Explosions.create(level, Vec3.atCenterOf(abs), ExplosionType.TNT, null);
+        helper.succeedWhen(() -> {
+            helper.assertTrue(explosionProducedCobble(helper, center), "TNT explosion softened stone to cobble");
+    private static boolean explosionProducedCobble(GameTestHelper helper, BlockPos center) {
+                    if (helper.getBlockState(new BlockPos(x, y, z)).is(Blocks.COBBLESTONE)) {
+                        return true;
+                    }
+        AABB box = new AABB(helper.absolutePos(center)).inflate(8.0);
+        for (FallingBlockEntity falling : level.getEntities(EntityTypes.FALLING_BLOCK, box, entity -> true)) {
+            if (falling.getBlockState().is(Blocks.COBBLESTONE)) {
+                return true;
+        return false;
+    public void explosionInterceptTurnsStoneToCobble(GameTestHelper helper) {
+        fillStoneCube(helper, center);
+        PrimedTnt tnt = new PrimedTnt(level, abs.getX() + 0.5, abs.getY() + 0.5, abs.getZ() + 0.5, null);
+        level.addFreshEntity(tnt);
+        level.explode(tnt, tnt.getX(), tnt.getY(), tnt.getZ(), 4.0F, false, Level.ExplosionInteraction.TNT);
+            helper.assertTrue(explosionProducedCobble(helper, center), "vanilla TNT intercept softened stone");
+    public void cancelledExplosionDoesNotBreakOrCrater(GameTestHelper helper) {
+        CANCEL_NEXT.set(Boolean.TRUE);
+            PrimedTnt tnt = new PrimedTnt(level, abs.getX() + 0.5, abs.getY() + 0.5, abs.getZ() + 0.5, null);
+            level.addFreshEntity(tnt);
+            level.explode(tnt, tnt.getX(), tnt.getY(), tnt.getZ(), 4.0F, false, Level.ExplosionInteraction.TNT);
+            CANCEL_NEXT.set(Boolean.FALSE);
+        helper.runAfterDelay(25, () -> {
+            for (int x = 2; x <= 6; x++) {
+                for (int y = 2; y <= 6; y++) {
+                    for (int z = 2; z <= 6; z++) {
+                        helper.assertBlockPresent(Blocks.STONE, new BlockPos(x, y, z));
+    public void mobGriefingFalseSkipsCreeperWorldDamage(GameTestHelper helper) {
+        level.getGameRules().set(GameRules.MOB_GRIEFING, false, level.getServer());
+        Creeper creeper = EntityTypes.CREEPER.create(level, EntitySpawnReason.COMMAND);
+        if (creeper == null) {
+            helper.fail("creeper create");
+            return;
+        creeper.snapTo(abs.getX() + 0.5, abs.getY() + 0.5, abs.getZ() + 0.5);
+        level.addFreshEntity(creeper);
+        level.explode(creeper, creeper.getX(), creeper.getY(), creeper.getZ(), 3.0F, false, Level.ExplosionInteraction.MOB);
+        helper.runAfterDelay(5, () -> {
+            helper.assertBlockPresent(Blocks.STONE, center);
+            helper.assertBlockPresent(Blocks.STONE, center.above());
+            level.getGameRules().set(GameRules.MOB_GRIEFING, true, level.getServer());
+    @GameTest(maxTicks = 80)
+    public void flyingDebrisAutoremovePastRadius(GameTestHelper helper) {
+        BlockPos floor = new BlockPos(2, 2, 2);
+        helper.setBlock(floor, Blocks.STONE);
+        helper.setBlock(floor.above(), Blocks.AIR);
+        BlockPos spawnRel = new BlockPos(2, 7, 2);
+        helper.setBlock(spawnRel, Blocks.AIR);
+        BlockPos spawn = helper.absolutePos(spawnRel);
+        Vec3 origin = Vec3.atCenterOf(spawn).add(20.0, 0.0, 0.0);
+        FallingBlockEntity falling = FallingBlockEntity.fall(level, spawn, Blocks.COBBLESTONE.defaultBlockState());
+        falling.setDeltaMovement(0.0, 0.0, 0.0);
+        falling.setAttached(EhmAttachments.EHM_OURS, Boolean.TRUE);
+        falling.setAttached(EhmAttachments.EHM_FLY_ORIGIN, origin);
+            helper.assertTrue(falling.isRemoved(), "far flying debris discarded on land");
+            helper.assertBlockNotPresent(Blocks.COBBLESTONE, spawnRel);
+            helper.assertBlockNotPresent(Blocks.COBBLESTONE, floor.above());
+            helper.assertBlockPresent(Blocks.STONE, floor);
+    private static void fillStoneCube(GameTestHelper helper, BlockPos center) {
 }

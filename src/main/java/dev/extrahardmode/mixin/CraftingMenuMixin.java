@@ -6,6 +6,7 @@ import dev.extrahardmode.feature.AntiFarming;
 import dev.extrahardmode.world.WorldGate;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import dev.extrahardmode.feature.MoreTnt;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.CraftingContainer;
@@ -17,6 +18,7 @@ import net.minecraft.world.item.crafting.RecipeHolder;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(CraftingMenu.class)
@@ -45,5 +47,24 @@ public abstract class CraftingMenuMixin {
             resultSlots.setItem(0, ItemStack.EMPTY);
             AntiFarming.notifyNoMelonSeeds(player);
         }
+    @Inject(method = "slotChangedCraftingGrid", at = @At("HEAD"))
+    private static void extrahardmode$captureCraftLevel(
+            CraftingContainer container,
+            ResultContainer result,
+        MoreTnt.captureCraftLevel(level);
+    }
+
+    @ModifyArg(
+            method = "slotChangedCraftingGrid",
+            at =
+                    @At(
+                            value = "INVOKE",
+                            target =
+                                    "Lnet/minecraft/world/inventory/ResultContainer;setItem(ILnet/minecraft/world/item/ItemStack;)V"),
+            index = 1)
+    private static ItemStack extrahardmode$tntCount(ItemStack stack) {
+        return MoreTnt.adjustCaptured(stack);
+    private static void extrahardmode$clearCraftLevel(
+        MoreTnt.clearCraftLevel();
     }
 }

@@ -12,6 +12,7 @@ import java.util.UUID;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.minecraft.core.UUIDUtil;
+import net.minecraft.world.phys.Vec3;
 
 public final class EhmAttachments {
     public static final Codec<LongOpenHashSet> LONG_SET_CODEC = Codec.LONG.listOf().xmap(list -> {
@@ -100,6 +101,8 @@ public final class EhmAttachments {
     public static final AttachmentType<Boolean> EHM_TRIAL_SPAWNED = AttachmentRegistry.create(
             ExtraHardModeMod.id("trial_spawned"),
             builder -> builder.persistent(Codec.BOOL).initializer(() -> Boolean.FALSE));
+    public static final AttachmentType<Vec3> EHM_FLY_ORIGIN = AttachmentRegistry.create(
+            ExtraHardModeMod.id("fly_origin"), builder -> builder.persistent(Vec3.CODEC));
 
     private EhmAttachments() {}
 

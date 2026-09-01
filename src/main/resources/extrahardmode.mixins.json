@@ -23,6 +23,11 @@
     "MobSpawnRulesMixin",
     "MonsterLootMixin",
     "NaturalSpawnerMixin"
+    "FallingBlockPlaceMixin",
+    "ServerExplosionMixin",
+    "ServerLevelExplosionMixin",
+    "CraftingMenuMixin",
+    "CrafterBlockMixin"
   ],
   "client": [
     "client.ClientPlayerDestroySpeedMixin",
