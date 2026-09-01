@@ -5,6 +5,9 @@ import dev.extrahardmode.command.EhmPermissions;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.feature.FeatureRegistry;
 import dev.extrahardmode.feature.HardenedStone;
+import dev.extrahardmode.feature.LimitedBuilding;
+import dev.extrahardmode.feature.NetherrackFire;
+import dev.extrahardmode.feature.Torches;
 import dev.extrahardmode.item.EhmComponents;
 import dev.extrahardmode.network.EhmNetworking;
 import dev.extrahardmode.player.EhmAttachments;
@@ -32,6 +35,9 @@ public class ExtraHardModeMod implements ModInitializer {
         EhmNetworking.register();
         EhmCommands.register();
         FEATURES.register(new HardenedStone());
+        FEATURES.register(new Torches());
+        FEATURES.register(new NetherrackFire());
+        FEATURES.register(new LimitedBuilding());
         ServerLevelEvents.LOAD.register((server, level) -> {
             WorldGate.onLevelLoad(server, level);
             FEATURES.onWorldLoad(level);

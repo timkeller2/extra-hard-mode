@@ -7,6 +7,11 @@ import dev.extrahardmode.world.ExtraHardModeBootData;
 import dev.extrahardmode.world.WorldGate;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.registries.Registries;
+import dev.extrahardmode.config.WorldConfig;
+import dev.extrahardmode.feature.NetherrackFire;
+import dev.extrahardmode.feature.Torches;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -19,6 +24,11 @@ import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 
 public class EhmGameTests {
     @GameTest
@@ -102,6 +112,44 @@ public class EhmGameTests {
         helper.assertValueEqual(127, pick.getOrDefault(EhmComponents.HARDENED_MINED, 0), "127 hardened breaks counted");
         HardenedStone.drain(player, pick, Blocks.STONE.defaultBlockState());
         helper.assertTrue(pick.isEmpty(), "iron pick consumed on 128th hardened break");
+    public void torchDenyBelowY0(GameTestHelper helper) {
+        ConfigManager.world(level).setEnabled(true);
+        BlockPos abs = helper.absolutePos(BlockPos.ZERO);
+        BlockPos stone = new BlockPos(abs.getX(), -2, abs.getZ());
+        level.setBlock(stone, Blocks.STONE.defaultBlockState(), 3);
+        level.setBlock(stone.above(), Blocks.AIR.defaultBlockState(), 3);
+        if (!(helper.makeMockServerPlayer(GameType.SURVIVAL) instanceof ServerPlayer player)) {
+            helper.fail("expected ServerPlayer");
+        BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(stone).add(0, 0.5, 0), Direction.UP, stone, false);
+        ItemStack torch = new ItemStack(Items.TORCH);
+        BlockPlaceContext torchContext =
+                new BlockPlaceContext(new UseOnContext(level, player, InteractionHand.MAIN_HAND, torch, hit));
+                torch.getItem() instanceof BlockItem blockItem
+                        && Torches.shouldDeny(level, torchContext, blockItem),
+                "torch denied below Y=0");
+        ItemStack redstone = new ItemStack(Items.REDSTONE_TORCH);
+        BlockPlaceContext redstoneContext =
+                new BlockPlaceContext(new UseOnContext(level, player, InteractionHand.MAIN_HAND, redstone, hit));
+        helper.assertFalse(
+                redstone.getItem() instanceof BlockItem redstoneItem
+                        && Torches.shouldDeny(level, redstoneContext, redstoneItem),
+                "redstone torch allowed below Y=0");
+        BlockPos stoneAtMinus1 = new BlockPos(abs.getX(), -1, abs.getZ());
+        level.setBlock(stoneAtMinus1, Blocks.STONE.defaultBlockState(), 3);
+        level.setBlock(stoneAtMinus1.above(), Blocks.AIR.defaultBlockState(), 3);
+        BlockHitResult hitAtY0 =
+                new BlockHitResult(Vec3.atCenterOf(stoneAtMinus1).add(0, 0.5, 0), Direction.UP, stoneAtMinus1, false);
+        BlockPlaceContext y0Context =
+                new BlockPlaceContext(new UseOnContext(level, player, InteractionHand.MAIN_HAND, torch, hitAtY0));
+                torch.getItem() instanceof BlockItem y0Item && Torches.shouldDeny(level, y0Context, y0Item),
+                "torch allowed at Y=0");
+        WorldConfig config = ConfigManager.world(level);
+        boolean previousYDeny = config.torchYDeny();
+        config.setTorchYDeny(false);
+                torch.getItem() instanceof BlockItem disabledItem
+                        && Torches.shouldDeny(level, torchContext, disabledItem),
+                "torch Y deny disabled with enable boolean");
+        config.setTorchYDeny(previousYDeny);
         helper.succeed();
     }
 
@@ -127,6 +175,25 @@ public class EhmGameTests {
         }
         HardenedStone.drain(player, pick, Blocks.STONE.defaultBlockState());
         helper.assertTrue(pick.isEmpty(), "Unbreaking III does not extend N; 128th break consumes pick");
+    public void netherrackFireOnNetherrackBelow(GameTestHelper helper) {
+        WorldConfig config = ConfigManager.world(level);
+        config.setEnabled(true);
+        int previous = config.netherrackFirePercent();
+        config.setNetherrackFirePercent(100);
+
+        helper.setBlock(new BlockPos(1, 1, 1), Blocks.NETHERRACK);
+        helper.setBlock(new BlockPos(1, 2, 1), Blocks.AIR);
+        BlockPos emptyOnNetherrack = helper.absolutePos(new BlockPos(1, 2, 1));
+        helper.assertTrue(
+                NetherrackFire.tryIgnite(level, null, emptyOnNetherrack), "fire in empty cell above remaining netherrack");
+        helper.assertBlockPresent(Blocks.FIRE, new BlockPos(1, 2, 1));
+        helper.setBlock(new BlockPos(3, 1, 1), Blocks.STONE);
+        helper.setBlock(new BlockPos(3, 2, 1), Blocks.AIR);
+        helper.assertFalse(
+                NetherrackFire.tryIgnite(level, null, helper.absolutePos(new BlockPos(3, 2, 1))),
+                "no fire when block below is not netherrack");
+        helper.assertBlockNotPresent(Blocks.FIRE, new BlockPos(3, 2, 1));
+        config.setNetherrackFirePercent(previous);
         helper.succeed();
     }
 }

@@ -65,24 +65,27 @@ public record ClientboundSyncPayload(
             ClientboundSyncPayload::depthLimitedLights,
             ClientboundSyncPayload::new);
 
-    public static ClientboundSyncPayload from(WorldConfig config) {
-        return from(null, config, false);
+    public static ClientboundSyncPayload inactive() {
+        return new ClientboundSyncPayload(
+                false, false, 0, false, false, false, List.of(), List.of(), List.of(), List.of(), List.of());
     }
 
     public static ClientboundSyncPayload from(ServerLevel level) {
         return from(level, ConfigManager.world(level), false);
     }
 
-    /** Rebuild from live world + this player's bypass so the client cannot refuse what the server allows. */
     public static ClientboundSyncPayload from(ServerPlayer player) {
         ServerLevel level = player.level();
         return from(level, ConfigManager.world(level), EhmApi.playerBypasses(player));
     }
 
     public static ClientboundSyncPayload from(ServerLevel level, WorldConfig config, boolean playerBypass) {
-        boolean hardened = level != null
-                && WorldGate.isModuleActive(level, HardenedStone.ID)
-                && config.hardenedEnable();
+        if (level == null || !WorldGate.isActive(level)) {
+            return inactive();
+        }
+        boolean torches = WorldGate.isModuleActive(level, ExtraHardModeMod.id("torches"));
+        boolean building = WorldGate.isModuleActive(level, ExtraHardModeMod.id("limited_building"));
+        boolean hardened = WorldGate.isModuleActive(level, HardenedStone.ID) && config.hardenedEnable();
         List<Identifier> hardenedBlocks = List.of();
         List<Identifier> hardenedPicks = List.of();
         List<Identifier> caveInOres = List.of();
@@ -106,18 +109,24 @@ public record ClientboundSyncPayload(
             caveInOres = snapshot(level.registryAccess().lookupOrThrow(Registries.BLOCK), EhmTags.CAVE_IN_ORES);
             blockOreNextToStone = config.blockOreNextToStone();
         }
+        List<Identifier> softTorch = List.of();
+        List<Identifier> depthLights = List.of();
+        if (torches) {
+            softTorch = snapshot(level.registryAccess().lookupOrThrow(Registries.BLOCK), EhmTags.SOFT_TORCH_SURFACES);
+            depthLights = snapshot(level.registryAccess().lookupOrThrow(Registries.BLOCK), EhmTags.DEPTH_LIMITED_LIGHTS);
+        }
         return new ClientboundSyncPayload(
-                config.limitedBuilding(),
-                config.torchSoftDeny(),
+                building && config.limitedBuilding(),
+                torches && config.torchSoftDeny(),
                 config.torchNoPlacementUnderY(),
-                config.torchYDeny(),
+                torches && config.torchYDeny(),
                 blockOreNextToStone,
                 playerBypass,
                 hardenedBlocks,
                 hardenedPicks,
                 caveInOres,
-                List.of(),
-                List.of());
+                softTorch,
+                depthLights);
     }
 
     private static <T> List<Identifier> snapshot(HolderLookup.RegistryLookup<T> lookup, TagKey<T> tag) {

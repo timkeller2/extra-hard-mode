@@ -33,6 +33,10 @@ public final class WorldConfig {
     private boolean blockOreNextToStone = true;
     private boolean blockPistonMove = true;
     private final Map<Identifier, Integer> hardenedBudgets = new LinkedHashMap<>();
+    private boolean rainBreaksTorches = true;
+    private boolean rainExtinguishesCampfires = false;
+    private boolean torchFizz = true;
+    private int netherrackFirePercent = 20;
     private boolean enabled = true;
     private boolean enabledPresent;
 
@@ -90,6 +94,14 @@ public final class WorldConfig {
 
     public Map<Identifier, Integer> hardenedBudgets() {
         return hardenedBudgets;
+    public boolean rainBreaksTorches() {
+        return rainBreaksTorches;
+    public boolean rainExtinguishesCampfires() {
+        return rainExtinguishesCampfires;
+    public boolean torchFizz() {
+        return torchFizz;
+    public int netherrackFirePercent() {
+        return netherrackFirePercent;
     }
 
     public boolean enabled() {
@@ -103,6 +115,14 @@ public final class WorldConfig {
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
         this.enabledPresent = true;
+    }
+
+    public void setTorchYDeny(boolean torchYDeny) {
+        this.torchYDeny = torchYDeny;
+    }
+
+    public void setNetherrackFirePercent(int netherrackFirePercent) {
+        this.netherrackFirePercent = netherrackFirePercent;
     }
 
     public boolean isModuleEnabled(Identifier moduleId) {
@@ -182,6 +202,15 @@ public final class WorldConfig {
                             "Current RootNode: IRON@128 DIAMOND@512 NETHERITE@1024. Copper: Math.round(128 * 190 / 250.0) = 97. Same list for stone, deepslate, tuff.");
                     file.set("mining.hardened.budgets", new ArrayList<>(HardenedBudget.DEFAULT_ENTRIES));
                 }
+                        "torches.rainBreaksTorches",
+                        "Rain drops exposed torches as items. Covered torches survive.",
+                writeDefaultIfMissing(
+                        file, "campfires.rainExtinguishes", "Optional. Same rain pass as torches; default off.", false);
+                writeDefaultIfMissing(file, "sounds.torchFizz", "Lava fizz when torch placement is denied.", true);
+                        file,
+                        "worldRules.netherrackFirePercent",
+                        "Chance that breaking netherrack places fire in the empty space. Nylium not included.",
+                        20);
                 if (!file.contains("modules")) {
                     file.setComment("modules", "Runtime per-module toggles for this dimension. Missing keys default true.");
                 }
@@ -233,6 +262,10 @@ public final class WorldConfig {
                     budgetEntries.addAll(HardenedBudget.DEFAULT_ENTRIES);
                 }
                 file.set("mining.hardened.budgets", budgetEntries);
+                file.set("torches.rainBreaksTorches", rainBreaksTorches);
+                file.set("campfires.rainExtinguishes", rainExtinguishesCampfires);
+                file.set("sounds.torchFizz", torchFizz);
+                file.set("worldRules.netherrackFirePercent", netherrackFirePercent);
                 for (Map.Entry<Identifier, Boolean> entry : modules.entrySet()) {
                     file.set(moduleKey(entry.getKey()), entry.getValue());
                 }
@@ -271,6 +304,10 @@ public final class WorldConfig {
                 hardenedBudgets.put(Identifier.parse(entry.getKey()), entry.getValue());
             }
         }
+        rainBreaksTorches = file.getOrElse("torches.rainBreaksTorches", true);
+        rainExtinguishesCampfires = file.getOrElse("campfires.rainExtinguishes", false);
+        torchFizz = file.getOrElse("sounds.torchFizz", true);
+        netherrackFirePercent = file.getOrElse("worldRules.netherrackFirePercent", 20);
         modules.clear();
         Object raw = file.get("modules");
         if (raw instanceof Config table) {
@@ -321,5 +358,9 @@ public final class WorldConfig {
             }
         }
         return values.isEmpty() ? fallback : values;
+    private static void writeDefaultIfMissing(CommentedFileConfig file, String path, String comment, int value) {
+        if (!file.contains(path)) {
+            file.setComment(path, comment);
+            file.set(path, value);
     }
 }

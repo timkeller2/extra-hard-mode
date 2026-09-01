@@ -11,7 +11,8 @@
   "client": [
     "client.ClientPlayerDestroySpeedMixin",
     "client.ClientPlayerHarvestMixin",
-    "client.ClientBlockItemPlaceMixin"
+    "client.ClientBlockItemPlaceMixin",
+    "MultiPlayerGameModeMixin"
   ],
   "injectors": {
     "defaultRequire": 1

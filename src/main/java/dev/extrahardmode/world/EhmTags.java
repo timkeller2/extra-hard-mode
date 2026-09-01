@@ -1,0 +1,28 @@
+package dev.extrahardmode.world;
+
+import dev.extrahardmode.ExtraHardModeMod;
+import java.util.ArrayList;
+import java.util.List;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.level.block.Block;
+
+public final class EhmTags {
+    public static final TagKey<Block> SOFT_TORCH_SURFACES =
+            TagKey.create(Registries.BLOCK, ExtraHardModeMod.id("soft_torch_surfaces"));
+    public static final TagKey<Block> DEPTH_LIMITED_LIGHTS =
+            TagKey.create(Registries.BLOCK, ExtraHardModeMod.id("depth_limited_lights"));
+
+    private EhmTags() {}
+
+    public static List<Identifier> snapshot(TagKey<Block> tag) {
+        List<Identifier> ids = new ArrayList<>();
+        for (Holder<Block> holder : BuiltInRegistries.BLOCK.getTagOrEmpty(tag)) {
+            holder.unwrapKey().ifPresent(key -> ids.add(key.identifier()));
+        }
+        return List.copyOf(ids);
+    }
+}

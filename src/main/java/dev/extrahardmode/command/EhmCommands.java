@@ -34,6 +34,7 @@ public final class EhmCommands {
         "cave_ins",
         "falling_blocks",
         "torches",
+        "netherrack_fire",
         "limited_building",
         "realistic_chopping",
         "players",
