@@ -2,7 +2,12 @@ package dev.extrahardmode.feature;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
+import java.util.Set;
 
 /**
  * Residence volume, amenity score, spacing, and dawn chance. Minecraft-free for JUnit.
@@ -32,6 +37,12 @@ public final class InhabitantRules {
     public static final int ARMOR_TRADE_USES = 1;
     public static final int WEALTHY_OFFER_COUNT = 8;
     public static final int WEALTHY_TRADE_USES = 4;
+    /** Barely qualifying houses roll this many percent of the usual shop. */
+    public static final int TRADE_BARE_MIN_PERCENT = 25;
+    public static final int TRADE_BARE_MAX_PERCENT = 50;
+    /** Extra house points above that specialty's requirement raise both bounds. */
+    public static final int TRADE_EXTRA_PERCENT_PER_POINT = 10;
+    public static final int MAX_TRADE_TYPES = 24;
     public static final int MASTER_ARMOR_PRICE_FACTOR = 4;
     public static final int IRON_BOOTS_EMERALDS = 12;
     public static final int IRON_HELMET_EMERALDS = 15;
@@ -39,6 +50,11 @@ public final class InhabitantRules {
     public static final int IRON_CHESTPLATE_EMERALDS = 24;
     public static final int WANDER_RANGE = 16;
     public static final int SNAP_HOME_RANGE = 32;
+    /** Player visit scan around a bed, in blocks. */
+    public static final int VISIT_RADIUS = 48;
+    /** One arrival roll per this many overworld days. */
+    public static final int ARRIVAL_INTERVAL_DAYS = 1;
+    public static final int MAX_CATCH_UP_ROLLS = 365;
     /**
      * Standing cells relative to the bed to try first. Horizontal floor spots
      * (2-high rooms) before {@code bed.above()}, which clips a 2-block ceiling.
@@ -58,11 +74,22 @@ public final class InhabitantRules {
     public static final String WEALTHY = "wealthy";
     public static final String ARMORSMITH = "armorsmith";
     public static final String MASTER_ARMORSMITH = "master_armorsmith";
+    public static final String COUNCIL = "council";
 
     public static final List<String> SPECIALTIES =
-            List.of(HAULER, COOK, FARM, BOUNTY, TRADER, WEALTHY, ARMORSMITH, MASTER_ARMORSMITH);
+            List.of(HAULER, COOK, FARM, BOUNTY, TRADER, WEALTHY, ARMORSMITH, MASTER_ARMORSMITH, COUNCIL);
 
     public record WealthyListing(String itemId, int count, int emeralds) {}
+
+    /**
+     * One inhabitant listing. {@code buy} true: the player sells {@code count} of the
+     * item for one emerald. False: the player pays {@code emeralds} for {@code count}.
+     */
+    public record TradeListing(String itemId, int count, int emeralds, int maxUses, boolean buy) {
+        public TradeListing withUses(int uses) {
+            return new TradeListing(itemId, count, emeralds, Math.max(1, uses), buy);
+        }
+    }
 
     public static final List<WealthyListing> WEALTHY_POOL = List.of(
             new WealthyListing("minecraft:iron_ingot", 8, 2),
@@ -300,7 +327,9 @@ public final class InhabitantRules {
                 "Need all of these: an enclosed room (solid walls, floor, and roof; doors and trapdoors are openings, not holes), 24 to 250 interior air blocks, a bed, a door or fence gate that faces outside, block light 8 on every floor tile, and 48 blocks from another occupied home.",
                 "Furnishings need 12 points. Each 48 interior air blocks: 1 point, max 5. Each enclosed room connected by doors, trapdoors, or fence gates: 1 point, max 3. Windows (glass or panes looking out of the room): 2 each, max 6. Art (paintings and filled item frames): 1 each, max 6. Rugs (wool carpets): 1 point per 4 carpets, max 3. Seating (stairs and slabs): 1 each, max 2.",
                 "Storage (chests, barrels, shulker boxes): 1 each, max 2. Workstations (crafting table, furnace, smoker, anvil, and similar): 1 each, max 2. Extra lights (torches, lanterns, glowstone, campfires): 1 each, max 2. Plants (pots, flowers, saplings): 1 each, max 2. Books (bookshelf, lectern): 1 each, max 2. A second bed: +1. Kitchen (a furnace, smoker, or campfire AND a cauldron): +2.",
-                "Eligible loaded homes are checked at dawn. Chance starts at 8% at 12 points and rises with extra points (halved in blight). Chests bias a hauler, a kitchen biases a cook, plants or workstations bias a farm neighbor. 18 points can attract a bounty board or wealthy trader, 24 an armorsmith, and 30 a master armorsmith. New residents prefer a type that has not appeared yet (and that the house can host); once every type has spawned, the usual furnishing biases apply. One resident per home. Most residents restock every 3 Minecraft days; armorsmiths restock every 30 days.");
+                "Eligible loaded homes are checked at dawn. An empty eligible home is timestamped the day it becomes inhabitable. When you visit later, each missed day is rolled once (same chances as dawn), then the timestamp is set to today, so houses in unloaded chunks can still fill. Chance starts at 8% at 12 points and rises with extra points (halved in blight). Chests bias a hauler, a kitchen biases a cook, plants or workstations bias a farm neighbor. 18 points can attract a bounty board or wealthy trader, 24 an armorsmith, and 30 a master armorsmith. A council member can appear in any eligible home. New residents prefer a type that has not appeared yet (and that the house can host); once every type has spawned, the usual furnishing biases apply, and council members are three times as likely as the most common other type. One resident per home. Most residents restock every 3 Minecraft days; armorsmiths restock every 30 days.",
+                "Shop stock follows the house score versus that resident's requirement. A home that only just qualifies rolls 25-50% of the usual trade types and 25-50% of each listing's uses (at least one of each). Every point above the requirement raises both ranges by 10%. Each listing rolls its uses separately. If that calls for more types than the usual shop, the extra listings are random trades.",
+                "Council members give each player a personal kill bounty when you check in. The first hunt is 6-18 common mobs; each success is 30% larger and rarer. You have 7 Minecraft days. Finishing grants XP equal to one quarter of the slain mobs' health plus 25, with 10% more per extra house point, a congratulations message, and a sound. Return to collect emeralds equal to one tenth of that XP (with a sound) and take a new bounty. A small counter such as Zombie Bounty 3/12 sits above the bottom-left ability icons.");
     }
 
     public static boolean farEnough(int dx, int dz, int spacing) {
@@ -422,6 +451,20 @@ public final class InhabitantRules {
             bag.add(MASTER_ARMORSMITH);
             bag.add(MASTER_ARMORSMITH);
         }
+        if (specialtyAllowed(COUNCIL, score)) {
+            HashMap<String, Integer> freq = new HashMap<>();
+            int maxOther = 1;
+            for (String type : bag) {
+                int n = freq.merge(type, 1, Integer::sum);
+                if (n > maxOther) {
+                    maxOther = n;
+                }
+            }
+            int copies = CouncilMissionRules.councilBagCopies(maxOther);
+            for (int i = 0; i < copies; i++) {
+                bag.add(COUNCIL);
+            }
+        }
         int index = Math.floorMod(roll, bag.size());
         return bag.get(index);
     }
@@ -439,6 +482,7 @@ public final class InhabitantRules {
             case WEALTHY -> "wealthy trader";
             case ARMORSMITH -> "armorsmith";
             case MASTER_ARMORSMITH -> "master armorsmith";
+            case COUNCIL -> "council member";
             default -> "traveler";
         };
     }
@@ -472,6 +516,21 @@ public final class InhabitantRules {
         return emptyUntilDay >= 0L && today < emptyUntilDay;
     }
 
+    /**
+     * Arrival rolls owed since the home was timestamped. Zero until the first
+     * stamp (the day it became inhabitable) and when {@code today} is not later.
+     */
+    public static int missedArrivalRolls(long lastRollDay, long today) {
+        if (lastRollDay < 0L || today <= lastRollDay) {
+            return 0;
+        }
+        long missed = today - lastRollDay;
+        if (missed > MAX_CATCH_UP_ROLLS) {
+            return MAX_CATCH_UP_ROLLS;
+        }
+        return (int) missed;
+    }
+
     public static int restockDays(String specialty) {
         if (ARMORSMITH.equals(specialty) || MASTER_ARMORSMITH.equals(specialty)) {
             return ARMOR_RESTOCK_DAYS;
@@ -502,6 +561,274 @@ public final class InhabitantRules {
             pool.set(j, swap);
         }
         return List.copyOf(pool.subList(0, want));
+    }
+
+    public static int extraTradePoints(int score, String specialty) {
+        return Math.max(0, score - minScoreForSpecialty(specialty == null || specialty.isEmpty() ? TRADER : specialty));
+    }
+
+    public static int tradeMinPercent(int score, String specialty) {
+        return TRADE_BARE_MIN_PERCENT + TRADE_EXTRA_PERCENT_PER_POINT * extraTradePoints(score, specialty);
+    }
+
+    public static int tradeMaxPercent(int score, String specialty) {
+        return TRADE_BARE_MAX_PERCENT + TRADE_EXTRA_PERCENT_PER_POINT * extraTradePoints(score, specialty);
+    }
+
+    /** Inclusive roll in {@code [minPercent, maxPercent]}. */
+    public static int rollTradePercent(int minPercent, int maxPercent, int roll) {
+        int min = Math.max(0, minPercent);
+        int max = Math.max(min, maxPercent);
+        return min + Math.floorMod(roll, max - min + 1);
+    }
+
+    /** {@code defaultAmount} scaled by {@code percent}, at least 1 when the default is positive. */
+    public static int scaledAmount(int defaultAmount, int percent) {
+        if (defaultAmount <= 0) {
+            return 0;
+        }
+        long scaled = Math.round(defaultAmount * (Math.max(0, percent) / 100.0));
+        if (scaled > Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        }
+        return Math.max(1, (int) scaled);
+    }
+
+    public static int defaultTradeTypeCount(String specialty) {
+        if (WEALTHY.equals(specialty)) {
+            return WEALTHY_OFFER_COUNT;
+        }
+        return defaultListings(specialty, 0, false).size();
+    }
+
+    public static List<TradeListing> defaultListings(String specialty, int storage, boolean blight) {
+        String type = specialty == null || specialty.isEmpty() ? TRADER : specialty;
+        int stack = haulerStack(storage);
+        return switch (type) {
+            case HAULER -> List.of(
+                    buyOf("minecraft:cobblestone", stack, 4),
+                    buyOf("minecraft:dirt", stack, 4),
+                    buyOf("minecraft:gravel", stack, 4),
+                    buyOf("minecraft:cobbled_deepslate", stack, 4),
+                    buyOf("minecraft:netherrack", stack, 4));
+            case COOK -> List.of(
+                    buyOf("minecraft:cooked_beef", 8, 4),
+                    buyOf("minecraft:cooked_porkchop", 8, 4),
+                    buyOf("minecraft:cooked_chicken", 8, 4),
+                    buyOf("minecraft:baked_potato", 8, 4),
+                    sellOf("minecraft:rabbit_stew", 1, 4, 4));
+            case FARM -> List.of(
+                    buyOf("minecraft:wheat", farmWheatBuy(blight), 6),
+                    sellOf("minecraft:wheat_seeds", 4, 1, 6),
+                    sellOf("minecraft:oak_sapling", 1, 2, 4));
+            case BOUNTY -> List.of(
+                    buyOf("minecraft:spider_eye", 8, 6),
+                    buyOf("minecraft:gunpowder", 8, 6),
+                    buyOf("minecraft:bone", 16, 6));
+            case ARMORSMITH -> armorListings(false);
+            case MASTER_ARMORSMITH -> armorListings(true);
+            case COUNCIL -> List.of(
+                    sellOf("minecraft:paper", 12, 1, 8),
+                    sellOf("minecraft:book", 1, 3, 4),
+                    sellOf("minecraft:compass", 1, 5, 4),
+                    sellOf("minecraft:clock", 1, 5, 4));
+            case WEALTHY -> wealthyTradeListings().subList(0, Math.min(WEALTHY_OFFER_COUNT, WEALTHY_POOL.size()));
+            default -> List.of(
+                    sellOf("minecraft:bread", 4, 1, 8),
+                    sellOf("minecraft:coal", 8, 1, 8),
+                    sellOf("minecraft:book", 1, 4, 4),
+                    sellOf("minecraft:white_wool", 8, 1, 8));
+        };
+    }
+
+    public static List<TradeListing> extraListings(String specialty, int storage, boolean blight) {
+        String type = specialty == null || specialty.isEmpty() ? TRADER : specialty;
+        int stack = haulerStack(storage);
+        return switch (type) {
+            case HAULER -> List.of(
+                    buyOf("minecraft:andesite", stack, 4),
+                    buyOf("minecraft:diorite", stack, 4),
+                    buyOf("minecraft:granite", stack, 4),
+                    buyOf("minecraft:tuff", stack, 4),
+                    buyOf("minecraft:sand", stack, 4),
+                    buyOf("minecraft:red_sand", stack, 4),
+                    buyOf("minecraft:mossy_cobblestone", stack, 4),
+                    buyOf("minecraft:stone", stack, 4),
+                    buyOf("minecraft:deepslate", stack, 4),
+                    buyOf("minecraft:basalt", stack, 4),
+                    buyOf("minecraft:blackstone", stack, 4),
+                    buyOf("minecraft:end_stone", stack, 4),
+                    buyOf("minecraft:soul_sand", stack, 4),
+                    buyOf("minecraft:calcite", stack, 4));
+            case COOK -> List.of(
+                    buyOf("minecraft:cooked_mutton", 8, 4),
+                    buyOf("minecraft:cooked_rabbit", 8, 4),
+                    buyOf("minecraft:cooked_cod", 8, 4),
+                    buyOf("minecraft:cooked_salmon", 8, 4),
+                    buyOf("minecraft:bread", 8, 4),
+                    buyOf("minecraft:cookie", 16, 4),
+                    sellOf("minecraft:mushroom_stew", 1, 3, 4),
+                    sellOf("minecraft:beetroot_soup", 1, 3, 4),
+                    sellOf("minecraft:pumpkin_pie", 1, 3, 4),
+                    sellOf("minecraft:honey_bottle", 1, 4, 4));
+            case FARM -> List.of(
+                    sellOf("minecraft:beetroot_seeds", 4, 1, 6),
+                    sellOf("minecraft:pumpkin_seeds", 4, 1, 6),
+                    sellOf("minecraft:melon_seeds", 4, 1, 6),
+                    sellOf("minecraft:carrot", 8, 1, 6),
+                    sellOf("minecraft:potato", 8, 1, 6),
+                    sellOf("minecraft:birch_sapling", 1, 2, 4),
+                    sellOf("minecraft:spruce_sapling", 1, 2, 4),
+                    sellOf("minecraft:bone_meal", 4, 1, 6),
+                    buyOf("minecraft:beetroot", farmWheatBuy(blight), 6),
+                    buyOf("minecraft:apple", 8, 6),
+                    buyOf("minecraft:sweet_berries", 16, 6),
+                    buyOf("minecraft:sugar_cane", 16, 6));
+            case BOUNTY -> List.of(
+                    buyOf("minecraft:rotten_flesh", 16, 6),
+                    buyOf("minecraft:string", 16, 6),
+                    buyOf("minecraft:slime_ball", 8, 6),
+                    buyOf("minecraft:leather", 12, 6),
+                    buyOf("minecraft:arrow", 24, 6),
+                    buyOf("minecraft:ink_sac", 12, 6),
+                    buyOf("minecraft:phantom_membrane", 4, 6),
+                    buyOf("minecraft:ender_pearl", 4, 6),
+                    buyOf("minecraft:blaze_rod", 4, 6),
+                    buyOf("minecraft:ghast_tear", 2, 6));
+            case ARMORSMITH -> List.of(
+                    sellOf("minecraft:iron_ingot", 8, 2, ARMOR_TRADE_USES),
+                    sellOf("minecraft:shield", 1, 5, ARMOR_TRADE_USES),
+                    sellOf("minecraft:iron_nugget", 16, 1, ARMOR_TRADE_USES),
+                    sellOf("minecraft:lava_bucket", 1, 3, ARMOR_TRADE_USES),
+                    sellOf("minecraft:chainmail_helmet", 1, 8, ARMOR_TRADE_USES),
+                    sellOf("minecraft:chainmail_boots", 1, 6, ARMOR_TRADE_USES));
+            case MASTER_ARMORSMITH -> List.of(
+                    sellOf("minecraft:diamond", 1, 8, ARMOR_TRADE_USES),
+                    sellOf("minecraft:diamond_horse_armor", 1, 14, ARMOR_TRADE_USES),
+                    sellOf("minecraft:netherite_scrap", 1, 16, ARMOR_TRADE_USES),
+                    sellOf("minecraft:shield", 1, 8, ARMOR_TRADE_USES));
+            case COUNCIL -> List.of(
+                    sellOf("minecraft:map", 1, 4, 4),
+                    sellOf("minecraft:name_tag", 1, 8, 4),
+                    sellOf("minecraft:writable_book", 1, 4, 4),
+                    sellOf("minecraft:item_frame", 4, 1, 8),
+                    sellOf("minecraft:lantern", 4, 1, 8));
+            case WEALTHY -> List.of();
+            default -> List.of(
+                    sellOf("minecraft:stick", 16, 1, 8),
+                    sellOf("minecraft:paper", 12, 1, 8),
+                    sellOf("minecraft:glass", 8, 1, 8),
+                    sellOf("minecraft:brick", 8, 1, 8),
+                    sellOf("minecraft:iron_ingot", 4, 2, 8),
+                    sellOf("minecraft:copper_ingot", 8, 1, 8),
+                    sellOf("minecraft:lantern", 4, 1, 8),
+                    sellOf("minecraft:arrow", 16, 1, 8),
+                    sellOf("minecraft:oak_log", 8, 1, 8),
+                    sellOf("minecraft:torch", 8, 1, 8),
+                    sellOf("minecraft:leather", 8, 1, 8),
+                    sellOf("minecraft:name_tag", 1, 8, 4));
+        };
+    }
+
+    public static List<TradeListing> genericExtraListings() {
+        return List.of(
+                sellOf("minecraft:apple", 8, 1, 6),
+                sellOf("minecraft:stick", 16, 1, 8),
+                sellOf("minecraft:string", 12, 1, 8),
+                sellOf("minecraft:feather", 12, 1, 8),
+                sellOf("minecraft:flint", 8, 1, 8),
+                sellOf("minecraft:clay_ball", 16, 1, 8),
+                sellOf("minecraft:paper", 8, 1, 8),
+                sellOf("minecraft:glass_bottle", 8, 1, 8),
+                sellOf("minecraft:bowl", 8, 1, 8),
+                sellOf("minecraft:kelp", 16, 1, 8),
+                sellOf("minecraft:bamboo", 16, 1, 8),
+                sellOf("minecraft:egg", 8, 1, 6),
+                sellOf("minecraft:charcoal", 8, 1, 8),
+                sellOf("minecraft:raw_copper", 8, 1, 8),
+                sellOf("minecraft:raw_iron", 4, 2, 6),
+                buyOf("minecraft:rotten_flesh", 16, 8),
+                buyOf("minecraft:poisonous_potato", 8, 8),
+                buyOf("minecraft:cactus", 16, 8),
+                buyOf("minecraft:kelp", 32, 8),
+                buyOf("minecraft:bamboo", 32, 8));
+    }
+
+    /**
+     * House-score shop: type count and per-listing uses are rolled in the
+     * 25–50% band, plus 10% per point above that specialty's requirement.
+     * Extra types beyond the usual shop are random leftover listings.
+     */
+    public static List<TradeListing> scaledListings(
+            String specialty, int score, int storage, boolean blight, Random random) {
+        Random rng = random == null ? new Random(0L) : random;
+        String type = specialty == null || specialty.isEmpty() ? TRADER : specialty;
+        List<TradeListing> defaults;
+        List<TradeListing> extras;
+        if (WEALTHY.equals(type)) {
+            List<TradeListing> pool = new ArrayList<>(wealthyTradeListings());
+            Collections.shuffle(pool, rng);
+            int n = Math.min(WEALTHY_OFFER_COUNT, pool.size());
+            defaults = new ArrayList<>(pool.subList(0, n));
+            extras = new ArrayList<>(pool.subList(n, pool.size()));
+        } else {
+            defaults = new ArrayList<>(defaultListings(type, storage, blight));
+            extras = new ArrayList<>(extraListings(type, storage, blight));
+            Collections.shuffle(defaults, rng);
+        }
+        extras.addAll(genericExtraListings());
+        Collections.shuffle(extras, rng);
+        int minPercent = tradeMinPercent(score, type);
+        int maxPercent = tradeMaxPercent(score, type);
+        int typePercent = rollTradePercent(minPercent, maxPercent, rng.nextInt());
+        int want = Math.min(MAX_TRADE_TYPES, scaledAmount(Math.max(1, defaults.size()), typePercent));
+        List<TradeListing> chosen = new ArrayList<>();
+        Set<String> used = new HashSet<>();
+        int takeDefaults = Math.min(want, defaults.size());
+        for (int i = 0; i < takeDefaults; i++) {
+            TradeListing listing = defaults.get(i);
+            if (used.add(listing.itemId())) {
+                chosen.add(listing);
+            }
+        }
+        for (int i = 0; i < extras.size() && chosen.size() < want; i++) {
+            TradeListing listing = extras.get(i);
+            if (used.add(listing.itemId())) {
+                chosen.add(listing);
+            }
+        }
+        List<TradeListing> scaled = new ArrayList<>(chosen.size());
+        for (TradeListing listing : chosen) {
+            int usePercent = rollTradePercent(minPercent, maxPercent, rng.nextInt());
+            scaled.add(listing.withUses(scaledAmount(listing.maxUses(), usePercent)));
+        }
+        return scaled;
+    }
+
+    static List<TradeListing> armorListings(boolean master) {
+        int uses = ARMOR_TRADE_USES;
+        String prefix = master ? "extrahardmode:heavy_diamond_" : "extrahardmode:heavy_iron_";
+        return List.of(
+                sellOf(prefix + "boots", 1, armorEmeralds(master, "boots"), uses),
+                sellOf(prefix + "helmet", 1, armorEmeralds(master, "helmet"), uses),
+                sellOf(prefix + "leggings", 1, armorEmeralds(master, "leggings"), uses),
+                sellOf(prefix + "chestplate", 1, armorEmeralds(master, "chestplate"), uses));
+    }
+
+    static List<TradeListing> wealthyTradeListings() {
+        List<TradeListing> listings = new ArrayList<>(WEALTHY_POOL.size());
+        for (WealthyListing listing : WEALTHY_POOL) {
+            listings.add(sellOf(listing.itemId(), listing.count(), listing.emeralds(), WEALTHY_TRADE_USES));
+        }
+        return listings;
+    }
+
+    static TradeListing buyOf(String itemId, int count, int uses) {
+        return new TradeListing(itemId, count, 1, uses, true);
+    }
+
+    static TradeListing sellOf(String itemId, int count, int emeralds, int uses) {
+        return new TradeListing(itemId, count, emeralds, uses, false);
     }
 
     /** True when trades have never restocked, or {@code days} have passed. */

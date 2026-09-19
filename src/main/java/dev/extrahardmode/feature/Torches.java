@@ -34,6 +34,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
@@ -200,12 +201,25 @@ public final class Torches implements FeatureModule {
         return state.getBlock() instanceof BaseTorchBlock || state.is(EhmTags.DEPTH_LIMITED_LIGHTS);
     }
 
+    public static boolean isCopperTorch(Block block) {
+        return TorchLifetimeRules.isCopperTorchId(BuiltInRegistries.BLOCK.getKey(block).toString());
+    }
+
+    public static boolean isCopperTorch(BlockState state) {
+        return isCopperTorch(state.getBlock());
+    }
+
+    public static int burnDaysFor(BlockState state, int baseDays) {
+        return TorchLifetimeRules.burnDaysFor(baseDays, isCopperTorch(state));
+    }
+
     public static int burningLight(ServerLevel level, BlockPos pos, int vanillaLight) {
+        BlockState state = level.getBlockState(pos);
         return TorchLifetimeRules.lightLevel(
                 vanillaLight,
                 TorchLifetimeData.of(level).placedAt(pos),
                 level.getGameTime(),
-                ConfigManager.world(level).torchBurnDays());
+                burnDaysFor(state, ConfigManager.world(level).torchBurnDays()));
     }
 
     /** Stamp a newly placed torch so it can burn out. Unstamped torches stay forever. */
@@ -316,6 +330,24 @@ public final class Torches implements FeatureModule {
         return false;
     }
 
+    /**
+     * Consume one coal or charcoal from the nearest chest in range. True when the
+     * torch should keep burning.
+     */
+    public static boolean tryRefuelTorch(ServerLevel level, BlockPos torch) {
+        List<BlockPos> chests = chestsInRange(level, torch, TorchLifetimeRules.TORCH_REFUEL_RANGE);
+        chests.sort(Comparator.comparingLong(pos -> TorchLifetimeRules.distanceSq(
+                pos.getX() - torch.getX(), pos.getY() - torch.getY(), pos.getZ() - torch.getZ())));
+        for (BlockPos chestPos : chests) {
+            if (takeOneTorchFuel(level, chestPos)) {
+                level.playSound(null, torch, SoundEvents.FIRECHARGE_USE, SoundSource.BLOCKS, 0.4F, 1.4F);
+                level.playSound(null, chestPos, SoundEvents.ITEM_PICKUP, SoundSource.BLOCKS, 0.3F, 0.8F);
+                return true;
+            }
+        }
+        return false;
+    }
+
     static List<BlockPos> chestsInRange(ServerLevel level, BlockPos origin, int range) {
         List<BlockPos> chests = new ArrayList<>();
         int minCx = origin.getX() - range >> 4;
@@ -348,13 +380,22 @@ public final class Torches implements FeatureModule {
     }
 
     static boolean takeOneLog(ServerLevel level, BlockPos pos) {
+        return takeOneFromChest(level, pos, stack -> stack.is(ItemTags.LOGS));
+    }
+
+    static boolean takeOneTorchFuel(ServerLevel level, BlockPos pos) {
+        return takeOneFromChest(level, pos, stack -> stack.is(Items.COAL) || stack.is(Items.CHARCOAL));
+    }
+
+    static boolean takeOneFromChest(
+            ServerLevel level, BlockPos pos, java.util.function.Predicate<ItemStack> match) {
         Container container = chestContainerAt(level, pos);
         if (container == null) {
             return false;
         }
         for (int slot = 0; slot < container.getContainerSize(); slot++) {
             ItemStack stack = container.getItem(slot);
-            if (stack.isEmpty() || !stack.is(ItemTags.LOGS)) {
+            if (stack.isEmpty() || !match.test(stack)) {
                 continue;
             }
             stack.shrink(1);

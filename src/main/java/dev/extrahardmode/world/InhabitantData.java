@@ -30,7 +30,8 @@ public final class InhabitantData extends SavedData {
                     Codec.LONG.optionalFieldOf("leave_after_day", -1L).forGetter(Home::leaveAfterDay),
                     Codec.LONG.optionalFieldOf("empty_until_day", -1L).forGetter(Home::emptyUntilDay),
                     Codec.BOOL.optionalFieldOf("uneasy", false).forGetter(Home::uneasy),
-                    Codec.LONG.optionalFieldOf("last_restock_day", -1L).forGetter(Home::lastRestockDay))
+                    Codec.LONG.optionalFieldOf("last_restock_day", -1L).forGetter(Home::lastRestockDay),
+                    Codec.LONG.optionalFieldOf("last_roll_day", -1L).forGetter(Home::lastRollDay))
             .apply(instance, Home::new));
 
     public static final Codec<InhabitantData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -151,25 +152,35 @@ public final class InhabitantData extends SavedData {
             long leaveAfterDay,
             long emptyUntilDay,
             boolean uneasy,
-            long lastRestockDay) {
+            long lastRestockDay,
+            long lastRollDay) {
         public Home withLiving(Optional<UUID> next) {
-            return new Home(id, bed, score, specialty, name, next, leaveAfterDay, emptyUntilDay, uneasy, lastRestockDay);
+            return new Home(
+                    id, bed, score, specialty, name, next, leaveAfterDay, emptyUntilDay, uneasy, lastRestockDay, lastRollDay);
         }
 
         public Home withScore(int next) {
-            return new Home(id, bed, next, specialty, name, living, leaveAfterDay, emptyUntilDay, uneasy, lastRestockDay);
+            return new Home(
+                    id, bed, next, specialty, name, living, leaveAfterDay, emptyUntilDay, uneasy, lastRestockDay, lastRollDay);
         }
 
         public Home withLeave(long day, boolean uneasy) {
-            return new Home(id, bed, score, specialty, name, living, day, emptyUntilDay, uneasy, lastRestockDay);
+            return new Home(
+                    id, bed, score, specialty, name, living, day, emptyUntilDay, uneasy, lastRestockDay, lastRollDay);
         }
 
         public Home withEmptyUntil(long day) {
-            return new Home(id, bed, score, specialty, name, Optional.empty(), -1L, day, false, lastRestockDay);
+            return new Home(id, bed, score, specialty, name, Optional.empty(), -1L, day, false, lastRestockDay, lastRollDay);
         }
 
         public Home withLastRestock(long day) {
-            return new Home(id, bed, score, specialty, name, living, leaveAfterDay, emptyUntilDay, uneasy, day);
+            return new Home(
+                    id, bed, score, specialty, name, living, leaveAfterDay, emptyUntilDay, uneasy, day, lastRollDay);
+        }
+
+        public Home withLastRoll(long day) {
+            return new Home(
+                    id, bed, score, specialty, name, living, leaveAfterDay, emptyUntilDay, uneasy, lastRestockDay, day);
         }
     }
 }

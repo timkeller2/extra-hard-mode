@@ -49,11 +49,12 @@ public final class TorchBurnTask {
             }
             BlockState state = level.getBlockState(pos);
             if (Torches.isBurnableTorch(state)) {
+                int torchDays = Torches.burnDaysFor(state, burnDays);
                 if (expired.size() < TorchLifetimeRules.MAX_EXPIRE_PER_TICK
-                        && TorchLifetimeRules.expired(entry.getLongValue(), now, burnDays)) {
+                        && TorchLifetimeRules.expired(entry.getLongValue(), now, torchDays)) {
                     expired.add(packed);
                 } else {
-                    refreshLight(level, pos, state, entry.getLongValue(), now, burnDays);
+                    refreshLight(level, pos, state, entry.getLongValue(), now, torchDays);
                 }
                 continue;
             }
@@ -70,9 +71,16 @@ public final class TorchBurnTask {
             data.removePacked(stale.getLong(i));
         }
         for (int i = 0; i < expired.size(); i++) {
-            BlockPos pos = BlockPos.of(expired.getLong(i));
-            Torches.burnOut(level, pos);
             long packed = expired.getLong(i);
+            BlockPos pos = BlockPos.of(packed);
+            BlockState state = level.getBlockState(pos);
+            if (Torches.isBurnableTorch(state) && Torches.tryRefuelTorch(level, pos)) {
+                data.record(pos, TorchLifetimeRules.extendPlacedAt(
+                        data.placedAt(pos), TorchLifetimeRules.refuelDaysFor(Torches.isCopperTorch(state))));
+                refreshLight(level, pos, state, data.placedAt(pos), now, Torches.burnDaysFor(state, burnDays));
+                continue;
+            }
+            Torches.burnOut(level, pos);
             data.removePacked(packed);
             Long2IntOpenHashMap lastDays = LAST_LIGHT_DAYS.get(level);
             if (lastDays != null) {

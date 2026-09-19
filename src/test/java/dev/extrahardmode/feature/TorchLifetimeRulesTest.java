@@ -76,5 +76,40 @@ class TorchLifetimeRulesTest {
         assertTrue(TorchLifetimeRules.expired(extended, 336000L, 7));
         assertEquals(0L, TorchLifetimeRules.extendPlacedAt(0L, 0));
         assertEquals(-1L, TorchLifetimeRules.extendPlacedAt(-1L, 7));
+        assertEquals(16, TorchLifetimeRules.TORCH_REFUEL_RANGE);
+        assertEquals(30, TorchLifetimeRules.TORCH_REFUEL_DAYS);
+        assertTrue(TorchLifetimeRules.chestInRange(16, 0, 0, 16));
+        assertFalse(TorchLifetimeRules.chestInRange(17, 0, 0, 16));
+        long torchExtended = TorchLifetimeRules.extendPlacedAt(0L, 30);
+        assertEquals(720000L, torchExtended);
+        assertFalse(TorchLifetimeRules.expired(torchExtended, 168000L, 7));
+        assertTrue(TorchLifetimeRules.isTorchFuelItemId("minecraft:coal"));
+        assertTrue(TorchLifetimeRules.isTorchFuelItemId("minecraft:charcoal"));
+        assertFalse(TorchLifetimeRules.isTorchFuelItemId("minecraft:oak_log"));
+    }
+
+    @Test
+    void copperTorchLastsTwiceAsLongAndRefuelsSixtyDays() {
+        assertEquals(2, TorchLifetimeRules.COPPER_DURATION_FACTOR);
+        assertEquals(60, TorchLifetimeRules.COPPER_REFUEL_DAYS);
+        assertTrue(TorchLifetimeRules.isCopperTorchId("minecraft:copper_torch"));
+        assertTrue(TorchLifetimeRules.isCopperTorchId("minecraft:copper_wall_torch"));
+        assertFalse(TorchLifetimeRules.isCopperTorchId("minecraft:torch"));
+        assertFalse(TorchLifetimeRules.isCopperTorchId("minecraft:wall_torch"));
+        assertEquals(7, TorchLifetimeRules.burnDaysFor(7, false));
+        assertEquals(14, TorchLifetimeRules.burnDaysFor(7, true));
+        assertEquals(0, TorchLifetimeRules.burnDaysFor(0, true));
+        assertEquals(TorchLifetimeRules.MAX_DAYS, TorchLifetimeRules.burnDaysFor(TorchLifetimeRules.MAX_DAYS, true));
+        assertEquals(30, TorchLifetimeRules.refuelDaysFor(false));
+        assertEquals(60, TorchLifetimeRules.refuelDaysFor(true));
+        assertFalse(TorchLifetimeRules.expired(0L, 167999L, 7));
+        assertTrue(TorchLifetimeRules.expired(0L, 168000L, 7));
+        assertFalse(TorchLifetimeRules.expired(0L, 335999L, 14));
+        assertTrue(TorchLifetimeRules.expired(0L, 336000L, 14));
+        long copperRefuel = TorchLifetimeRules.extendPlacedAt(0L, 60);
+        assertEquals(1_440_000L, copperRefuel);
+        assertFalse(TorchLifetimeRules.expired(copperRefuel, 336000L, 14));
+        assertFalse(TorchLifetimeRules.expired(copperRefuel, 1_775_999L, 14));
+        assertTrue(TorchLifetimeRules.expired(copperRefuel, 1_776_000L, 14));
     }
 }

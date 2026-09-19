@@ -16,8 +16,37 @@ public final class TorchLifetimeRules {
     public static final int DIM_AFTER_DAYS = 2;
     /** Campfires pull one log from a chest at most this many blocks away. */
     public static final int CAMPFIRE_REFUEL_RANGE = 12;
+    /** Torches pull coal or charcoal from a chest at most this many blocks away. */
+    public static final int TORCH_REFUEL_RANGE = 16;
+    /** Extra Minecraft days a torch lasts after consuming coal or charcoal. */
+    public static final int TORCH_REFUEL_DAYS = 30;
+    /** Copper torches last this many times as long as a regular torch. */
+    public static final int COPPER_DURATION_FACTOR = 2;
+    /** Extra Minecraft days a copper torch lasts after consuming coal or charcoal. */
+    public static final int COPPER_REFUEL_DAYS = 60;
 
     private TorchLifetimeRules() {}
+
+    public static boolean isCopperTorchId(String blockId) {
+        return "minecraft:copper_torch".equals(blockId) || "minecraft:copper_wall_torch".equals(blockId);
+    }
+
+    /** Copper lasts {@link #COPPER_DURATION_FACTOR} times {@code baseDays}. Permanent stays 0. */
+    public static int burnDaysFor(int baseDays, boolean copper) {
+        int clamped = clampDays(baseDays);
+        if (clamped <= 0 || !copper) {
+            return clamped;
+        }
+        long doubled = (long) clamped * COPPER_DURATION_FACTOR;
+        if (doubled > MAX_DAYS) {
+            return MAX_DAYS;
+        }
+        return (int) doubled;
+    }
+
+    public static int refuelDaysFor(boolean copper) {
+        return copper ? COPPER_REFUEL_DAYS : TORCH_REFUEL_DAYS;
+    }
 
     public static int clampDays(int days) {
         if (days <= 0) {
@@ -96,5 +125,9 @@ public final class TorchLifetimeRules {
             return Long.MAX_VALUE;
         }
         return placedAt + extra;
+    }
+
+    public static boolean isTorchFuelItemId(String itemId) {
+        return "minecraft:coal".equals(itemId) || "minecraft:charcoal".equals(itemId);
     }
 }

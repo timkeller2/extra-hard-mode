@@ -3,7 +3,6 @@ package dev.extrahardmode.feature;
 import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.config.WorldConfig;
-import dev.extrahardmode.item.EhmItems;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.world.InhabitantData;
 import dev.extrahardmode.world.WorldGate;
@@ -71,12 +70,19 @@ public final class Inhabitants implements FeatureModule {
 
     @Override
     public void serverTick(ServerLevel level) {
+        if (level.getGameTime() % 20L == 0L) {
+            long day = AntiFarming.overworldDay(level);
+            for (ServerPlayer player : level.players()) {
+                CouncilMissions.tick(player, day);
+            }
+        }
         if (level.dimension() != Level.OVERWORLD) {
             return;
         }
         tickHomes(level);
         if (level.getGameTime() % 20L == 0L) {
             keepNearHome(level);
+            visitNearbyHomes(level);
         }
     }
 
@@ -96,13 +102,25 @@ public final class Inhabitants implements FeatureModule {
 
     static void inspect(ServerPlayer player, ServerLevel level, BlockPos bed) {
         WorldConfig cfg = ConfigManager.world(level);
+        long day = AntiFarming.overworldDay(level);
+        InhabitantData data = InhabitantData.of(level);
+        List<BlockPos> occupied = occupiedBeds(level);
         ResidenceScan.Result result =
-                ResidenceScan.inspect(level, bed, occupiedBeds(level), cfg.inhabitantMinLight(), cfg.inhabitantSpacing());
+                ResidenceScan.inspect(level, bed, occupied, cfg.inhabitantMinLight(), cfg.inhabitantSpacing());
+        catchUpArrival(
+                level,
+                data,
+                result,
+                day,
+                occupied,
+                cfg,
+                level.getRandom(),
+                CropGrowthRules.beesInactive(AntiFarming.currentSeasonalLossRate(level)));
         player.sendSystemMessage(Component.translatableWithFallback(
                 "extrahardmode.message.inhabitant_inspect",
                 "%s",
                 Component.literal(InhabitantRules.inspectFallback(result.gates()))));
-        InhabitantData.Home home = InhabitantData.of(level).get(ResidenceScan.homeId(result.bed()));
+        InhabitantData.Home home = data.get(ResidenceScan.homeId(result.bed()));
         if (home != null && home.living().isPresent()) {
             player.sendSystemMessage(Component.translatableWithFallback(
                     "extrahardmode.message.inhabitant_lives_here",
@@ -161,34 +179,111 @@ public final class Inhabitants implements FeatureModule {
         List<BlockPos> occupied = occupiedBeds(level);
         RandomSource random = level.getRandom();
         for (BlockPos pos : bedHeadsInTickingChunks(level)) {
-            ResidenceScan.Result result =
-                    ResidenceScan.inspect(level, pos, occupied, cfg.inhabitantMinLight(), cfg.inhabitantSpacing());
-            String id = ResidenceScan.homeId(result.bed());
-            if (!seen.add(id)) {
+            considerArrival(level, data, pos, day, occupied, seen, cfg, random, blight);
+        }
+    }
+
+    static void visitNearbyHomes(ServerLevel level) {
+        if (!hasSurvivalPlayer(level)) {
+            return;
+        }
+        long day = AntiFarming.overworldDay(level);
+        InhabitantData data = InhabitantData.of(level);
+        WorldConfig cfg = ConfigManager.world(level);
+        boolean blight = CropGrowthRules.beesInactive(AntiFarming.currentSeasonalLossRate(level));
+        Set<String> seen = new HashSet<>();
+        List<BlockPos> occupied = occupiedBeds(level);
+        RandomSource random = level.getRandom();
+        for (ServerPlayer player : level.players()) {
+            if (player.isSpectator() || player.isCreative()) {
                 continue;
             }
-            InhabitantData.Home existing = data.get(id);
-            if (existing != null && existing.living().isPresent()) {
-                continue;
+            for (BlockPos pos : bedHeadsNear(level, player.blockPosition(), InhabitantRules.VISIT_RADIUS)) {
+                considerArrival(level, data, pos, day, occupied, seen, cfg, random, blight);
             }
-            if (existing != null && InhabitantRules.spawnBlocked(day, existing.emptyUntilDay())) {
-                continue;
+        }
+    }
+
+    static void considerArrival(
+            ServerLevel level,
+            InhabitantData data,
+            BlockPos pos,
+            long day,
+            List<BlockPos> occupied,
+            Set<String> seen,
+            WorldConfig cfg,
+            RandomSource random,
+            boolean blight) {
+        InhabitantData.Home existing = data.get(ResidenceScan.homeId(pos));
+        if (existing != null && existing.living().isPresent()) {
+            seen.add(existing.id());
+            return;
+        }
+        if (existing != null && existing.lastRollDay() >= 0L && existing.lastRollDay() >= day) {
+            seen.add(existing.id());
+            return;
+        }
+        ResidenceScan.Result result =
+                ResidenceScan.inspect(level, pos, occupied, cfg.inhabitantMinLight(), cfg.inhabitantSpacing());
+        String id = ResidenceScan.homeId(result.bed());
+        if (!seen.add(id)) {
+            return;
+        }
+        catchUpArrival(level, data, result, day, occupied, cfg, random, blight);
+    }
+
+    /**
+     * Stamp a newly eligible empty home, or roll once per missed day since the
+     * last stamp, then set the stamp to today.
+     */
+    static void catchUpArrival(
+            ServerLevel level,
+            InhabitantData data,
+            ResidenceScan.Result result,
+            long day,
+            List<BlockPos> occupied,
+            WorldConfig cfg,
+            RandomSource random,
+            boolean blight) {
+        String id = ResidenceScan.homeId(result.bed());
+        InhabitantData.Home existing = data.get(id);
+        if (existing != null && existing.living().isPresent()) {
+            return;
+        }
+        if (existing != null && InhabitantRules.spawnBlocked(day, existing.emptyUntilDay())) {
+            data.put(existing.withLastRoll(day));
+            return;
+        }
+        if (!result.gates().eligible()) {
+            if (existing != null && existing.living().isEmpty()) {
+                data.put(existing.withLastRoll(-1L));
             }
-            if (!result.gates().eligible()) {
-                continue;
-            }
-            int chance = InhabitantRules.spawnChancePercent(
-                    result.gates().score(),
-                    cfg.inhabitantMinScore(),
-                    cfg.inhabitantBaseChancePercent(),
-                    cfg.inhabitantChancePerPoint(),
-                    cfg.inhabitantMaxChancePercent(),
-                    blight);
+            return;
+        }
+        if (existing == null) {
+            data.put(new InhabitantData.Home(
+                    id, result.bed(), result.gates().score(), "", "", Optional.empty(), -1L, -1L, false, -1L, day));
+            return;
+        }
+        int missed = InhabitantRules.missedArrivalRolls(existing.lastRollDay(), day);
+        data.put(existing.withScore(result.gates().score()).withLastRoll(day));
+        if (missed <= 0) {
+            return;
+        }
+        int chance = InhabitantRules.spawnChancePercent(
+                result.gates().score(),
+                cfg.inhabitantMinScore(),
+                cfg.inhabitantBaseChancePercent(),
+                cfg.inhabitantChancePerPoint(),
+                cfg.inhabitantMaxChancePercent(),
+                blight);
+        for (int i = 0; i < missed; i++) {
             if (!InhabitantRules.spawnRoll(random.nextInt(100), chance)) {
                 continue;
             }
             spawnResident(level, data, result, random);
             occupied.add(result.bed());
+            return;
         }
     }
 
@@ -212,12 +307,14 @@ public final class Inhabitants implements FeatureModule {
                 specialty,
                 result.amenities(),
                 CropGrowthRules.beesInactive(AntiFarming.currentSeasonalLossRate(level)),
-                random);
+                random,
+                result.gates().score());
         if (!level.addFreshEntity(villager)) {
             villager.discard();
             return;
         }
         data.markSpawned(specialty);
+        long today = AntiFarming.overworldDay(level);
         data.put(new InhabitantData.Home(
                 ResidenceScan.homeId(result.bed()),
                 result.bed(),
@@ -228,7 +325,8 @@ public final class Inhabitants implements FeatureModule {
                 -1L,
                 -1L,
                 false,
-                AntiFarming.overworldDay(level)));
+                today,
+                today));
         Component message = Component.translatableWithFallback(
                 "extrahardmode.chat.inhabitant_arrive",
                 "%s the %s has taken up residence.",
@@ -261,74 +359,44 @@ public final class Inhabitants implements FeatureModule {
             String specialty,
             InhabitantRules.AmenityCounts amenities,
             boolean blight,
-            RandomSource random) {
+            RandomSource random,
+            int score) {
         MerchantOffers offers = villager.getOffers();
         offers.clear();
-        offers.addAll(offersFor(specialty, amenities, blight, random));
+        offers.addAll(offersFor(specialty, amenities, blight, random, score));
     }
 
     static List<MerchantOffer> offersFor(
-            String specialty, InhabitantRules.AmenityCounts amenities, boolean blight, RandomSource random) {
+            String specialty,
+            InhabitantRules.AmenityCounts amenities,
+            boolean blight,
+            RandomSource random,
+            int score) {
         int storage = amenities == null ? 0 : amenities.storage();
-        return switch (specialty == null ? InhabitantRules.TRADER : specialty) {
-            case InhabitantRules.HAULER -> List.of(
-                    buy(Items.COBBLESTONE, InhabitantRules.haulerStack(storage), 4),
-                    buy(Items.DIRT, InhabitantRules.haulerStack(storage), 4),
-                    buy(Items.GRAVEL, InhabitantRules.haulerStack(storage), 4),
-                    buy(Items.COBBLED_DEEPSLATE, InhabitantRules.haulerStack(storage), 4),
-                    buy(Items.NETHERRACK, InhabitantRules.haulerStack(storage), 4));
-            case InhabitantRules.COOK -> List.of(
-                    buy(Items.COOKED_BEEF, 8, 4),
-                    buy(Items.COOKED_PORKCHOP, 8, 4),
-                    buy(Items.COOKED_CHICKEN, 8, 4),
-                    buy(Items.BAKED_POTATO, 8, 4),
-                    sell(Items.RABBIT_STEW, 1, 4, 4));
-            case InhabitantRules.FARM -> List.of(
-                    buy(Items.WHEAT, InhabitantRules.farmWheatBuy(blight), 6),
-                    sell(Items.WHEAT_SEEDS, 4, 1, 6),
-                    sell(Items.OAK_SAPLING, 1, 2, 4));
-            case InhabitantRules.BOUNTY -> List.of(
-                    buy(Items.SPIDER_EYE, 8, 6),
-                    buy(Items.GUNPOWDER, 8, 6),
-                    buy(Items.BONE, 16, 6));
-            case InhabitantRules.ARMORSMITH -> armorOffers(false);
-            case InhabitantRules.MASTER_ARMORSMITH -> armorOffers(true);
-            case InhabitantRules.WEALTHY -> wealthyOffers(random);
-            default -> List.of(
-                    sell(Items.BREAD, 4, 1, 8),
-                    sell(Items.COAL, 8, 1, 8),
-                    sell(Items.BOOK, 1, 4, 4),
-                    sell(Items.WOOL.white(), 8, 1, 8));
-        };
-    }
-
-    static List<MerchantOffer> armorOffers(boolean master) {
-        int uses = InhabitantRules.ARMOR_TRADE_USES;
-        if (master) {
-            return List.of(
-                    sell(EhmItems.HEAVY_DIAMOND_BOOTS, 1, InhabitantRules.armorEmeralds(true, "boots"), uses),
-                    sell(EhmItems.HEAVY_DIAMOND_HELMET, 1, InhabitantRules.armorEmeralds(true, "helmet"), uses),
-                    sell(EhmItems.HEAVY_DIAMOND_LEGGINGS, 1, InhabitantRules.armorEmeralds(true, "leggings"), uses),
-                    sell(EhmItems.HEAVY_DIAMOND_CHESTPLATE, 1, InhabitantRules.armorEmeralds(true, "chestplate"), uses));
-        }
-        return List.of(
-                sell(EhmItems.HEAVY_IRON_BOOTS, 1, InhabitantRules.armorEmeralds(false, "boots"), uses),
-                sell(EhmItems.HEAVY_IRON_HELMET, 1, InhabitantRules.armorEmeralds(false, "helmet"), uses),
-                sell(EhmItems.HEAVY_IRON_LEGGINGS, 1, InhabitantRules.armorEmeralds(false, "leggings"), uses),
-                sell(EhmItems.HEAVY_IRON_CHESTPLATE, 1, InhabitantRules.armorEmeralds(false, "chestplate"), uses));
-    }
-
-    static List<MerchantOffer> wealthyOffers(RandomSource random) {
-        int seed = random == null ? 0 : random.nextInt();
+        java.util.Random rng = new java.util.Random(random == null ? 0L : random.nextLong());
         List<MerchantOffer> offers = new ArrayList<>();
-        for (InhabitantRules.WealthyListing listing : InhabitantRules.pickWealthyListings(seed)) {
-            net.minecraft.world.item.Item item = itemFromId(listing.itemId());
-            if (item == null || item == Items.AIR) {
-                continue;
+        for (InhabitantRules.TradeListing listing :
+                InhabitantRules.scaledListings(specialty, score, storage, blight, rng)) {
+            MerchantOffer offer = offerFrom(listing);
+            if (offer != null) {
+                offers.add(offer);
             }
-            offers.add(sell(item, listing.count(), listing.emeralds(), InhabitantRules.WEALTHY_TRADE_USES));
         }
         return offers;
+    }
+
+    static MerchantOffer offerFrom(InhabitantRules.TradeListing listing) {
+        if (listing == null) {
+            return null;
+        }
+        net.minecraft.world.item.Item item = itemFromId(listing.itemId());
+        if (item == null || item == Items.AIR) {
+            return null;
+        }
+        if (listing.buy()) {
+            return buy(item, listing.count(), listing.maxUses());
+        }
+        return sell(item, listing.count(), listing.emeralds(), listing.maxUses());
     }
 
     static net.minecraft.world.item.Item itemFromId(String itemId) {
@@ -347,7 +415,7 @@ public final class Inhabitants implements FeatureModule {
                 new ItemCost(item, Math.max(1, count)),
                 Optional.empty(),
                 new ItemStack(Items.EMERALD),
-                maxUses,
+                Math.max(1, maxUses),
                 0,
                 0.0F);
     }
@@ -363,7 +431,7 @@ public final class Inhabitants implements FeatureModule {
                 new ItemCost(Items.EMERALD, first),
                 extra,
                 new ItemStack(item, Math.max(1, count)),
-                maxUses,
+                Math.max(1, maxUses),
                 0,
                 0.0F);
     }
@@ -384,7 +452,13 @@ public final class Inhabitants implements FeatureModule {
                 WorldConfig cfg = ConfigManager.world(level);
                 ResidenceScan.Result result = ResidenceScan.inspect(
                         level, home.bed(), occupiedBeds(level, home.id()), cfg.inhabitantMinLight(), cfg.inhabitantSpacing());
-                applyOffers(villager, home.specialty(), result.amenities(), blight, random);
+                applyOffers(
+                        villager,
+                        home.specialty(),
+                        result.amenities(),
+                        blight,
+                        random,
+                        result.gates().score());
                 data.put(home.withLastRestock(day));
             }
         }
@@ -440,10 +514,13 @@ public final class Inhabitants implements FeatureModule {
             }
         }
         entity.discard();
-        data.put(home.withLiving(Optional.empty()).withLeave(-1L, false));
+        data.put(home.withLiving(Optional.empty())
+                .withLeave(-1L, false)
+                .withLastRoll(AntiFarming.overworldDay(level)));
     }
 
     static void onDeath(LivingEntity entity, DamageSource source) {
+        CouncilMissions.onKill(entity, source);
         if (!(entity instanceof Villager villager)
                 || !isInhabitant(villager)
                 || !(entity.level() instanceof ServerLevel level)) {
@@ -455,7 +532,7 @@ public final class Inhabitants implements FeatureModule {
             return;
         }
         long day = AntiFarming.overworldDay(level);
-        data.put(home.withEmptyUntil(InhabitantRules.emptyUntilDay(day)));
+        data.put(home.withEmptyUntil(InhabitantRules.emptyUntilDay(day)).withLastRoll(day));
         Component message = Component.translatableWithFallback(
                 "extrahardmode.chat.inhabitant_slain",
                 "%s will not be replaced here for a while.",
@@ -495,7 +572,14 @@ public final class Inhabitants implements FeatureModule {
             return;
         }
         InhabitantData.Home home = InhabitantData.of(level).byLiving(villager.getUUID());
-        if (home == null || !InhabitantRules.BOUNTY.equals(home.specialty())) {
+        if (home == null) {
+            return;
+        }
+        if (InhabitantRules.COUNCIL.equals(home.specialty())) {
+            CouncilMissions.onTalk(serverPlayer, level, home);
+            return;
+        }
+        if (!InhabitantRules.BOUNTY.equals(home.specialty())) {
             return;
         }
         if (BiomeBosses.anySpawned(level.getServer())) {
@@ -522,7 +606,8 @@ public final class Inhabitants implements FeatureModule {
                     home.specialty(),
                     result.amenities(),
                     CropGrowthRules.beesInactive(AntiFarming.currentSeasonalLossRate(level)),
-                    level.getRandom());
+                    level.getRandom(),
+                    result.gates().score());
         }
     }
 
@@ -556,6 +641,33 @@ public final class Inhabitants implements FeatureModule {
     static List<BlockPos> bedHeadsInTickingChunks(ServerLevel level) {
         List<BlockPos> beds = new ArrayList<>();
         level.getChunkSource().chunkMap.forEachBlockTickingChunk(chunk -> collectBedHeads(chunk, beds));
+        return beds;
+    }
+
+    static List<BlockPos> bedHeadsNear(ServerLevel level, BlockPos origin, int range) {
+        List<BlockPos> beds = new ArrayList<>();
+        int radius = Math.max(0, range);
+        int minCx = origin.getX() - radius >> 4;
+        int maxCx = origin.getX() + radius >> 4;
+        int minCz = origin.getZ() - radius >> 4;
+        int maxCz = origin.getZ() + radius >> 4;
+        for (int cx = minCx; cx <= maxCx; cx++) {
+            for (int cz = minCz; cz <= maxCz; cz++) {
+                if (!level.hasChunk(cx, cz)) {
+                    continue;
+                }
+                LevelChunk chunk = level.getChunk(cx, cz);
+                chunk.findBlocks(Inhabitants::isBedHead, (pos, state) -> {
+                    if (TorchLifetimeRules.chestInRange(
+                            pos.getX() - origin.getX(),
+                            pos.getY() - origin.getY(),
+                            pos.getZ() - origin.getZ(),
+                            radius)) {
+                        beds.add(pos.immutable());
+                    }
+                });
+            }
+        }
         return beds;
     }
 

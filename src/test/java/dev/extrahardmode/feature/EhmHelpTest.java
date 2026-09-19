@@ -84,6 +84,10 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("smelting iron"));
         assertTrue(String.join(" ", lines).contains("campfires also need airflow"));
         assertTrue(String.join(" ", lines).contains("burn out after 7 Minecraft days"));
+        assertTrue(String.join(" ", lines).contains("coal or charcoal"));
+        assertTrue(String.join(" ", lines).contains("30 more days"));
+        assertTrue(String.join(" ", lines).contains("Copper torches last twice as long"));
+        assertTrue(String.join(" ", lines).contains("60 days"));
         assertTrue(String.join(" ", lines).contains("dim after 2 days"));
         assertTrue(String.join(" ", lines).contains("pull a log"));
         assertTrue(String.join(" ", lines).contains("12 blocks"));
@@ -114,6 +118,10 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("/ehm help homes"));
         assertTrue(String.join(" ", lines).contains("/ehm set inhabitants true"));
         assertTrue(String.join(" ", lines).contains("armorsmiths restock every 30"));
+        assertTrue(String.join(" ", lines).contains("25-50%"));
+        assertTrue(String.join(" ", lines).contains("random trades"));
+        assertTrue(String.join(" ", lines).contains("Council members"));
+        assertTrue(String.join(" ", lines).contains("kill bounty"));
         assertTrue(String.join(" ", lines).contains("requires operator"));
     }
 
@@ -121,7 +129,7 @@ class EhmHelpTest {
     void homesHelpListsChecklistAndPoints() {
         var lines = EhmHelp.homesHelpLines();
         assertEquals(lines.size(), EhmHelp.homesHelpKeys().size());
-        assertEquals(5, lines.size());
+        assertEquals(7, lines.size());
         String all = String.join(" ", lines);
         assertTrue(all.contains("/ehm help homes"));
         assertTrue(all.contains("24 to 250"));
@@ -129,11 +137,20 @@ class EhmHelpTest {
         assertTrue(all.contains("Each 48 interior air"));
         assertTrue(all.contains("enclosed room"));
         assertTrue(all.contains("Eligible loaded homes"));
+        assertTrue(all.contains("timestamped"));
+        assertTrue(all.contains("missed day"));
+        assertTrue(all.contains("unloaded chunks"));
         assertTrue(all.contains("Most residents restock every 3 Minecraft days"));
         assertTrue(all.contains("armorsmiths restock every 30"));
         assertTrue(all.contains("has not appeared yet"));
         assertTrue(all.contains("wealthy trader"));
         assertTrue(all.contains("master armorsmith"));
+        assertTrue(all.contains("25-50%"));
+        assertTrue(all.contains("raises both ranges by 10%"));
+        assertTrue(all.contains("random trades"));
+        assertTrue(all.contains("council member"));
+        assertTrue(all.contains("three times as likely"));
+        assertTrue(all.contains("Zombie Bounty 3/12"));
         assertTrue(all.contains("Windows"));
         assertTrue(all.contains("Kitchen"));
         assertTrue(all.contains("clock"));

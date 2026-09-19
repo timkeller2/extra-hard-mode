@@ -4,6 +4,7 @@ import dev.extrahardmode.command.EhmPermissions;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.config.WorldConfig;
 import dev.extrahardmode.feature.Achievements;
+import dev.extrahardmode.feature.CouncilMissions;
 import dev.extrahardmode.feature.ManaAbilities;
 import dev.extrahardmode.world.WorldGate;
 import net.fabricmc.fabric.api.entity.event.v1.ServerEntityLevelChangeEvents;
@@ -29,6 +30,8 @@ public final class EhmNetworking {
                 .register(ClientboundAbilityDurationsPayload.TYPE, ClientboundAbilityDurationsPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay()
                 .register(ClientboundSoilLookPayload.TYPE, ClientboundSoilLookPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay()
+                .register(ClientboundCouncilBountyPayload.TYPE, ClientboundCouncilBountyPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(ServerboundConfigPayload.TYPE, ServerboundConfigPayload.STREAM_CODEC);
         ServerPlayNetworking.registerGlobalReceiver(ServerboundConfigPayload.TYPE, EhmNetworking::onConfig);
         ServerPlayConnectionEvents.JOIN.register(EhmNetworking::onJoin);
@@ -68,6 +71,7 @@ public final class EhmNetworking {
         sendSync(handler.player);
         Achievements.sendMana(handler.player);
         ManaAbilities.onJoin(handler.player);
+        CouncilMissions.sendHud(handler.player);
         WorldGate.onPlayerJoin(handler.player);
     }
 

@@ -4,7 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class InhabitantRulesTest {
@@ -119,9 +122,10 @@ class InhabitantRulesTest {
         assertEquals("Alder", InhabitantRules.pickName(0));
         assertEquals(InhabitantRules.pickName(0), InhabitantRules.pickName(20));
         assertEquals(
-                List.of("hauler", "cook", "farm", "trader"), InhabitantRules.unseenSpecialties(List.of(), 12));
+                List.of("hauler", "cook", "farm", "trader", "council"),
+                InhabitantRules.unseenSpecialties(List.of(), 12));
         assertEquals(
-                List.of("hauler", "cook", "farm", "bounty", "trader", "wealthy"),
+                List.of("hauler", "cook", "farm", "bounty", "trader", "wealthy", "council"),
                 InhabitantRules.unseenSpecialties(List.of(), 18));
         assertTrue(InhabitantRules.unseenSpecialties(List.of(), 24).contains(InhabitantRules.ARMORSMITH));
         assertTrue(InhabitantRules.unseenSpecialties(List.of(), 30).contains(InhabitantRules.MASTER_ARMORSMITH));
@@ -145,6 +149,9 @@ class InhabitantRulesTest {
         assertEquals("armorsmith", InhabitantRules.specialtyFallback(InhabitantRules.ARMORSMITH));
         assertEquals("master armorsmith", InhabitantRules.specialtyFallback(InhabitantRules.MASTER_ARMORSMITH));
         assertEquals("wealthy trader", InhabitantRules.specialtyFallback(InhabitantRules.WEALTHY));
+        assertEquals("council member", InhabitantRules.specialtyFallback(InhabitantRules.COUNCIL));
+        assertTrue(InhabitantRules.specialtyAllowed(InhabitantRules.COUNCIL, 12));
+        assertEquals(4, InhabitantRules.defaultTradeTypeCount(InhabitantRules.COUNCIL));
         boolean sawCookAfterAll = false;
         for (int roll = 0; roll < 20; roll++) {
             if (InhabitantRules.COOK.equals(
@@ -153,6 +160,16 @@ class InhabitantRulesTest {
             }
         }
         assertTrue(sawCookAfterAll);
+        InhabitantRules.AmenityCounts empty =
+                new InhabitantRules.AmenityCounts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false);
+        int council = 0;
+        for (int roll = 0; roll < 80; roll++) {
+            if (InhabitantRules.COUNCIL.equals(
+                    InhabitantRules.pickSpecialty(empty, 12, roll, InhabitantRules.SPECIALTIES))) {
+                council++;
+            }
+        }
+        assertTrue(council >= 50);
     }
 
     @Test
@@ -170,6 +187,12 @@ class InhabitantRulesTest {
         assertTrue(InhabitantRules.spawnBlocked(16, 17));
         assertFalse(InhabitantRules.spawnBlocked(17, 17));
         assertFalse(InhabitantRules.spawnBlocked(10, -1));
+        assertEquals(0, InhabitantRules.missedArrivalRolls(-1, 10));
+        assertEquals(0, InhabitantRules.missedArrivalRolls(5, 5));
+        assertEquals(0, InhabitantRules.missedArrivalRolls(5, 4));
+        assertEquals(1, InhabitantRules.missedArrivalRolls(5, 6));
+        assertEquals(3, InhabitantRules.missedArrivalRolls(5, 8));
+        assertEquals(365, InhabitantRules.missedArrivalRolls(0, 10_000));
     }
 
     @Test
@@ -208,6 +231,86 @@ class InhabitantRulesTest {
         long unique = first.stream().map(InhabitantRules.WealthyListing::itemId).distinct().count();
         assertEquals(8, unique);
         assertTrue(InhabitantRules.WEALTHY_POOL.size() >= 8);
+    }
+
+    @Test
+    void shopStockScalesWithHouseScore() {
+        assertEquals(5, InhabitantRules.defaultTradeTypeCount(InhabitantRules.HAULER));
+        assertEquals(5, InhabitantRules.defaultTradeTypeCount(InhabitantRules.COOK));
+        assertEquals(3, InhabitantRules.defaultTradeTypeCount(InhabitantRules.FARM));
+        assertEquals(3, InhabitantRules.defaultTradeTypeCount(InhabitantRules.BOUNTY));
+        assertEquals(4, InhabitantRules.defaultTradeTypeCount(InhabitantRules.TRADER));
+        assertEquals(4, InhabitantRules.defaultTradeTypeCount(InhabitantRules.ARMORSMITH));
+        assertEquals(4, InhabitantRules.defaultTradeTypeCount(InhabitantRules.MASTER_ARMORSMITH));
+        assertEquals(8, InhabitantRules.defaultTradeTypeCount(InhabitantRules.WEALTHY));
+        assertEquals(0, InhabitantRules.extraTradePoints(12, InhabitantRules.HAULER));
+        assertEquals(25, InhabitantRules.tradeMinPercent(12, InhabitantRules.HAULER));
+        assertEquals(50, InhabitantRules.tradeMaxPercent(12, InhabitantRules.HAULER));
+        assertEquals(25, InhabitantRules.tradeMinPercent(18, InhabitantRules.WEALTHY));
+        assertEquals(25, InhabitantRules.tradeMinPercent(24, InhabitantRules.ARMORSMITH));
+        assertEquals(25, InhabitantRules.tradeMinPercent(30, InhabitantRules.MASTER_ARMORSMITH));
+        assertEquals(35, InhabitantRules.tradeMinPercent(13, InhabitantRules.HAULER));
+        assertEquals(60, InhabitantRules.tradeMaxPercent(13, InhabitantRules.HAULER));
+        assertEquals(105, InhabitantRules.tradeMinPercent(20, InhabitantRules.HAULER));
+        assertEquals(130, InhabitantRules.tradeMaxPercent(20, InhabitantRules.HAULER));
+        assertEquals(1, InhabitantRules.scaledAmount(5, 25));
+        assertEquals(3, InhabitantRules.scaledAmount(5, 50));
+        assertEquals(1, InhabitantRules.scaledAmount(1, 25));
+        assertEquals(8, InhabitantRules.scaledAmount(8, 100));
+        assertEquals(10, InhabitantRules.scaledAmount(8, 125));
+        assertEquals(1, InhabitantRules.scaledAmount(4, 25));
+        assertEquals(25, InhabitantRules.rollTradePercent(25, 50, 0));
+        assertEquals(50, InhabitantRules.rollTradePercent(25, 50, 25));
+        Set<String> haulerDefaults = new HashSet<>();
+        for (InhabitantRules.TradeListing listing : InhabitantRules.defaultListings(InhabitantRules.HAULER, 1, false)) {
+            haulerDefaults.add(listing.itemId());
+        }
+        assertEquals(5, haulerDefaults.size());
+        for (int seed = 0; seed < 80; seed++) {
+            List<InhabitantRules.TradeListing> poor =
+                    InhabitantRules.scaledListings(InhabitantRules.HAULER, 12, 1, false, new Random(seed));
+            assertFalse(poor.isEmpty());
+            assertTrue(poor.size() <= 3);
+            Set<String> ids = new HashSet<>();
+            for (InhabitantRules.TradeListing listing : poor) {
+                assertTrue(ids.add(listing.itemId()));
+                assertTrue(haulerDefaults.contains(listing.itemId()));
+                assertTrue(listing.maxUses() >= 1);
+                assertTrue(listing.maxUses() <= 2);
+            }
+        }
+        boolean sawExtra = false;
+        boolean sawSplitUses = false;
+        for (int seed = 0; seed < 80; seed++) {
+            List<InhabitantRules.TradeListing> rich =
+                    InhabitantRules.scaledListings(InhabitantRules.HAULER, 22, 1, false, new Random(seed));
+            assertTrue(rich.size() >= 6);
+            assertTrue(rich.size() <= 8);
+            Set<String> ids = new HashSet<>();
+            int firstUses = rich.getFirst().maxUses();
+            for (InhabitantRules.TradeListing listing : rich) {
+                assertTrue(ids.add(listing.itemId()));
+                if (!haulerDefaults.contains(listing.itemId())) {
+                    sawExtra = true;
+                }
+                if (listing.maxUses() != firstUses) {
+                    sawSplitUses = true;
+                }
+            }
+            assertEquals(rich.size(), ids.size());
+        }
+        assertTrue(sawExtra);
+        assertTrue(sawSplitUses);
+        for (int seed = 0; seed < 40; seed++) {
+            List<InhabitantRules.TradeListing> wealthy =
+                    InhabitantRules.scaledListings(InhabitantRules.WEALTHY, 18, 0, false, new Random(seed));
+            assertTrue(wealthy.size() >= 2);
+            assertTrue(wealthy.size() <= 4);
+        }
+        List<InhabitantRules.TradeListing> palaceWealthy =
+                InhabitantRules.scaledListings(InhabitantRules.WEALTHY, 28, 0, false, new Random(1));
+        assertTrue(palaceWealthy.size() >= 10);
+        assertTrue(palaceWealthy.size() <= 12);
     }
 
     @Test

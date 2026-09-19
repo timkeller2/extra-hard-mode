@@ -11,6 +11,7 @@ import dev.extrahardmode.feature.Torches;
 import dev.extrahardmode.feature.monster.Horses;
 import dev.extrahardmode.module.MessageId;
 import dev.extrahardmode.network.ClientboundAbilityDurationsPayload;
+import dev.extrahardmode.network.ClientboundCouncilBountyPayload;
 import dev.extrahardmode.network.ClientboundFlightPayload;
 import dev.extrahardmode.network.ClientboundManaPayload;
 import dev.extrahardmode.network.ClientboundPowerMinePayload;
@@ -53,6 +54,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
     private static volatile ClientboundPowerMinePayload lastPowerMine;
     private static volatile ClientboundAbilityDurationsPayload lastDurations;
     private static volatile ClientboundSoilLookPayload lastSoilLook;
+    private static volatile ClientboundCouncilBountyPayload lastCouncilBounty;
 
     public static ClientboundSyncPayload lastSync() {
         return lastSync;
@@ -76,6 +78,10 @@ public class ExtraHardModeClient implements ClientModInitializer {
 
     public static ClientboundSoilLookPayload lastSoilLook() {
         return lastSoilLook;
+    }
+
+    public static ClientboundCouncilBountyPayload lastCouncilBounty() {
+        return lastCouncilBounty;
     }
 
     public static boolean denyOffhandLightSwap(Player player) {
@@ -293,6 +299,8 @@ public class ExtraHardModeClient implements ClientModInitializer {
                 ClientboundAbilityDurationsPayload.TYPE, (payload, context) -> lastDurations = payload);
         ClientPlayNetworking.registerGlobalReceiver(
                 ClientboundSoilLookPayload.TYPE, (payload, context) -> lastSoilLook = payload);
+        ClientPlayNetworking.registerGlobalReceiver(
+                ClientboundCouncilBountyPayload.TYPE, (payload, context) -> lastCouncilBounty = payload);
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             lastSync = null;
             lastMana = null;
@@ -300,10 +308,12 @@ public class ExtraHardModeClient implements ClientModInitializer {
             lastPowerMine = null;
             lastDurations = null;
             lastSoilLook = null;
+            lastCouncilBounty = null;
             SeasonAtmosphere.clearClient();
         });
         ManaHud.register();
         AbilityDurationHud.register();
+        CouncilBountyHud.register();
         SoilLookHud.register();
         AbilityHelp.register();
         UseEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {
