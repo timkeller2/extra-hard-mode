@@ -13,6 +13,8 @@ class EhmHelpTest {
         assertEquals(lines.size(), EhmHelp.featureHelpKeys().size());
         assertTrue(lines.getFirst().contains("/ehm ability help"));
         assertTrue(String.join(" ", lines).contains("1/4"));
+        assertTrue(String.join(" ", lines).contains("/ 100 per minute"));
+        assertTrue(String.join(" ", lines).contains("1 quartz per 2 mana"));
         assertTrue(String.join(" ", lines).contains("20 mana"));
         assertTrue(String.join(" ", lines).contains("/ehm ability help"));
         assertTrue(String.join(" ", lines).contains("/ehm me"));

@@ -41,21 +41,15 @@ class AchievementRulesTest {
 
     @Test
     void manaRegenPerLevelPerMinute() {
-        assertEquals(0, AchievementRules.regenUnits(0));
-        assertEquals(1, AchievementRules.regenUnits(1));
-        assertEquals(1, AchievementRules.regenUnits(2));
-        assertEquals(1, AchievementRules.regenUnits(3));
-        assertEquals(1, AchievementRules.regenUnits(4));
-        assertEquals(2, AchievementRules.regenUnits(5));
-        assertEquals(5, AchievementRules.regenUnits(20));
-        assertEquals(0.0, AchievementRules.regenPerMinute(0, false), 1e-9);
-        assertEquals(0.0, AchievementRules.regenPerMinute(0, true), 1e-9);
-        assertEquals(0.05, AchievementRules.regenPerMinute(1, false), 1e-9);
-        assertEquals(0.15, AchievementRules.regenPerMinute(1, true), 1e-9);
-        assertEquals(0.05, AchievementRules.regenPerMinute(2, false), 1e-9);
-        assertEquals(0.05, AchievementRules.regenPerMinute(3, false), 1e-9);
-        assertEquals(0.25, AchievementRules.regenPerMinute(20, false), 1e-9);
-        assertEquals(0.75, AchievementRules.regenPerMinute(20, true), 1e-9);
+        assertEquals(0.0, AchievementRules.regenPerMinute(0, 0.0, false), 1e-9);
+        assertEquals(0.0, AchievementRules.regenPerMinute(0, 5.0, true), 1e-9);
+        assertEquals(0.01, AchievementRules.regenPerMinute(1, 0.0, false), 1e-9);
+        assertEquals(0.03, AchievementRules.regenPerMinute(1, 0.0, true), 1e-9);
+        assertEquals(0.02, AchievementRules.regenPerMinute(1, 1.0, false), 1e-9);
+        assertEquals(0.05, AchievementRules.regenPerMinute(2, 3.0, false), 1e-9);
+        assertEquals(0.20, AchievementRules.regenPerMinute(20, 0.0, false), 1e-9);
+        assertEquals(0.40, AchievementRules.regenPerMinute(20, 20.0, false), 1e-9);
+        assertEquals(1.20, AchievementRules.regenPerMinute(20, 20.0, true), 1e-9);
         assertEquals(0.5, AchievementRules.addMana(0.0, 2, 0.5), 1e-9);
         assertEquals(1.025, AchievementRules.addMana(0.95, 1, 0.15), 1e-9);
         assertEquals(1.0125, AchievementRules.addMana(1.0, 1, 0.05), 1e-9);
@@ -63,9 +57,16 @@ class AchievementRulesTest {
         assertEquals(20.0, AchievementRules.addMana(19.9, 2, 4.0), 1e-9);
         assertEquals(20.0, AchievementRules.addMana(20.0, 8, 1.0), 1e-9);
         assertEquals(20.0, AchievementRules.clampMana(25.0), 1e-9);
-        assertTrue(AchievementRules.shouldConsumeQuartz(2, 1.0));
-        assertFalse(AchievementRules.shouldConsumeQuartz(2, 2.0));
-        assertFalse(AchievementRules.shouldConsumeQuartz(0, 0.0));
+        assertTrue(AchievementRules.shouldBoostWithQuartz(2, 1.0));
+        assertFalse(AchievementRules.shouldBoostWithQuartz(2, 2.0));
+        assertFalse(AchievementRules.shouldBoostWithQuartz(0, 0.0));
+        assertEquals(2.0, AchievementRules.QUARTZ_MANA_PER_ITEM, 1e-9);
+        assertEquals(0.15, AchievementRules.addQuartzCredit(0.10, 0.05), 1e-9);
+        assertEquals(0, AchievementRules.quartzItemsForCredit(1.99));
+        assertEquals(1, AchievementRules.quartzItemsForCredit(2.0));
+        assertEquals(2, AchievementRules.quartzItemsForCredit(4.5));
+        assertEquals(0.5, AchievementRules.remainingQuartzCredit(4.5, 2), 1e-9);
+        assertEquals(2.5, AchievementRules.remainingQuartzCredit(4.5, 1), 1e-9);
     }
 
     @Test

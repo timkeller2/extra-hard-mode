@@ -42,4 +42,20 @@ class AbilityDurationRulesTest {
         assertEquals(0xFF00FF00, AbilityDurationRules.argb(0x00FF00, 1.0F));
         assertEquals(0x4000FF00, AbilityDurationRules.argb(0x00FF00, 0.25F));
     }
+
+    @Test
+    void durationHudSitsBottomLeftWithIconWidthBars() {
+        assertEquals(16, AbilityDurationRules.ICON_SIZE);
+        assertEquals(16, AbilityDurationRules.BAR_WIDTH);
+        assertEquals(8, AbilityDurationRules.originX());
+        assertEquals(240 - 8 - AbilityDurationRules.columnHeight(), AbilityDurationRules.originY(240));
+        assertEquals(8, AbilityDurationRules.iconX(8, 0));
+        assertEquals(28, AbilityDurationRules.iconX(8, 1));
+        assertEquals(16 + 1, AbilityDurationRules.barY(0));
+        assertEquals(14, AbilityDurationRules.innerBarWidth());
+        assertEquals(14, AbilityDurationRules.filledWidth(100, 100));
+        assertEquals(7, AbilityDurationRules.filledWidth(50, 100));
+        assertEquals(1, AbilityDurationRules.filledWidth(1, 100));
+        assertEquals(0, AbilityDurationRules.filledWidth(0, 100));
+    }
 }

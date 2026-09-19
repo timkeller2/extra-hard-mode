@@ -11,17 +11,14 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
-/** Stacked duration bars for flight, light, Iron Heart, and power mining. */
+/** Bottom-left duration icons with a short bar under each for flight, light, Iron Heart, and power mining. */
 public final class AbilityDurationHud {
     public static final net.minecraft.resources.Identifier ELEMENT_ID = ExtraHardModeMod.id("ability_durations");
-    private static final int BAR_WIDTH = 182;
-    private static final int BAR_HEIGHT = 5;
-    private static final int ROW_GAP = 6;
 
     private AbilityDurationHud() {}
 
     public static void register() {
-        HudElementRegistry.attachElementAfter(VanillaHudElements.CROSSHAIR, ELEMENT_ID, AbilityDurationHud::extract);
+        HudElementRegistry.attachElementAfter(VanillaHudElements.HOTBAR, ELEMENT_ID, AbilityDurationHud::extract);
     }
 
     static void extract(GuiGraphicsExtractor graphics, net.minecraft.client.DeltaTracker delta) {
@@ -34,14 +31,15 @@ public final class AbilityDurationHud {
             return;
         }
         long time = minecraft.level == null ? 0L : minecraft.level.getGameTime();
-        int x = graphics.guiWidth() / 2 - BAR_WIDTH / 2;
-        int y = graphics.guiHeight() / 2 + 16;
+        int originX = AbilityDurationRules.originX();
+        int originY = AbilityDurationRules.originY(graphics.guiHeight());
+        int index = 0;
         for (ClientboundAbilityDurationsPayload.Entry effect : payload.effects()) {
             if (effect.remainingTicks() <= 0 || effect.maxTicks() <= 0) {
                 continue;
             }
-            drawBar(graphics, effect, x, y, time);
-            y += BAR_HEIGHT + ROW_GAP;
+            drawBar(graphics, effect, AbilityDurationRules.iconX(originX, index), originY, time);
+            index++;
         }
     }
 
@@ -54,15 +52,34 @@ public final class AbilityDurationHud {
         boolean auto = effect.autoContinue();
         float alpha = AbilityDurationRules.alpha(effect.remainingTicks(), auto);
         boolean showFill = AbilityDurationRules.visible(effect.remainingTicks(), auto, time);
-        int filled = Math.max(1, (int) (BAR_WIDTH * (effect.remainingTicks() / (float) effect.maxTicks())));
-        filled = Math.min(BAR_WIDTH, filled);
-        graphics.fill(x - 1, y - 1, x + BAR_WIDTH + 1, y + BAR_HEIGHT + 1, AbilityDurationRules.argb(0x000000, alpha));
-        graphics.fill(x, y, x + BAR_WIDTH, y + BAR_HEIGHT, AbilityDurationRules.argb(trackRgb(effect.ability()), alpha));
-        if (showFill) {
+        int barY = AbilityDurationRules.barY(y);
+        int barBottom = barY + AbilityDurationRules.BAR_HEIGHT + 2 * AbilityDurationRules.BAR_OUTLINE;
+        int innerLeft = x + AbilityDurationRules.BAR_OUTLINE;
+        int innerTop = barY + AbilityDurationRules.BAR_OUTLINE;
+        int innerRight = x + AbilityDurationRules.BAR_WIDTH - AbilityDurationRules.BAR_OUTLINE;
+        int innerBottom = barY + AbilityDurationRules.BAR_OUTLINE + AbilityDurationRules.BAR_HEIGHT;
+        int filled = AbilityDurationRules.filledWidth(effect.remainingTicks(), effect.maxTicks());
+        graphics.item(icon(effect.ability()), x, y);
+        graphics.fill(
+                x,
+                barY,
+                x + AbilityDurationRules.BAR_WIDTH,
+                barBottom,
+                AbilityDurationRules.argb(0x000000, alpha));
+        graphics.fill(
+                innerLeft,
+                innerTop,
+                innerRight,
+                innerBottom,
+                AbilityDurationRules.argb(trackRgb(effect.ability()), alpha));
+        if (showFill && filled > 0) {
             graphics.fill(
-                    x, y, x + filled, y + BAR_HEIGHT, AbilityDurationRules.argb(fillRgb(effect.ability()), alpha));
+                    innerLeft,
+                    innerTop,
+                    innerLeft + filled,
+                    innerBottom,
+                    AbilityDurationRules.argb(fillRgb(effect.ability()), alpha));
         }
-        graphics.item(icon(effect.ability()), x - 20, y - 6);
     }
 
     static int trackRgb(String ability) {

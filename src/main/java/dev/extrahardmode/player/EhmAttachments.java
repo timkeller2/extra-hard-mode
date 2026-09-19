@@ -177,6 +177,10 @@ public final class EhmAttachments {
     public static final AttachmentType<Double> EHM_MANA_CURRENT = AttachmentRegistry.create(
             ExtraHardModeMod.id("mana_current"),
             builder -> builder.persistent(Codec.DOUBLE).copyOnDeath().initializer(() -> 0.0));
+    /** Quartz-boosted mana regained toward the next quartz consumed. */
+    public static final AttachmentType<Double> EHM_QUARTZ_MANA_CREDIT = AttachmentRegistry.create(
+            ExtraHardModeMod.id("quartz_mana_credit"),
+            builder -> builder.persistent(Codec.DOUBLE).copyOnDeath().initializer(() -> 0.0));
     public static final AttachmentType<Map<String, Integer>> EHM_ABILITY_USES = AttachmentRegistry.create(
             ExtraHardModeMod.id("ability_uses"),
             builder -> builder.persistent(Codec.unboundedMap(Codec.STRING, Codec.INT))

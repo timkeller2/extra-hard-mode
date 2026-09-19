@@ -165,15 +165,29 @@ public final class Achievements implements FeatureModule {
         int level = manaLevel(player);
         Double stored = player.getAttachedOrElse(EhmAttachments.EHM_MANA_CURRENT, 0.0);
         double current = AchievementRules.clampMana(stored == null ? 0.0 : stored);
-        boolean quartz = false;
-        if (AchievementRules.shouldConsumeQuartz(level, current)) {
-            quartz = consumeQuartz(player);
+        boolean quartz =
+                AchievementRules.shouldBoostWithQuartz(level, current) && hasItem(player, Items.QUARTZ);
+        double next = AchievementRules.addMana(
+                current, level, AchievementRules.regenPerMinute(level, current, quartz));
+        if (quartz) {
+            settleQuartzCredit(player, next - current);
         }
-        double next = AchievementRules.addMana(current, level, AchievementRules.regenPerMinute(level, quartz));
         if (stored == null || next != stored) {
             player.setAttached(EhmAttachments.EHM_MANA_CURRENT, next);
             sendMana(player);
         }
+    }
+
+    static void settleQuartzCredit(ServerPlayer player, double gained) {
+        Double stored = player.getAttachedOrElse(EhmAttachments.EHM_QUARTZ_MANA_CREDIT, 0.0);
+        double credit = AchievementRules.addQuartzCredit(stored == null ? 0.0 : stored, gained);
+        int want = AchievementRules.quartzItemsForCredit(credit);
+        int taken = 0;
+        while (taken < want && consumeQuartz(player)) {
+            taken++;
+        }
+        player.setAttached(
+                EhmAttachments.EHM_QUARTZ_MANA_CREDIT, AchievementRules.remainingQuartzCredit(credit, taken));
     }
 
     static void grantNewTiers(

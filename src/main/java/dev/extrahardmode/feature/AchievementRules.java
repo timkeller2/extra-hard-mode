@@ -15,8 +15,11 @@ public final class AchievementRules {
     public static final int[] SLAYER_THRESHOLDS = {25, 100, 250};
     public static final int BREAK_DECREMENT_PERCENT = 75;
     public static final int TICKS_PER_MINUTE = 1200;
-    public static final double MANA_PER_LEVEL_PER_MINUTE = 1.0 / 20.0;
+    /** Base regen per Minecraft minute is {@code (manaLevel + currentMana) / REGEN_DIVISOR}. */
+    public static final double REGEN_DIVISOR = 100.0;
     public static final double QUARTZ_REGEN_MULTIPLIER = 3.0;
+    /** One nether quartz is consumed per this much quartz-boosted mana (one crystal). */
+    public static final double QUARTZ_MANA_PER_ITEM = 2.0;
     /** Regen multiplier once current mana is at or above mana level. */
     public static final double OVERFLOW_REGEN_MULTIPLIER = 0.25;
     /** Stored mana cannot exceed this (10 crystals). */
@@ -72,19 +75,12 @@ public final class AchievementRules {
         return count;
     }
 
-    /** {@code ceil(manaLevel / 4)}. Each unit restores {@link #MANA_PER_LEVEL_PER_MINUTE}. */
-    public static int regenUnits(int manaLevel) {
-        if (manaLevel <= 0) {
-            return 0;
-        }
-        return (manaLevel + 3) / 4;
-    }
-
-    public static double regenPerMinute(int manaLevel, boolean quartz) {
+    /** {@code (manaLevel + currentMana) / 100} mana per Minecraft minute. */
+    public static double regenPerMinute(int manaLevel, double currentMana, boolean quartz) {
         if (manaLevel <= 0) {
             return 0.0;
         }
-        double base = regenUnits(manaLevel) * MANA_PER_LEVEL_PER_MINUTE;
+        double base = (manaLevel + Math.max(0.0, currentMana)) / REGEN_DIVISOR;
         return quartz ? base * QUARTZ_REGEN_MULTIPLIER : base;
     }
 
@@ -117,8 +113,23 @@ public final class AchievementRules {
         return Math.min(MANA_HARD_CAP, current);
     }
 
-    public static boolean shouldConsumeQuartz(int manaLevel, double current) {
+    public static boolean shouldBoostWithQuartz(int manaLevel, double current) {
         return manaLevel > 0 && current < manaLevel;
+    }
+
+    public static double addQuartzCredit(double credit, double gained) {
+        return Math.max(0.0, credit) + Math.max(0.0, gained);
+    }
+
+    public static int quartzItemsForCredit(double credit) {
+        if (credit < QUARTZ_MANA_PER_ITEM) {
+            return 0;
+        }
+        return (int) Math.floor(credit / QUARTZ_MANA_PER_ITEM);
+    }
+
+    public static double remainingQuartzCredit(double credit, int consumed) {
+        return Math.max(0.0, credit - Math.max(0, consumed) * QUARTZ_MANA_PER_ITEM);
     }
 
     /** Experience-level percent chance of a bonus mana level, 0–100. */
