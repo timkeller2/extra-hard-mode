@@ -101,8 +101,10 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("how many lapis"));
         assertTrue(String.join(" ", lines).contains("sparkles you blue"));
         assertTrue(String.join(" ", lines).contains("50 experience and a diamond"));
-        assertTrue(String.join(" ", lines).contains("visit a biome you gain 100 experience"));
+        assertTrue(String.join(" ", lines).contains("visit a biome you gain 50 experience"));
         assertTrue(String.join(" ", lines).contains("first player to visit it"));
+        assertTrue(String.join(" ", lines).contains("habitable home in a biome"));
+        assertTrue(String.join(" ", lines).contains("house points × 3"));
         assertTrue(String.join(" ", lines).contains("300 blocks from spawn"));
         assertTrue(String.join(" ", lines).contains("first player to claim"));
         assertTrue(String.join(" ", lines).contains("upcoming list"));

@@ -1,11 +1,15 @@
 package dev.extrahardmode.feature;
 
+import java.util.Collection;
+
 /**
  * First biome visits and leaving spawn. Minecraft-free for JUnit.
  */
 public final class ExplorationRules {
-    public static final int BIOME_VISIT_XP = 100;
+    public static final int BIOME_VISIT_XP = 50;
     public static final int WORLD_FIRST_BONUS_XP = 100;
+    /** XP per house point for the first habitable home in a biome. */
+    public static final int HOME_BIOME_XP_PER_POINT = 3;
     public static final int SPAWN_DISTANCE = 300;
     public static final int SPAWN_XP = 100;
 
@@ -25,6 +29,17 @@ public final class ExplorationRules {
             return 0;
         }
         return BIOME_VISIT_XP + (worldFirst ? WORLD_FIRST_BONUS_XP : 0);
+    }
+
+    public static boolean unseenBiome(Collection<String> already, String biomeId) {
+        return biomeId != null && !biomeId.isEmpty() && (already == null || !already.contains(biomeId));
+    }
+
+    public static int homeBiomeXp(int houseScore) {
+        if (houseScore <= 0) {
+            return 0;
+        }
+        return houseScore * HOME_BIOME_XP_PER_POINT;
     }
 
     /** {@code dark_forest} → {@code Dark Forest}. */

@@ -115,7 +115,8 @@ public final class Inhabitants implements FeatureModule {
                 occupied,
                 cfg,
                 level.getRandom(),
-                CropGrowthRules.beesInactive(AntiFarming.currentSeasonalLossRate(level)));
+                CropGrowthRules.beesInactive(AntiFarming.currentSeasonalLossRate(level)),
+                player);
         player.sendSystemMessage(Component.translatableWithFallback(
                 "extrahardmode.message.inhabitant_inspect",
                 "%s",
@@ -179,7 +180,7 @@ public final class Inhabitants implements FeatureModule {
         List<BlockPos> occupied = occupiedBeds(level);
         RandomSource random = level.getRandom();
         for (BlockPos pos : bedHeadsInTickingChunks(level)) {
-            considerArrival(level, data, pos, day, occupied, seen, cfg, random, blight);
+            considerArrival(level, data, pos, day, occupied, seen, cfg, random, blight, null);
         }
     }
 
@@ -199,7 +200,7 @@ public final class Inhabitants implements FeatureModule {
                 continue;
             }
             for (BlockPos pos : bedHeadsNear(level, player.blockPosition(), InhabitantRules.VISIT_RADIUS)) {
-                considerArrival(level, data, pos, day, occupied, seen, cfg, random, blight);
+                considerArrival(level, data, pos, day, occupied, seen, cfg, random, blight, player);
             }
         }
     }
@@ -213,7 +214,8 @@ public final class Inhabitants implements FeatureModule {
             Set<String> seen,
             WorldConfig cfg,
             RandomSource random,
-            boolean blight) {
+            boolean blight,
+            ServerPlayer visitor) {
         InhabitantData.Home existing = data.get(ResidenceScan.homeId(pos));
         if (existing != null && existing.living().isPresent()) {
             seen.add(existing.id());
@@ -229,7 +231,7 @@ public final class Inhabitants implements FeatureModule {
         if (!seen.add(id)) {
             return;
         }
-        catchUpArrival(level, data, result, day, occupied, cfg, random, blight);
+        catchUpArrival(level, data, result, day, occupied, cfg, random, blight, visitor);
     }
 
     /**
@@ -244,7 +246,8 @@ public final class Inhabitants implements FeatureModule {
             List<BlockPos> occupied,
             WorldConfig cfg,
             RandomSource random,
-            boolean blight) {
+            boolean blight,
+            ServerPlayer visitor) {
         String id = ResidenceScan.homeId(result.bed());
         InhabitantData.Home existing = data.get(id);
         if (existing != null && existing.living().isPresent()) {
@@ -263,6 +266,7 @@ public final class Inhabitants implements FeatureModule {
         if (existing == null) {
             data.put(new InhabitantData.Home(
                     id, result.bed(), result.gates().score(), "", "", Optional.empty(), -1L, -1L, false, -1L, day));
+            awardFirstHomeBiome(level, result.bed(), result.gates().score(), visitor);
             return;
         }
         int missed = InhabitantRules.missedArrivalRolls(existing.lastRollDay(), day);
@@ -285,6 +289,30 @@ public final class Inhabitants implements FeatureModule {
             occupied.add(result.bed());
             return;
         }
+    }
+
+    static void awardFirstHomeBiome(ServerLevel level, BlockPos bed, int houseScore, ServerPlayer preferred) {
+        ServerPlayer player = preferred;
+        if (player == null || Achievements.skipPlayer(player)) {
+            player = nearestSurvivalPlayer(level, bed);
+        }
+        Exploration.maybeAwardFirstHome(player, level, bed, houseScore);
+    }
+
+    static ServerPlayer nearestSurvivalPlayer(ServerLevel level, BlockPos pos) {
+        ServerPlayer best = null;
+        double bestDist = (double) InhabitantRules.VISIT_RADIUS * InhabitantRules.VISIT_RADIUS;
+        for (ServerPlayer player : level.players()) {
+            if (Achievements.skipPlayer(player)) {
+                continue;
+            }
+            double dist = player.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+            if (dist <= bestDist) {
+                best = player;
+                bestDist = dist;
+            }
+        }
+        return best;
     }
 
     static void spawnResident(

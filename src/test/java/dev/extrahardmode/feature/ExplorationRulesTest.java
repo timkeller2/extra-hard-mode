@@ -21,13 +21,22 @@ class ExplorationRulesTest {
     }
 
     @Test
-    void biomeVisitPaysOneHundredAndWorldFirstAddsOneHundred() {
-        assertEquals(100, ExplorationRules.BIOME_VISIT_XP);
+    void biomeVisitPaysFiftyAndWorldFirstAddsOneHundred() {
+        assertEquals(50, ExplorationRules.BIOME_VISIT_XP);
         assertEquals(100, ExplorationRules.WORLD_FIRST_BONUS_XP);
+        assertEquals(3, ExplorationRules.HOME_BIOME_XP_PER_POINT);
+        assertEquals(0, ExplorationRules.homeBiomeXp(0));
+        assertEquals(36, ExplorationRules.homeBiomeXp(12));
+        assertEquals(54, ExplorationRules.homeBiomeXp(18));
         assertEquals(0, ExplorationRules.biomeXp(false, false));
         assertEquals(0, ExplorationRules.biomeXp(false, true));
-        assertEquals(100, ExplorationRules.biomeXp(true, false));
-        assertEquals(200, ExplorationRules.biomeXp(true, true));
+        assertEquals(50, ExplorationRules.biomeXp(true, false));
+        assertEquals(150, ExplorationRules.biomeXp(true, true));
+        assertTrue(ExplorationRules.unseenBiome(java.util.List.of(), "minecraft:plains"));
+        assertFalse(ExplorationRules.unseenBiome(java.util.List.of("minecraft:plains"), "minecraft:plains"));
+        assertTrue(ExplorationRules.unseenBiome(java.util.List.of("minecraft:plains"), "minecraft:desert"));
+        assertFalse(ExplorationRules.unseenBiome(java.util.List.of(), ""));
+        assertFalse(ExplorationRules.unseenBiome(java.util.List.of(), null));
     }
 
     @Test

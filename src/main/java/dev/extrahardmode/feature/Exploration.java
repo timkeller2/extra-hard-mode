@@ -5,6 +5,7 @@ import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.world.ExplorationData;
 import java.util.ArrayList;
 import java.util.List;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
@@ -112,13 +113,49 @@ public final class Exploration implements FeatureModule {
     }
 
     static boolean markVisited(ServerPlayer player, String biomeId) {
-        List<String> visited =
-                new ArrayList<>(player.getAttachedOrElse(EhmAttachments.EHM_VISITED_BIOMES, List.of()));
-        if (visited.contains(biomeId)) {
+        return markBiome(player, EhmAttachments.EHM_VISITED_BIOMES, biomeId);
+    }
+
+    /**
+     * First habitable home this player has completed in {@code pos}'s biome.
+     * Survival players only. XP is house points × 3.
+     */
+    public static void maybeAwardFirstHome(ServerPlayer player, ServerLevel level, BlockPos pos, int houseScore) {
+        if (player == null || Achievements.skipPlayer(player) || pos == null) {
+            return;
+        }
+        int xp = ExplorationRules.homeBiomeXp(houseScore);
+        if (xp <= 0) {
+            return;
+        }
+        Holder<Biome> holder = level.getBiome(pos);
+        String id = biomeId(holder);
+        if (id.isEmpty() || !markBiome(player, EhmAttachments.EHM_HOME_BIOMES, id)) {
+            return;
+        }
+        Component name = biomeName(holder);
+        player.giveExperiencePoints(xp);
+        player.sendSystemMessage(Component.translatableWithFallback(
+                "extrahardmode.message.explore_home_biome",
+                "You built a home in %s. +%s experience.",
+                name,
+                Component.literal(Integer.toString(xp))));
+        level.playSound(
+                null,
+                player.blockPosition(),
+                SoundEvents.PLAYER_LEVELUP,
+                SoundSource.PLAYERS,
+                0.6F,
+                1.15F);
+    }
+
+    static boolean markBiome(ServerPlayer player, AttachmentType<List<String>> attachment, String biomeId) {
+        List<String> already = new ArrayList<>(player.getAttachedOrElse(attachment, List.of()));
+        if (!ExplorationRules.unseenBiome(already, biomeId)) {
             return false;
         }
-        visited.add(biomeId);
-        player.setAttached(EhmAttachments.EHM_VISITED_BIOMES, visited);
+        already.add(biomeId);
+        player.setAttached(attachment, already);
         return true;
     }
 
