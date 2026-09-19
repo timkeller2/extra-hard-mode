@@ -88,7 +88,12 @@ public enum MessageId {
             "This is a dangerous place. Make sure you come prepared with arrows and good gear."),
     LOST_ITEMS("lost_items", Kind.TOAST, false, "On death there is a chance you might lose some of your items!"),
     ENABLED_ON("enabled_on", Kind.TOAST, false, "Extra Hard Mode is on. /gamerule extrahardmode:enabled"),
-    ENABLED_OFF("enabled_off", Kind.TOAST, false, "Extra Hard Mode is off. /gamerule extrahardmode:enabled");
+    ENABLED_OFF("enabled_off", Kind.TOAST, false, "Extra Hard Mode is off. /gamerule extrahardmode:enabled"),
+    NO_OFFHAND_LIGHT(
+            "no_offhand_light",
+            Kind.ACTION_BAR,
+            false,
+            "You can't carry a torch, lantern, or glowstone in your off hand.");
 
     private static final Map<String, MessageId> BY_ID = Stream.of(values())
             .collect(Collectors.toUnmodifiableMap(MessageId::id, Function.identity()));

@@ -60,6 +60,7 @@ public final class FallingBlocks implements FeatureModule {
             return;
         }
         PhysicsQueue.of(level).markLanded(entity);
+        RealisticChopping.dropUnsupportedLogs(level, entity.blockPosition());
         if (!Boolean.TRUE.equals(entity.getAttachedOrElse(EhmAttachments.EHM_OURS, Boolean.FALSE))) {
             return;
         }
@@ -74,6 +75,21 @@ public final class FallingBlocks implements FeatureModule {
         if (config.fallingCascade()) {
             cascade(level, pos);
         }
+    }
+
+    /**
+     * A hole just opened (EHM falling entity spawned). Adjacent {@code #extra_falling}
+     * blocks that are now unsupported are queued, which can chain as those convert.
+     */
+    public static void onBeganFalling(ServerLevel level, BlockPos origin) {
+        RealisticChopping.dropUnsupportedLogs(level, origin);
+        if (!ConfigManager.world(level).fallingCascade()) {
+            return;
+        }
+        if (!enabled(level) && !CaveIns.enabled(level)) {
+            return;
+        }
+        enqueueAround(level, origin);
     }
 
     public static void applyConfiguredDamage(FallingBlockEntity entity, double fallDistance) {

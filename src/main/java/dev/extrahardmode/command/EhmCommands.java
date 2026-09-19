@@ -10,12 +10,14 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.config.WorldConfig;
+import dev.extrahardmode.feature.Achievements;
+import dev.extrahardmode.feature.EhmHelp;
+import dev.extrahardmode.feature.ManaAbilities;
 import dev.extrahardmode.module.PhysicsQueue;
 import dev.extrahardmode.network.EhmNetworking;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.world.WorldGate;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.fabricmc.fabric.api.permission.v1.PermissionPredicates;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
@@ -39,6 +41,8 @@ public final class EhmCommands {
         "limited_building",
         "realistic_chopping",
         "players",
+        "hunger",
+        "fish_stocks",
         "anti_farming",
         "water_sources",
         "animal_crowd_control",
@@ -63,10 +67,13 @@ public final class EhmCommands {
         "vindicator",
         "cave_spider",
         "guardians",
-        "vex"
+        "vex",
         "pigmen",
         "ghasts",
-        "dragon"
+        "biome_bosses",
+        "achievements",
+        "mana_abilities",
+        "inhabitants"
     };
 
     private static final SuggestionProvider<CommandSourceStack> MODULE_SUGGESTOR =
@@ -83,37 +90,42 @@ public final class EhmCommands {
             CommandBuildContext buildContext,
             Commands.CommandSelection selection) {
         dispatcher.register(Commands.literal("ehm")
-                .executes(EhmCommands::help)
-                .then(Commands.literal("help").executes(EhmCommands::help))
+                .executes(EhmCommands::featureHelp)
+                .then(Commands.literal("help")
+                        .executes(EhmCommands::featureHelp)
+                        .then(Commands.literal("ability").executes(EhmCommands::abilityHelp))
+                        .then(Commands.literal("homes").executes(EhmCommands::homesHelp)))
+                .then(Commands.literal("ability")
+                        .executes(EhmCommands::abilityHelp)
+                        .then(Commands.literal("help").executes(EhmCommands::abilityHelp)))
+                .then(Commands.literal("homes")
+                        .executes(EhmCommands::homesHelp)
+                        .then(Commands.literal("help").executes(EhmCommands::homesHelp)))
+                .then(Commands.literal("commands").executes(EhmCommands::commandHelp))
+                .then(Commands.literal("achieve").executes(EhmCommands::achieve))
+                .then(Commands.literal("me").executes(EhmCommands::me))
                 .then(Commands.literal("version").executes(EhmCommands::version))
                 .then(Commands.literal("enabled")
                         .executes(EhmCommands::enabledHere)
                         .then(Commands.argument("world", DimensionArgument.dimension())
                                 .executes(EhmCommands::enabledWorld)))
-                .then(Commands.literal("reload")
-                        .requires(PermissionPredicates.require(EhmPermissions.ADMIN, PermissionLevel.ADMINS))
-                        .executes(EhmCommands::reload))
-                .then(Commands.literal("debug")
-                        .requires(PermissionPredicates.require(EhmPermissions.ADMIN, PermissionLevel.ADMINS))
-                        .executes(EhmCommands::debug))
-                .then(Commands.literal("bypass")
-                        .requires(EhmCommands::canBypassCommand)
-                        .executes(EhmCommands::bypass))
+                .then(Commands.literal("reload").executes(EhmCommands::reload))
+                .then(Commands.literal("debug").executes(EhmCommands::debug))
+                .then(Commands.literal("bypass").executes(EhmCommands::bypass))
                 .then(Commands.literal("set")
-                        .requires(PermissionPredicates.require(EhmPermissions.ADMIN, PermissionLevel.ADMINS))
                         .then(Commands.argument("module", StringArgumentType.word())
                                 .suggests(MODULE_SUGGESTOR)
                                 .then(Commands.argument("value", BoolArgumentType.bool())
                                         .executes(EhmCommands::setModule))))
                 .then(Commands.literal("set-world")
-                        .requires(PermissionPredicates.require(EhmPermissions.ADMIN, PermissionLevel.ADMINS))
                         .then(Commands.argument("value", BoolArgumentType.bool()).executes(EhmCommands::setWorld)))
-                .then(Commands.literal("enable")
-                        .requires(PermissionPredicates.require(EhmPermissions.ADMIN, PermissionLevel.ADMINS))
-                        .executes(context -> setWorldEnabled(context, true)))
-                .then(Commands.literal("disable")
-                        .requires(PermissionPredicates.require(EhmPermissions.ADMIN, PermissionLevel.ADMINS))
-                        .executes(context -> setWorldEnabled(context, false))));
+                .then(Commands.literal("enable").executes(context -> setWorldEnabled(context, true)))
+                .then(Commands.literal("disable").executes(context -> setWorldEnabled(context, false))));
+    }
+
+    private static boolean canStaff(CommandSourceStack source) {
+        return source.checkPermission(EhmPermissions.ADMIN, false)
+                || Commands.LEVEL_GAMEMASTERS.check(source.permissions());
     }
 
     private static boolean canBypassCommand(CommandSourceStack source) {
@@ -121,13 +133,52 @@ public final class EhmCommands {
                 || Commands.LEVEL_GAMEMASTERS.check(source.permissions());
     }
 
-    private static int help(CommandContext<CommandSourceStack> context) {
+    private static int denyStaff(CommandSourceStack source) {
+        source.sendFailure(Component.translatableWithFallback(
+                "extrahardmode.command.staff.denied",
+                "You need operator permission for that Extra Hard Mode command. From the server console, run: op <your name>"));
+        return 0;
+    }
+
+    private static int featureHelp(CommandContext<CommandSourceStack> context) {
+        return sendLines(context.getSource(), EhmHelp.featureHelpKeys(), EhmHelp.featureHelpLines());
+    }
+
+    private static int abilityHelp(CommandContext<CommandSourceStack> context) {
+        return sendLines(context.getSource(), EhmHelp.abilityHelpKeys(), EhmHelp.abilityHelpLines());
+    }
+
+    private static int homesHelp(CommandContext<CommandSourceStack> context) {
+        return sendLines(context.getSource(), EhmHelp.homesHelpKeys(), EhmHelp.homesHelpLines());
+    }
+
+    private static int achieve(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        CommandSourceStack source = context.getSource();
+        return Achievements.sendClosest(player, message -> source.sendSuccess(() -> message, false));
+    }
+
+    private static int me(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        CommandSourceStack source = context.getSource();
+        return ManaAbilities.sendMeReport(player, message -> source.sendSuccess(() -> message, false));
+    }
+
+    private static int commandHelp(CommandContext<CommandSourceStack> context) {
         context.getSource()
                 .sendSuccess(
-                        () -> Component.translatableWithFallback(
-                                "extrahardmode.command.help",
-                                "/ehm help|version|enabled [world]|reload|debug|bypass|set <module> <bool>|set-world <bool>|enable|disable"),
+                        () -> Component.translatableWithFallback(EhmHelp.COMMANDS_KEY, EhmHelp.COMMANDS_FALLBACK),
                         false);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int sendLines(CommandSourceStack source, java.util.List<String> keys, java.util.List<String> lines) {
+        int n = Math.min(keys.size(), lines.size());
+        for (int i = 0; i < n; i++) {
+            String key = keys.get(i);
+            String line = lines.get(i);
+            source.sendSuccess(() -> Component.translatableWithFallback(key, line), false);
+        }
         return Command.SINGLE_SUCCESS;
     }
 
@@ -175,6 +226,9 @@ public final class EhmCommands {
     }
 
     private static int reload(CommandContext<CommandSourceStack> context) {
+        if (!canStaff(context.getSource())) {
+            return denyStaff(context.getSource());
+        }
         MinecraftServer server = context.getSource().getServer();
         ConfigManager.reload(server);
         context.getSource()
@@ -185,6 +239,9 @@ public final class EhmCommands {
     }
 
     private static int debug(CommandContext<CommandSourceStack> context) {
+        if (!canStaff(context.getSource())) {
+            return denyStaff(context.getSource());
+        }
         boolean next = !ConfigManager.global().debug();
         ConfigManager.setDebug(next);
         PhysicsQueue queue = PhysicsQueue.of(context.getSource().getLevel());
@@ -207,6 +264,9 @@ public final class EhmCommands {
     }
 
     private static int bypass(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        if (!canBypassCommand(context.getSource())) {
+            return denyStaff(context.getSource());
+        }
         ServerPlayer player = context.getSource().getPlayerOrException();
         boolean next = !Boolean.TRUE.equals(player.getAttachedOrElse(EhmAttachments.EHM_BYPASS, Boolean.FALSE));
         player.setAttached(EhmAttachments.EHM_BYPASS, next);
@@ -220,6 +280,9 @@ public final class EhmCommands {
     }
 
     private static int setModule(CommandContext<CommandSourceStack> context) {
+        if (!canStaff(context.getSource())) {
+            return denyStaff(context.getSource());
+        }
         ServerLevel level = context.getSource().getLevel();
         Identifier moduleId = parseModule(StringArgumentType.getString(context, "module"));
         if (moduleId == null) {
@@ -256,6 +319,9 @@ public final class EhmCommands {
     }
 
     private static int setWorldEnabled(CommandContext<CommandSourceStack> context, boolean value) {
+        if (!canStaff(context.getSource())) {
+            return denyStaff(context.getSource());
+        }
         ServerLevel level = context.getSource().getLevel();
         WorldConfig config = ConfigManager.world(level);
         config.setEnabled(value);

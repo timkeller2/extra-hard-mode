@@ -147,26 +147,23 @@ public final class PigMen implements FeatureModule {
         if (!WorldGate.isModuleActive(level, ID)) {
             return;
         }
-        if (level.dimension() != Level.NETHER) {
-            return;
-        }
         Entity entity = context.getOptionalParameter(LootContextParams.THIS_ENTITY);
         if (!(entity instanceof ZombifiedPiglin piglin)) {
             return;
         }
-        if (Boolean.TRUE.equals(piglin.getAttachedOrElse(EhmAttachments.EHM_LOOTLESS, Boolean.FALSE))) {
-            return;
-        }
+        boolean lootless = Boolean.TRUE.equals(piglin.getAttachedOrElse(EhmAttachments.EHM_LOOTLESS, Boolean.FALSE));
         WorldConfig config = ConfigManager.world(level);
         boolean fortress = Blazes.inFortress(level, piglin.blockPosition());
-        if (fortress && config.pigmenFortressNetherwart()) {
-            drops.add(new ItemStack(Items.NETHER_WART));
+        if (!PigMenRules.dropsNetherWart(
+                level.dimension() == Level.NETHER,
+                lootless,
+                fortress,
+                config.pigmenFortressNetherwart(),
+                config.pigmenElsewhereNetherwartPercent(),
+                piglin.getRandom().nextInt(100))) {
             return;
         }
-        if (!fortress
-                && Blazes.percentChance(piglin.getRandom(), config.pigmenElsewhereNetherwartPercent())) {
-            drops.add(new ItemStack(Items.NETHER_WART));
-        }
+        drops.add(new ItemStack(Items.NETHER_WART));
     }
 
     public static float scaleIfPlayerHit(Player player, Entity attacker, float amount, int percent) {

@@ -20,6 +20,7 @@ public record ServerboundConfigPayload(
         boolean torchSoftDeny,
         int torchNoPlacementUnderY,
         boolean torchFizz,
+        int torchBurnDays,
         boolean creeperTntWarning)
         implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<ServerboundConfigPayload> TYPE =
@@ -47,6 +48,7 @@ public record ServerboundConfigPayload(
                 torchSoftDeny,
                 torchNoPlacementUnderY,
                 torchFizz,
+                torchBurnDays,
                 creeperTntWarning);
     }
 
@@ -65,6 +67,7 @@ public record ServerboundConfigPayload(
                 world.torchSoftDeny(),
                 world.torchNoPlacementUnderY(),
                 world.torchFizz(),
+                world.torchBurnDays(),
                 world.creeperTntWarning());
     }
 
@@ -83,6 +86,7 @@ public record ServerboundConfigPayload(
             boolean torchSoftDeny,
             int torchNoPlacementUnderY,
             boolean torchFizz,
+            int torchBurnDays,
             boolean creeperTntWarning) {
         static final StreamCodec<ByteBuf, WorldBits> STREAM_CODEC = StreamCodec.composite(
                 ByteBufCodecs.BOOL,
@@ -101,6 +105,8 @@ public record ServerboundConfigPayload(
                 WorldBits::torchSoftDeny,
                 ByteBufCodecs.VAR_INT,
                 WorldBits::torchNoPlacementUnderY,
+                ByteBufCodecs.VAR_INT,
+                WorldBits::torchBurnDays,
                 Sounds.STREAM_CODEC,
                 WorldBits::sounds,
                 WorldBits::withSounds);
@@ -118,6 +124,7 @@ public record ServerboundConfigPayload(
                 boolean torchYDeny,
                 boolean torchSoftDeny,
                 int torchNoPlacementUnderY,
+                int torchBurnDays,
                 Sounds sounds) {
             return new WorldBits(
                     applyWorld,
@@ -129,6 +136,7 @@ public record ServerboundConfigPayload(
                     torchSoftDeny,
                     torchNoPlacementUnderY,
                     sounds.torchFizz(),
+                    torchBurnDays,
                     sounds.creeperTntWarning());
         }
 

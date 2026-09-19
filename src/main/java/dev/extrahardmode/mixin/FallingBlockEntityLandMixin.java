@@ -4,6 +4,8 @@ import dev.extrahardmode.feature.CaveIns;
 import dev.extrahardmode.feature.Explosions;
 import dev.extrahardmode.feature.FallingBlocks;
 import dev.extrahardmode.feature.FeatureBus;
+import dev.extrahardmode.feature.RealisticChopping;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.item.FallingBlockEntity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -30,12 +32,20 @@ public abstract class FallingBlockEntityLandMixin {
     @Inject(method = "tick", at = @At("RETURN"))
     private void extrahardmode$fallingLand(CallbackInfo ci) {
         FallingBlockEntity self = (FallingBlockEntity) (Object) this;
-        if (!FeatureBus.guard(self.level(), FallingBlocks.ID) && !FeatureBus.guard(self.level(), CaveIns.ID)) {
+        if (!FeatureBus.guard(self.level(), FallingBlocks.ID)
+                && !FeatureBus.guard(self.level(), CaveIns.ID)
+                && !FeatureBus.guard(self.level(), RealisticChopping.ID)) {
             return;
         }
         if (!self.isRemoved()) {
             return;
         }
-        FallingBlocks.onRemoved(self);
+        if (FeatureBus.guard(self.level(), FallingBlocks.ID) || FeatureBus.guard(self.level(), CaveIns.ID)) {
+            FallingBlocks.onRemoved(self);
+            return;
+        }
+        if (self.level() instanceof ServerLevel level) {
+            RealisticChopping.dropUnsupportedLogs(level, self.blockPosition());
+        }
     }
 }

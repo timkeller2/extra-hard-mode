@@ -46,7 +46,7 @@ public final class PlayerSettings {
 
     private boolean armorEnable = true;
     private double baseSpeed = 0.22;
-    private int fullDiamondSlowdownPercent = 40;
+    private int fullDiamondSlowdownPercent = 0;
 
     public boolean environmentEnable() {
         return environmentEnable;
@@ -244,10 +244,14 @@ public final class PlayerSettings {
         comment(
                 file,
                 "player.armor.enable",
-                "Identifier-keyed movement-speed modifier. Unarmored buff to 0.22 walk-speed; full diamond 40% slowdown.");
+                "Identifier-keyed movement-speed modifier. Unarmored buff to 0.22 walk-speed.");
         setIfMissing(file, "player.armor.enable", true);
         setIfMissing(file, "player.armor.baseSpeed", 0.22);
-        setIfMissing(file, "player.armor.fullDiamondSlowdownPercent", 40);
+        comment(
+                file,
+                "player.armor.fullDiamondSlowdownPercent",
+                "Movement penalty at 20 armor (full diamond), interpolated by armor points. Default 0 (off). Raise this if a host wants armor to slow players.");
+        setIfMissing(file, "player.armor.fullDiamondSlowdownPercent", 0);
     }
 
     void read(CommentedFileConfig file) {
@@ -291,7 +295,7 @@ public final class PlayerSettings {
 
         armorEnable = file.getOrElse("player.armor.enable", true);
         baseSpeed = number(file, "player.armor.baseSpeed", 0.22);
-        fullDiamondSlowdownPercent = file.getOrElse("player.armor.fullDiamondSlowdownPercent", 40);
+        fullDiamondSlowdownPercent = file.getOrElse("player.armor.fullDiamondSlowdownPercent", 0);
     }
 
     void write(CommentedFileConfig file) {

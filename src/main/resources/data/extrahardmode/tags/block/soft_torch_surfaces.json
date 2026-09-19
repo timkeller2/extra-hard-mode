@@ -3,6 +3,9 @@
   "values": [
     "minecraft:dirt",
     "minecraft:grass_block",
+    "minecraft:podzol",
+    "minecraft:mycelium",
+    "minecraft:coarse_dirt",
     "minecraft:sand",
     "minecraft:red_sand",
     "minecraft:gravel",
@@ -12,6 +15,7 @@
     "minecraft:clay",
     "minecraft:snow_block",
     "minecraft:moss_block",
+    "minecraft:pale_moss_block",
     "minecraft:rooted_dirt",
     "minecraft:farmland",
     "minecraft:sulfur"

@@ -26,6 +26,10 @@ public abstract class ClientBlockItemPlaceMixin {
             cir.setReturnValue(InteractionResult.FAIL);
             return;
         }
+        if (ExtraHardModeClient.denyTorchPlacement(context)) {
+            cir.setReturnValue(InteractionResult.FAIL);
+            return;
+        }
         if (ExtraHardModeClient.denyOrePlacement(context)) {
             ExtraHardModeClient.toast("no_placing_ore_against_stone");
             cir.setReturnValue(InteractionResult.FAIL);

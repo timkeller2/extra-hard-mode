@@ -47,10 +47,17 @@ public abstract class CraftingMenuMixin {
             resultSlots.setItem(0, ItemStack.EMPTY);
             AntiFarming.notifyNoMelonSeeds(player);
         }
+    }
+
     @Inject(method = "slotChangedCraftingGrid", at = @At("HEAD"))
     private static void extrahardmode$captureCraftLevel(
-            CraftingContainer container,
-            ResultContainer result,
+            AbstractContainerMenu menu,
+            ServerLevel level,
+            Player player,
+            CraftingContainer craftSlots,
+            ResultContainer resultSlots,
+            RecipeHolder<CraftingRecipe> recipe,
+            CallbackInfo ci) {
         MoreTnt.captureCraftLevel(level);
     }
 
@@ -64,7 +71,17 @@ public abstract class CraftingMenuMixin {
             index = 1)
     private static ItemStack extrahardmode$tntCount(ItemStack stack) {
         return MoreTnt.adjustCaptured(stack);
+    }
+
+    @Inject(method = "slotChangedCraftingGrid", at = @At("RETURN"))
     private static void extrahardmode$clearCraftLevel(
+            AbstractContainerMenu menu,
+            ServerLevel level,
+            Player player,
+            CraftingContainer craftSlots,
+            ResultContainer resultSlots,
+            RecipeHolder<CraftingRecipe> recipe,
+            CallbackInfo ci) {
         MoreTnt.clearCraftLevel();
     }
 }

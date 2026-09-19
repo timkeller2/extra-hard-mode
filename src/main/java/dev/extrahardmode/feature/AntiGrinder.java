@@ -172,6 +172,7 @@ public final class AntiGrinder implements FeatureModule {
     private static boolean isExempt(LivingEntity entity) {
         return entity instanceof WitherBoss
                 || entity instanceof EnderDragon
-                || entity instanceof Guardian;
+                || entity instanceof Guardian
+                || Boolean.TRUE.equals(entity.getAttachedOrElse(EhmAttachments.EHM_BIOME_BOSS, Boolean.FALSE));
     }
 }

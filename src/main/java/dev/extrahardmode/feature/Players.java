@@ -9,7 +9,9 @@ import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.config.PlayerSettings;
 import dev.extrahardmode.config.PotionEffectHolder;
 import dev.extrahardmode.config.WorldConfig;
+import dev.extrahardmode.item.FragileTools;
 import dev.extrahardmode.player.DeathForfeit;
+import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.task.ArmorWeightTask;
 import dev.extrahardmode.task.SetPlayerHealthAndFoodTask;
 import dev.extrahardmode.task.WeightCheckTask;
@@ -18,24 +20,37 @@ import dev.extrahardmode.world.WorldGate;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.animal.equine.AbstractHorse;
+import net.minecraft.world.entity.vehicle.boat.AbstractBoat;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
+import net.minecraft.world.entity.boss.wither.WitherBoss;
+import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.storage.LevelData;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -44,19 +59,23 @@ import net.minecraft.world.level.block.BaseFireBlock;
 import net.minecraft.world.phys.BlockHitResult;
 
 /**
- * Player-triggered Extra Hard Mode rules: death forfeit, weak respawn, environmental
- * injuries, punching fire, inventory-weight drowning, and armor slowdown.
+ * Player-triggered Extra Hard Mode rules: death forfeit, weak respawn, bed-camp
+ * clear, environmental injuries, punching fire, inventory-weight drowning,
+ * armor slowdown, leaky shields, and boats that smash on long falls.
  */
 public final class Players implements FeatureModule {
     public static final Identifier ID = ExtraHardModeMod.id("players");
     public static final Players INSTANCE = new Players();
 
     private static final List<PendingRespawn> PENDING_RESPAWNS = new ArrayList<>();
+    private static final Map<UUID, PendingBedClear> PENDING_BED_CLEARS = new ConcurrentHashMap<>();
     private static final ThreadLocal<Boolean> UNSCALED_DAMAGE = ThreadLocal.withInitial(() -> Boolean.FALSE);
 
     private Players() {}
 
     private record PendingRespawn(UUID playerId, float health, int food, int readyTick) {}
+
+    private record PendingBedClear(ResourceKey<Level> dimension, BlockPos bed) {}
 
     @Override
     public Identifier id() {
@@ -67,7 +86,10 @@ public final class Players implements FeatureModule {
     public void bootstrap(FeatureBus bus) {
         bus.listen(ServerLivingEntityEvents.ALLOW_DAMAGE, ID, Players::onAllowDamage);
         bus.listen(ServerPlayerEvents.AFTER_RESPAWN, ID, Players::onAfterRespawn);
-        bus.listen(ServerPlayerEvents.LEAVE, ID, ArmorWeightTask::clear);
+        bus.listen(ServerPlayerEvents.LEAVE, ID, player -> {
+            ArmorWeightTask.clear(player);
+            PENDING_BED_CLEARS.remove(player.getUUID());
+        });
         bus.listen(UseBlockCallback.EVENT, ID, Players::onUseBlock);
         ServerTickEvents.END_SERVER_TICK.register(Players::flushRespawns);
         ServerTickEvents.END_LEVEL_TICK.register(level -> {
@@ -88,6 +110,9 @@ public final class Players implements FeatureModule {
         WorldConfig world = ConfigManager.world(level);
         WeightCheckTask.run(level, world);
         ArmorWeightTask.run(level, world);
+        for (ServerPlayer player : level.players()) {
+            FragileTools.rescaleInventory(player);
+        }
     }
 
     /** Server tick count, not per-dimension gameTime — nether/end respawns must not be eaten by overworld. */
@@ -133,6 +158,56 @@ public final class Players implements FeatureModule {
         PotionEffectHolder effect = effectFor(source, settings, amount);
         if (effect != null) {
             effect.apply(player);
+        }
+        return true;
+    }
+
+    /** Vanilla blocked amount after Extra Hard Mode: 75% soak, 25% leak. */
+    public static float scaleBlockedDamage(LivingEntity entity, ServerLevel level, float blocked) {
+        if (blocked <= 0.0F || !WorldGate.isModuleActive(level, ID)) {
+            return blocked;
+        }
+        if (entity instanceof ServerPlayer player && EhmApi.playerBypasses(player)) {
+            return blocked;
+        }
+        return ShieldRules.absorbed(blocked);
+    }
+
+    /** Vanilla shield item-damage after Extra Hard Mode: twice the durability hit. */
+    public static int scaleShieldDurability(LivingEntity entity, Level level, int amount) {
+        if (amount <= 0 || !(level instanceof ServerLevel server) || !WorldGate.isModuleActive(server, ID)) {
+            return amount;
+        }
+        if (entity instanceof ServerPlayer player && EhmApi.playerBypasses(player)) {
+            return amount;
+        }
+        return ShieldRules.durabilityHit(amount);
+    }
+
+    /**
+     * Occupied boats that land after more than 3 blocks shatter with no drop, and
+     * the riders take the fall. Returns true when the boat was removed.
+     */
+    public static boolean smashBoatIfLongFall(AbstractBoat boat, boolean onGround) {
+        if (!(boat.level() instanceof ServerLevel level) || !WorldGate.isModuleActive(level, ID)) {
+            return false;
+        }
+        List<ServerPlayer> riders = new ArrayList<>();
+        for (Entity passenger : boat.getPassengers()) {
+            if (passenger instanceof ServerPlayer player && !EhmApi.playerBypasses(player)) {
+                riders.add(player);
+            }
+        }
+        if (!BoatRules.shouldBreak(boat.fallDistance, onGround, !riders.isEmpty())) {
+            return false;
+        }
+        double fall = boat.fallDistance;
+        boat.ejectPassengers();
+        boat.discard();
+        DamageSource source = level.damageSources().fall();
+        for (ServerPlayer player : riders) {
+            player.fallDistance = fall;
+            player.causeFallDamage(fall, 1.0F, source);
         }
         return true;
     }
@@ -211,8 +286,10 @@ public final class Players implements FeatureModule {
         }
         ServerLevel level = newPlayer.level();
         if (!WorldGate.isModuleActive(level, ID) || EhmApi.playerBypasses(newPlayer)) {
+            PENDING_BED_CLEARS.remove(newPlayer.getUUID());
             return;
         }
+        clearPendingBedHostiles(newPlayer);
         PlayerSettings settings = ConfigManager.world(level).player();
         if (!settings.respawnHealthEnable()) {
             return;
@@ -261,6 +338,9 @@ public final class Players implements FeatureModule {
         ServerLevel level = player.level();
         if (!WorldGate.isModuleActive(level, ID)) {
             return;
+        }
+        if (!EhmApi.playerBypasses(player) && !player.isSpectator()) {
+            noteDeathNearBed(player);
         }
         if (inventoryBypasses(player)) {
             return;
@@ -318,6 +398,80 @@ public final class Players implements FeatureModule {
             return;
         }
         player.igniteForTicks(event.burnTicks());
+    }
+
+    static void noteDeathNearBed(ServerPlayer player) {
+        ServerLevel level = player.level();
+        BlockPos bed = findBed(level, player);
+        if (bed == null) {
+            PENDING_BED_CLEARS.remove(player.getUUID());
+            return;
+        }
+        BlockPos death = player.blockPosition();
+        if (!BedDeathRules.withinRangeOfBed(
+                death.getX(), death.getY(), death.getZ(), bed.getX(), bed.getY(), bed.getZ())) {
+            PENDING_BED_CLEARS.remove(player.getUUID());
+            return;
+        }
+        PENDING_BED_CLEARS.put(player.getUUID(), new PendingBedClear(level.dimension(), bed.immutable()));
+        clearHostilesAroundBed(level, bed);
+    }
+
+    static void clearPendingBedHostiles(ServerPlayer player) {
+        PendingBedClear pending = PENDING_BED_CLEARS.remove(player.getUUID());
+        if (pending == null) {
+            return;
+        }
+        ServerLevel level = player.level();
+        if (!pending.dimension().equals(level.dimension())) {
+            return;
+        }
+        clearHostilesAroundBed(level, pending.bed());
+    }
+
+    static BlockPos findBed(ServerLevel level, ServerPlayer player) {
+        ServerPlayer.RespawnConfig config = player.getRespawnConfig();
+        if (config == null) {
+            return null;
+        }
+        LevelData.RespawnData data = config.respawnData();
+        if (data == null || !data.dimension().equals(level.dimension())) {
+            return null;
+        }
+        BlockPos origin = data.pos();
+        if (level.getBlockState(origin).is(BlockTags.BEDS)) {
+            return origin;
+        }
+        BlockPos min = origin.offset(-1, -1, -1);
+        BlockPos max = origin.offset(1, 1, 1);
+        for (BlockPos pos : BlockPos.betweenClosed(min, max)) {
+            if (level.getBlockState(pos).is(BlockTags.BEDS)) {
+                return pos.immutable();
+            }
+        }
+        return null;
+    }
+
+    static void clearHostilesAroundBed(ServerLevel level, BlockPos bed) {
+        AABB box = new AABB(bed).inflate(BedDeathRules.RANGE + 1);
+        for (Mob mob : level.getEntitiesOfClass(Mob.class, box, Players::isClearableHostile)) {
+            BlockPos feet = mob.blockPosition();
+            if (!BedDeathRules.withinRangeOfBed(
+                    feet.getX(), feet.getY(), feet.getZ(), bed.getX(), bed.getY(), bed.getZ())) {
+                continue;
+            }
+            mob.discard();
+        }
+    }
+
+    static boolean isClearableHostile(Mob mob) {
+        if (!mob.isAlive() || !(mob instanceof Enemy)) {
+            return false;
+        }
+        if (mob instanceof WitherBoss || mob instanceof EnderDragon) {
+            return false;
+        }
+        return !Boolean.TRUE.equals(mob.getAttachedOrElse(EhmAttachments.EHM_BIOME_BOSS, Boolean.FALSE));
     }
 
     private static boolean inventoryBypasses(ServerPlayer player) {

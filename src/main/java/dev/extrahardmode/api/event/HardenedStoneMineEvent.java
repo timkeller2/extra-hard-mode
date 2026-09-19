@@ -7,7 +7,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Fired before Extra Hard Mode applies hardened-stone harvest deny or budget drain.
+ * Fired before Extra Hard Mode applies hardened-stone harvest deny or extra durability.
  * Cancel to allow silk-touch drills / other mods to skip EHM handling.
  */
 public final class HardenedStoneMineEvent {

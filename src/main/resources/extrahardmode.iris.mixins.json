@@ -1,0 +1,12 @@
+{
+  "required": false,
+  "package": "dev.extrahardmode.mixin.iris",
+  "plugin": "dev.extrahardmode.mixin.iris.EhmIrisMixinPlugin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "IdMapUniformsHeldItemSupplierMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

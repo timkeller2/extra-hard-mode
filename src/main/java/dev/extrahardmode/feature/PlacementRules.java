@@ -1,7 +1,9 @@
 package dev.extrahardmode.feature;
 
+import java.util.Collection;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.state.BlockState;
@@ -18,8 +20,44 @@ public final class PlacementRules {
         return enable && placeY < noPlacementUnderY;
     }
 
+    /**
+     * Same Y cutoff as torches. {@code depthLimitedOrCampfire} is the tag or a campfire
+     * block; campfires are not in {@code #depth_limited_lights} (rain would drop them).
+     */
+    public static boolean denyFlameY(
+            boolean enable, int noPlacementUnderY, int placeY, boolean depthLimitedOrCampfire) {
+        return depthLimitedOrCampfire && denyTorchY(enable, noPlacementUnderY, placeY);
+    }
+
     public static boolean denyTorchSoft(boolean enable, boolean clickedIsSoft) {
         return enable && clickedIsSoft;
+    }
+
+    public static boolean denyOffhandLight(boolean enable, boolean itemBlocked) {
+        return enable && itemBlocked;
+    }
+
+    public static boolean isOffhandLightId(String itemId) {
+        if (itemId == null) {
+            return false;
+        }
+        return "minecraft:torch".equals(itemId)
+                || "minecraft:soul_torch".equals(itemId)
+                || "minecraft:copper_torch".equals(itemId)
+                || "minecraft:glowstone".equals(itemId)
+                || "minecraft:lantern".equals(itemId)
+                || "minecraft:soul_lantern".equals(itemId)
+                || itemId.contains("copper_lantern");
+    }
+
+    /** Client place-cancel uses payload IDs; do not query live tags. */
+    public static boolean torchLikeFromPayload(
+            boolean torchBlock, Identifier itemBlockId, Identifier placedId, Collection<Identifier> depthLimitedLights) {
+        return torchBlock || contains(depthLimitedLights, itemBlockId) || contains(depthLimitedLights, placedId);
+    }
+
+    static boolean contains(Collection<Identifier> ids, Identifier id) {
+        return id != null && ids.contains(id);
     }
 
     /**

@@ -1,7 +1,9 @@
 package dev.extrahardmode.mixin;
 
 import dev.extrahardmode.feature.AntiFarming;
+import dev.extrahardmode.feature.CropGrowthRules;
 import dev.extrahardmode.world.WorldGate;
+import java.util.Random;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
@@ -14,6 +16,19 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(SaplingBlock.class)
 public abstract class SaplingBlockMixin {
+    @Inject(method = "randomTick", at = @At("HEAD"), cancellable = true)
+    private void ehm$slowSapling(
+            BlockState state, ServerLevel level, BlockPos pos, RandomSource random, CallbackInfo ci) {
+        if (!WorldGate.isModuleActive(level, AntiFarming.ID)) {
+            return;
+        }
+        if (!CropGrowthRules.allowVanillaRandomTick(
+                AntiFarming.currentDurationPercent(level, pos, CropGrowthRules.TREE_DURATION_PERCENT),
+                new Random(random.nextLong()))) {
+            ci.cancel();
+        }
+    }
+
     @Inject(method = "advanceTree", at = @At("HEAD"), cancellable = true)
     private void ehm$infertileDesert(
             ServerLevel level, BlockPos pos, BlockState state, RandomSource random, CallbackInfo ci) {

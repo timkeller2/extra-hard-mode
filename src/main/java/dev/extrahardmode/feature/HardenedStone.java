@@ -5,7 +5,6 @@ import dev.extrahardmode.api.EhmApi;
 import dev.extrahardmode.api.event.HardenedStoneMineEvent;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.config.WorldConfig;
-import dev.extrahardmode.item.EhmComponents;
 import dev.extrahardmode.network.EhmNetworking;
 import dev.extrahardmode.tag.EhmTags;
 import dev.extrahardmode.world.WorldGate;
@@ -17,6 +16,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
@@ -150,6 +150,9 @@ public final class HardenedStone implements FeatureModule {
         if (!state.is(EhmTags.HARDENED) || tool.isEmpty()) {
             return;
         }
+        if (ManaAbilities.isPowerMining(player)) {
+            return;
+        }
         if (player.hasInfiniteMaterials() || player.isCreative() || EhmApi.playerBypasses(player)) {
             return;
         }
@@ -164,26 +167,14 @@ public final class HardenedStone implements FeatureModule {
             return;
         }
         budget = event.budget();
-        if (budget <= 0) {
+        if (budget <= 0 || !tool.isDamageableItem()) {
             return;
         }
-        int mined = HardenedBudget.increment(tool.getOrDefault(EhmComponents.HARDENED_MINED, 0));
-        tool.set(EhmComponents.HARDENED_MINED, mined);
-        if (!HardenedBudget.shouldConsume(mined, budget)) {
+        int extra = HardenedBudget.extraDamage(tool.getMaxDamage(), budget);
+        if (extra <= 0) {
             return;
         }
-        consumeRemaining(tool, player);
-    }
-
-    /** Unbreaking must not extend N — empty the stack even if vanilla damage is skipped. */
-    private static void consumeRemaining(ItemStack tool, ServerPlayer player) {
-        if (tool.isDamageableItem()) {
-            int remaining = Math.max(1, tool.getMaxDamage() - tool.getDamageValue());
-            tool.hurtAndBreak(remaining, player.level(), player, item -> {});
-        }
-        if (!tool.isEmpty()) {
-            tool.setCount(0);
-        }
+        tool.hurtAndBreak(extra, player, EquipmentSlot.MAINHAND);
     }
 
     private static boolean isListedMiner(ItemStack tool, WorldConfig config) {

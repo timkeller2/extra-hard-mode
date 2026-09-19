@@ -53,18 +53,38 @@ public final class ConfigManager {
 
     public static void setDebug(boolean debug) {
         global = global.withDebug(debug);
+        saveGlobal();
+    }
+
+    public static void setGlobal(GlobalConfig next) {
+        global = next;
+    }
+
+    public static boolean saveGlobal() {
         Path path = FabricLoader.getInstance().getConfigDir().resolve(FILE_NAME);
-        try (CommentedFileConfig config = CommentedFileConfig.builder(path, TomlFormat.instance())
-                .sync()
-                .preserveInsertionOrder()
-                .build()) {
-            if (Files.exists(path)) {
-                config.load();
+        try {
+            Files.createDirectories(path.getParent());
+            try (CommentedFileConfig config = CommentedFileConfig.builder(path, TomlFormat.instance())
+                    .sync()
+                    .preserveInsertionOrder()
+                    .build()) {
+                if (Files.exists(path)) {
+                    config.load();
+                }
+                config.set("enabledByDefault", global.enabledByDefault());
+                config.set("debug", global.debug());
+                config.set("f3Enabled", global.f3Enabled());
+                config.set("tutorial.maxShows", global.tutorialMaxShows());
+                config.set("performance.budgetConversionsPerTick", global.budgetConversionsPerTick());
+                config.set("performance.maxLiveEhmFallingEntities", global.maxLiveEhmFallingEntities());
+                config.set("performance.maxFloodFillPerConversion", global.maxFloodFillPerConversion());
+                config.set("performance.maxQueueDepth", global.maxQueueDepth());
+                config.save();
             }
-            config.set("debug", debug);
-            config.save();
+            return true;
         } catch (Exception e) {
-            ExtraHardModeMod.LOGGER.error("Failed to persist debug flag", e);
+            ExtraHardModeMod.LOGGER.error("Failed to persist {}", FILE_NAME, e);
+            return false;
         }
     }
 
@@ -96,6 +116,12 @@ public final class ConfigManager {
                     config.setComment("debug", "Extra debug logging.");
                     config.set("debug", false);
                 }
+                if (!config.contains("f3Enabled")) {
+                    config.setComment(
+                            "f3Enabled",
+                            "Allow the F3 debug screen (coordinates, light, profiling). Default false. In a world, client.f3Enabled in the world config wins.");
+                    config.set("f3Enabled", false);
+                }
                 writeIntIfMissing(
                         config,
                         "performance.budgetConversionsPerTick",
@@ -126,6 +152,8 @@ public final class ConfigManager {
                 global = new GlobalConfig(
                         config.getOrElse("enabledByDefault", defaultEnabled),
                         config.getOrElse("debug", false),
+                        config.getOrElse("f3Enabled", false),
+                        Math.max(0, config.getIntOrElse("tutorial.maxShows", GlobalConfig.DEFAULT_TUTORIAL_MAX_SHOWS)),
                         config.getIntOrElse("performance.budgetConversionsPerTick", PhysicsBudget.CONVERSIONS_PER_TICK),
                         config.getIntOrElse(
                                 "performance.maxLiveEhmFallingEntities", PhysicsBudget.MAX_LIVE_EHM_FALLING),
@@ -142,28 +170,6 @@ public final class ConfigManager {
         if (!config.contains(path)) {
             config.setComment(path, comment);
             config.set(path, value);
-                        Math.max(0, config.getIntOrElse("tutorial.maxShows", GlobalConfig.DEFAULT_TUTORIAL_MAX_SHOWS)));
-            global = new GlobalConfig(defaultEnabled, false, GlobalConfig.DEFAULT_TUTORIAL_MAX_SHOWS);
-    public static void setGlobal(GlobalConfig next) {
-        global = next;
-    public static boolean saveGlobal() {
-        Path path = FabricLoader.getInstance().getConfigDir().resolve(FILE_NAME);
-        try {
-            Files.createDirectories(path.getParent());
-            try (CommentedFileConfig config = CommentedFileConfig.builder(path, TomlFormat.instance())
-                    .sync()
-                    .preserveInsertionOrder()
-                    .build()) {
-                if (Files.exists(path)) {
-                    config.load();
-                }
-                config.set("enabledByDefault", global.enabledByDefault());
-                config.set("debug", global.debug());
-                config.set("tutorial.maxShows", global.tutorialMaxShows());
-                config.save();
-            return true;
-            ExtraHardModeMod.LOGGER.error("Failed to persist {}", FILE_NAME, e);
-            return false;
         }
     }
 }

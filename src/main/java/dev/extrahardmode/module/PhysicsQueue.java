@@ -4,6 +4,7 @@ import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.config.GlobalConfig;
 import dev.extrahardmode.config.WorldConfig;
+import dev.extrahardmode.feature.FallingBlocks;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.tag.EhmTags;
 import dev.extrahardmode.world.PhysicsSkip;
@@ -66,18 +67,18 @@ public final class PhysicsQueue {
 
     public void enqueueConvert(
             ServerLevel level, BlockPos pos, BlockState from, BlockState to, boolean applyPhysics) {
-        enqueue(level, pos, from, to, applyPhysics, 0);
+        enqueue(level, pos, from, to, applyPhysics, 0, null, 0.0, 0.0);
     }
 
     public void enqueueFalling(ServerLevel level, BlockPos pos, BlockState from, BlockState to) {
-        enqueue(level, pos, from, to, true, 0);
+        enqueue(level, pos, from, to, true, 0, null, 0.0, 0.0);
     }
 
     public void enqueueFalling(
             ServerLevel level, BlockPos pos, BlockState from, BlockState to, int delayTicks) {
-        enqueue(level, pos, from, to, true, delayTicks);
-        enqueue(level, pos, from, to, applyPhysics, null, 0.0, 0.0);
-        enqueue(level, pos, from, to, true, null, 0.0, 0.0);
+        enqueue(level, pos, from, to, true, delayTicks, null, 0.0, 0.0);
+    }
+
     /** Flying explosion debris. Budgeted like other conversions; live-cap overflow becomes air. */
     public void enqueueFlying(
             ServerLevel level,
@@ -86,7 +87,7 @@ public final class PhysicsQueue {
             Vec3 origin,
             double upVelocity,
             double spreadVelocity) {
-        enqueue(level, pos, state, state, true, origin, upVelocity, spreadVelocity);
+        enqueue(level, pos, state, state, true, 0, origin, upVelocity, spreadVelocity);
     }
 
     public void markLanded(FallingBlockEntity entity) {
@@ -105,12 +106,12 @@ public final class PhysicsQueue {
     }
 
     private void enqueue(
-            ServerLevel level, BlockPos pos, BlockState from, BlockState to, boolean spawnEntity, int delayTicks) {
             ServerLevel level,
             BlockPos pos,
             BlockState from,
             BlockState to,
             boolean spawnEntity,
+            int delayTicks,
             Vec3 flyOrigin,
             double upVelocity,
             double spreadVelocity) {
@@ -136,8 +137,8 @@ public final class PhysicsQueue {
                         global.maxQueueDepth());
             }
         }
-        queue.addLast(new FallRequest(pos.immutable(), from, to, spawnEntity, Math.max(0, delayTicks)));
-        queue.addLast(new FallRequest(pos.immutable(), from, to, spawnEntity, 0, flyOrigin, upVelocity, spreadVelocity));
+        queue.addLast(new FallRequest(
+                pos.immutable(), from, to, spawnEntity, Math.max(0, delayTicks), flyOrigin, upVelocity, spreadVelocity));
         if (ConfigManager.global().debug()) {
             ExtraHardModeMod.LOGGER.debug("EHM physics enqueue {} -> {} {} delay={}", from, to, pos, delayTicks);
         }
@@ -199,6 +200,7 @@ public final class PhysicsQueue {
         if (PhysicsBudget.overflowToSetBlock(live.size(), global.maxLiveEhmFallingEntities())) {
             if (request.flyOrigin != null) {
                 level.setBlock(request.pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+                FallingBlocks.onBeganFalling(level, request.pos);
             } else {
                 level.setBlock(request.pos, place, Block.UPDATE_ALL);
             }
@@ -217,6 +219,7 @@ public final class PhysicsQueue {
             entity.setAttached(EhmAttachments.EHM_FLY_ORIGIN, request.flyOrigin);
         }
         live.put(entity.getUUID(), entity);
+        FallingBlocks.onBeganFalling(level, request.pos);
         return true;
     }
 

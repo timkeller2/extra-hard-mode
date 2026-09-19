@@ -1,8 +1,8 @@
 package dev.extrahardmode.mixin;
 
+import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.client.ExtraHardModeClient;
 import dev.extrahardmode.feature.LimitedBuilding;
-import dev.extrahardmode.feature.Torches;
 import dev.extrahardmode.network.ClientboundSyncPayload;
 import net.minecraft.client.multiplayer.MultiPlayerGameMode;
 import net.minecraft.client.player.LocalPlayer;
@@ -20,7 +20,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(MultiPlayerGameMode.class)
 public class MultiPlayerGameModeMixin {
-    @Inject(method = "performUseItemOn", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "useItemOn", at = @At("HEAD"), cancellable = true)
     private void extrahardmode$cancelPlace(
             LocalPlayer player, InteractionHand hand, BlockHitResult hit, CallbackInfoReturnable<InteractionResult> cir) {
         // lastSync() null / inactive() is the client WorldGate skip (payload-only, never TOML).
@@ -32,24 +32,25 @@ public class MultiPlayerGameModeMixin {
             return;
         }
         ItemStack stack = player.getItemInHand(hand);
-        if (!(stack.getItem() instanceof BlockItem blockItem)) {
-            return;
-        }
-        BlockPlaceContext context = new BlockPlaceContext(new UseOnContext(player.level(), player, hand, stack, hit));
-        if (Torches.denyReasonFromPayload(
-                        sync.torchYDeny(),
-                        sync.torchNoPlacementUnderY(),
-                        sync.torchSoftDeny(),
-                        sync.depthLimitedLights(),
-                        sync.softTorchSurfaces(),
-                        context,
-                        blockItem)
-                != Torches.DenyReason.NONE) {
-            cir.setReturnValue(InteractionResult.FAIL);
-            return;
-        }
-        if (sync.limitedBuilding() && LimitedBuilding.shouldDeny(player.level(), player, context, blockItem)) {
-            cir.setReturnValue(InteractionResult.FAIL);
+        try {
+            if (sync.torchYDeny()
+                    && ExtraHardModeClient.denyCampfireLightFromPayload(player.level(), hit.getBlockPos(), stack)) {
+                cir.setReturnValue(InteractionResult.FAIL);
+                return;
+            }
+            BlockPlaceContext context = new BlockPlaceContext(new UseOnContext(player.level(), player, hand, stack, hit));
+            if (ExtraHardModeClient.denyTorchPlacement(context)) {
+                cir.setReturnValue(InteractionResult.FAIL);
+                return;
+            }
+            if (!(stack.getItem() instanceof BlockItem blockItem)) {
+                return;
+            }
+            if (sync.limitedBuilding() && LimitedBuilding.shouldDeny(player.level(), player, context, blockItem)) {
+                cir.setReturnValue(InteractionResult.FAIL);
+            }
+        } catch (Throwable t) {
+            ExtraHardModeMod.LOGGER.warn("Client block-place prediction failed", t);
         }
     }
 }

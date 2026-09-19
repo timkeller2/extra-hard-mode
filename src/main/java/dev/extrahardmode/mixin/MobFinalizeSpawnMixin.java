@@ -27,4 +27,17 @@ public abstract class MobFinalizeSpawnMixin {
         }
         Zombies.stampReinforcement((Mob) (Object) this, reason);
     }
+
+    @Inject(method = "finalizeSpawn", at = @At("RETURN"))
+    private void extrahardmode$zombieSpeedVariance(
+            ServerLevelAccessor level,
+            DifficultyInstance difficulty,
+            EntitySpawnReason reason,
+            SpawnGroupData spawnGroupData,
+            CallbackInfoReturnable<SpawnGroupData> cir) {
+        if (!FeatureBus.guard((Level) level.getLevel(), Zombies.ID)) {
+            return;
+        }
+        Zombies.applySpeedVariance((Mob) (Object) this);
+    }
 }

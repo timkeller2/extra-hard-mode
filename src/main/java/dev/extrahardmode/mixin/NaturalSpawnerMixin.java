@@ -1,5 +1,6 @@
 package dev.extrahardmode.mixin;
 
+import dev.extrahardmode.feature.FishStocks;
 import dev.extrahardmode.feature.MoreMonsters;
 import dev.extrahardmode.module.SpawnReplaceService;
 import dev.extrahardmode.world.WorldGate;
@@ -42,6 +43,10 @@ public abstract class NaturalSpawnerMixin {
                 return;
             }
         }
+        if (!FishStocks.allowNaturalSpawn(level, entity)) {
+            entity.discard();
+            return;
+        }
         level.addFreshEntityWithPassengers(entity);
     }
 
@@ -79,10 +84,11 @@ public abstract class NaturalSpawnerMixin {
             NaturalSpawner.SpawnPredicate predicate,
             NaturalSpawner.AfterSpawnCallback callback) {
         MoreMonsters.markPackCountMixinApplied();
-        if (!WorldGate.isModuleActive(level, MoreMonsters.ID)) {
-            return data.minCount();
+        int min = data.minCount();
+        if (WorldGate.isModuleActive(level, MoreMonsters.ID)) {
+            min = MoreMonsters.maybeScale(min, category, level, pos);
         }
-        return MoreMonsters.maybeScale(data.minCount(), category, level, pos);
+        return FishStocks.packCount(min, data.type(), level);
     }
 
     @Redirect(
@@ -102,10 +108,11 @@ public abstract class NaturalSpawnerMixin {
             NaturalSpawner.SpawnPredicate predicate,
             NaturalSpawner.AfterSpawnCallback callback) {
         MoreMonsters.markPackCountMixinApplied();
-        if (!WorldGate.isModuleActive(level, MoreMonsters.ID)) {
-            return data.maxCount();
+        int max = data.maxCount();
+        if (WorldGate.isModuleActive(level, MoreMonsters.ID)) {
+            max = MoreMonsters.maybeScale(max, category, level, pos);
         }
-        return MoreMonsters.maybeScale(data.maxCount(), category, level, pos);
+        return FishStocks.packCount(max, data.type(), level);
     }
 
     @Inject(

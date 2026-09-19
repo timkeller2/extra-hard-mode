@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "extrahardmode:heavy_copper_leggings",
+    "extrahardmode:heavy_iron_leggings",
+    "extrahardmode:heavy_diamond_leggings",
+    "extrahardmode:heavy_netherite_leggings"
+  ]
+}

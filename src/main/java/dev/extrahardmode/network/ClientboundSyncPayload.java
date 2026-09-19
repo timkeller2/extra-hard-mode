@@ -5,10 +5,12 @@ import dev.extrahardmode.api.EhmApi;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.config.GlobalConfig;
 import dev.extrahardmode.config.WorldConfig;
+import dev.extrahardmode.feature.AntiFarming;
 import dev.extrahardmode.feature.Dragon;
 import dev.extrahardmode.feature.HardenedStone;
-import dev.extrahardmode.tag.EhmTags;
+import dev.extrahardmode.feature.TorchLifetimeRules;
 import dev.extrahardmode.feature.monster.Horses;
+import dev.extrahardmode.tag.EhmTags;
 import dev.extrahardmode.world.WorldGate;
 import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
@@ -30,6 +32,7 @@ public record ClientboundSyncPayload(
         boolean torchSoftDeny,
         int torchNoPlacementUnderY,
         boolean torchYDeny,
+        int torchBurnDays,
         boolean blockOreNextToStone,
         boolean playerBypass,
         boolean horseBlockChest,
@@ -39,7 +42,7 @@ public record ClientboundSyncPayload(
         List<Identifier> caveInOres,
         List<Identifier> softTorchSurfaces,
         List<Identifier> depthLimitedLights,
-        boolean noEndBuilding)
+        boolean noEndBuilding,
         DisplayExtras extras)
         implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<ClientboundSyncPayload> TYPE =
@@ -49,47 +52,32 @@ public record ClientboundSyncPayload(
             Identifier.STREAM_CODEC.apply(ByteBufCodecs.list());
 
     public static final StreamCodec<ByteBuf, ClientboundSyncPayload> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.BOOL,
-            ClientboundSyncPayload::limitedBuilding,
-            ByteBufCodecs.BOOL,
-            ClientboundSyncPayload::torchSoftDeny,
-            ByteBufCodecs.VAR_INT,
-            ClientboundSyncPayload::torchNoPlacementUnderY,
-            ByteBufCodecs.BOOL,
-            ClientboundSyncPayload::torchYDeny,
-            ByteBufCodecs.BOOL,
-            ClientboundSyncPayload::blockOreNextToStone,
-            ByteBufCodecs.BOOL,
-            ClientboundSyncPayload::playerBypass,
-            ClientboundSyncPayload::horseBlockChest,
-            ByteBufCodecs.VAR_INT,
-            ClientboundSyncPayload::horseBlockChestBelowY,
-            IDENTIFIERS,
-            ClientboundSyncPayload::hardenedBlocks,
-            IDENTIFIERS,
-            ClientboundSyncPayload::hardenedPicks,
-            IDENTIFIERS,
-            ClientboundSyncPayload::caveInOres,
-            IDENTIFIERS,
-            ClientboundSyncPayload::softTorchSurfaces,
-            IDENTIFIERS,
-            ClientboundSyncPayload::depthLimitedLights,
-            ByteBufCodecs.BOOL,
-            ClientboundSyncPayload::noEndBuilding,
-            ClientboundSyncPayload::new);
-
-    public static ClientboundSyncPayload inactive() {
-    public static ClientboundSyncPayload from(ServerLevel level) {
-        WorldConfig config = ConfigManager.world(level);
+            Flags.STREAM_CODEC,
+            ClientboundSyncPayload::flags,
+            Lists.STREAM_CODEC,
+            ClientboundSyncPayload::lists,
             DisplayExtras.STREAM_CODEC,
             ClientboundSyncPayload::extras,
-    public List<Identifier> depthLimitedLights() {
-        return extras.depthLimitedLights();
-    }
-    public static ClientboundSyncPayload from(WorldConfig config) {
-        GlobalConfig global = ConfigManager.global();
+            ClientboundSyncPayload::fromParts);
+
+    public static ClientboundSyncPayload inactive() {
         return new ClientboundSyncPayload(
-                false, false, 0, false, false, false, List.of(), List.of(), List.of(), List.of(), List.of());
+                false,
+                false,
+                0,
+                false,
+                TorchLifetimeRules.DEFAULT_DAYS,
+                false,
+                false,
+                false,
+                0,
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                false,
+                DisplayExtras.INACTIVE);
     }
 
     public static ClientboundSyncPayload from(ServerLevel level) {
@@ -105,6 +93,7 @@ public record ClientboundSyncPayload(
         if (level == null || !WorldGate.isActive(level)) {
             return inactive();
         }
+        GlobalConfig global = ConfigManager.global();
         boolean torches = WorldGate.isModuleActive(level, ExtraHardModeMod.id("torches"));
         boolean building = WorldGate.isModuleActive(level, ExtraHardModeMod.id("limited_building"));
         boolean hardened = WorldGate.isModuleActive(level, HardenedStone.ID) && config.hardenedEnable();
@@ -117,8 +106,7 @@ public record ClientboundSyncPayload(
             if (hardenedBlocks.isEmpty()) {
                 hardenedBlocks = List.of(
                         Identifier.withDefaultNamespace("stone"),
-                        Identifier.withDefaultNamespace("deepslate"),
-                        Identifier.withDefaultNamespace("tuff"));
+                        Identifier.withDefaultNamespace("deepslate"));
             }
             List<Identifier> picks = new ArrayList<>(
                     snapshot(level.registryAccess().lookupOrThrow(Registries.ITEM), EhmTags.HARDENED_MINER));
@@ -137,23 +125,75 @@ public record ClientboundSyncPayload(
             softTorch = snapshot(level.registryAccess().lookupOrThrow(Registries.BLOCK), EhmTags.SOFT_TORCH_SURFACES);
             depthLights = snapshot(level.registryAccess().lookupOrThrow(Registries.BLOCK), EhmTags.DEPTH_LIMITED_LIGHTS);
         }
+        boolean noEndBuilding = level.dimension() == Level.END
+                && WorldGate.isModuleActive(level, Dragon.ID)
+                && config.dragon().noBuilding();
         return new ClientboundSyncPayload(
                 building && config.limitedBuilding(),
                 torches && config.torchSoftDeny(),
                 config.torchNoPlacementUnderY(),
                 torches && config.torchYDeny(),
+                config.torchBurnDays(),
                 blockOreNextToStone,
                 playerBypass,
+                WorldGate.isModuleActive(level, Horses.ID) && config.horseBlockChest(),
+                config.horseBlockChestBelowY(),
                 hardenedBlocks,
                 hardenedPicks,
                 caveInOres,
                 softTorch,
-                depthLights);
-                List.of(),
-                level != null
-                        && level.dimension() == Level.END
-                        && WorldGate.isModuleActive(level, Dragon.ID)
-                        && config.dragon().noBuilding());
+                depthLights,
+                noEndBuilding,
+                new DisplayExtras(
+                        config.checkPermission(),
+                        config.creativeBypasses(),
+                        config.operatorsBypass(),
+                        config.torchFizz(),
+                        config.creeperTntWarning(),
+                        global.enabledByDefault(),
+                        global.debug(),
+                        global.tutorialMaxShows(),
+                        config.f3Enabled(),
+                        new DisplayExtras.SeasonBits(
+                                WorldGate.isModuleActive(level, AntiFarming.ID), config.lossRate())));
+    }
+
+    private Flags flags() {
+        return new Flags(
+                limitedBuilding,
+                torchSoftDeny,
+                torchNoPlacementUnderY,
+                torchYDeny,
+                torchBurnDays,
+                blockOreNextToStone,
+                playerBypass,
+                horseBlockChest,
+                horseBlockChestBelowY,
+                noEndBuilding);
+    }
+
+    private Lists lists() {
+        return new Lists(hardenedBlocks, hardenedPicks, caveInOres, softTorchSurfaces, depthLimitedLights);
+    }
+
+    private static ClientboundSyncPayload fromParts(Flags flags, Lists lists, DisplayExtras extras) {
+        return new ClientboundSyncPayload(
+                flags.limitedBuilding(),
+                flags.torchSoftDeny(),
+                flags.torchNoPlacementUnderY(),
+                flags.torchYDeny(),
+                flags.torchBurnDays(),
+                flags.blockOreNextToStone(),
+                flags.playerBypass(),
+                flags.horseBlockChest(),
+                flags.horseBlockChestBelowY(),
+                lists.hardenedBlocks(),
+                lists.hardenedPicks(),
+                lists.caveInOres(),
+                lists.softTorchSurfaces(),
+                lists.depthLimitedLights(),
+                flags.noEndBuilding(),
+                extras);
     }
 
     private static <T> List<Identifier> snapshot(HolderLookup.RegistryLookup<T> lookup, TagKey<T> tag) {
@@ -163,24 +203,14 @@ public record ClientboundSyncPayload(
                         .map(Identifier::parse)
                         .toList())
                 .orElse(List.of());
-                config.torchYDeny(),
-                WorldGate.isModuleActive(level, Horses.ID) && config.horseBlockChest(),
-                config.horseBlockChestBelowY(),
-                List.of(),
-                new DisplayExtras(
-                        List.of(),
-                        config.checkPermission(),
-                        config.creativeBypasses(),
-                        config.operatorsBypass(),
-                        config.torchFizz(),
-                        config.creeperTntWarning(),
-                        global.enabledByDefault(),
-                        global.debug(),
-                        global.tutorialMaxShows()));
+    }
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
     public record DisplayExtras(
-            List<Identifier> depthLimitedLights,
             boolean checkPermission,
             boolean creativeBypasses,
             boolean operatorsBypass,
@@ -188,10 +218,22 @@ public record ClientboundSyncPayload(
             boolean creeperTntWarning,
             boolean enabledByDefault,
             boolean debug,
-            int tutorialMaxShows) {
+            int tutorialMaxShows,
+            boolean f3Enabled,
+            SeasonBits season) {
+        static final DisplayExtras INACTIVE = new DisplayExtras(
+                true,
+                true,
+                false,
+                true,
+                true,
+                false,
+                false,
+                GlobalConfig.DEFAULT_TUTORIAL_MAX_SHOWS,
+                true,
+                SeasonBits.INACTIVE);
+
         static final StreamCodec<ByteBuf, DisplayExtras> STREAM_CODEC = StreamCodec.composite(
-                IDENTIFIERS,
-                DisplayExtras::depthLimitedLights,
                 ByteBufCodecs.BOOL,
                 DisplayExtras::checkPermission,
                 ByteBufCodecs.BOOL,
@@ -208,11 +250,110 @@ public record ClientboundSyncPayload(
                 DisplayExtras::debug,
                 ByteBufCodecs.VAR_INT,
                 DisplayExtras::tutorialMaxShows,
+                ByteBufCodecs.BOOL,
+                DisplayExtras::f3Enabled,
+                SeasonBits.STREAM_CODEC,
+                DisplayExtras::season,
                 DisplayExtras::new);
+
+        public record SeasonBits(boolean antiFarming, int lossRate) {
+            static final SeasonBits INACTIVE = new SeasonBits(false, 25);
+
+            static final StreamCodec<ByteBuf, SeasonBits> STREAM_CODEC = StreamCodec.composite(
+                    ByteBufCodecs.BOOL,
+                    SeasonBits::antiFarming,
+                    ByteBufCodecs.VAR_INT,
+                    SeasonBits::lossRate,
+                    SeasonBits::new);
+        }
     }
 
-    @Override
-    public Type<? extends CustomPacketPayload> type() {
-        return TYPE;
+    private record Flags(
+            boolean limitedBuilding,
+            boolean torchSoftDeny,
+            int torchNoPlacementUnderY,
+            boolean torchYDeny,
+            int torchBurnDays,
+            boolean blockOreNextToStone,
+            boolean playerBypass,
+            boolean horseBlockChest,
+            int horseBlockChestBelowY,
+            boolean noEndBuilding) {
+        static final StreamCodec<ByteBuf, Flags> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.BOOL,
+                Flags::limitedBuilding,
+                ByteBufCodecs.BOOL,
+                Flags::torchSoftDeny,
+                ByteBufCodecs.VAR_INT,
+                Flags::torchNoPlacementUnderY,
+                ByteBufCodecs.BOOL,
+                Flags::torchYDeny,
+                ByteBufCodecs.VAR_INT,
+                Flags::torchBurnDays,
+                ByteBufCodecs.BOOL,
+                Flags::blockOreNextToStone,
+                ByteBufCodecs.BOOL,
+                Flags::playerBypass,
+                HorseBits.STREAM_CODEC,
+                Flags::horse,
+                ByteBufCodecs.BOOL,
+                Flags::noEndBuilding,
+                Flags::fromBits);
+
+        private HorseBits horse() {
+            return new HorseBits(horseBlockChest, horseBlockChestBelowY);
+        }
+
+        private static Flags fromBits(
+                boolean limitedBuilding,
+                boolean torchSoftDeny,
+                int torchNoPlacementUnderY,
+                boolean torchYDeny,
+                int torchBurnDays,
+                boolean blockOreNextToStone,
+                boolean playerBypass,
+                HorseBits horse,
+                boolean noEndBuilding) {
+            return new Flags(
+                    limitedBuilding,
+                    torchSoftDeny,
+                    torchNoPlacementUnderY,
+                    torchYDeny,
+                    torchBurnDays,
+                    blockOreNextToStone,
+                    playerBypass,
+                    horse.horseBlockChest(),
+                    horse.horseBlockChestBelowY(),
+                    noEndBuilding);
+        }
+
+        private record HorseBits(boolean horseBlockChest, int horseBlockChestBelowY) {
+            static final StreamCodec<ByteBuf, HorseBits> STREAM_CODEC = StreamCodec.composite(
+                    ByteBufCodecs.BOOL,
+                    HorseBits::horseBlockChest,
+                    ByteBufCodecs.VAR_INT,
+                    HorseBits::horseBlockChestBelowY,
+                    HorseBits::new);
+        }
+    }
+
+    private record Lists(
+            List<Identifier> hardenedBlocks,
+            List<Identifier> hardenedPicks,
+            List<Identifier> caveInOres,
+            List<Identifier> softTorchSurfaces,
+            List<Identifier> depthLimitedLights) {
+        static final StreamCodec<ByteBuf, Lists> STREAM_CODEC = StreamCodec.composite(
+                IDENTIFIERS,
+                Lists::hardenedBlocks,
+                IDENTIFIERS,
+                Lists::hardenedPicks,
+                IDENTIFIERS,
+                Lists::caveInOres,
+                IDENTIFIERS,
+                Lists::softTorchSurfaces,
+                IDENTIFIERS,
+                Lists::depthLimitedLights,
+                Lists::new);
     }
 }

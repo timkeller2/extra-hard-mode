@@ -103,6 +103,66 @@ tasks.jar {
 	}
 }
 
+val deployDirs = listOf(
+	file("C:/Client/minecraftserver/mods"),
+	file("${System.getProperty("user.home")}/AppData/Roaming/.minecraft/mods"),
+)
+
+tasks.register("deployJar") {
+	group = "distribution"
+	description = "Copy the remapped Extra Hard Mode jar to the local server and client mods folders."
+	dependsOn("assemble")
+	doLast {
+		val src = layout.buildDirectory
+				.dir("libs")
+				.get()
+				.asFile
+				.listFiles()
+				?.firstOrNull { file ->
+					file.isFile
+							&& file.name.startsWith("extrahardmode-")
+							&& file.name.endsWith(".jar")
+							&& !file.name.contains("sources")
+				}
+				?: error("No Extra Hard Mode jar in build/libs")
+		val failed = mutableListOf<String>()
+		for (dir in deployDirs) {
+			dir.mkdirs()
+			val dest = dir.resolve(src.name)
+			val tmp = dir.resolve(src.name + ".tmp")
+			tmp.delete()
+			src.copyTo(tmp, overwrite = true)
+			val stale = dir.listFiles()?.filter { file ->
+				file.isFile
+						&& file.name.startsWith("extrahardmode-")
+						&& file.name.endsWith(".jar")
+						&& file.name != src.name
+			} ?: emptyList()
+			stale.forEach { file ->
+				if (!file.delete()) {
+					failed += "could not remove ${file.absolutePath} (is Minecraft or the server running?)"
+				}
+			}
+			if (dest.exists() && !dest.delete()) {
+				tmp.delete()
+				failed += "could not replace ${dest.absolutePath} (stop the server/client, then run deployJar again)"
+				continue
+			}
+			if (!tmp.renameTo(dest)) {
+				tmp.copyTo(dest, overwrite = true)
+				tmp.delete()
+			}
+		}
+		if (failed.isNotEmpty()) {
+			error(failed.joinToString(separator = "\n"))
+		}
+	}
+}
+
+tasks.matching { it.name == "assemble" || it.name == "remapJar" }.configureEach {
+	finalizedBy("deployJar")
+}
+
 publishing {
 	publications {
 		create<MavenPublication>("mavenJava") {

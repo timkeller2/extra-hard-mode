@@ -1,0 +1,138 @@
+package dev.extrahardmode.feature;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.Test;
+
+class EhmHelpTest {
+    @Test
+    void featureHelpCoversManaAndAbilities() {
+        var lines = EhmHelp.featureHelpLines();
+        assertEquals(lines.size(), EhmHelp.featureHelpKeys().size());
+        assertTrue(lines.getFirst().contains("/ehm ability help"));
+        assertTrue(String.join(" ", lines).contains("1/4"));
+        assertTrue(String.join(" ", lines).contains("20 mana"));
+        assertTrue(String.join(" ", lines).contains("/ehm ability help"));
+        assertTrue(String.join(" ", lines).contains("/ehm me"));
+        assertFalse(String.join(" ", lines).contains("diversification"));
+        assertTrue(String.join(" ", lines).contains("closest slayer"));
+        assertTrue(String.join(" ", lines).contains("five closest builder"));
+        assertTrue(String.join(" ", lines).contains("last block you placed"));
+        assertTrue(String.join(" ", lines).contains("Stone and deepslate"));
+        assertFalse(String.join(" ", lines).contains("tuff"));
+        assertTrue(String.join(" ", lines).contains("Let it grow"));
+        assertTrue(String.join(" ", lines).contains("Let there be light"));
+        assertTrue(String.join(" ", lines).contains("charcoal for Fire bolt"));
+        assertTrue(String.join(" ", lines).contains("an arrow for Magic arrow"));
+        assertTrue(String.join(" ", lines).contains("an iron ingot for Iron Heart"));
+        assertTrue(String.join(" ", lines).contains("+2 on any ability"));
+        assertTrue(String.join(" ", lines).contains("half your mana level"));
+        assertTrue(String.join(" ", lines).contains("Redstone dust"));
+        assertTrue(String.join(" ", lines).contains("Pumpkins and melons"));
+        assertTrue(String.join(" ", lines).contains("drop no seeds"));
+        assertTrue(String.join(" ", lines).contains("6 times as long to breed"));
+        assertTrue(String.join(" ", lines).contains("overgraze"));
+        assertTrue(String.join(" ", lines).contains("starve without dropping meat"));
+        assertTrue(String.join(" ", lines).contains("lay eggs twice"));
+        assertTrue(String.join(" ", lines).contains("Trees take 10 times"));
+        assertTrue(String.join(" ", lines).contains("Nether wart grows at 1/20"));
+        assertTrue(String.join(" ", lines).contains("half as many saplings"));
+        assertTrue(String.join(" ", lines).contains("clock"));
+        assertTrue(String.join(" ", lines).contains("falls 1% per day"));
+        assertTrue(String.join(" ", lines).contains("soil modifier of the plant's own plot"));
+        assertTrue(String.join(" ", lines).contains("51% loss and"));
+        assertTrue(String.join(" ", lines).contains("Let it grow never causes that death"));
+        assertTrue(String.join(" ", lines).contains("three times"));
+        assertTrue(String.join(" ", lines).contains("above 60%"));
+        assertTrue(String.join(" ", lines).contains("bees stay"));
+        assertTrue(String.join(" ", lines).contains("1 less meat"));
+        assertTrue(String.join(" ", lines).contains("chickens drop 1 less"));
+        assertFalse(String.join(" ", lines).contains("minimum 1"));
+        assertTrue(String.join(" ", lines).contains("1 honeycomb"));
+        assertTrue(String.join(" ", lines).contains("second segment"));
+        assertTrue(String.join(" ", lines).contains("8 times as long to restock"));
+        assertTrue(String.join(" ", lines).contains("positive is good"));
+        assertTrue(String.join(" ", lines).contains("13%"));
+        assertTrue(String.join(" ", lines).contains("Hold a hoe"));
+        assertTrue(String.join(" ", lines).contains("small percent"));
+        assertTrue(String.join(" ", lines).contains("red when below 0"));
+        assertTrue(String.join(" ", lines).contains("soil under the cane"));
+        assertTrue(String.join(" ", lines).contains("starts at 0"));
+        assertTrue(String.join(" ", lines).contains("1d10"));
+        assertTrue(String.join(" ", lines).contains("water source"));
+        assertTrue(String.join(" ", lines).contains("diamond +10"));
+        assertTrue(String.join(" ", lines).contains("gold +20"));
+        assertTrue(String.join(" ", lines).contains("netherite +30"));
+        assertTrue(String.join(" ", lines).contains("1/10 of the gap"));
+        assertTrue(String.join(" ", lines).contains("at most 4"));
+        assertTrue(String.join(" ", lines).contains("the step is 3"));
+        assertTrue(String.join(" ", lines).contains("subtracts 5"));
+        assertTrue(String.join(" ", lines).contains("same crop again"));
+        assertTrue(String.join(" ", lines).contains("Let it grow adds 3"));
+        assertTrue(String.join(" ", lines).contains("Bone meal on a plant adds 5"));
+        assertTrue(String.join(" ", lines).contains("cooking XP"));
+        assertTrue(String.join(" ", lines).contains("50% extra"));
+        assertTrue(String.join(" ", lines).contains("campfires also need airflow"));
+        assertTrue(String.join(" ", lines).contains("burn out after 7 Minecraft days"));
+        assertTrue(String.join(" ", lines).contains("off hand"));
+        assertTrue(String.join(" ", lines).contains("falls more than 3 blocks"));
+        assertTrue(String.join(" ", lines).contains("drops nothing"));
+        assertTrue(String.join(" ", lines).contains("50 experience"));
+        assertTrue(String.join(" ", lines).contains("diamond block"));
+        assertTrue(String.join(" ", lines).contains("1 more each time"));
+        assertTrue(String.join(" ", lines).contains("how many lapis"));
+        assertTrue(String.join(" ", lines).contains("sparkles you blue"));
+        assertTrue(String.join(" ", lines).contains("50 experience and a diamond"));
+        assertTrue(String.join(" ", lines).contains("first player to claim"));
+        assertTrue(String.join(" ", lines).contains("upcoming list"));
+        assertTrue(String.join(" ", lines).contains("3 experience"));
+        assertTrue(String.join(" ", lines).contains("faster hit softer"));
+        assertTrue(String.join(" ", lines).contains("look smaller"));
+        assertTrue(String.join(" ", lines).contains("Shields absorb 75%"));
+        assertTrue(String.join(" ", lines).contains("double the durability"));
+        assertTrue(String.join(" ", lines).contains("30% harder"));
+        assertTrue(String.join(" ", lines).contains("credits"));
+        assertTrue(String.join(" ", lines).contains("twice as long"));
+        assertTrue(String.join(" ", lines).contains("one traveler"));
+        assertTrue(String.join(" ", lines).contains("/ehm help homes"));
+        assertTrue(String.join(" ", lines).contains("/ehm set inhabitants true"));
+        assertTrue(String.join(" ", lines).contains("requires operator"));
+    }
+
+    @Test
+    void homesHelpListsChecklistAndPoints() {
+        var lines = EhmHelp.homesHelpLines();
+        assertEquals(lines.size(), EhmHelp.homesHelpKeys().size());
+        assertEquals(5, lines.size());
+        String all = String.join(" ", lines);
+        assertTrue(all.contains("/ehm help homes"));
+        assertTrue(all.contains("24 to 250"));
+        assertTrue(all.contains("12 points"));
+        assertTrue(all.contains("Windows"));
+        assertTrue(all.contains("Kitchen"));
+        assertTrue(all.contains("clock"));
+    }
+
+    @Test
+    void abilityHelpListsEveryAbility() {
+        var lines = EhmHelp.abilityHelpLines();
+        var keys = EhmHelp.abilityHelpKeys();
+        assertEquals(lines.size(), keys.size());
+        assertEquals(1 + AbilityRules.indexHelpLines().size() + AbilityRules.ABILITY_IDS.size(), lines.size());
+        assertTrue(lines.getFirst().startsWith("Base power:"));
+        assertTrue(lines.stream().anyMatch(line -> line.startsWith("Healing:")));
+        assertTrue(lines.stream().anyMatch(line -> line.startsWith("Iron Heart:")));
+        assertTrue(lines.stream().anyMatch(line -> line.startsWith("Fire bolt:")));
+        assertTrue(lines.stream().anyMatch(line -> line.startsWith("Magic arrow:")));
+        assertTrue(lines.stream().anyMatch(line -> line.startsWith("Flight:")));
+        assertTrue(lines.stream().anyMatch(line -> line.startsWith("Let it grow:")));
+        assertTrue(lines.stream().anyMatch(line -> line.contains("Unbreaking can skip that wear")));
+        assertTrue(lines.stream().anyMatch(line -> line.startsWith("Power mining:")));
+        assertTrue(lines.stream().anyMatch(line -> line.startsWith("Detect ore:")));
+        assertTrue(lines.stream().anyMatch(line -> line.startsWith("Slow:")));
+        assertTrue(lines.stream().anyMatch(line -> line.startsWith("Sense Evil:")));
+        assertTrue(lines.stream().anyMatch(line -> line.startsWith("Let there be light:")));
+    }
+}

@@ -3,6 +3,7 @@ package dev.extrahardmode.client;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.config.GlobalConfig;
 import dev.extrahardmode.config.WorldConfig;
+import dev.extrahardmode.feature.TorchLifetimeRules;
 import dev.extrahardmode.network.ClientboundSyncPayload;
 import dev.extrahardmode.network.ServerboundConfigPayload;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
@@ -42,6 +43,7 @@ public final class ClothConfigScreen {
         boolean[] torchSoftDeny = {seed.torchSoftDeny};
         int[] torchY = {seed.torchY};
         boolean[] torchFizz = {seed.torchFizz};
+        int[] torchBurnDays = {seed.torchBurnDays};
         boolean[] creeperTntWarning = {seed.creeperTntWarning};
 
         ConfigBuilder builder = ConfigBuilder.create()
@@ -60,6 +62,7 @@ public final class ClothConfigScreen {
                         torchSoftDeny[0],
                         torchY[0],
                         torchFizz[0],
+                        torchBurnDays[0],
                         creeperTntWarning[0]));
         ConfigEntryBuilder entry = builder.entryBuilder();
 
@@ -125,7 +128,8 @@ public final class ClothConfigScreen {
                     .setSaveConsumer(v -> limitedBuilding[0] = v)
                     .build());
             current.addEntry(entry.startBooleanToggle(
-                            Component.translatableWithFallback("extrahardmode.config.torchYDeny", "Deny torches below Y"),
+                            Component.translatableWithFallback(
+                                    "extrahardmode.config.torchYDeny", "Deny torches and campfires below Y"),
                             torchYDeny[0])
                     .setDefaultValue(true)
                     .setSaveConsumer(v -> torchYDeny[0] = v)
@@ -149,6 +153,18 @@ public final class ClothConfigScreen {
                             torchFizz[0])
                     .setDefaultValue(true)
                     .setSaveConsumer(v -> torchFizz[0] = v)
+                    .build());
+            current.addEntry(entry.startIntField(
+                            Component.translatableWithFallback(
+                                    "extrahardmode.config.torchBurnDays", "Torch burn days"),
+                            torchBurnDays[0])
+                    .setDefaultValue(TorchLifetimeRules.DEFAULT_DAYS)
+                    .setMin(0)
+                    .setMax(TorchLifetimeRules.MAX_DAYS)
+                    .setTooltip(Component.translatableWithFallback(
+                            "extrahardmode.config.torchBurnDays.tooltip",
+                            "Minecraft days a newly placed torch burns before it disappears. 0 = permanent. Torches placed before this setting never burn out."))
+                    .setSaveConsumer(v -> torchBurnDays[0] = v)
                     .build());
             current.addEntry(entry.startBooleanToggle(
                             Component.translatableWithFallback(
@@ -175,6 +191,7 @@ public final class ClothConfigScreen {
             boolean torchSoftDeny,
             int torchY,
             boolean torchFizz,
+            int torchBurnDays,
             boolean creeperTntWarning) {
         Minecraft client = Minecraft.getInstance();
         boolean connected = client.player != null;
@@ -192,13 +209,17 @@ public final class ClothConfigScreen {
                     torchSoftDeny,
                     torchY,
                     torchFizz,
+                    torchBurnDays,
                     creeperTntWarning));
             return;
         }
         if (client.getSingleplayerServer() != null || connected) {
             return;
         }
-        ConfigManager.setGlobal(new GlobalConfig(enabledByDefault, debug, tutorialMaxShows));
+        ConfigManager.setGlobal(ConfigManager.global()
+                .withEnabledByDefault(enabledByDefault)
+                .withDebug(debug)
+                .withTutorialMaxShows(tutorialMaxShows));
         ConfigManager.saveGlobal();
     }
 
@@ -215,6 +236,7 @@ public final class ClothConfigScreen {
             boolean torchSoftDeny,
             int torchY,
             boolean torchFizz,
+            int torchBurnDays,
             boolean creeperTntWarning) {
         static Seed capture() {
             GlobalConfig global = ConfigManager.global();
@@ -249,6 +271,9 @@ public final class ClothConfigScreen {
                     world != null ? world.torchSoftDeny() : sync == null || sync.torchSoftDeny(),
                     world != null ? world.torchNoPlacementUnderY() : sync == null ? 0 : sync.torchNoPlacementUnderY(),
                     world != null ? world.torchFizz() : extras == null || extras.torchFizz(),
+                    world != null
+                            ? world.torchBurnDays()
+                            : sync == null ? TorchLifetimeRules.DEFAULT_DAYS : sync.torchBurnDays(),
                     world != null
                             ? world.creeperTntWarning()
                             : extras == null || extras.creeperTntWarning());

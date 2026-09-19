@@ -4,6 +4,7 @@ import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.api.EhmApi;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.tag.EhmTags;
+import dev.extrahardmode.module.PhysicsQueue;
 import dev.extrahardmode.task.FallingLogsTask;
 import dev.extrahardmode.world.WorldGate;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
@@ -93,6 +94,26 @@ public final class RealisticChopping implements FeatureModule {
             return;
         }
         FallingLogsTask.enqueue(level, logs, broken);
+    }
+
+    /**
+     * After a log is removed (chopped or converted to a falling entity), any neighboring
+     * log that now has air below starts falling. Fallen stacks hang without this because
+     * the leaf check no longer treats them as a tree.
+     */
+    public static void dropUnsupportedLogs(ServerLevel level, BlockPos origin) {
+        if (!enabled(level)) {
+            return;
+        }
+        PhysicsQueue queue = PhysicsQueue.of(level);
+        for (Direction direction : Direction.values()) {
+            BlockPos pos = origin.relative(direction);
+            BlockState state = level.getBlockState(pos);
+            if (!state.is(EhmTags.FELLABLE_LOGS) || !PhysicsQueue.canFall(level, pos)) {
+                continue;
+            }
+            queue.enqueueFalling(level, pos, state, PhysicsQueue.unwaterlog(state), 0);
+        }
     }
 
     public static TagKey<Block> matchingVanillaLogTag(BlockState state) {
@@ -215,5 +236,6 @@ public final class RealisticChopping implements FeatureModule {
             return;
         }
         tryFell(level, player, pos, state);
+        dropUnsupportedLogs(level, pos);
     }
 }

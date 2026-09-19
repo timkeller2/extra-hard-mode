@@ -8,7 +8,9 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(LivingEntity.class)
 public abstract class LivingEntityHurtMixin {
@@ -21,5 +23,16 @@ public abstract class LivingEntityHurtMixin {
             return amount;
         }
         return Players.scaleIncomingDamage(player, source, amount);
+    }
+
+    @Inject(method = "applyItemBlocking", at = @At("RETURN"), cancellable = true)
+    private void extrahardmode$partialShieldAbsorb(
+            ServerLevel level, DamageSource source, float amount, CallbackInfoReturnable<Float> cir) {
+        Float blocked = cir.getReturnValue();
+        if (blocked == null || blocked <= 0.0F) {
+            return;
+        }
+        LivingEntity entity = (LivingEntity) (Object) this;
+        cir.setReturnValue(Players.scaleBlockedDamage(entity, level, blocked));
     }
 }

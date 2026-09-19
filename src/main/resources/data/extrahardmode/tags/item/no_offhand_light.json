@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:torch",
+    "minecraft:soul_torch",
+    "minecraft:copper_torch",
+    "minecraft:glowstone",
+    {
+      "id": "#minecraft:lanterns",
+      "required": false
+    }
+  ]
+}

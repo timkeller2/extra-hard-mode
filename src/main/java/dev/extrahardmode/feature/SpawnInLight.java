@@ -6,6 +6,7 @@ import dev.extrahardmode.config.WorldConfig;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.world.EhmTags;
 import it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet;
+import java.util.HashMap;
 import java.util.Map;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -70,8 +71,9 @@ public final class SpawnInLight implements FeatureModule {
         if (player.getBlockY() >= config.spawnInLightMaxY()) {
             return;
         }
-        Map<String, LongLinkedOpenHashSet> byDimension =
-                player.getAttachedOrCreate(EhmAttachments.EHM_VISITED_SECTIONS);
+        Map<String, LongLinkedOpenHashSet> stored =
+                player.getAttachedOrElse(EhmAttachments.EHM_VISITED_SECTIONS, Map.of());
+        Map<String, LongLinkedOpenHashSet> byDimension = new HashMap<>(stored);
         addVisit(
                 byDimension,
                 dimensionKey(player.level()),

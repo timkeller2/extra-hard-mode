@@ -2,8 +2,9 @@ package dev.extrahardmode.network;
 
 import dev.extrahardmode.command.EhmPermissions;
 import dev.extrahardmode.config.ConfigManager;
-import dev.extrahardmode.config.GlobalConfig;
 import dev.extrahardmode.config.WorldConfig;
+import dev.extrahardmode.feature.Achievements;
+import dev.extrahardmode.feature.ManaAbilities;
 import dev.extrahardmode.world.WorldGate;
 import net.fabricmc.fabric.api.entity.event.v1.ServerEntityLevelChangeEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
@@ -20,16 +21,30 @@ public final class EhmNetworking {
     public static void register() {
         PayloadTypeRegistry.clientboundPlay().register(ClientboundSyncPayload.TYPE, ClientboundSyncPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(ClientboundToastPayload.TYPE, ClientboundToastPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(ClientboundManaPayload.TYPE, ClientboundManaPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(ClientboundFlightPayload.TYPE, ClientboundFlightPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay()
+                .register(ClientboundPowerMinePayload.TYPE, ClientboundPowerMinePayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay()
+                .register(ClientboundAbilityDurationsPayload.TYPE, ClientboundAbilityDurationsPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay()
+                .register(ClientboundSoilLookPayload.TYPE, ClientboundSoilLookPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(ServerboundConfigPayload.TYPE, ServerboundConfigPayload.STREAM_CODEC);
         ServerPlayNetworking.registerGlobalReceiver(ServerboundConfigPayload.TYPE, EhmNetworking::onConfig);
         ServerPlayConnectionEvents.JOIN.register(EhmNetworking::onJoin);
-        ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.register(
-                (player, origin, destination) -> sendSync(player));
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> ManaAbilities.clearPlayerLight(handler.player));
+        ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.register((player, origin, destination) -> {
+            sendSync(player);
+            ManaAbilities.onJoin(player);
+        });
     }
 
     public static void sendSync(ServerPlayer player) {
         ServerPlayNetworking.send(player, ClientboundSyncPayload.from(player));
-        ServerPlayNetworking.send(player, ClientboundSyncPayload.from(player.level()));
+    }
+
+    public static void sendSoilLook(ServerPlayer player, ClientboundSoilLookPayload payload) {
+        ServerPlayNetworking.send(player, payload);
     }
 
     public static void sendToast(ServerPlayer player, String messageId) {
@@ -51,6 +66,8 @@ public final class EhmNetworking {
             net.fabricmc.fabric.api.networking.v1.PacketSender sender,
             MinecraftServer server) {
         sendSync(handler.player);
+        Achievements.sendMana(handler.player);
+        ManaAbilities.onJoin(handler.player);
         WorldGate.onPlayerJoin(handler.player);
     }
 
@@ -61,8 +78,10 @@ public final class EhmNetworking {
             return;
         }
         MinecraftServer server = player.level().getServer();
-        ConfigManager.setGlobal(new GlobalConfig(
-                payload.enabledByDefault(), payload.debug(), Math.max(0, payload.tutorialMaxShows())));
+        ConfigManager.setGlobal(ConfigManager.global()
+                .withEnabledByDefault(payload.enabledByDefault())
+                .withDebug(payload.debug())
+                .withTutorialMaxShows(payload.tutorialMaxShows()));
         ConfigManager.saveGlobal();
         if (payload.applyWorld()) {
             WorldConfig world = ConfigManager.world(player.level());
@@ -75,6 +94,7 @@ public final class EhmNetworking {
                     payload.torchSoftDeny(),
                     payload.torchNoPlacementUnderY(),
                     payload.torchFizz(),
+                    payload.torchBurnDays(),
                     payload.creeperTntWarning());
             world.save(server);
         }

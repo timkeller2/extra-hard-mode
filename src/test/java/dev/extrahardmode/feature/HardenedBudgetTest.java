@@ -1,7 +1,6 @@
 package dev.extrahardmode.feature;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Map;
@@ -9,38 +8,31 @@ import org.junit.jupiter.api.Test;
 
 class HardenedBudgetTest {
     @Test
-    void iron128thBreakConsumesPick() {
-        int budget = HardenedBudget.IRON;
-        int mined = 0;
-        for (int i = 0; i < 127; i++) {
-            mined = HardenedBudget.increment(mined);
-            assertFalse(HardenedBudget.shouldConsume(mined, budget), "break " + mined + " must not consume");
-        }
-        mined = HardenedBudget.increment(mined);
-        assertEquals(128, mined);
-        assertTrue(HardenedBudget.shouldConsume(mined, budget), "128th hardened break consumes iron pick");
+    void extraDamageMatchesBudgets() {
+        assertEquals(1, HardenedBudget.extraDamage(250, HardenedBudget.IRON));
+        assertEquals(2, HardenedBudget.extraDamage(1561, HardenedBudget.DIAMOND));
+        assertEquals(1, HardenedBudget.extraDamage(2031, HardenedBudget.NETHERITE));
+        assertEquals(1, HardenedBudget.extraDamage(190, HardenedBudget.COPPER));
     }
 
     @Test
-    void unbreakingDoesNotExtendN() {
-        int unbreakingIii = 3;
-        int budget = HardenedBudget.IRON;
-        int mined = 0;
-        HardenedBudget.BreakResult last = null;
-        for (int i = 0; i < budget; i++) {
-            last = HardenedBudget.afterHardenedBreak(mined, budget, unbreakingIii);
-            mined = last.mined();
-            assertEquals(i + 1, mined, "Unbreaking must not skip the component counter");
-            if (i < budget - 1) {
-                assertFalse(last.consume(), "Unbreaking III must not consume before N");
-            }
-        }
-        assertEquals(128, mined);
-        assertTrue(last.unbreakingSkippedVanillaDamage(), "Unbreaking III applied");
-        assertTrue(last.consume(), "Unbreaking III still consumes the pick at N");
-        assertEquals(
-                HardenedBudget.shouldConsume(budget, budget, 0),
-                HardenedBudget.shouldConsume(budget, budget, unbreakingIii));
+    void extraDamageIsZeroWhenBudgetCoversVanillaDurability() {
+        assertEquals(0, HardenedBudget.extraDamage(63, HardenedBudget.COPPER));
+        assertEquals(0, HardenedBudget.extraDamage(250, 0));
+        assertEquals(0, HardenedBudget.extraDamage(0, HardenedBudget.IRON));
+    }
+
+    @Test
+    void unbreakingCanSkipExtraDamage() {
+        assertEquals(1.0, HardenedBudget.unbreakingKeepChance(0));
+        assertEquals(0.5, HardenedBudget.unbreakingKeepChance(1));
+        assertEquals(0.25, HardenedBudget.unbreakingKeepChance(3));
+        assertEquals(1, HardenedBudget.applyUnbreaking(1, 3, bound -> 0));
+        assertEquals(0, HardenedBudget.applyUnbreaking(1, 3, bound -> 1));
+        assertEquals(2, HardenedBudget.applyUnbreaking(2, 0, bound -> 1));
+        int extra = HardenedBudget.extraDamage(250, HardenedBudget.IRON);
+        assertEquals(0, HardenedBudget.applyUnbreaking(extra, 3, bound -> 2));
+        assertTrue(extra > 0);
     }
 
     @Test

@@ -8,6 +8,7 @@ import dev.extrahardmode.config.WorldConfig;
 import dev.extrahardmode.feature.FeatureBus;
 import dev.extrahardmode.feature.FeatureModule;
 import dev.extrahardmode.module.EntityHelper;
+import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.task.RespawnZombieTask;
 import java.util.ArrayDeque;
 import java.util.Iterator;
@@ -15,6 +16,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
@@ -29,6 +31,9 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.entity.monster.zombie.ZombieVillager;
 import net.minecraft.world.entity.player.Player;
@@ -40,11 +45,15 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
- * Zombie slowness on hit and reanimate. No villager / reinforcement / on-fire
- * reanimate. Copies {@code EHM_REANIMATE_COUNT} so chance decays.
+ * Zombie slowness on hit, reanimate, and ±20% speed with inverse damage and scale.
+ * No villager / reinforcement / on-fire reanimate. Copies {@code EHM_REANIMATE_COUNT}
+ * so chance decays.
  */
 public final class Zombies implements FeatureModule {
     public static final Identifier ID = ExtraHardModeMod.id("zombies");
+    public static final Identifier SPEED_MOD = ExtraHardModeMod.id("zombie_speed");
+    public static final Identifier DAMAGE_MOD = ExtraHardModeMod.id("zombie_damage");
+    public static final Identifier SCALE_MOD = ExtraHardModeMod.id("zombie_scale");
 
     private static final Map<Identifier, ArrayDeque<RespawnZombieTask>> PENDING = new ConcurrentHashMap<>();
 
@@ -58,6 +67,7 @@ public final class Zombies implements FeatureModule {
         bus.listen(ServerLivingEntityEvents.AFTER_DAMAGE, ID, Zombies::onAfterDamage);
         bus.listen(ServerLivingEntityEvents.AFTER_DEATH, ID, Zombies::onDeath);
         bus.listen(PlayerBlockBreakEvents.BEFORE, ID, Zombies::onSkullBreak);
+        bus.listen(ServerEntityEvents.ENTITY_LOAD, ID, Zombies::onLoad);
     }
 
     @Override
@@ -117,6 +127,63 @@ public final class Zombies implements FeatureModule {
             return;
         }
         EntityHelper.markIgnored(mob);
+    }
+
+    /**
+     * Permanent ±20% movement-speed roll with inverse attack damage and scale.
+     * Skips biome bosses. Chunk reload keeps the existing roll; scale is filled
+     * in if an older zombie already has speed but not size.
+     */
+    public static void applySpeedVariance(Entity entity) {
+        if (!isOrdinaryZombie(entity) || !(entity instanceof Mob mob)) {
+            return;
+        }
+        if (!(mob.level() instanceof ServerLevel level) || !enabled(level)) {
+            return;
+        }
+        if (Boolean.TRUE.equals(mob.getAttachedOrElse(EhmAttachments.EHM_BIOME_BOSS, Boolean.FALSE))) {
+            return;
+        }
+        AttributeInstance speed = mob.getAttribute(Attributes.MOVEMENT_SPEED);
+        AttributeInstance damage = mob.getAttribute(Attributes.ATTACK_DAMAGE);
+        AttributeInstance scale = mob.getAttribute(Attributes.SCALE);
+        if (speed == null || damage == null) {
+            return;
+        }
+        if (speed.hasModifier(SPEED_MOD) || damage.hasModifier(DAMAGE_MOD)) {
+            applyScaleFromSpeed(speed, scale);
+            return;
+        }
+        double speedDelta = ZombieRules.speedDelta(mob.getRandom().nextDouble());
+        addVariance(speed, SPEED_MOD, speedDelta);
+        addVariance(damage, DAMAGE_MOD, ZombieRules.damageDelta(speedDelta));
+        addVariance(scale, SCALE_MOD, ZombieRules.scaleDelta(speedDelta));
+    }
+
+    private static void applyScaleFromSpeed(AttributeInstance speed, AttributeInstance scale) {
+        if (scale == null || scale.hasModifier(SCALE_MOD) || !speed.hasModifier(SPEED_MOD)) {
+            return;
+        }
+        AttributeModifier existing = speed.getModifier(SPEED_MOD);
+        if (existing == null) {
+            return;
+        }
+        addVariance(scale, SCALE_MOD, ZombieRules.scaleDelta(existing.amount()));
+    }
+
+    private static void addVariance(AttributeInstance instance, Identifier id, double amount) {
+        if (instance == null || instance.hasModifier(id)) {
+            return;
+        }
+        instance.addPermanentModifier(
+                new AttributeModifier(id, amount, AttributeModifier.Operation.ADD_MULTIPLIED_BASE));
+    }
+
+    private static void onLoad(Entity entity, ServerLevel level) {
+        if (!enabled(level)) {
+            return;
+        }
+        applySpeedVariance(entity);
     }
 
     private static void onAfterDamage(

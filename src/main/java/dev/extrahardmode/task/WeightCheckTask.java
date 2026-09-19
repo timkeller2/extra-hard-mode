@@ -2,7 +2,6 @@ package dev.extrahardmode.task;
 
 import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.api.EhmApi;
-import dev.extrahardmode.feature.Players;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.config.PlayerSettings;
 import dev.extrahardmode.config.WorldConfig;
@@ -22,7 +21,7 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * Every 20 ticks: if the player is in water and overencumbered (or in a 1-wide waterfall),
- * roll drownRate + extra*2 and apply 1 drowning damage, bubble drain, and downward velocity.
+ * roll drownRate + extra*2 and apply bubble drain and downward velocity (no extra HP damage).
  */
 public final class WeightCheckTask {
     private static final EquipmentSlot[] ARMOR_SLOTS = {
@@ -66,7 +65,6 @@ public final class WeightCheckTask {
         if (rate <= 0 || player.getRandom().nextInt(100) >= rate) {
             return;
         }
-        Players.hurtUnscaled(player, level.damageSources().drown(), 1.0f);
         player.setAirSupply(Math.max(-20, player.getAirSupply() - 60));
         Vec3 motion = player.getDeltaMovement();
         player.setDeltaMovement(motion.x, Math.min(motion.y, -0.5), motion.z);

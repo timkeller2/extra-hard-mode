@@ -1,6 +1,7 @@
 package dev.extrahardmode.task;
 
 import dev.extrahardmode.api.event.ZombieRespawnEvent;
+import dev.extrahardmode.feature.monster.Zombies;
 import dev.extrahardmode.module.EntityHelper;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
@@ -78,6 +79,7 @@ public final class RespawnZombieTask {
         zombie.setHealth(zombie.getMaxHealth() / 2.0F);
         EntityHelper.markLootless(zombie);
         EntityHelper.setReanimateCount(zombie, reanimateCount);
+        Zombies.applySpeedVariance(zombie);
         ServerPlayer target = targetId == null ? null : level.getServer().getPlayerList().getPlayer(targetId);
         if (target != null && target.isAlive() && target.level() == level) {
             zombie.setTarget(target);

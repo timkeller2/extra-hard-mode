@@ -147,6 +147,8 @@ public final class Explosions implements FeatureModule {
     public static void createFromModule(
             ServerLevel level, Identifier moduleId, Vec3 origin, ExplosionType type, Entity source) {
         if (!FeatureBus.guard((Level) level, moduleId)) {
+            return;
+        }
         if (!ExplosionSettings.allowCreate(
                 type, FeatureBus.guard((Level) level, ID), FeatureBus.guard((Level) level, Dragon.ID))) {
             return;

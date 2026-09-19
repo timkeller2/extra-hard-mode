@@ -12,7 +12,8 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 
 /**
  * Identifier-keyed movement-speed modifier. Vanilla walk-speed 0.2 maps to attribute 0.1;
- * unarmored buffs to 0.22 walk-speed; full diamond (20 armor) is a 40% slowdown from that base.
+ * unarmored buffs to 0.22 walk-speed. Full diamond (20 armor) applies
+ * {@code fullDiamondSlowdownPercent} from that base (default 0).
  */
 public final class ArmorWeightTask {
     public static final AttributeModifier.Operation OPERATION = AttributeModifier.Operation.ADD_MULTIPLIED_BASE;

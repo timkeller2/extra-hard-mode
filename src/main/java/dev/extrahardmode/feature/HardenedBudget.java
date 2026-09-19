@@ -3,10 +3,13 @@ package dev.extrahardmode.feature;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.IntUnaryOperator;
 
 /**
- * Tool budgets for hardened stone. N means N breaks; Unbreaking does not extend N.
- * Minecraft-free so JUnit can cover the 128th-break rule.
+ * Tool budgets for hardened stone. N is the expected lifetime in hardened breaks
+ * with no Unbreaking: extra durability per break is {@code round(max / N) - 1}
+ * on top of vanilla's 1. {@code ItemStack.hurtAndBreak} applies Unbreaking to
+ * that extra damage.
  */
 public final class HardenedBudget {
     public static final int COPPER = Math.round(128 * 190 / 250.0f);
@@ -22,35 +25,50 @@ public final class HardenedBudget {
 
     private HardenedBudget() {}
 
-    public static int increment(int mined) {
-        return mined + 1;
-    }
-
-    /** True when the break that just happened consumes the tool. Unbreaking is ignored. */
-    public static boolean shouldConsume(int minedInclusive, int budget) {
-        return budget > 0 && minedInclusive >= budget;
+    /**
+     * Extra durability applied after vanilla's 1-per-block so the tool lasts about
+     * {@code budget} hardened breaks with no Unbreaking. Zero when the budget is
+     * already at least the tool's max durability.
+     */
+    public static int extraDamage(int maxDamage, int budget) {
+        if (maxDamage <= 0 || budget <= 0) {
+            return 0;
+        }
+        int perBreak = Math.max(1, (int) Math.round(maxDamage / (double) budget));
+        return Math.max(0, perBreak - 1);
     }
 
     /**
-     * Same as {@link #shouldConsume(int, int)}. {@code unbreakingLevel} is accepted so tests can apply
-     * Unbreaking and prove it does not extend N.
+     * Vanilla tool Unbreaking: each durability point is actually taken with
+     * probability {@code 1 / (level + 1)}.
      */
-    public static boolean shouldConsume(int minedInclusive, int budget, int unbreakingLevel) {
-        return shouldConsume(minedInclusive, budget);
+    public static double unbreakingKeepChance(int unbreakingLevel) {
+        if (unbreakingLevel <= 0) {
+            return 1.0;
+        }
+        return 1.0 / (unbreakingLevel + 1);
     }
 
     /**
-     * One hardened break: increment the component (Unbreaking cannot skip this) then consume at N
-     * even if vanilla {@code hurtAndBreak} would have been skipped.
+     * Applies vanilla tool Unbreaking to {@code amount} durability points.
+     * {@code nextIntExclusive} is {@code RandomSource.nextInt(bound)}.
      */
-    public static BreakResult afterHardenedBreak(int mined, int budget, int unbreakingLevel) {
-        int next = increment(mined);
-        boolean unbreakingSkippedVanillaDamage = unbreakingLevel > 0;
-        boolean consume = shouldConsume(next, budget, unbreakingLevel);
-        return new BreakResult(next, consume, unbreakingSkippedVanillaDamage);
+    public static int applyUnbreaking(int amount, int unbreakingLevel, IntUnaryOperator nextIntExclusive) {
+        if (amount <= 0) {
+            return 0;
+        }
+        if (unbreakingLevel <= 0) {
+            return amount;
+        }
+        int taken = 0;
+        int bound = unbreakingLevel + 1;
+        for (int i = 0; i < amount; i++) {
+            if (nextIntExclusive.applyAsInt(bound) == 0) {
+                taken++;
+            }
+        }
+        return taken;
     }
-
-    public record BreakResult(int mined, boolean consume, boolean unbreakingSkippedVanillaDamage) {}
 
     public record Entry(String itemId, int budget) {}
 
