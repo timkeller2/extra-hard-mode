@@ -25,6 +25,7 @@ public final class AbilityRules {
     public static final String DETECT_ORE = "detect_ore";
     public static final String SLOW = "slow";
     public static final String SENSE_EVIL = "sense_evil";
+    public static final String SMITE_EVIL = "smite_evil";
     public static final int MANA_COST = 1;
     public static final int DETECT_ORE_MANA_COST = 1;
     public static final double HEAL_BASE_RANGE = 2.0;
@@ -81,6 +82,7 @@ public final class AbilityRules {
     public static final String NETHERITE_HOE_ID = "minecraft:netherite_hoe";
     public static final String COAL_ID = "minecraft:coal";
     public static final String SPIDER_EYE_ID = "minecraft:spider_eye";
+    public static final String GOLDEN_SWORD_ID = "minecraft:golden_sword";
     /** Distance at which Sense Evil reports a rough range: 250 × ability level. */
     public static final double SENSE_EVIL_RANGE_PER_POWER = 250.0;
     public static final int SENSE_EVIL_SPARKLE_TICKS = 120;
@@ -106,7 +108,19 @@ public final class AbilityRules {
         {1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}
     };
     public static final List<String> ABILITY_IDS =
-            List.of(HEAL, IRON_HEART, FIRE_BOLT, MAGIC_ARROW, FLIGHT, GROW, LIGHT, POWER_MINE, DETECT_ORE, SLOW, SENSE_EVIL);
+            List.of(
+                    HEAL,
+                    IRON_HEART,
+                    FIRE_BOLT,
+                    MAGIC_ARROW,
+                    FLIGHT,
+                    GROW,
+                    LIGHT,
+                    POWER_MINE,
+                    DETECT_ORE,
+                    SLOW,
+                    SENSE_EVIL,
+                    SMITE_EVIL);
 
     private AbilityRules() {}
 
@@ -144,6 +158,9 @@ public final class AbilityRules {
         }
         if (SPIDER_EYE_ID.equals(itemId)) {
             return SENSE_EVIL;
+        }
+        if (GOLDEN_SWORD_ID.equals(itemId)) {
+            return SMITE_EVIL;
         }
         return null;
     }
@@ -231,6 +248,7 @@ public final class AbilityRules {
             case DETECT_ORE -> "Detect ore";
             case SLOW -> "Slow";
             case SENSE_EVIL -> "Sense Evil";
+            case SMITE_EVIL -> "Smite Evil";
             default -> "this ability";
         };
     }
@@ -254,7 +272,7 @@ public final class AbilityRules {
             case HEAL ->
                 "Healing: Right-click an injured teammate within 2 + ability level blocks while holding paper. If no teammate is targeted and you are injured, you heal yourself instead. Costs 1 mana. A honey bottle in your main inventory (not a bundle) is consumed for +6, with or without mana. If you have no mana, a honey bottle still lets you heal, even with no mana levels. The recipient sparkles blue for 6 seconds. An extra paper is consumed for +2 if you have more than one. The last paper is kept.";
             case IRON_HEART ->
-                "Iron Heart: Right-click while holding an iron ingot. Costs 1 mana. Raises maximum health by ability level for ability level minutes. If another player is targeted within 2 + ability level blocks, they receive the buff instead. Cannot be used again while it is active. The recipient sparkles silver for 3 seconds. An extra iron ingot is consumed for +2 if you have more than one. The last ingot is kept. If it ends and you still have mana, another mana is spent and it continues, and you gain skill as if you cast it again.";
+                "Iron Heart: Right-click while holding an iron ingot. Costs 1 mana. Raises maximum health by ability level for ability level minutes. If another player is targeted within 2 + ability level blocks, they receive the buff instead. Right-click again with an iron ingot to cancel your own; you cannot cancel another player's Iron Heart. The recipient sparkles silver for 3 seconds. An extra iron ingot is consumed for +2 if you have more than one. The last ingot is kept. If it ends and you still have mana, another mana is spent and it continues, and you gain skill as if you cast it again.";
             case FIRE_BOLT ->
                 "Fire bolt: Right-click while holding charcoal. Costs 1 mana. The bolt seeks the nearest creature along your aim. Range scales with ability level. Ability level includes your mana level. Cooldown is 10 seconds minus (mana level + skill). An extra charcoal is consumed for +2 if you have more than one. The last charcoal is kept.";
             case MAGIC_ARROW ->
@@ -273,6 +291,8 @@ public final class AbilityRules {
                 "Slow: Right-click while holding string. Costs 1 mana. Slows enemy mobs within ability level blocks by 20% + 5% per ability level (max 80%) for (ability level × 6) seconds. Mobs with more than 100 health are affected half as much. An extra string is consumed for +2 if you have more than one. The last string is kept.";
             case SENSE_EVIL ->
                 "Sense Evil: Right-click while holding a spider eye. Costs 1 mana. If a biome boss is spawned, you turn toward the nearest one and sparkle with a creepy aura for 6 seconds. If it is within 250 × ability level blocks, you also learn the rough distance. If none are spawned, you sparkle as with Healing. An extra spider eye is consumed for +2 if you have more than one. The last spider eye is kept.";
+            case SMITE_EVIL ->
+                "Smite Evil: Right-click while holding a golden sword. Costs 1 mana. Strikes a creature along your aim up to your ability level in blocks with a normal melee attack from that sword, including enchantments, durability, and attack cooldown. Undead take extra damage equal to your ability level. A small flash of light appears on the creature hit.";
             default -> null;
         };
     }
@@ -285,7 +305,7 @@ public final class AbilityRules {
     }
 
     public static String indexHelpFallback() {
-        return "Mana abilities — hold the item and press ? for details: Paper: Healing. Iron ingot: Iron Heart. Feather: Flight. Charcoal: Fire bolt. Arrow: Magic arrow. Any hoe: Let it grow. Coal: Let there be light. Any pickaxe: Power mining. Compass: Detect ore. String: Slow. Spider eye: Sense Evil. Redstone dust in your inventory: +2 to any ability (1 is consumed). You can learn up to half your mana level in abilities, rounded up. Unlearned abilities can be used and still gain skill, at −3 power (floored at 1), until you have a free slot to learn them.";
+        return "Mana abilities — hold the item and press ? for details: Paper: Healing. Iron ingot: Iron Heart. Feather: Flight. Charcoal: Fire bolt. Arrow: Magic arrow. Any hoe: Let it grow. Coal: Let there be light. Any pickaxe: Power mining. Compass: Detect ore. String: Slow. Spider eye: Sense Evil. Golden sword: Smite Evil. Redstone dust in your inventory: +2 to any ability (1 is consumed). You can learn up to half your mana level in abilities, rounded up. Unlearned abilities can be used and still gain skill, at −3 power (floored at 1), until you have a free slot to learn them.";
     }
 
     public static List<String> indexHelpKeys() {
@@ -302,6 +322,7 @@ public final class AbilityRules {
                 "extrahardmode.ability.index.detect_ore",
                 "extrahardmode.ability.index.slow",
                 "extrahardmode.ability.index.sense_evil",
+                "extrahardmode.ability.index.smite_evil",
                 "extrahardmode.ability.index.redstone",
                 "extrahardmode.ability.index.unlock");
     }
@@ -320,6 +341,7 @@ public final class AbilityRules {
                 "Compass: Detect ore",
                 "String: Slow",
                 "Spider eye: Sense Evil",
+                "Golden sword: Smite Evil",
                 "Redstone dust in your inventory: +2 to any ability (1 is consumed)",
                 "You can learn up to half your mana level in abilities, rounded up. Unlearned abilities can be used and still gain skill, at −3 power (floored at 1), until you have a free slot to learn them.");
     }
@@ -772,6 +794,16 @@ public final class AbilityRules {
         return SENSE_EVIL_RANGE_PER_POWER * Math.max(0.0, power);
     }
 
+    /** Melee projection range in blocks: the effective ability level. */
+    public static double smiteRange(double power) {
+        return Math.max(0.0, power);
+    }
+
+    /** Extra sword damage against undead, equal to ability level. */
+    public static float smiteUndeadBonus(double power) {
+        return (float) Math.max(0.0, power);
+    }
+
     public static boolean senseEvilShowsDistance(double distance, double power) {
         return distance >= 0.0 && distance <= senseEvilRange(power);
     }
@@ -1027,6 +1059,9 @@ public final class AbilityRules {
     }
 
     public static int cooldownTicks(String ability, int manaLevel, int uses) {
+        if (SMITE_EVIL.equals(ability)) {
+            return 0;
+        }
         if (addsManaLevel(ability)) {
             return fireBoltCooldownTicks(manaLevel, uses);
         }

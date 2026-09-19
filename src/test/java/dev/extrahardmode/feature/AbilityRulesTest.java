@@ -50,6 +50,8 @@ class AbilityRulesTest {
         assertEquals(AbilityRules.DETECT_ORE, AbilityRules.abilityForItem("minecraft:compass"));
         assertEquals(AbilityRules.SLOW, AbilityRules.abilityForItem("minecraft:string"));
         assertEquals(AbilityRules.SENSE_EVIL, AbilityRules.abilityForItem("minecraft:spider_eye"));
+        assertEquals(AbilityRules.SMITE_EVIL, AbilityRules.abilityForItem("minecraft:golden_sword"));
+        assertEquals(null, AbilityRules.abilityForItem("minecraft:iron_sword"));
         assertEquals(AbilityRules.LIGHT, AbilityRules.abilityForItem("minecraft:coal"));
         assertEquals(null, AbilityRules.abilityForItem("minecraft:torch"));
         assertEquals(null, AbilityRules.abilityForItem("minecraft:soul_torch"));
@@ -81,6 +83,7 @@ class AbilityRulesTest {
             "minecraft:compass",
             "minecraft:string",
             "minecraft:spider_eye",
+            "minecraft:golden_sword",
             "minecraft:coal"
         }) {
             String ability = AbilityRules.abilityForItem(item);
@@ -112,7 +115,8 @@ class AbilityRulesTest {
         assertTrue(ironHelp.contains("iron ingot"));
         assertTrue(ironHelp.contains("maximum health"));
         assertTrue(ironHelp.contains("minutes"));
-        assertTrue(ironHelp.contains("Cannot be used again"));
+        assertTrue(ironHelp.contains("cancel your own"));
+        assertTrue(ironHelp.contains("cannot cancel another"));
         assertTrue(ironHelp.contains("silver"));
         assertTrue(ironHelp.contains("still have mana"));
         assertTrue(ironHelp.contains("gain skill"));
@@ -153,6 +157,15 @@ class AbilityRulesTest {
         assertTrue(senseHelp.contains("250"));
         assertTrue(senseHelp.contains("biome boss"));
         assertEquals(120, AbilityRules.SENSE_EVIL_SPARKLE_TICKS);
+        String smiteHelp = AbilityRules.helpFallback(AbilityRules.SMITE_EVIL);
+        assertTrue(smiteHelp.contains("golden sword"));
+        assertTrue(smiteHelp.contains("Right-click"));
+        assertTrue(smiteHelp.contains("Undead"));
+        assertTrue(smiteHelp.contains("flash of light"));
+        assertEquals(5.0, AbilityRules.smiteRange(5), 1e-9);
+        assertEquals(0.0, AbilityRules.smiteRange(0), 1e-9);
+        assertEquals(3.0F, AbilityRules.smiteUndeadBonus(3), 1e-4F);
+        assertEquals(0, AbilityRules.cooldownTicks(AbilityRules.SMITE_EVIL, 10, 9));
         assertTrue(AbilityRules.helpFallback(AbilityRules.LIGHT).contains("coal"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.LIGHT).contains("30 seconds"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.LIGHT).contains("Right-click"));
@@ -170,7 +183,7 @@ class AbilityRulesTest {
         assertTrue(AbilityRules.indexHelpFallback().contains("Redstone dust"));
         assertEquals(null, AbilityRules.helpFallback(null));
         assertEquals(null, AbilityRules.helpFallback("unknown"));
-        assertEquals(14, AbilityRules.indexHelpLines().size());
+        assertEquals(15, AbilityRules.indexHelpLines().size());
         assertEquals(AbilityRules.indexHelpLines().size(), AbilityRules.indexHelpKeys().size());
         assertTrue(AbilityRules.indexHelpFallback().contains("Paper: Healing"));
         assertTrue(AbilityRules.indexHelpFallback().contains("Any hoe: Let it grow"));
@@ -179,6 +192,7 @@ class AbilityRulesTest {
         assertTrue(AbilityRules.indexHelpFallback().contains("Compass: Detect ore"));
         assertTrue(AbilityRules.indexHelpFallback().contains("String: Slow"));
         assertTrue(AbilityRules.indexHelpFallback().contains("Spider eye: Sense Evil"));
+        assertTrue(AbilityRules.indexHelpFallback().contains("Golden sword: Smite Evil"));
         assertTrue(AbilityRules.indexHelpFallback().contains("Redstone dust in your inventory"));
         assertTrue(AbilityRules.indexHelpFallback().contains("half your mana level"));
         assertEquals("Healing", AbilityRules.nameFallback(AbilityRules.HEAL));
@@ -191,6 +205,7 @@ class AbilityRulesTest {
         assertEquals("Detect ore", AbilityRules.nameFallback(AbilityRules.DETECT_ORE));
         assertEquals("Slow", AbilityRules.nameFallback(AbilityRules.SLOW));
         assertEquals("Sense Evil", AbilityRules.nameFallback(AbilityRules.SENSE_EVIL));
+        assertEquals("Smite Evil", AbilityRules.nameFallback(AbilityRules.SMITE_EVIL));
         assertEquals("Let there be light", AbilityRules.nameFallback(AbilityRules.LIGHT));
         assertEquals("extrahardmode.ability.detect_ore", AbilityRules.nameKey(AbilityRules.DETECT_ORE));
         assertTrue(AbilityRules.lockedFallback(AbilityRules.HEAL).contains("Healing"));
@@ -270,6 +285,8 @@ class AbilityRulesTest {
         assertEquals(2, AbilityRules.supplyBonus(AbilityRules.FIRE_BOLT, "minecraft:charcoal", 2, false, false));
         assertEquals(4, AbilityRules.supplyBonus(AbilityRules.FIRE_BOLT, "minecraft:charcoal", 2, true, false));
         assertEquals(0, AbilityRules.supplyBonus(AbilityRules.FIRE_BOLT, "minecraft:stick", 8, false, false));
+        assertEquals(0, AbilityRules.supplyBonus(AbilityRules.SMITE_EVIL, "minecraft:golden_sword", 1, false, false));
+        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.SMITE_EVIL, "minecraft:golden_sword", 1, true, false));
         assertEquals(2, AbilityRules.supplyBonus(AbilityRules.MAGIC_ARROW, "minecraft:arrow", 2, false, false));
         assertEquals(0, AbilityRules.supplyBonus(null, "minecraft:coal", 4, true, true));
     }

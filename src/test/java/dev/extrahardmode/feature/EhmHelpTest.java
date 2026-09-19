@@ -13,7 +13,9 @@ class EhmHelpTest {
         assertEquals(lines.size(), EhmHelp.featureHelpKeys().size());
         assertTrue(lines.getFirst().contains("/ehm ability help"));
         assertTrue(String.join(" ", lines).contains("1/4"));
-        assertTrue(String.join(" ", lines).contains("/ 100 per minute"));
+        assertTrue(String.join(" ", lines).contains("/ 200 per minute"));
+        assertTrue(String.join(" ", lines).contains("saturation"));
+        assertTrue(String.join(" ", lines).contains("17"));
         assertTrue(String.join(" ", lines).contains("1 quartz per 2 mana"));
         assertTrue(String.join(" ", lines).contains("20 mana"));
         assertTrue(String.join(" ", lines).contains("/ehm ability help"));
@@ -29,6 +31,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("charcoal for Fire bolt"));
         assertTrue(String.join(" ", lines).contains("an arrow for Magic arrow"));
         assertTrue(String.join(" ", lines).contains("an iron ingot for Iron Heart"));
+        assertTrue(String.join(" ", lines).contains("a golden sword for Smite Evil"));
         assertTrue(String.join(" ", lines).contains("+2 on any ability"));
         assertTrue(String.join(" ", lines).contains("half your mana level"));
         assertTrue(String.join(" ", lines).contains("Redstone dust"));
@@ -44,6 +47,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("clock"));
         assertTrue(String.join(" ", lines).contains("falls 1% per day"));
         assertTrue(String.join(" ", lines).contains("soil modifier of the plant's own plot"));
+        assertTrue(String.join(" ", lines).contains("never faster than vanilla"));
         assertTrue(String.join(" ", lines).contains("51% loss and"));
         assertTrue(String.join(" ", lines).contains("Let it grow never causes that death"));
         assertTrue(String.join(" ", lines).contains("three times"));
@@ -78,6 +82,10 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("50% extra"));
         assertTrue(String.join(" ", lines).contains("campfires also need airflow"));
         assertTrue(String.join(" ", lines).contains("burn out after 7 Minecraft days"));
+        assertTrue(String.join(" ", lines).contains("dim after 2 days"));
+        assertTrue(String.join(" ", lines).contains("pull a log"));
+        assertTrue(String.join(" ", lines).contains("12 blocks"));
+        assertTrue(String.join(" ", lines).contains("7 more days"));
         assertTrue(String.join(" ", lines).contains("off hand"));
         assertTrue(String.join(" ", lines).contains("falls more than 3 blocks"));
         assertTrue(String.join(" ", lines).contains("drops nothing"));
@@ -87,6 +95,9 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("how many lapis"));
         assertTrue(String.join(" ", lines).contains("sparkles you blue"));
         assertTrue(String.join(" ", lines).contains("50 experience and a diamond"));
+        assertTrue(String.join(" ", lines).contains("visit a biome you gain 100 experience"));
+        assertTrue(String.join(" ", lines).contains("first player to visit it"));
+        assertTrue(String.join(" ", lines).contains("300 blocks from spawn"));
         assertTrue(String.join(" ", lines).contains("first player to claim"));
         assertTrue(String.join(" ", lines).contains("upcoming list"));
         assertTrue(String.join(" ", lines).contains("3 experience"));
@@ -112,6 +123,7 @@ class EhmHelpTest {
         assertTrue(all.contains("/ehm help homes"));
         assertTrue(all.contains("24 to 250"));
         assertTrue(all.contains("12 points"));
+        assertTrue(all.contains("Eligible loaded homes"));
         assertTrue(all.contains("Windows"));
         assertTrue(all.contains("Kitchen"));
         assertTrue(all.contains("clock"));
@@ -135,6 +147,7 @@ class EhmHelpTest {
         assertTrue(lines.stream().anyMatch(line -> line.startsWith("Detect ore:")));
         assertTrue(lines.stream().anyMatch(line -> line.startsWith("Slow:")));
         assertTrue(lines.stream().anyMatch(line -> line.startsWith("Sense Evil:")));
+        assertTrue(lines.stream().anyMatch(line -> line.startsWith("Smite Evil:")));
         assertTrue(lines.stream().anyMatch(line -> line.startsWith("Let there be light:")));
     }
 }

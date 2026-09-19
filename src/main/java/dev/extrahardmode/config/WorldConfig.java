@@ -957,7 +957,7 @@ public final class WorldConfig {
                 writeDefaultIfMissing(
                         file,
                         "torches.burnDays",
-                        "Minecraft days (24000 ticks) a newly placed torch burns before it disappears. 0 = permanent. Torches with no recorded place time (older worlds, worldgen) never burn out. Default 7.",
+                        "Minecraft days (24000 ticks) a newly placed torch or campfire lasts before it disappears. Campfires pull one log from a chest within 12 blocks to add another period. 0 = permanent. Lights with no recorded place time (older worlds, worldgen) never burn out. Default 7.",
                         TorchLifetimeRules.DEFAULT_DAYS);
                 writeDefaultIfMissing(
                         file, "campfires.rainExtinguishes", "Optional. Same rain pass as torches; default off.", false);

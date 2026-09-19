@@ -12,7 +12,10 @@ import dev.extrahardmode.world.EhmTags;
 import dev.extrahardmode.world.TorchLifetimeData;
 import dev.extrahardmode.world.WorldGate;
 import net.minecraft.world.entity.EquipmentSlot;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
 import net.fabricmc.fabric.api.event.player.BlockEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
@@ -24,6 +27,8 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -35,7 +40,11 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseTorchBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.CampfireBlock;
+import net.minecraft.world.level.block.ChestBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jspecify.annotations.Nullable;
 
@@ -67,6 +76,7 @@ public final class Torches implements FeatureModule {
     @Override
     public void onWorldUnload(ServerLevel level) {
         RemoveExposedTorchesTask.clear(level);
+        TorchBurnTask.clear(level);
     }
 
     static InteractionResult onUseBlock(Player player, Level level, InteractionHand hand, BlockHitResult hit) {
@@ -190,13 +200,25 @@ public final class Torches implements FeatureModule {
         return state.getBlock() instanceof BaseTorchBlock || state.is(EhmTags.DEPTH_LIMITED_LIGHTS);
     }
 
+    public static int burningLight(ServerLevel level, BlockPos pos, int vanillaLight) {
+        return TorchLifetimeRules.lightLevel(
+                vanillaLight,
+                TorchLifetimeData.of(level).placedAt(pos),
+                level.getGameTime(),
+                ConfigManager.world(level).torchBurnDays());
+    }
+
     /** Stamp a newly placed torch so it can burn out. Unstamped torches stay forever. */
     public static void onPlaced(BlockPlaceContext context, Block block) {
         if (!(context.getLevel() instanceof ServerLevel level) || !WorldGate.isModuleActive(level, ID)) {
             return;
         }
         BlockPos pos = context.getClickedPos();
-        if (!isBurnableTorch(block) && !isBurnableTorch(level.getBlockState(pos))) {
+        BlockState placed = level.getBlockState(pos);
+        if (!isBurnableTorch(block)
+                && !isBurnableTorch(placed)
+                && !isCampfire(block)
+                && !isCampfire(placed)) {
             return;
         }
         TorchLifetimeData.of(level).record(pos, level.getGameTime());
@@ -211,7 +233,7 @@ public final class Torches implements FeatureModule {
         if (!(level instanceof ServerLevel serverLevel) || !WorldGate.isModuleActive(serverLevel, ID)) {
             return;
         }
-        if (isBurnableTorch(state)) {
+        if (isBurnableTorch(state) || isCampfire(state)) {
             forgetPlaced(serverLevel, pos);
         }
     }
@@ -245,6 +267,110 @@ public final class Torches implements FeatureModule {
 
     public static boolean isCampfire(BlockState state) {
         return isCampfire(state.getBlock());
+    }
+
+    public static boolean isLitCampfire(BlockState state) {
+        if (!isCampfire(state)) {
+            return false;
+        }
+        if (!state.hasProperty(CampfireBlock.LIT)) {
+            return true;
+        }
+        return state.getValue(CampfireBlock.LIT);
+    }
+
+    /** Extinguish without dropping the campfire. Cooking items still drop. */
+    public static void burnOutCampfire(ServerLevel level, BlockPos pos) {
+        if (!isCampfire(level.getBlockState(pos))) {
+            return;
+        }
+        level.removeBlock(pos, false);
+        level.playSound(null, pos, SoundEvents.FIRE_EXTINGUISH, SoundSource.BLOCKS, 0.5F, 1.2F);
+        level.sendParticles(
+                ParticleTypes.SMOKE,
+                pos.getX() + 0.5,
+                pos.getY() + 0.6,
+                pos.getZ() + 0.5,
+                16,
+                0.2,
+                0.25,
+                0.2,
+                0.02);
+    }
+
+    /**
+     * Consume one log from the nearest chest in range. True when the campfire
+     * should keep burning.
+     */
+    public static boolean tryRefuelCampfire(ServerLevel level, BlockPos campfire) {
+        List<BlockPos> chests = chestsInRange(level, campfire, TorchLifetimeRules.CAMPFIRE_REFUEL_RANGE);
+        chests.sort(Comparator.comparingLong(pos -> TorchLifetimeRules.distanceSq(
+                pos.getX() - campfire.getX(), pos.getY() - campfire.getY(), pos.getZ() - campfire.getZ())));
+        for (BlockPos chestPos : chests) {
+            if (takeOneLog(level, chestPos)) {
+                level.playSound(null, campfire, SoundEvents.CAMPFIRE_CRACKLE, SoundSource.BLOCKS, 1.0F, 1.0F);
+                level.playSound(null, chestPos, SoundEvents.WOOD_BREAK, SoundSource.BLOCKS, 0.4F, 1.2F);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static List<BlockPos> chestsInRange(ServerLevel level, BlockPos origin, int range) {
+        List<BlockPos> chests = new ArrayList<>();
+        int minCx = origin.getX() - range >> 4;
+        int maxCx = origin.getX() + range >> 4;
+        int minCz = origin.getZ() - range >> 4;
+        int maxCz = origin.getZ() + range >> 4;
+        for (int cx = minCx; cx <= maxCx; cx++) {
+            for (int cz = minCz; cz <= maxCz; cz++) {
+                if (!level.hasChunk(cx, cz)) {
+                    continue;
+                }
+                LevelChunk chunk = level.getChunk(cx, cz);
+                for (BlockEntity be : chunk.getBlockEntities().values()) {
+                    if (!(be instanceof ChestBlockEntity)) {
+                        continue;
+                    }
+                    BlockPos pos = be.getBlockPos();
+                    if (!TorchLifetimeRules.chestInRange(
+                            pos.getX() - origin.getX(),
+                            pos.getY() - origin.getY(),
+                            pos.getZ() - origin.getZ(),
+                            range)) {
+                        continue;
+                    }
+                    chests.add(pos.immutable());
+                }
+            }
+        }
+        return chests;
+    }
+
+    static boolean takeOneLog(ServerLevel level, BlockPos pos) {
+        Container container = chestContainerAt(level, pos);
+        if (container == null) {
+            return false;
+        }
+        for (int slot = 0; slot < container.getContainerSize(); slot++) {
+            ItemStack stack = container.getItem(slot);
+            if (stack.isEmpty() || !stack.is(ItemTags.LOGS)) {
+                continue;
+            }
+            stack.shrink(1);
+            container.setItem(slot, stack);
+            container.setChanged();
+            return true;
+        }
+        return false;
+    }
+
+    static Container chestContainerAt(ServerLevel level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        if (state.getBlock() instanceof ChestBlock chest) {
+            return ChestBlock.getContainer(chest, state, level, pos, true);
+        }
+        return null;
     }
 
     /** Server lighting / keep-lit path. Client mixins use the sync payload, never this. */

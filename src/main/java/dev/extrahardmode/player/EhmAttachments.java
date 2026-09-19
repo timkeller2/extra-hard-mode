@@ -284,6 +284,18 @@ public final class EhmAttachments {
             ExtraHardModeMod.id("overgraze_chests"),
             builder -> builder.persistent(LONG_SET_CODEC).initializer(LongOpenHashSet::new));
 
+    /** Biome ids this player has already been rewarded for visiting. */
+    public static final AttachmentType<List<String>> EHM_VISITED_BIOMES = AttachmentRegistry.create(
+            ExtraHardModeMod.id("visited_biomes"),
+            builder -> builder.persistent(Codec.STRING.listOf()).copyOnDeath().initializer(ArrayList::new));
+    /** True after the first 300-block trip from world spawn. */
+    public static final AttachmentType<Boolean> EHM_LEFT_SPAWN = AttachmentRegistry.create(
+            ExtraHardModeMod.id("left_spawn"),
+            builder -> builder.persistent(Codec.BOOL).copyOnDeath().initializer(() -> Boolean.FALSE));
+    /** Last packed block position checked for exploration awards. */
+    public static final AttachmentType<Long> EHM_EXPLORATION_LAST_POS = AttachmentRegistry.create(
+            ExtraHardModeMod.id("exploration_last_pos"), builder -> builder.initializer(() -> Long.MIN_VALUE));
+
     private EhmAttachments() {}
 
     public static void register() {

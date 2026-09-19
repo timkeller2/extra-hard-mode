@@ -22,7 +22,16 @@ public final class InhabitantRules {
     public static final int KILL_COOLDOWN_DAYS = 7;
     public static final int WANDER_RANGE = 16;
     public static final int SNAP_HOME_RANGE = 32;
-    public static final int SCAN_RADIUS = 24;
+    /**
+     * Standing cells relative to the bed to try first. Horizontal floor spots
+     * (2-high rooms) before {@code bed.above()}, which clips a 2-block ceiling.
+     */
+    public static final int[][] STAND_OFFSETS = {
+        {1, 0, 0}, {-1, 0, 0}, {0, 0, 1}, {0, 0, -1},
+        {1, 0, 1}, {1, 0, -1}, {-1, 0, 1}, {-1, 0, -1},
+        {2, 0, 0}, {-2, 0, 0}, {0, 0, 2}, {0, 0, -2},
+        {0, 1, 0}
+    };
 
     public static final String HAULER = "hauler";
     public static final String COOK = "cook";
@@ -209,7 +218,7 @@ public final class InhabitantRules {
                 "Need all of these: an enclosed room (solid walls, floor, and roof; doors and trapdoors are openings, not holes), 24 to 250 interior air blocks, a bed, a door or fence gate that faces outside, block light 8 on every floor tile, and 48 blocks from another occupied home.",
                 "Furnishings need 12 points. Windows (glass or panes looking out of the room): 2 each, max 6. Art (paintings and filled item frames): 1 each, max 4. Rugs (wool carpets): 1 point per 4 carpets, max 3. Seating (stairs and slabs): 1 each, max 2.",
                 "Storage (chests, barrels, shulker boxes): 1 each, max 2. Workstations (crafting table, furnace, smoker, anvil, and similar): 1 each, max 2. Extra lights (torches, lanterns, glowstone, campfires): 1 each, max 2. Plants (pots, flowers, saplings): 1 each, max 2. Books (bookshelf, lectern): 1 each, max 2. A second bed: +1. Kitchen (a furnace, smoker, or campfire AND a cauldron): +2.",
-                "Dawn chance starts at 8% at 12 points and rises with extra points (halved in blight). Chests bias a hauler, a kitchen biases a cook, plants or workstations bias a farm neighbor, and a well-furnished room can attract a bounty board. One resident per home.");
+                "Eligible loaded homes are checked at dawn. Chance starts at 8% at 12 points and rises with extra points (halved in blight). Chests bias a hauler, a kitchen biases a cook, plants or workstations bias a farm neighbor, and a well-furnished room can attract a bounty board. One resident per home.");
     }
 
     public static boolean farEnough(int dx, int dz, int spacing) {
@@ -316,5 +325,19 @@ public final class InhabitantRules {
 
     public static boolean spawnBlocked(long today, long emptyUntilDay) {
         return emptyUntilDay >= 0L && today < emptyUntilDay;
+    }
+
+    /**
+     * Dawn is a new overworld day and at least one survival player is in this
+     * dimension. Otherwise the day is left unconsumed so a later return still
+     * gets that dawn's roll.
+     */
+    public static boolean shouldAttemptDawn(long lastDawnDay, long day, boolean anySurvivalPlayer) {
+        return lastDawnDay != day && anySurvivalPlayer;
+    }
+
+    /** Two walkable cells (feet and head) over a solid block. */
+    public static boolean villagerFits(boolean feetWalkable, boolean headWalkable, boolean solidBelow) {
+        return feetWalkable && headWalkable && solidBelow;
     }
 }

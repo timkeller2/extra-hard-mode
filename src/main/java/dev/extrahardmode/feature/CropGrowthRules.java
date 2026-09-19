@@ -9,6 +9,11 @@ import java.util.Random;
 public final class CropGrowthRules {
     public static final int VANILLA_DURATION_PERCENT = 100;
     public static final int DEFAULT_DURATION_PERCENT = 300;
+    /**
+     * Fastest allowed duration after season and soil. 100 is vanilla speed;
+     * good soil cannot make plants grow faster than vanilla.
+     */
+    public static final int MIN_DURATION_PERCENT = VANILLA_DURATION_PERCENT;
     /** Sugar cane random ticks fire 1/10 as often as vanilla. */
     public static final int SUGAR_CANE_DURATION_PERCENT = 1000;
     /** Nether wart random ticks fire 1/20 as often as vanilla. */
@@ -199,15 +204,18 @@ public final class CropGrowthRules {
     }
 
     /**
-     * Duration using seasonal crop loss plus the plant's soil modifier.
-     * Positive modifier (worse soil) slows growth; negative speeds it.
+     * Duration using seasonal crop loss plus the plant's soil modifier
+     * (stored; shown modifier is the negation). Positive stored modifier (worse
+     * soil) slows growth; negative speeds it. Never faster than
+     * {@link #MIN_DURATION_PERCENT}.
      */
     public static int durationPercent(
             int baseDurationPercent, double normalLoss, double seasonalLoss, int soilModifier) {
         double normal = Math.max(0.0, normalLoss);
         double loss = Math.max(0.0, seasonalLoss + soilModifier);
         double factor = normal <= 0.0 ? 1.0 : loss / normal;
-        return clampDurationPercent((int) Math.round(baseDurationPercent * factor));
+        int duration = (int) Math.round(baseDurationPercent * factor);
+        return Math.max(MIN_DURATION_PERCENT, clampDurationPercent(duration));
     }
 
     public static boolean beesInactive(double seasonalLoss) {

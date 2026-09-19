@@ -16,7 +16,11 @@ public final class AchievementRules {
     public static final int BREAK_DECREMENT_PERCENT = 75;
     public static final int TICKS_PER_MINUTE = 1200;
     /** Base regen per Minecraft minute is {@code (manaLevel + currentMana) / REGEN_DIVISOR}. */
-    public static final double REGEN_DIVISOR = 100.0;
+    public static final double REGEN_DIVISOR = 200.0;
+    /** Saturation restore: current mana must be below {@code saturation - SATURATION_MANA_OFFSET}. */
+    public static final double SATURATION_MANA_OFFSET = 17.0;
+    public static final double SATURATION_MANA_RESTORE = 1.0;
+    public static final float SATURATION_MANA_COST = 1.0F;
     public static final double QUARTZ_REGEN_MULTIPLIER = 3.0;
     /** One nether quartz is consumed per this much quartz-boosted mana (one crystal). */
     public static final double QUARTZ_MANA_PER_ITEM = 2.0;
@@ -75,7 +79,7 @@ public final class AchievementRules {
         return count;
     }
 
-    /** {@code (manaLevel + currentMana) / 100} mana per Minecraft minute. */
+    /** {@code (manaLevel + currentMana) / 200} mana per Minecraft minute. */
     public static double regenPerMinute(int manaLevel, double currentMana, boolean quartz) {
         if (manaLevel <= 0) {
             return 0.0;
@@ -115,6 +119,24 @@ public final class AchievementRules {
 
     public static boolean shouldBoostWithQuartz(int manaLevel, double current) {
         return manaLevel > 0 && current < manaLevel;
+    }
+
+    /**
+     * Extra 1 mana per minute, paid with 1 saturation, when below mana level and
+     * {@code currentMana < saturation - 17}.
+     */
+    public static boolean shouldRestoreFromSaturation(int manaLevel, double currentMana, double saturation) {
+        if (manaLevel <= 0 || currentMana >= manaLevel) {
+            return false;
+        }
+        if (saturation < SATURATION_MANA_COST) {
+            return false;
+        }
+        return currentMana < saturation - SATURATION_MANA_OFFSET;
+    }
+
+    public static float saturationAfterManaRestore(float saturation) {
+        return Math.max(0.0F, saturation - SATURATION_MANA_COST);
     }
 
     public static double addQuartzCredit(double credit, double gained) {

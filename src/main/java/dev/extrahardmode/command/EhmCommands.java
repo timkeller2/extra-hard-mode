@@ -72,6 +72,7 @@ public final class EhmCommands {
         "ghasts",
         "biome_bosses",
         "achievements",
+        "exploration",
         "mana_abilities",
         "inhabitants"
     };

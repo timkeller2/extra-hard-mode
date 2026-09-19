@@ -117,4 +117,25 @@ class InhabitantRulesTest {
         assertFalse(InhabitantRules.spawnBlocked(17, 17));
         assertFalse(InhabitantRules.spawnBlocked(10, -1));
     }
+
+    @Test
+    void dawnWaitsForASurvivalPlayer() {
+        assertFalse(InhabitantRules.shouldAttemptDawn(5, 5, true));
+        assertFalse(InhabitantRules.shouldAttemptDawn(4, 5, false));
+        assertTrue(InhabitantRules.shouldAttemptDawn(4, 5, true));
+        assertTrue(InhabitantRules.shouldAttemptDawn(-1, 0, true));
+    }
+
+    @Test
+    void villagerNeedsTwoHighFloorSpace() {
+        assertTrue(InhabitantRules.villagerFits(true, true, true));
+        assertFalse(InhabitantRules.villagerFits(true, false, true));
+        assertFalse(InhabitantRules.villagerFits(false, true, true));
+        assertFalse(InhabitantRules.villagerFits(true, true, false));
+        assertEquals(0, InhabitantRules.STAND_OFFSETS[0][1]);
+        int[] last = InhabitantRules.STAND_OFFSETS[InhabitantRules.STAND_OFFSETS.length - 1];
+        assertEquals(0, last[0]);
+        assertEquals(1, last[1]);
+        assertEquals(0, last[2]);
+    }
 }

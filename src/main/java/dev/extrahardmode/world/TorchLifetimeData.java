@@ -13,8 +13,8 @@ import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 
 /**
- * Place-time stamps for torches that should burn out. Positions with no entry are
- * permanent (worldgen and torches placed before this data existed).
+ * Place-time stamps for torches and campfires that should burn out. Positions with
+ * no entry are permanent (worldgen and lights placed before this data existed).
  */
 public final class TorchLifetimeData extends SavedData {
     public static final Codec<TorchLifetimeData> CODEC = RecordCodecBuilder.create(instance -> instance.group(

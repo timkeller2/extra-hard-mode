@@ -167,10 +167,20 @@ public final class Achievements implements FeatureModule {
         double current = AchievementRules.clampMana(stored == null ? 0.0 : stored);
         boolean quartz =
                 AchievementRules.shouldBoostWithQuartz(level, current) && hasItem(player, Items.QUARTZ);
-        double next = AchievementRules.addMana(
+        double afterBase = AchievementRules.addMana(
                 current, level, AchievementRules.regenPerMinute(level, current, quartz));
         if (quartz) {
-            settleQuartzCredit(player, next - current);
+            settleQuartzCredit(player, afterBase - current);
+        }
+        double next = afterBase;
+        var food = player.getFoodData();
+        float saturation = food.getSaturationLevel();
+        if (AchievementRules.shouldRestoreFromSaturation(level, afterBase, saturation)) {
+            double withSat = AchievementRules.clampMana(afterBase + AchievementRules.SATURATION_MANA_RESTORE);
+            if (withSat > afterBase) {
+                next = withSat;
+                food.setSaturation(AchievementRules.saturationAfterManaRestore(saturation));
+            }
         }
         if (stored == null || next != stored) {
             player.setAttached(EhmAttachments.EHM_MANA_CURRENT, next);

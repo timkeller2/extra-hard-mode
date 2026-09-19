@@ -200,7 +200,11 @@ class CropGrowthRulesTest {
         assertEquals(120, CropGrowthRules.durationPercent(300, 25, 25, -15));
         assertEquals(156, CropGrowthRules.durationPercent(300, 25, 13, 0));
         assertEquals(300, CropGrowthRules.durationPercent(300, 25, 13, 12));
-        assertEquals(1, CropGrowthRules.durationPercent(300, 25, 25, -100));
+        assertEquals(100, CropGrowthRules.MIN_DURATION_PERCENT);
+        assertEquals(100, CropGrowthRules.durationPercent(300, 25, 25, -20));
+        assertEquals(100, CropGrowthRules.durationPercent(300, 25, 25, -100));
+        assertEquals(100, CropGrowthRules.durationPercent(300, 25, 15, -35));
+        assertEquals(100, CropGrowthRules.durationPercent(300, 25, 15, -15));
     }
 
     @Test

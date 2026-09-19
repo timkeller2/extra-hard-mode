@@ -41,6 +41,7 @@ import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BedPart;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.BlockHitResult;
 
 /**
@@ -113,7 +114,7 @@ public final class Inhabitants implements FeatureModule {
         long day = AntiFarming.overworldDay(level);
         InhabitantData data = InhabitantData.of(level);
         maintainOccupied(level, data, day);
-        if (data.lastDawnDay() == day) {
+        if (!InhabitantRules.shouldAttemptDawn(data.lastDawnDay(), day, hasSurvivalPlayer(level))) {
             return;
         }
         data.setLastDawnDay(day);
@@ -157,62 +158,58 @@ public final class Inhabitants implements FeatureModule {
         Set<String> seen = new HashSet<>();
         List<BlockPos> occupied = occupiedBeds(level);
         RandomSource random = level.getRandom();
-        for (ServerPlayer player : level.players()) {
-            if (player.isSpectator() || player.isCreative()) {
+        for (BlockPos pos : bedHeadsInTickingChunks(level)) {
+            ResidenceScan.Result result =
+                    ResidenceScan.inspect(level, pos, occupied, cfg.inhabitantMinLight(), cfg.inhabitantSpacing());
+            String id = ResidenceScan.homeId(result.bed());
+            if (!seen.add(id)) {
                 continue;
             }
-            BlockPos origin = player.blockPosition();
-            int radius = InhabitantRules.SCAN_RADIUS;
-            BlockPos min = origin.offset(-radius, -4, -radius);
-            BlockPos max = origin.offset(radius, 8, radius);
-            for (BlockPos pos : BlockPos.betweenClosed(min, max)) {
-                if (!level.isLoaded(pos) || !isBedHead(level.getBlockState(pos))) {
-                    continue;
-                }
-                ResidenceScan.Result result =
-                        ResidenceScan.inspect(level, pos.immutable(), occupied, cfg.inhabitantMinLight(), cfg.inhabitantSpacing());
-                String id = ResidenceScan.homeId(result.bed());
-                if (!seen.add(id)) {
-                    continue;
-                }
-                InhabitantData.Home existing = data.get(id);
-                if (existing != null && existing.living().isPresent()) {
-                    continue;
-                }
-                if (existing != null && InhabitantRules.spawnBlocked(day, existing.emptyUntilDay())) {
-                    continue;
-                }
-                if (!result.gates().eligible()) {
-                    continue;
-                }
-                int chance = InhabitantRules.spawnChancePercent(
-                        result.gates().score(),
-                        cfg.inhabitantMinScore(),
-                        cfg.inhabitantBaseChancePercent(),
-                        cfg.inhabitantChancePerPoint(),
-                        cfg.inhabitantMaxChancePercent(),
-                        blight);
-                if (!InhabitantRules.spawnRoll(random.nextInt(100), chance)) {
-                    continue;
-                }
-                spawnResident(level, data, result, random);
-                occupied.add(result.bed());
+            InhabitantData.Home existing = data.get(id);
+            if (existing != null && existing.living().isPresent()) {
+                continue;
             }
+            if (existing != null && InhabitantRules.spawnBlocked(day, existing.emptyUntilDay())) {
+                continue;
+            }
+            if (!result.gates().eligible()) {
+                continue;
+            }
+            int chance = InhabitantRules.spawnChancePercent(
+                    result.gates().score(),
+                    cfg.inhabitantMinScore(),
+                    cfg.inhabitantBaseChancePercent(),
+                    cfg.inhabitantChancePerPoint(),
+                    cfg.inhabitantMaxChancePercent(),
+                    blight);
+            if (!InhabitantRules.spawnRoll(random.nextInt(100), chance)) {
+                continue;
+            }
+            spawnResident(level, data, result, random);
+            occupied.add(result.bed());
         }
     }
 
     static void spawnResident(
             ServerLevel level, InhabitantData data, ResidenceScan.Result result, RandomSource random) {
-        BlockPos spawn = result.bed().above();
-        Villager villager = EntityTypes.VILLAGER.spawn(level, spawn, EntitySpawnReason.EVENT);
+        BlockPos spawn = ResidenceScan.standableNear(level, result.bed());
+        if (spawn == null) {
+            return;
+        }
+        Villager villager = EntityTypes.VILLAGER.create(level, EntitySpawnReason.EVENT);
         if (villager == null) {
             return;
         }
+        villager.snapTo(spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5, random.nextFloat() * 360.0F, 0.0F);
         String specialty = InhabitantRules.pickSpecialty(
                 result.amenities(), result.gates().score(), random.nextInt());
         String name = InhabitantRules.pickName(random.nextInt());
         stamp(villager, ResidenceScan.homeId(result.bed()), specialty, name);
         applyOffers(villager, specialty, result.amenities(), CropGrowthRules.beesInactive(AntiFarming.currentSeasonalLossRate(level)));
+        if (!level.addFreshEntity(villager)) {
+            villager.discard();
+            return;
+        }
         data.put(new InhabitantData.Home(
                 ResidenceScan.homeId(result.bed()),
                 result.bed(),
@@ -333,15 +330,20 @@ public final class Inhabitants implements FeatureModule {
             if (!(entity instanceof Villager villager) || !isInhabitant(villager)) {
                 continue;
             }
-            double dist = villager.distanceToSqr(home.bed().getX() + 0.5, home.bed().getY() + 1.0, home.bed().getZ() + 0.5);
+            BlockPos dest = ResidenceScan.standableNear(level, home.bed());
+            if (dest == null) {
+                dest = home.bed().above();
+            }
+            double destX = dest.getX() + 0.5;
+            double destY = dest.getY();
+            double destZ = dest.getZ() + 0.5;
+            double dist = villager.distanceToSqr(destX, destY, destZ);
             double snap = (double) InhabitantRules.SNAP_HOME_RANGE * InhabitantRules.SNAP_HOME_RANGE;
             double wander = (double) InhabitantRules.WANDER_RANGE * InhabitantRules.WANDER_RANGE;
             if (dist > snap) {
-                BlockPos dest = home.bed().above();
-                villager.teleportTo(dest.getX() + 0.5, dest.getY(), dest.getZ() + 0.5);
+                villager.teleportTo(destX, destY, destZ);
             } else if (dist > wander) {
-                villager.getNavigation()
-                        .moveTo(home.bed().getX() + 0.5, home.bed().getY() + 1.0, home.bed().getZ() + 0.5, 0.8);
+                villager.getNavigation().moveTo(destX, destY, destZ, 0.8);
             }
         }
     }
@@ -470,6 +472,25 @@ public final class Inhabitants implements FeatureModule {
             beds.add(home.bed());
         }
         return beds;
+    }
+
+    static boolean hasSurvivalPlayer(ServerLevel level) {
+        for (ServerPlayer player : level.players()) {
+            if (!player.isSpectator() && !player.isCreative()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static List<BlockPos> bedHeadsInTickingChunks(ServerLevel level) {
+        List<BlockPos> beds = new ArrayList<>();
+        level.getChunkSource().chunkMap.forEachBlockTickingChunk(chunk -> collectBedHeads(chunk, beds));
+        return beds;
+    }
+
+    static void collectBedHeads(LevelChunk chunk, List<BlockPos> beds) {
+        chunk.findBlocks(Inhabitants::isBedHead, (pos, state) -> beds.add(pos.immutable()));
     }
 
     static boolean isBedHead(BlockState state) {

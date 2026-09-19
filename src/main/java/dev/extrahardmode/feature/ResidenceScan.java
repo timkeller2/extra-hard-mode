@@ -371,4 +371,45 @@ public final class ResidenceScan {
     public static String homeId(BlockPos bed) {
         return Long.toString(bed.asLong());
     }
+
+    /**
+     * Feet block a villager can occupy without clipping a 2-high ceiling.
+     * Prefers floor cells beside the bed; {@code bed.above()} is last.
+     */
+    public static BlockPos standableNear(ServerLevel level, BlockPos bed) {
+        for (int[] offset : InhabitantRules.STAND_OFFSETS) {
+            BlockPos feet = bed.offset(offset[0], offset[1], offset[2]);
+            if (villagerCanStand(level, feet)) {
+                return feet.immutable();
+            }
+        }
+        LongOpenHashSet interior = new LongOpenHashSet();
+        fill(level, bed, interior);
+        BlockPos fallback = null;
+        int best = Integer.MAX_VALUE;
+        for (long key : interior) {
+            BlockPos feet = BlockPos.of(key);
+            if (!villagerCanStand(level, feet)) {
+                continue;
+            }
+            int dx = feet.getX() - bed.getX();
+            int dy = feet.getY() - bed.getY();
+            int dz = feet.getZ() - bed.getZ();
+            int dist = dx * dx + dy * dy + dz * dz;
+            if (dist < best) {
+                best = dist;
+                fallback = feet.immutable();
+            }
+        }
+        return fallback;
+    }
+
+    static boolean villagerCanStand(ServerLevel level, BlockPos feet) {
+        BlockPos head = feet.above();
+        if (!level.isLoaded(feet) || !level.isLoaded(head) || !level.isLoaded(feet.below())) {
+            return false;
+        }
+        return InhabitantRules.villagerFits(
+                walkable(level, feet), walkable(level, head), level.getBlockState(feet.below()).isSolid());
+    }
 }

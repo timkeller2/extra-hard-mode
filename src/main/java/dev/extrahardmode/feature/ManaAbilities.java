@@ -46,6 +46,7 @@ import net.minecraft.world.entity.projectile.arrow.Arrow;
 import net.minecraft.world.entity.projectile.hurtingprojectile.SmallFireball;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Abilities;
+import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -63,7 +64,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
 
-/** Mana abilities: heal, iron heart, fire bolt, magic arrow, flight, let it grow, let there be light, power mining, detect ore, slow, sense evil. */
+/** Mana abilities: heal, iron heart, fire bolt, magic arrow, flight, let it grow, let there be light, power mining, detect ore, slow, sense evil, smite evil. */
 public final class ManaAbilities implements FeatureModule {
     public static final Identifier ID = ExtraHardModeMod.id("mana_abilities");
     private static final float MINING_REACH = 5.0F;
@@ -148,6 +149,9 @@ public final class ManaAbilities implements FeatureModule {
                 return InteractionResult.FAIL;
             }
             if (serverPlayer.getMainHandItem().is(Items.SPIDER_EYE) && trySenseEvil(serverPlayer)) {
+                return InteractionResult.FAIL;
+            }
+            if (serverPlayer.getMainHandItem().is(Items.GOLDEN_SWORD) && trySmiteEvil(serverPlayer, null)) {
                 return InteractionResult.FAIL;
             }
             if (isLightCoal(serverPlayer.getMainHandItem()) && tryLetThereBeLight(serverPlayer)) {
@@ -253,6 +257,14 @@ public final class ManaAbilities implements FeatureModule {
                 && player instanceof ServerPlayer serverPlayer
                 && level instanceof ServerLevel serverLevel
                 && WorldGate.isModuleActive(serverLevel, ID)
+                && serverPlayer.getMainHandItem().is(Items.GOLDEN_SWORD)
+                && trySmiteEvil(serverPlayer, null)) {
+            return InteractionResult.FAIL;
+        }
+        if (hand == InteractionHand.MAIN_HAND
+                && player instanceof ServerPlayer serverPlayer
+                && level instanceof ServerLevel serverLevel
+                && WorldGate.isModuleActive(serverLevel, ID)
                 && isLightCoal(serverPlayer.getMainHandItem())
                 && tryLetThereBeLight(serverPlayer)) {
             return InteractionResult.FAIL;
@@ -294,6 +306,14 @@ public final class ManaAbilities implements FeatureModule {
                 && WorldGate.isModuleActive(serverLevel, ID)
                 && serverPlayer.getMainHandItem().is(Items.ARROW)
                 && tryMagicArrow(serverPlayer, entity instanceof LivingEntity living ? living : null)) {
+            return InteractionResult.FAIL;
+        }
+        if (hand == InteractionHand.MAIN_HAND
+                && player instanceof ServerPlayer serverPlayer
+                && level instanceof ServerLevel serverLevel
+                && WorldGate.isModuleActive(serverLevel, ID)
+                && serverPlayer.getMainHandItem().is(Items.GOLDEN_SWORD)
+                && trySmiteEvil(serverPlayer, entity instanceof LivingEntity living ? living : null)) {
             return InteractionResult.FAIL;
         }
         return InteractionResult.PASS;
@@ -373,9 +393,8 @@ public final class ManaAbilities implements FeatureModule {
         if (alreadyHandled(player, (ServerLevel) player.level())) {
             return true;
         }
-        if (isIronHeartLocked(player)) {
-            player.sendSystemMessage(Component.translatableWithFallback(
-                    "extrahardmode.message.iron_heart_active", "Iron Heart is still active."));
+        if (remainingIronHeartBuff(player) > 0) {
+            cancelIronHeart(player);
             markHandled(player);
             return true;
         }
@@ -470,6 +489,16 @@ public final class ManaAbilities implements FeatureModule {
         }
     }
 
+    static void cancelIronHeart(ServerPlayer player) {
+        if (remainingIronHeartBuff(player) <= 0) {
+            return;
+        }
+        clearIronHeartBuff(player, false);
+        sendAbilityDurations(player);
+        player.sendSystemMessage(Component.translatableWithFallback(
+                "extrahardmode.message.iron_heart_cancel", "You cancel Iron Heart."));
+    }
+
     static void clearIronHeartBuff(ServerPlayer player, boolean message) {
         boolean had = remainingIronHeartBuff(player) > 0;
         UUID casterId = player.getAttached(EhmAttachments.EHM_IRON_HEART_CASTER);
@@ -479,7 +508,8 @@ public final class ManaAbilities implements FeatureModule {
         player.setAttached(EhmAttachments.EHM_IRON_HEART_CASTER, null);
         if (casterId != null && player.level().getServer() != null) {
             ServerPlayer caster = player.level().getServer().getPlayerList().getPlayer(casterId);
-            if (caster != null) {
+            UUID currentTarget = caster == null ? null : caster.getAttached(EhmAttachments.EHM_IRON_HEART_TARGET);
+            if (caster != null && player.getUUID().equals(currentTarget)) {
                 caster.setAttached(EhmAttachments.EHM_IRON_HEART_TARGET, null);
                 caster.setAttached(EhmAttachments.EHM_IRON_HEART_LOCK, 0);
             }
@@ -649,6 +679,52 @@ public final class ManaAbilities implements FeatureModule {
         spend(player, Items.ARROW, AbilityRules.MAGIC_ARROW);
         tellAbilityUse(player, "extrahardmode.ability.magic_arrow", "Magic arrow", power);
         return true;
+    }
+
+    static boolean trySmiteEvil(ServerPlayer player, LivingEntity clicked) {
+        if (!player.getMainHandItem().is(Items.GOLDEN_SWORD) || Achievements.skipPlayer(player)) {
+            return false;
+        }
+        if (alreadyHandled(player, (ServerLevel) player.level())) {
+            return true;
+        }
+        int bonus = withRedstoneBonus(player, 0);
+        double power = abilityPower(player, AbilityRules.SMITE_EVIL, bonus);
+        double range = AbilityRules.smiteRange(power);
+        LivingEntity target = fireTarget(player, clicked, range);
+        if (target == null) {
+            return false;
+        }
+        if (blockedByCooldownOrMana(
+                player, AbilityRules.SMITE_EVIL, "extrahardmode.ability.smite_evil", "Smite Evil")) {
+            return true;
+        }
+        spend(player, null, AbilityRules.SMITE_EVIL);
+        player.attack(target);
+        if (target.isAlive() && isUndead(target)) {
+            float extra = AbilityRules.smiteUndeadBonus(power);
+            if (extra > 0.0F) {
+                target.invulnerableTime = 0;
+                target.hurt(player.damageSources().playerAttack(player), extra);
+            }
+        }
+        spawnSmiteFlash(target, (ServerLevel) player.level());
+        tellAbilityUse(player, "extrahardmode.ability.smite_evil", "Smite Evil", power);
+        return true;
+    }
+
+    static boolean isUndead(LivingEntity target) {
+        return target != null && target.is(EntityTypeTags.UNDEAD);
+    }
+
+    static void spawnSmiteFlash(LivingEntity target, ServerLevel level) {
+        double x = target.getX();
+        double y = target.getY() + target.getBbHeight() * 0.6;
+        double z = target.getZ();
+        level.sendParticles(
+                ColorParticleOption.create(ParticleTypes.FLASH, 1.0F, 1.0F, 0.85F), x, y, z, 1, 0.0, 0.0, 0.0, 0.0);
+        level.sendParticles(ParticleTypes.END_ROD, x, y, z, 6, 0.2, 0.35, 0.2, 0.02);
+        level.sendParticles(ParticleTypes.GLOW, x, y, z, 4, 0.25, 0.4, 0.25, 0.0);
     }
 
     static boolean tryGrow(ServerPlayer player) {
@@ -1433,7 +1509,11 @@ public final class ManaAbilities implements FeatureModule {
         if (held.is(Items.FEATHER) && isFlying(player)) {
             return;
         }
-        if (held.is(Items.IRON_INGOT) && isIronHeartLocked(player)) {
+        if (held.is(Items.IRON_INGOT) && remainingIronHeartBuff(player) > 0) {
+            player.sendOverlayMessage(Component.translatableWithFallback(
+                    "extrahardmode.message.ability_hint_iron_heart_off",
+                    "Right click to cancel %s...",
+                    abilityName(ability)));
             return;
         }
         if (!AbilityRules.hasManaToUse(ability, Achievements.currentMana(player))) {
@@ -1487,6 +1567,7 @@ public final class ManaAbilities implements FeatureModule {
                 || held.is(Items.ARROW)
                 || held.is(Items.CHARCOAL)
                 || held.is(Items.STRING)
+                || held.is(Items.GOLDEN_SWORD)
                 || isLightCoal(held)) {
             if (hoeBonus > 0) {
                 player.sendOverlayMessage(Component.translatableWithFallback(
@@ -1715,6 +1796,9 @@ public final class ManaAbilities implements FeatureModule {
         }
         if (held.is(Items.SPIDER_EYE)) {
             return AbilityRules.SENSE_EVIL;
+        }
+        if (held.is(Items.GOLDEN_SWORD)) {
+            return AbilityRules.SMITE_EVIL;
         }
         return null;
     }

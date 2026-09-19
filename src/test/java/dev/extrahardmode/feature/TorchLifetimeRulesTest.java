@@ -33,4 +33,48 @@ class TorchLifetimeRulesTest {
         assertTrue(TorchLifetimeRules.expired(0L, 168000L, 7));
         assertFalse(TorchLifetimeRules.expired(0L, 167999L, 7));
     }
+
+    @Test
+    void lightDimsAfterTwoDaysAndPermanentStaysFull() {
+        assertEquals(14, TorchLifetimeRules.FULL_LIGHT);
+        assertEquals(2, TorchLifetimeRules.DIM_AFTER_DAYS);
+        assertEquals(0, TorchLifetimeRules.daysBurning(-1L, 99_000L));
+        assertEquals(0, TorchLifetimeRules.daysBurning(0L, 23999L));
+        assertEquals(1, TorchLifetimeRules.daysBurning(0L, 24000L));
+        assertEquals(2, TorchLifetimeRules.daysBurning(0L, 48000L));
+        assertEquals(3, TorchLifetimeRules.daysBurning(0L, 72000L));
+        assertEquals(14, TorchLifetimeRules.lightLevel(14, 0L, 0L, 7));
+        assertEquals(14, TorchLifetimeRules.lightLevel(14, 0L, 47999L, 7));
+        assertEquals(14, TorchLifetimeRules.lightLevel(14, 0L, 48000L, 7));
+        assertEquals(13, TorchLifetimeRules.lightLevel(14, 0L, 72000L, 7));
+        assertEquals(12, TorchLifetimeRules.lightLevel(14, 0L, 96000L, 7));
+        assertEquals(10, TorchLifetimeRules.lightLevel(14, 0L, 168000L - 1L, 7));
+        assertEquals(14, TorchLifetimeRules.lightLevel(14, -1L, 999_999L, 7));
+        assertEquals(14, TorchLifetimeRules.lightLevel(14, 0L, 999_999L, 0));
+        assertEquals(10, TorchLifetimeRules.lightLevel(10, 0L, 72000L, 7));
+        assertEquals(10, TorchLifetimeRules.lightLevel(10, 0L, 168000L - 1L, 7));
+    }
+
+    @Test
+    void campfireChestRangeIsTwelveBlocks() {
+        assertEquals(12, TorchLifetimeRules.CAMPFIRE_REFUEL_RANGE);
+        assertTrue(TorchLifetimeRules.chestInRange(12, 0, 0, 12));
+        assertTrue(TorchLifetimeRules.chestInRange(0, -12, 0, 12));
+        assertTrue(TorchLifetimeRules.chestInRange(8, 8, 4, 12));
+        assertFalse(TorchLifetimeRules.chestInRange(13, 0, 0, 12));
+        assertFalse(TorchLifetimeRules.chestInRange(9, 8, 0, 12));
+        assertEquals(144L, TorchLifetimeRules.distanceSq(12, 0, 0));
+    }
+
+    @Test
+    void campfireRefuelAddsAnotherBurnPeriod() {
+        assertTrue(TorchLifetimeRules.expired(0L, 168000L, 7));
+        long extended = TorchLifetimeRules.extendPlacedAt(0L, 7);
+        assertEquals(168000L, extended);
+        assertFalse(TorchLifetimeRules.expired(extended, 168000L, 7));
+        assertFalse(TorchLifetimeRules.expired(extended, 168000L + 167999L, 7));
+        assertTrue(TorchLifetimeRules.expired(extended, 336000L, 7));
+        assertEquals(0L, TorchLifetimeRules.extendPlacedAt(0L, 0));
+        assertEquals(-1L, TorchLifetimeRules.extendPlacedAt(-1L, 7));
+    }
 }

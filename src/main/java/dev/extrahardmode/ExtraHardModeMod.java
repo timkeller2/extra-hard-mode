@@ -10,6 +10,7 @@ import dev.extrahardmode.feature.AntiFarming;
 import dev.extrahardmode.feature.BiomeBosses;
 import dev.extrahardmode.feature.CaveIns;
 import dev.extrahardmode.feature.Dragon;
+import dev.extrahardmode.feature.Exploration;
 import dev.extrahardmode.feature.Explosions;
 import dev.extrahardmode.feature.FallingBlocks;
 import dev.extrahardmode.feature.FeatureRegistry;
@@ -112,6 +113,7 @@ public class ExtraHardModeMod implements ModInitializer {
         FEATURES.register(new Dragon());
         FEATURES.register(new BiomeBosses());
         FEATURES.register(new Achievements());
+        FEATURES.register(new Exploration());
         FEATURES.register(new ManaAbilities());
         FEATURES.register(new Tutorial());
         FEATURES.register(new VillagerNerf());

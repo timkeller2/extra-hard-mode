@@ -13,6 +13,8 @@
     "AnimalMixin",
     "BaseFireBlockMixin",
     "BlockItemPlaceMixin",
+    "BlockLightEngineMixin",
+    "ChunkAccessMixin",
     "BoneMealItemMixin",
     "BlocksAttacksMixin",
     "BucketItemMixin",
