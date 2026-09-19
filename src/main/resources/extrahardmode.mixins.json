@@ -55,6 +55,7 @@
     "LivingEntityDropMixin",
     "LivingEntityHealthMixin",
     "LivingEntityHurtMixin",
+    "LightEngineAccess",
     "LivingEntityLootAccess",
     "LivingEntityLootMixin",
     "LootlessMixin",
