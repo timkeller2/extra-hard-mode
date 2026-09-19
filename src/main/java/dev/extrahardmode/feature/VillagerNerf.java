@@ -74,7 +74,7 @@ public final class VillagerNerf implements FeatureModule {
 
     @Override
     public boolean defaultEnabled() {
-        return false;
+        return true;
     }
 
     public static void apply(Villager villager) {

@@ -27,13 +27,13 @@ public final class PlayerSettings {
     private boolean extinguishIgnites = true;
     private int extinguishBurnTicks = 80;
 
-    private boolean forfeitEnable = true;
-    private int forfeitPercent = 10;
-    private int toolDamagePercent = 30;
+    private boolean forfeitEnable = false;
+    private int forfeitPercent = 0;
+    private int toolDamagePercent = 0;
     private boolean keepHeavilyDamagedTools = true;
     private boolean respawnHealthEnable = true;
-    private int respawnHealthPercent = 75;
-    private int respawnFood = 15;
+    private int respawnHealthPercent = 25;
+    private int respawnFood = 6;
 
     private boolean weightEnable = true;
     private boolean blockWaterfalls = true;
@@ -220,13 +220,13 @@ public final class PlayerSettings {
                 file,
                 "player.death.forfeitEnable",
                 "Forfeit a percent of item stacks on death. Still runs when keepInventory is true; remaining stacks still drop otherwise. Tag extrahardmode:death_item_blacklist is empty by default; datapack in minecraft:recovery_compass and minecraft:totem_of_undying to keep those.");
-        setIfMissing(file, "player.death.forfeitEnable", true);
-        setIfMissing(file, "player.death.forfeitPercent", 10);
-        setIfMissing(file, "player.death.toolDamagePercent", 30);
+        setIfMissing(file, "player.death.forfeitEnable", false);
+        setIfMissing(file, "player.death.forfeitPercent", 0);
+        setIfMissing(file, "player.death.toolDamagePercent", 0);
         setIfMissing(file, "player.death.keepHeavilyDamagedTools", true);
         setIfMissing(file, "player.death.respawnHealthEnable", true);
-        setIfMissing(file, "player.death.respawnHealthPercent", 75);
-        setIfMissing(file, "player.death.respawnFood", 15);
+        setIfMissing(file, "player.death.respawnHealthPercent", 25);
+        setIfMissing(file, "player.death.respawnFood", 6);
 
         comment(
                 file,
@@ -276,13 +276,13 @@ public final class PlayerSettings {
         extinguishIgnites = file.getOrElse("player.extinguishIgnites", true);
         extinguishBurnTicks = file.getOrElse("player.extinguishBurnTicks", 80);
 
-        forfeitEnable = file.getOrElse("player.death.forfeitEnable", true);
-        forfeitPercent = file.getOrElse("player.death.forfeitPercent", 10);
-        toolDamagePercent = file.getOrElse("player.death.toolDamagePercent", 30);
+        forfeitEnable = file.getOrElse("player.death.forfeitEnable", false);
+        forfeitPercent = file.getOrElse("player.death.forfeitPercent", 0);
+        toolDamagePercent = file.getOrElse("player.death.toolDamagePercent", 0);
         keepHeavilyDamagedTools = file.getOrElse("player.death.keepHeavilyDamagedTools", true);
         respawnHealthEnable = file.getOrElse("player.death.respawnHealthEnable", true);
-        respawnHealthPercent = file.getOrElse("player.death.respawnHealthPercent", 75);
-        respawnFood = file.getOrElse("player.death.respawnFood", 15);
+        respawnHealthPercent = file.getOrElse("player.death.respawnHealthPercent", 25);
+        respawnFood = file.getOrElse("player.death.respawnFood", 6);
 
         weightEnable = file.getOrElse("player.weight.enable", true);
         blockWaterfalls = file.getOrElse("player.weight.blockWaterfalls", true);

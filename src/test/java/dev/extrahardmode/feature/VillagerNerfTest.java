@@ -18,7 +18,7 @@ class VillagerNerfTest {
     }
 
     @Test
-    void missingKeyOnWorldConfigIsOffAfterRegister() {
+    void missingKeyOnWorldConfigIsOnAfterRegister() {
         WorldConfig world = new WorldConfig(ExtraHardModeMod.id("testdim"));
         assertTrue(world.isModuleEnabled(Tutorial.ID));
         boolean already = false;
@@ -31,11 +31,11 @@ class VillagerNerfTest {
         if (!already) {
             ExtraHardModeMod.FEATURES.register(new VillagerNerf());
         }
-        assertFalse(world.isModuleEnabled(VillagerNerf.ID));
-        world.setModuleEnabled(VillagerNerf.ID, true);
         assertTrue(world.isModuleEnabled(VillagerNerf.ID));
         world.setModuleEnabled(VillagerNerf.ID, false);
         assertFalse(world.isModuleEnabled(VillagerNerf.ID));
+        world.setModuleEnabled(VillagerNerf.ID, true);
+        assertTrue(world.isModuleEnabled(VillagerNerf.ID));
     }
 
     @Test
@@ -140,7 +140,7 @@ class VillagerNerfTest {
         assertFalse(VillagerNerf.shouldDropOffer(false, true, 3, true, true, true));
         assertFalse(VillagerNerf.shouldDropOffer(false, true, 4, true, true, true));
         assertEquals(20, VillagerNerf.MASTER_MENDING_EMERALDS);
-        assertFalse(new VillagerNerf().defaultEnabled());
+        assertTrue(new VillagerNerf().defaultEnabled());
     }
 
     private static List<String> results(List<Trade> offers) {

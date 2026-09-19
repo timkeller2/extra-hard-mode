@@ -119,7 +119,7 @@ Dedicated servers do not load client extras. Optional **Cloth Config** + **Mod M
 
 ## Optional villager trade nerf (default off)
 
-Not original Extra Hard Mode. `/ehm set villager_nerf true` (gamerule must also be on) removes villager trades whose **result** is diamond or netherite sword/tools/armor. Librarian Mending books are stripped from novice and apprentice; a Master librarian may still sell Mending at **2×** emeralds (20 + a book). Farmer crop trades, cartographer maps, and copper-age trades are left alone. Missing `modules.extrahardmode.villager_nerf` is **false**.
+Not original Extra Hard Mode. `/ehm set villager_nerf true` (gamerule must also be on) removes villager trades whose **result** is diamond or netherite sword/tools/armor. Librarian Mending books are stripped from novice and apprentice; a Master librarian may still sell Mending at **2×** emeralds (20 + a book). Farmer crop trades, cartographer maps, and copper-age trades are left alone. Missing `modules.extrahardmode.villager_nerf` is **true**.
 
 ## Credits
 

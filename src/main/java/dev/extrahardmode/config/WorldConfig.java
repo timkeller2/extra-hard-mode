@@ -67,7 +67,7 @@ public final class WorldConfig {
     private int skeletonSilverfishMaxAtOnce = 5;
     private int skeletonSilverfishMaxTotal = 15;
     private boolean skeletonKillSilverfishOnDeath = true;
-    private int skeletonDeflectArrowsPercent = 100;
+    private int skeletonDeflectArrowsPercent = 75;
     private boolean silverfishCantEnterBlocks = true;
     private boolean silverfishDropCobble = true;
     private boolean silverfishVisibilityParticles = true;
@@ -89,7 +89,7 @@ public final class WorldConfig {
     private boolean cantCraftMelonSeeds = true;
     private boolean noBonemealOnMushrooms = true;
     private boolean noFarmNetherWart = false;
-    private boolean sheepWhiteWool = true;
+    private boolean sheepWhiteWool = false;
     private boolean squidOceanOnly = true;
     private boolean bucketsDontMoveSources = true;
     private boolean animalXpNerf = true;
@@ -102,7 +102,7 @@ public final class WorldConfig {
     private int overgrazingChestRange = OvergrazingRules.DEFAULT_CHEST_RANGE;
     private int cropMatureDurationPercent = 300;
     private int animalBreedCooldownMultiplier = 6;
-    private int eggLayTimeMultiplier = 2;
+    private int eggLayTimeMultiplier = 6;
     private int hiveHoneycombCount = 1;
     private float movingExhaustionPerSecond = 0.175F;
     private int foodHistorySize = 7;
@@ -121,10 +121,10 @@ public final class WorldConfig {
     private boolean inhibitGrinders = true;
     private boolean moreMonstersEnable = true;
     private int moreMonstersMaxY = 48;
-    private int moreMonstersMultiplier = 2;
+    private int moreMonstersMultiplier = 3;
     private boolean spawnInLightEnable = true;
     private int spawnInLightMaxY = 48;
-    private int spawnInLightMaxLight = 10;
+    private int spawnInLightMaxLight = 11;
     private int spawnInLightPercent = 100;
     private final ExplosionConfig explosions = new ExplosionConfig();
     private final MonsterConfig monsters = new MonsterConfig();
@@ -160,7 +160,7 @@ public final class WorldConfig {
     private double bossDifficultyPercentPerStep = 1.0;
     private double bossTreasurePercentScale = 3.0;
     private int inhabitantMinVolume = 24;
-    private int inhabitantMaxVolume = 250;
+    private int inhabitantMaxVolume = 300;
     private int inhabitantMinLight = 8;
     private int inhabitantMinScore = 12;
     private int inhabitantSpacing = 48;
@@ -946,7 +946,7 @@ public final class WorldConfig {
                 if (!file.contains("mining.hardened.budgets")) {
                     file.setComment(
                             "mining.hardened.budgets",
-                            "Expected hardened-stone lifetime without Unbreaking. Extra durability per break is round(maxDurability / N) - 1 on top of vanilla's 1; Unbreaking can skip that extra damage. iron@128 diamond@512 netherite@1024 copper@97.");
+                            "Expected hardened-stone lifetime without Unbreaking. Extra durability per break is round(maxDurability / N) - 1 on top of vanilla's 1; Unbreaking can skip that extra damage. copper@3 iron@7 diamond@128 netherite@512.");
                     file.set("mining.hardened.budgets", new ArrayList<>(HardenedBudget.DEFAULT_ENTRIES));
                 }
                 writeDefaultIfMissing(
@@ -1022,7 +1022,7 @@ public final class WorldConfig {
                 writeDefaultIfMissing(file, "skeletons.silverfishMaxTotal", 15);
                 writeDefaultIfMissing(
                         file, "skeletons.killSilverfishOnSkeletonDeath", "Discard owner-tagged minions on skeleton death.", true);
-                writeDefaultIfMissing(file, "skeletons.deflectArrowsPercent", "Arrows pass through Skeleton/Bogged.", 100);
+                writeDefaultIfMissing(file, "skeletons.deflectArrowsPercent", "Arrows pass through Skeleton/Bogged.", 75);
                 writeDefaultIfMissing(file, "silverfish.cantEnterBlocks", "Block merge-into-stone.", true);
                 writeDefaultIfMissing(file, "silverfish.dropCobble", true);
                 writeDefaultIfMissing(
@@ -1086,7 +1086,7 @@ public final class WorldConfig {
                 }
                 if (!file.contains("monsters.more.multiplier")) {
                     file.setComment("monsters.more.multiplier", "Pack size only; does not raise the vanilla monster cap.");
-                    file.set("monsters.more.multiplier", 2);
+                    file.set("monsters.more.multiplier", 3);
                 }
                 writeDefaultIfMissing(
                         file,
@@ -1099,7 +1099,7 @@ public final class WorldConfig {
                 }
                 if (!file.contains("monsters.spawnInLight.maxLight")) {
                     file.setComment("monsters.spawnInLight.maxLight", "0-3 bats, 0-7 vanilla, 8-11 hostile no burn, 12+ burn");
-                    file.set("monsters.spawnInLight.maxLight", 10);
+                    file.set("monsters.spawnInLight.maxLight", 11);
                 }
                 if (!file.contains("monsters.spawnInLight.percent")) {
                     file.setComment("monsters.spawnInLight.percent", "Chance per attempt at previously visited cave sections.");
@@ -1146,13 +1146,13 @@ public final class WorldConfig {
                 if (!file.contains("modules")) {
                     file.setComment(
                             "modules",
-                            "Runtime per-module toggles for this dimension. Missing keys default true except villager_nerf.");
+                            "Runtime per-module toggles for this dimension. Missing keys default true.");
                 }
                 writeDefaultIfMissing(
                         file,
                         "modules.extrahardmode.villager_nerf",
-                        "Optional diamond-gear / novice-Mending trade nerf. Not original EHM; default false.",
-                        false);
+                        "Optional diamond-gear / novice-Mending trade nerf. Not original EHM; default true.",
+                        true);
                 writeDefaultIfMissing(
                         file,
                         "villagerNerf.blockDiamondGearTrades",
@@ -1166,8 +1166,8 @@ public final class WorldConfig {
                 writeDefaultIfMissing(
                         file,
                         "modules.extrahardmode.inhabitants",
-                        "Homes can attract one traveler. Default false until tuned.",
-                        false);
+                        "Homes can attract one traveler. Default true.",
+                        true);
                 writeInhabitantDefaults(file);
                 migrate(file);
                 file.save();
@@ -1465,7 +1465,7 @@ public final class WorldConfig {
         cantCraftMelonSeeds = file.getOrElse("farming.cantCraftMelonSeeds", true);
         noBonemealOnMushrooms = file.getOrElse("farming.noBonemealOnMushrooms", true);
         noFarmNetherWart = file.getOrElse("farming.noFarmNetherWart", false);
-        sheepWhiteWool = file.getOrElse("farming.sheepWhiteWool", true);
+        sheepWhiteWool = file.getOrElse("farming.sheepWhiteWool", false);
         squidOceanOnly = file.getOrElse("farming.squidOceanOnly", true);
         bucketsDontMoveSources = file.getOrElse("farming.bucketsDontMoveSources", true);
         animalXpNerf = file.getOrElse("farming.animalXpNerf", true);
@@ -1481,7 +1481,7 @@ public final class WorldConfig {
                 getInt(file, "farming.overgrazing.chestRange", OvergrazingRules.DEFAULT_CHEST_RANGE));
         cropMatureDurationPercent = Math.max(1, getInt(file, "farming.cropMatureDurationPercent", 300));
         animalBreedCooldownMultiplier = Math.max(1, getInt(file, "farming.animalBreedCooldownMultiplier", 6));
-        eggLayTimeMultiplier = Math.max(1, getInt(file, "farming.eggLayTimeMultiplier", 2));
+        eggLayTimeMultiplier = Math.max(1, getInt(file, "farming.eggLayTimeMultiplier", 6));
         hiveHoneycombCount = Math.clamp(getInt(file, "farming.hiveHoneycombCount", 1), 0, 64);
         movingExhaustionPerSecond = (float) getDouble(file, "hunger.movingExhaustionPerSecond", 0.175);
         foodHistorySize = Math.max(1, getInt(file, "hunger.foodHistorySize", 7));
@@ -1506,7 +1506,7 @@ public final class WorldConfig {
         skeletonSilverfishMaxAtOnce = Math.max(0, getInt(file, "skeletons.silverfishMaxAtOnce", 5));
         skeletonSilverfishMaxTotal = Math.max(0, getInt(file, "skeletons.silverfishMaxTotal", 15));
         skeletonKillSilverfishOnDeath = file.getOrElse("skeletons.killSilverfishOnSkeletonDeath", true);
-        skeletonDeflectArrowsPercent = percent(getInt(file, "skeletons.deflectArrowsPercent", 100));
+        skeletonDeflectArrowsPercent = percent(getInt(file, "skeletons.deflectArrowsPercent", 75));
         silverfishCantEnterBlocks = file.getOrElse("silverfish.cantEnterBlocks", true);
         silverfishDropCobble = file.getOrElse("silverfish.dropCobble", true);
         silverfishVisibilityParticles = file.getOrElse("silverfish.visibilityParticles", true);
@@ -1523,16 +1523,16 @@ public final class WorldConfig {
         inhibitGrinders = file.getOrElse("monsters.inhibitGrinders", true);
         moreMonstersEnable = file.getOrElse("monsters.more.enable", true);
         moreMonstersMaxY = getInt(file, "monsters.more.maxY", 48);
-        moreMonstersMultiplier = getInt(file, "monsters.more.multiplier", 2);
+        moreMonstersMultiplier = getInt(file, "monsters.more.multiplier", 3);
         spawnInLightEnable = file.getOrElse("monsters.spawnInLight.enable", true);
         spawnInLightMaxY = getInt(file, "monsters.spawnInLight.maxY", 48);
-        spawnInLightMaxLight = getInt(file, "monsters.spawnInLight.maxLight", 10);
+        spawnInLightMaxLight = getInt(file, "monsters.spawnInLight.maxLight", 11);
         spawnInLightPercent = getInt(file, "monsters.spawnInLight.percent", 100);
         creeperTntWarning = file.getOrElse("sounds.creeperTntWarning", true);
         villagerNerfBlockDiamondGear = file.getOrElse("villagerNerf.blockDiamondGearTrades", true);
         villagerNerfNoviceMending = file.getOrElse("villagerNerf.nerfNoviceMending", true);
         inhabitantMinVolume = Math.max(1, getInt(file, "inhabitants.minVolume", 24));
-        inhabitantMaxVolume = Math.max(inhabitantMinVolume, getInt(file, "inhabitants.maxVolume", 250));
+        inhabitantMaxVolume = Math.max(inhabitantMinVolume, getInt(file, "inhabitants.maxVolume", 300));
         inhabitantMinLight = Math.clamp(getInt(file, "inhabitants.minLight", 8), 0, 15);
         inhabitantMinScore = Math.max(0, getInt(file, "inhabitants.minScore", 12));
         inhabitantSpacing = Math.max(0, getInt(file, "inhabitants.spacing", 48));
@@ -1590,7 +1590,7 @@ public final class WorldConfig {
                 "farming.noFarmNetherWart",
                 "If true, cannot place nether wart and breaking always drops exactly 1. Default false: wart is farmable at 1/20 vanilla growth.",
                 false);
-        writeDefaultIfMissing(file, "farming.sheepWhiteWool", "Sheep regrow and breed white. Dyeing is one-shot.", true);
+        writeDefaultIfMissing(file, "farming.sheepWhiteWool", "Sheep regrow and breed white. Dyeing is one-shot.", false);
         writeDefaultIfMissing(
                 file, "farming.squidOceanOnly", "Natural squid only spawn in #minecraft:is_ocean. Glow squid unchanged.", true);
         writeDefaultIfMissing(
@@ -1640,8 +1640,8 @@ public final class WorldConfig {
         writeDefaultIfMissing(
                 file,
                 "farming.eggLayTimeMultiplier",
-                "Chickens take this many times as long to lay eggs. Vanilla is 5–10 minutes; default 2 (10–20 minutes). 1 is vanilla.",
-                2);
+                "Chickens take this many times as long to lay eggs. Vanilla is 5–10 minutes; default 6 (30–60 minutes). 1 is vanilla.",
+                6);
         writeDefaultIfMissing(
                 file,
                 "farming.hiveHoneycombCount",
@@ -1685,7 +1685,7 @@ public final class WorldConfig {
                 "Interior air blocks required for a home. Smaller rooms do not qualify.",
                 24);
         writeDefaultIfMissing(
-                file, "inhabitants.maxVolume", "Interior air blocks above this are too large for one resident.", 250);
+                file, "inhabitants.maxVolume", "Interior air blocks above this are too large for one resident.", 300);
         writeDefaultIfMissing(file, "inhabitants.minLight", "Minimum block light on interior floor air.", 8);
         writeDefaultIfMissing(file, "inhabitants.minScore", "Amenity points required to attract a resident.", 12);
         writeDefaultIfMissing(

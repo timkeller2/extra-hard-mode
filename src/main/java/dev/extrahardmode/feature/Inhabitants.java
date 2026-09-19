@@ -58,7 +58,7 @@ public final class Inhabitants implements FeatureModule {
 
     @Override
     public boolean defaultEnabled() {
-        return false;
+        return true;
     }
 
     @Override

@@ -12,16 +12,16 @@ import java.util.function.IntUnaryOperator;
  * that extra damage.
  */
 public final class HardenedBudget {
-    public static final int COPPER = Math.round(128 * 190 / 250.0f);
-    public static final int IRON = 128;
-    public static final int DIAMOND = 512;
-    public static final int NETHERITE = 1024;
+    public static final int COPPER = 3;
+    public static final int IRON = 7;
+    public static final int DIAMOND = 128;
+    public static final int NETHERITE = 512;
 
     public static final List<String> DEFAULT_ENTRIES = List.of(
-            "copper_pickaxe@" + COPPER,
-            "iron_pickaxe@" + IRON,
-            "diamond_pickaxe@" + DIAMOND,
-            "netherite_pickaxe@" + NETHERITE);
+            "minecraft:copper_pickaxe@" + COPPER,
+            "minecraft:iron_pickaxe@" + IRON,
+            "minecraft:diamond_pickaxe@" + DIAMOND,
+            "minecraft:netherite_pickaxe@" + NETHERITE);
 
     private HardenedBudget() {}
 

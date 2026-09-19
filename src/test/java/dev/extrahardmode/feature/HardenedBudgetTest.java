@@ -9,15 +9,15 @@ import org.junit.jupiter.api.Test;
 class HardenedBudgetTest {
     @Test
     void extraDamageMatchesBudgets() {
-        assertEquals(1, HardenedBudget.extraDamage(250, HardenedBudget.IRON));
-        assertEquals(2, HardenedBudget.extraDamage(1561, HardenedBudget.DIAMOND));
-        assertEquals(1, HardenedBudget.extraDamage(2031, HardenedBudget.NETHERITE));
-        assertEquals(1, HardenedBudget.extraDamage(190, HardenedBudget.COPPER));
+        assertEquals(35, HardenedBudget.extraDamage(250, HardenedBudget.IRON));
+        assertEquals(11, HardenedBudget.extraDamage(1561, HardenedBudget.DIAMOND));
+        assertEquals(3, HardenedBudget.extraDamage(2031, HardenedBudget.NETHERITE));
+        assertEquals(62, HardenedBudget.extraDamage(190, HardenedBudget.COPPER));
     }
 
     @Test
     void extraDamageIsZeroWhenBudgetCoversVanillaDurability() {
-        assertEquals(0, HardenedBudget.extraDamage(63, HardenedBudget.COPPER));
+        assertEquals(0, HardenedBudget.extraDamage(3, HardenedBudget.COPPER));
         assertEquals(0, HardenedBudget.extraDamage(250, 0));
         assertEquals(0, HardenedBudget.extraDamage(0, HardenedBudget.IRON));
     }
@@ -36,13 +36,15 @@ class HardenedBudgetTest {
     }
 
     @Test
-    void copperBudgetIs97() {
-        assertEquals(97, HardenedBudget.COPPER);
-        assertEquals(97, Math.round(128 * 190 / 250.0));
+    void defaultBudgetsMatchLiveOverworld() {
+        assertEquals(3, HardenedBudget.COPPER);
+        assertEquals(7, HardenedBudget.IRON);
+        assertEquals(128, HardenedBudget.DIAMOND);
+        assertEquals(512, HardenedBudget.NETHERITE);
         Map<String, Integer> parsed = HardenedBudget.parseAll(HardenedBudget.DEFAULT_ENTRIES);
-        assertEquals(97, parsed.get("minecraft:copper_pickaxe"));
-        assertEquals(128, parsed.get("minecraft:iron_pickaxe"));
-        assertEquals(512, parsed.get("minecraft:diamond_pickaxe"));
-        assertEquals(1024, parsed.get("minecraft:netherite_pickaxe"));
+        assertEquals(3, parsed.get("minecraft:copper_pickaxe"));
+        assertEquals(7, parsed.get("minecraft:iron_pickaxe"));
+        assertEquals(128, parsed.get("minecraft:diamond_pickaxe"));
+        assertEquals(512, parsed.get("minecraft:netherite_pickaxe"));
     }
 }

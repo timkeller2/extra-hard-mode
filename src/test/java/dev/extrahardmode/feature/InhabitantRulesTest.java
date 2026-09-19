@@ -17,7 +17,8 @@ class InhabitantRulesTest {
         assertTrue(InhabitantRules.volumeOk(24));
         assertTrue(InhabitantRules.volumeOk(80));
         assertTrue(InhabitantRules.volumeOk(250));
-        assertFalse(InhabitantRules.volumeOk(251));
+        assertTrue(InhabitantRules.volumeOk(300));
+        assertFalse(InhabitantRules.volumeOk(301));
         assertTrue(InhabitantRules.fillOpen(512, true));
         assertFalse(InhabitantRules.fillOpen(512, false));
         assertFalse(InhabitantRules.fillOpen(250, true));
@@ -173,8 +174,8 @@ class InhabitantRulesTest {
     }
 
     @Test
-    void moduleDefaultsOff() {
-        assertFalse(new Inhabitants().defaultEnabled());
+    void moduleDefaultsOn() {
+        assertTrue(new Inhabitants().defaultEnabled());
         assertEquals("inhabitants", Inhabitants.ID.getPath());
     }
 

@@ -40,7 +40,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("6 times as long to breed"));
         assertTrue(String.join(" ", lines).contains("overgraze"));
         assertTrue(String.join(" ", lines).contains("starve without dropping meat"));
-        assertTrue(String.join(" ", lines).contains("lay eggs twice"));
+        assertTrue(String.join(" ", lines).contains("lay eggs 6 times"));
         assertTrue(String.join(" ", lines).contains("Trees take 10 times"));
         assertTrue(String.join(" ", lines).contains("Nether wart grows at 1/20"));
         assertTrue(String.join(" ", lines).contains("half as many saplings"));
@@ -134,7 +134,7 @@ class EhmHelpTest {
         assertEquals(7, lines.size());
         String all = String.join(" ", lines);
         assertTrue(all.contains("/ehm help homes"));
-        assertTrue(all.contains("24 to 250"));
+        assertTrue(all.contains("24 to 300"));
         assertTrue(all.contains("12 points"));
         assertTrue(all.contains("Each 48 interior air"));
         assertTrue(all.contains("enclosed room"));

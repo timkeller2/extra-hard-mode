@@ -29,7 +29,7 @@ public final class MonsterConfig {
     private int spiderBonusPercent = 20;
     private boolean spidersDropWeb = true;
 
-    private int chargedPercent = 10;
+    private int chargedPercent = 5;
     private int dropTntPercent = 20;
     private int dropTntMaxY = CAVE_Y;
     private boolean chargedExplodeOnDamage = true;
@@ -151,7 +151,7 @@ public final class MonsterConfig {
                 20);
         writeBool(file, "spiders.dropWebOnDeath", "Place cobwebs on death. Y>=48 cleaned; caves persist.", true);
 
-        writeInt(file, "creepers.chargedPercent", "NATURAL creepers spawn charged.", 10);
+        writeInt(file, "creepers.chargedPercent", "NATURAL creepers spawn charged.", 5);
         writeInt(file, "creepers.dropTntPercent", "Death chance to drop primed TNT.", 20);
         if (!file.contains("creepers.dropTntMaxY")) {
             file.setComment("creepers.dropTntMaxY", "Cave band. original: 50");
@@ -178,7 +178,7 @@ public final class MonsterConfig {
         spiderBonusPercent = readInt(file, "spiders.bonusUndergroundPercent", 20);
         spidersDropWeb = file.getOrElse("spiders.dropWebOnDeath", true);
 
-        chargedPercent = readInt(file, "creepers.chargedPercent", 10);
+        chargedPercent = readInt(file, "creepers.chargedPercent", 5);
         dropTntPercent = readInt(file, "creepers.dropTntPercent", 20);
         dropTntMaxY = readInt(file, "creepers.dropTntMaxY", CAVE_Y);
         chargedExplodeOnDamage = file.getOrElse("creepers.chargedExplodeOnDamage", true);
