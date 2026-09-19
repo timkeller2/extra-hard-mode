@@ -17,6 +17,8 @@ class FurnaceXpRulesTest {
         assertEquals(1050, FurnaceXpRules.withAutomationBonus(700));
         assertEquals(0, FurnaceXpRules.withAutomationBonus(0));
         assertEquals(1500, FurnaceXpRules.withAutomationBonus(1000));
+        assertEquals(0.7F, FurnaceXpRules.COMPOSTER_EXPERIENCE, 0.0001F);
+        assertEquals(1050, FurnaceXpRules.withAutomationBonus(FurnaceXpRules.toMilli(FurnaceXpRules.COMPOSTER_EXPERIENCE)));
     }
 
     @Test

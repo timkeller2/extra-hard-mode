@@ -5,9 +5,11 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.extrahardmode.ExtraHardModeMod;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.UUIDUtil;
@@ -27,27 +29,42 @@ public final class InhabitantData extends SavedData {
                     UUIDUtil.CODEC.optionalFieldOf("living").forGetter(Home::living),
                     Codec.LONG.optionalFieldOf("leave_after_day", -1L).forGetter(Home::leaveAfterDay),
                     Codec.LONG.optionalFieldOf("empty_until_day", -1L).forGetter(Home::emptyUntilDay),
-                    Codec.BOOL.optionalFieldOf("uneasy", false).forGetter(Home::uneasy))
+                    Codec.BOOL.optionalFieldOf("uneasy", false).forGetter(Home::uneasy),
+                    Codec.LONG.optionalFieldOf("last_restock_day", -1L).forGetter(Home::lastRestockDay))
             .apply(instance, Home::new));
 
     public static final Codec<InhabitantData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                     HOME_CODEC.listOf().optionalFieldOf("homes", List.of()).forGetter(InhabitantData::homes),
-                    Codec.LONG.optionalFieldOf("last_dawn_day", -1L).forGetter(InhabitantData::lastDawnDay))
+                    Codec.LONG.optionalFieldOf("last_dawn_day", -1L).forGetter(InhabitantData::lastDawnDay),
+                    Codec.LONG.optionalFieldOf("last_restock_day", -1L).forGetter(InhabitantData::lastRestockDay),
+                    Codec.STRING
+                            .listOf()
+                            .optionalFieldOf("spawned_specialties", List.of())
+                            .forGetter(InhabitantData::spawnedSpecialtyList))
             .apply(instance, InhabitantData::new));
 
     public static final SavedDataType<InhabitantData> TYPE = new SavedDataType<>(
             ExtraHardModeMod.id("inhabitants"), InhabitantData::new, CODEC, DataFixTypes.SAVED_DATA_MAP_INDEX);
 
     private final Map<String, Home> homes = new LinkedHashMap<>();
+    private final LinkedHashSet<String> spawnedSpecialties = new LinkedHashSet<>();
     private long lastDawnDay = -1L;
+    private long lastRestockDay = -1L;
 
     public InhabitantData() {}
 
-    public InhabitantData(List<Home> homes, long lastDawnDay) {
+    public InhabitantData(List<Home> homes, long lastDawnDay, long lastRestockDay, List<String> spawnedSpecialties) {
         for (Home home : homes) {
             this.homes.put(home.id(), home);
+            rememberSpecialty(home.specialty());
         }
         this.lastDawnDay = lastDawnDay;
+        this.lastRestockDay = lastRestockDay;
+        if (spawnedSpecialties != null) {
+            for (String type : spawnedSpecialties) {
+                rememberSpecialty(type);
+            }
+        }
     }
 
     public static InhabitantData of(ServerLevel level) {
@@ -65,6 +82,36 @@ public final class InhabitantData extends SavedData {
     public void setLastDawnDay(long day) {
         this.lastDawnDay = day;
         setDirty();
+    }
+
+    public long lastRestockDay() {
+        return lastRestockDay;
+    }
+
+    public void setLastRestockDay(long day) {
+        this.lastRestockDay = day;
+        setDirty();
+    }
+
+    public Set<String> spawnedSpecialties() {
+        return Set.copyOf(spawnedSpecialties);
+    }
+
+    public void markSpawned(String specialty) {
+        if (rememberSpecialty(specialty)) {
+            setDirty();
+        }
+    }
+
+    private boolean rememberSpecialty(String specialty) {
+        if (specialty == null || specialty.isEmpty()) {
+            return false;
+        }
+        return spawnedSpecialties.add(specialty);
+    }
+
+    private List<String> spawnedSpecialtyList() {
+        return new ArrayList<>(spawnedSpecialties);
     }
 
     public Home get(String id) {
@@ -103,21 +150,26 @@ public final class InhabitantData extends SavedData {
             Optional<UUID> living,
             long leaveAfterDay,
             long emptyUntilDay,
-            boolean uneasy) {
+            boolean uneasy,
+            long lastRestockDay) {
         public Home withLiving(Optional<UUID> next) {
-            return new Home(id, bed, score, specialty, name, next, leaveAfterDay, emptyUntilDay, uneasy);
+            return new Home(id, bed, score, specialty, name, next, leaveAfterDay, emptyUntilDay, uneasy, lastRestockDay);
         }
 
         public Home withScore(int next) {
-            return new Home(id, bed, next, specialty, name, living, leaveAfterDay, emptyUntilDay, uneasy);
+            return new Home(id, bed, next, specialty, name, living, leaveAfterDay, emptyUntilDay, uneasy, lastRestockDay);
         }
 
         public Home withLeave(long day, boolean uneasy) {
-            return new Home(id, bed, score, specialty, name, living, day, emptyUntilDay, uneasy);
+            return new Home(id, bed, score, specialty, name, living, day, emptyUntilDay, uneasy, lastRestockDay);
         }
 
         public Home withEmptyUntil(long day) {
-            return new Home(id, bed, score, specialty, name, Optional.empty(), -1L, day, false);
+            return new Home(id, bed, score, specialty, name, Optional.empty(), -1L, day, false, lastRestockDay);
+        }
+
+        public Home withLastRestock(long day) {
+            return new Home(id, bed, score, specialty, name, living, leaveAfterDay, emptyUntilDay, uneasy, day);
         }
     }
 }

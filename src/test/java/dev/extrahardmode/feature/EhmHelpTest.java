@@ -80,6 +80,8 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("Bone meal on a plant adds 5"));
         assertTrue(String.join(" ", lines).contains("cooking XP"));
         assertTrue(String.join(" ", lines).contains("50% extra"));
+        assertTrue(String.join(" ", lines).contains("Composters do the same for bone meal"));
+        assertTrue(String.join(" ", lines).contains("smelting iron"));
         assertTrue(String.join(" ", lines).contains("campfires also need airflow"));
         assertTrue(String.join(" ", lines).contains("burn out after 7 Minecraft days"));
         assertTrue(String.join(" ", lines).contains("dim after 2 days"));
@@ -111,6 +113,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("one traveler"));
         assertTrue(String.join(" ", lines).contains("/ehm help homes"));
         assertTrue(String.join(" ", lines).contains("/ehm set inhabitants true"));
+        assertTrue(String.join(" ", lines).contains("armorsmiths restock every 30"));
         assertTrue(String.join(" ", lines).contains("requires operator"));
     }
 
@@ -123,7 +126,14 @@ class EhmHelpTest {
         assertTrue(all.contains("/ehm help homes"));
         assertTrue(all.contains("24 to 250"));
         assertTrue(all.contains("12 points"));
+        assertTrue(all.contains("Each 48 interior air"));
+        assertTrue(all.contains("enclosed room"));
         assertTrue(all.contains("Eligible loaded homes"));
+        assertTrue(all.contains("Most residents restock every 3 Minecraft days"));
+        assertTrue(all.contains("armorsmiths restock every 30"));
+        assertTrue(all.contains("has not appeared yet"));
+        assertTrue(all.contains("wealthy trader"));
+        assertTrue(all.contains("master armorsmith"));
         assertTrue(all.contains("Windows"));
         assertTrue(all.contains("Kitchen"));
         assertTrue(all.contains("clock"));

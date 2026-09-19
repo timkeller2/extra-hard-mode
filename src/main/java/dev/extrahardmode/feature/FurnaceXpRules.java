@@ -8,6 +8,8 @@ public final class FurnaceXpRules {
     public static final int FURNACE_RESULT_SLOT = 2;
     /** Extra cooking XP when a hopper pulls from a furnace. */
     public static final int AUTOMATION_BONUS_PERCENT = 50;
+    /** Same as smelting an iron ingot; hopper bone meal uses this plus the automation bonus. */
+    public static final float COMPOSTER_EXPERIENCE = 0.7F;
 
     private FurnaceXpRules() {}
 

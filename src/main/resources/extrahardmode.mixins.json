@@ -23,6 +23,7 @@
     "CrafterBlockMixin",
     "CraftingMenuMixin",
     "ComposterBlockMixin",
+    "ComposterOutputAccess",
     "CompoundContainerAccess",
     "CreeperPoweredMixin",
     "ChickenMixin",

@@ -145,6 +145,14 @@ public final class FurnaceXp {
         addMilli(destination, milli);
     }
 
+    public static void onComposterExtracted(Container destination, ServerLevel level) {
+        if (level == null || !WorldGate.isActive(level)) {
+            return;
+        }
+        int milli = FurnaceXpRules.withAutomationBonus(FurnaceXpRules.toMilli(FurnaceXpRules.COMPOSTER_EXPERIENCE));
+        addMilli(destination, milli);
+    }
+
     public static void giveToPlayer(ServerPlayer player, Container container, int taken, int leftAfterTake) {
         if (taken <= 0 || container instanceof AbstractFurnaceBlockEntity) {
             return;

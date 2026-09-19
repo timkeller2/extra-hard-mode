@@ -31,6 +31,14 @@ public abstract class HopperBlockEntityMixin {
         if (!Boolean.TRUE.equals(cir.getReturnValue())) {
             return;
         }
+        if (container instanceof ComposterOutputAccess) {
+            if (hopper instanceof HopperBlockEntity hopperBe
+                    && hopperBe.getLevel() instanceof ServerLevel level
+                    && hopper instanceof Container destination) {
+                FurnaceXp.onComposterExtracted(destination, level);
+            }
+            return;
+        }
         if (slot != FurnaceXpRules.FURNACE_RESULT_SLOT || !(container instanceof AbstractFurnaceBlockEntity furnace)) {
             return;
         }

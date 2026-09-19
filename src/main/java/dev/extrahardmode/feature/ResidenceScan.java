@@ -3,6 +3,7 @@ package dev.extrahardmode.feature;
 import dev.extrahardmode.tag.EhmTags;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import java.util.ArrayDeque;
+import java.util.Collection;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -29,11 +30,13 @@ public final class ResidenceScan {
 
     private ResidenceScan() {}
 
+    record House(LongOpenHashSet interior, int rooms, boolean leaked) {}
+
     public static Result inspect(
             ServerLevel level, BlockPos bed, List<BlockPos> occupiedBeds, int minLight, int spacing) {
-        LongOpenHashSet interior = new LongOpenHashSet();
-        boolean moreQueued = fill(level, bed, interior);
-        boolean enclosed = InhabitantRules.enclosed(interior.size(), moreQueued);
+        House house = fillHouse(level, bed);
+        LongOpenHashSet interior = house.interior();
+        boolean enclosed = interior.size() > 0 && !house.leaked();
         int volume = interior.size();
         BlockPos anchor = canonicalBed(level, bed, interior);
         boolean hasBed = countBeds(level, interior) > 0;
@@ -43,14 +46,49 @@ public final class ResidenceScan {
         InhabitantRules.AmenityCounts amenities = amenities(level, interior);
         boolean far = farEnough(anchor, occupiedBeds, spacing);
         InhabitantRules.GateResult gates = InhabitantRules.gates(
-                enclosed, volume, hasBed, doorOutside, lit, roofed, far, amenities);
+                enclosed, volume, hasBed, doorOutside, lit, roofed, far, amenities, house.rooms());
         return new Result(anchor, volume, enclosed, hasBed, doorOutside, lit, roofed, amenities, gates);
     }
 
     static boolean fill(ServerLevel level, BlockPos bed, LongOpenHashSet interior) {
+        return fillFrom(level, starts(level, bed), interior);
+    }
+
+    static House fillHouse(ServerLevel level, BlockPos bed) {
+        LongOpenHashSet house = new LongOpenHashSet();
+        ArrayDeque<BlockPos> roomStarts = new ArrayDeque<>(starts(level, bed));
+        int rooms = 0;
+        boolean leaked = false;
+        boolean primary = true;
+        while (!roomStarts.isEmpty() && rooms < 8) {
+            BlockPos origin = roomStarts.removeFirst();
+            if (!walkable(level, origin) || house.contains(origin.asLong())) {
+                continue;
+            }
+            LongOpenHashSet room = new LongOpenHashSet();
+            boolean more = fillFrom(level, List.of(origin.immutable()), room);
+            if (room.isEmpty()) {
+                continue;
+            }
+            if (InhabitantRules.fillOpen(room.size(), more)) {
+                if (primary) {
+                    leaked = true;
+                    house.addAll(room);
+                }
+                continue;
+            }
+            primary = false;
+            rooms++;
+            house.addAll(room);
+            enqueueThroughOpenings(level, room, house, roomStarts);
+        }
+        return new House(house, rooms, leaked);
+    }
+
+    static boolean fillFrom(ServerLevel level, Collection<BlockPos> origins, LongOpenHashSet interior) {
         ArrayDeque<BlockPos> queue = new ArrayDeque<>();
         LongOpenHashSet seen = new LongOpenHashSet();
-        for (BlockPos start : starts(level, bed)) {
+        for (BlockPos start : origins) {
             long key = start.asLong();
             if (seen.add(key)) {
                 queue.add(start.immutable());
@@ -79,6 +117,30 @@ public final class ResidenceScan {
             }
         }
         return more || !queue.isEmpty();
+    }
+
+    static void enqueueThroughOpenings(
+            ServerLevel level, LongOpenHashSet room, LongOpenHashSet house, ArrayDeque<BlockPos> roomStarts) {
+        for (long key : room) {
+            BlockPos pos = BlockPos.of(key);
+            for (Direction dir : Direction.values()) {
+                BlockPos next = pos.relative(dir);
+                if (!level.isLoaded(next) || !isOpening(level.getBlockState(next))) {
+                    continue;
+                }
+                for (Direction out : Direction.values()) {
+                    BlockPos far = next.relative(out);
+                    if (!walkable(level, far)) {
+                        continue;
+                    }
+                    long farKey = far.asLong();
+                    if (house.contains(farKey) || room.contains(farKey)) {
+                        continue;
+                    }
+                    roomStarts.add(far.immutable());
+                }
+            }
+        }
     }
 
     static List<BlockPos> starts(ServerLevel level, BlockPos bed) {
@@ -173,6 +235,10 @@ public final class ResidenceScan {
 
     static boolean isDoorLike(BlockState state) {
         return state.is(BlockTags.DOORS) || state.is(BlockTags.FENCE_GATES);
+    }
+
+    static boolean isOpening(BlockState state) {
+        return isDoorLike(state) || state.is(BlockTags.TRAPDOORS);
     }
 
     static boolean doorFacesOut(LongOpenHashSet interior, BlockPos door) {

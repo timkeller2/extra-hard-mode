@@ -89,10 +89,14 @@ public abstract class VillagerTradesMixin {
 
     @Inject(method = "shouldRestock", at = @At("HEAD"), cancellable = true)
     private void ehm$slowRestock(ServerLevel level, CallbackInfoReturnable<Boolean> cir) {
+        Villager self = (Villager) (Object) this;
+        if (Inhabitants.isInhabitant(self)) {
+            cir.setReturnValue(false);
+            return;
+        }
         if (!WorldGate.isModuleActive(level, AntiFarming.ID)) {
             return;
         }
-        Villager self = (Villager) (Object) this;
         long now = self.level().getGameTime();
         long day = CropGrowthRules.dayIndex(level.getOverworldClockTime());
         boolean overdue = now > lastRestockGameTime + VillagerRestockRules.catchUpTicks();
