@@ -286,7 +286,7 @@ public final class AbilityRules {
             case POWER_MINE ->
                 "Power mining: Right-click while holding any pickaxe. Costs 1 mana. For (ability level × 12) seconds, Tougher extra pickaxe wear on hardened stone is suspended. Ends when the timer expires. Pickaxe bonus: wood/stone 0, copper +1, iron +2, diamond +3, gold +4, netherite +5.";
             case DETECT_ORE ->
-                "Detect ore: Right-click while holding a compass. Costs 1 mana. Optionally consumes 1 nether quartz from your inventory for +2 (stacks with redstone dust). Turns you to face the highest-value ore deposit within 2 + ability level blocks, even through walls, and tells you the ore and approximate distance.";
+                "Detect ore: Right-click while holding a compass. Costs 1 mana. Optionally consumes 1 nether quartz from your inventory for +2 (stacks with redstone dust). Turns you to face the best ore you can detect within 2 + ability level blocks, even through walls, and tells you the ore and approximate distance. You only sense ores at or below your ability level: coal 1, quartz 2, copper 3, iron 4, redstone 5, lapis 6, gold 7, emerald 8, diamond 9, ancient debris 10.";
             case SLOW ->
                 "Slow: Right-click while holding string. Costs 1 mana. Slows enemy mobs within ability level blocks by 20% + 5% per ability level (max 80%) for (ability level × 6) seconds. Mobs with more than 100 health are affected half as much. An extra string is consumed for +2 if you have more than one. The last string is kept.";
             case SENSE_EVIL ->
@@ -740,9 +740,13 @@ public final class AbilityRules {
         return Math.max(1, (int) Math.round(Math.max(0.0, power) * POWER_MINE_SECONDS_PER_POWER * 20.0));
     }
 
+    /** Rounded ability level used for detect-ore range and ore-tier gating. */
+    public static int detectOreSkill(double power) {
+        return Math.max(0, (int) Math.round(Math.max(0.0, power)));
+    }
+
     public static int detectOreRange(double power) {
-        return DETECT_ORE_BASE_RANGE
-                + DETECT_ORE_RANGE_PER_POWER * Math.max(0, (int) Math.round(Math.max(0.0, power)));
+        return DETECT_ORE_BASE_RANGE + DETECT_ORE_RANGE_PER_POWER * detectOreSkill(power);
     }
 
     public static double slowRange(double power) {
@@ -901,24 +905,39 @@ public final class AbilityRules {
      * Higher is better. Deepslate uses the same family as the stone variant.
      * Type outweighs vein size when scoring deposits.
      */
-    public static int oreValue(String blockId) {
+    /**
+     * Minimum rounded Detect ore skill to sense this ore. 0 means not an ore.
+     * Coal 1, quartz 2, copper 3, iron 4, redstone 5, lapis 6, gold 7, emerald 8,
+     * diamond 9, ancient debris 10.
+     */
+    public static int oreDetectLevel(String blockId) {
         return switch (oreFamily(blockId)) {
-            case "ancient_debris" -> 100;
-            case "diamond" -> 90;
-            case "emerald" -> 80;
-            case "gold" -> 70;
-            case "lapis" -> 60;
-            case "redstone" -> 50;
-            case "iron" -> 40;
-            case "copper" -> 30;
-            case "quartz" -> 20;
-            case "coal" -> 10;
+            case "coal" -> 1;
+            case "quartz" -> 2;
+            case "copper" -> 3;
+            case "iron" -> 4;
+            case "redstone" -> 5;
+            case "lapis" -> 6;
+            case "gold" -> 7;
+            case "emerald" -> 8;
+            case "diamond" -> 9;
+            case "ancient_debris" -> 10;
             default -> 0;
         };
     }
 
+    public static int oreValue(String blockId) {
+        int level = oreDetectLevel(blockId);
+        return level > 0 ? level * 10 : 0;
+    }
+
     public static boolean isDetectableOre(String blockId) {
-        return oreValue(blockId) > 0;
+        return oreDetectLevel(blockId) > 0;
+    }
+
+    public static boolean canDetectOre(String blockId, double power) {
+        int required = oreDetectLevel(blockId);
+        return required > 0 && detectOreSkill(power) >= required;
     }
 
     public static String oreFamilyLabel(String family) {

@@ -901,7 +901,7 @@ public final class ManaAbilities implements FeatureModule {
         int bonus = detectOreInventoryBonus(player);
         double power = abilityPower(player, AbilityRules.DETECT_ORE, bonus);
         int range = AbilityRules.detectOreRange(power);
-        AbilityRules.OreDeposit best = DetectOre.findBest(player, range);
+        AbilityRules.OreDeposit best = DetectOre.findBest(player, range, power);
         consumeDetectOreQuartz(player);
         spend(player, null, AbilityRules.DETECT_ORE);
         tellAbilityUse(player, "tougher.ability.detect_ore", "Detect ore", power);

@@ -39,6 +39,8 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("drop no seeds"));
         assertTrue(String.join(" ", lines).contains("6 times as long to breed"));
         assertTrue(String.join(" ", lines).contains("overgraze"));
+        assertTrue(String.join(" ", lines).contains("9 patches"));
+        assertTrue(String.join(" ", lines).contains("chicken or rabbit"));
         assertTrue(String.join(" ", lines).contains("starve without dropping meat"));
         assertTrue(String.join(" ", lines).contains("lay eggs 6 times"));
         assertTrue(String.join(" ", lines).contains("Trees take 10 times"));

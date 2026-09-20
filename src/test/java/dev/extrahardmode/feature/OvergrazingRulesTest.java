@@ -8,10 +8,19 @@ import org.junit.jupiter.api.Test;
 
 class OvergrazingRulesTest {
     @Test
-    void crowdNeedsSixteen() {
-        assertFalse(OvergrazingRules.overcrowded(15, OvergrazingRules.CROWD_THRESHOLD));
-        assertTrue(OvergrazingRules.overcrowded(16, OvergrazingRules.CROWD_THRESHOLD));
-        assertTrue(OvergrazingRules.overcrowded(40, OvergrazingRules.CROWD_THRESHOLD));
+    void marksDependOnAnimalSize() {
+        assertEquals(9, OvergrazingRules.marksNeeded(false, 9, 4));
+        assertEquals(4, OvergrazingRules.marksNeeded(true, 9, 4));
+        assertEquals(1, OvergrazingRules.clampMarks(0));
+        assertEquals(32, OvergrazingRules.clampMarks(99));
+        assertEquals(1, OvergrazingRules.marksNeeded(true, 9, 0));
+    }
+
+    @Test
+    void grassIsUnmarkedOnANewDay() {
+        assertTrue(OvergrazingRules.unmarkedToday(-1, 0));
+        assertFalse(OvergrazingRules.unmarkedToday(3, 3));
+        assertTrue(OvergrazingRules.unmarkedToday(2, 3));
     }
 
     @Test
@@ -20,6 +29,9 @@ class OvergrazingRulesTest {
         assertTrue(OvergrazingRules.lookInChests(32));
         assertFalse(OvergrazingRules.lookInChests(33));
         assertFalse(OvergrazingRules.lookInChests(99));
+        assertTrue(OvergrazingRules.lookInChests(49, 50));
+        assertFalse(OvergrazingRules.lookInChests(50, 50));
+        assertFalse(OvergrazingRules.lookInChests(0, 0));
         assertTrue(OvergrazingRules.starve(0));
         assertTrue(OvergrazingRules.starve(32));
         assertFalse(OvergrazingRules.starve(33));

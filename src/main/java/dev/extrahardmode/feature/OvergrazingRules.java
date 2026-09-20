@@ -5,9 +5,11 @@ package dev.extrahardmode.feature;
  */
 public final class OvergrazingRules {
     public static final int DEFAULT_INTERVAL_TICKS = 24000;
-    public static final int DEFAULT_CROWD_RANGE = 8;
     public static final int DEFAULT_CHEST_RANGE = 20;
-    public static final int CROWD_THRESHOLD = 16;
+    public static final int DEFAULT_GRASS_RANGE = 6;
+    public static final int DEFAULT_LARGE_MARKS = 9;
+    public static final int DEFAULT_SMALL_MARKS = 4;
+    public static final int MAX_MARKS = 32;
     public static final int LOOK_CHANCE_PERCENT = 33;
     public static final int STARVE_CHANCE_PERCENT = 33;
     public static final int FOOD_FLOAT_TICKS = 100;
@@ -29,13 +31,29 @@ public final class OvergrazingRules {
         return Math.min(MAX_RANGE, range);
     }
 
-    public static boolean overcrowded(int livestockNearby, int threshold) {
-        return livestockNearby >= threshold;
+    public static int clampMarks(int marks) {
+        if (marks <= 0) {
+            return 1;
+        }
+        return Math.min(MAX_MARKS, marks);
+    }
+
+    public static int marksNeeded(boolean small, int largeMarks, int smallMarks) {
+        return clampMarks(small ? smallMarks : largeMarks);
+    }
+
+    public static boolean unmarkedToday(int markedDay, int currentDay) {
+        return markedDay != currentDay;
     }
 
     /** {@code roll} is 0–99. */
     public static boolean lookInChests(int roll) {
-        return chance(roll, LOOK_CHANCE_PERCENT);
+        return lookInChests(roll, LOOK_CHANCE_PERCENT);
+    }
+
+    /** {@code roll} is 0–99. */
+    public static boolean lookInChests(int roll, int percent) {
+        return chance(roll, percent);
     }
 
     /** {@code roll} is 0–99. */

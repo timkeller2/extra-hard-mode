@@ -8,9 +8,11 @@ import dev.extrahardmode.mixin.DisplayAccess;
 import dev.extrahardmode.mixin.ItemDisplayAccess;
 import dev.extrahardmode.module.EntityHelper;
 import dev.extrahardmode.player.EhmAttachments;
+import dev.extrahardmode.world.OvergrazeGrassData;
 import dev.extrahardmode.world.WorldGate;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
@@ -24,12 +26,15 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.entity.animal.chicken.Chicken;
 import net.minecraft.world.entity.animal.equine.AbstractHorse;
 import net.minecraft.world.entity.animal.feline.Cat;
 import net.minecraft.world.entity.animal.parrot.Parrot;
+import net.minecraft.world.entity.animal.rabbit.Rabbit;
 import net.minecraft.world.entity.animal.wolf.Wolf;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.entity.BarrelBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -37,12 +42,12 @@ import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.pathfinder.Path;
-import net.minecraft.world.phys.AABB;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 /**
- * Dense livestock pens eat breeding food from reachable chests, or starve.
+ * Livestock claim nearby grass each day. If they cannot graze enough, they may
+ * eat breeding food from reachable chests, or starve.
  */
 public final class Overgrazing implements FeatureModule {
     public static final Identifier ID = ExtraHardModeMod.id("overgrazing");
@@ -88,11 +93,10 @@ public final class Overgrazing implements FeatureModule {
             return;
         }
         animal.setAttached(EhmAttachments.EHM_OVERGRAZE_AT, OvergrazingRules.reschedule(now, interval));
-        int crowd = livestockNearby(level, animal, config.overgrazingCrowdRange());
-        if (!OvergrazingRules.overcrowded(crowd, OvergrazingRules.CROWD_THRESHOLD)) {
+        if (tryClaimGrass(level, animal, config)) {
             return;
         }
-        if (!OvergrazingRules.lookInChests(level.getRandom().nextInt(100))) {
+        if (!OvergrazingRules.lookInChests(level.getRandom().nextInt(100), config.overgrazingLookChance())) {
             return;
         }
         if (tryEatBreedingFood(level, animal, config.overgrazingChestRange())) {
@@ -117,16 +121,61 @@ public final class Overgrazing implements FeatureModule {
         return !(animal instanceof TamableAnimal tamable) || !tamable.isTame();
     }
 
-    static int livestockNearby(ServerLevel level, Animal animal, int range) {
+    static boolean isSmallLivestock(Animal animal) {
+        return animal instanceof Chicken || animal instanceof Rabbit;
+    }
+
+    static boolean tryClaimGrass(ServerLevel level, Animal animal, WorldConfig config) {
+        int need = OvergrazingRules.marksNeeded(
+                isSmallLivestock(animal), config.overgrazingLargeMarks(), config.overgrazingSmallMarks());
+        int day = (int) Math.min(Integer.MAX_VALUE, CropGrowthRules.dayIndex(level.getOverworldClockTime()));
+        OvergrazeGrassData data = OvergrazeGrassData.of(level);
+        data.prepareDay(day);
+        List<BlockPos> claimed = reachableUnmarkedGrass(level, animal, data, day, need);
+        if (claimed.size() < need) {
+            return false;
+        }
+        for (int i = 0; i < need; i++) {
+            data.mark(claimed.get(i), day);
+        }
+        return true;
+    }
+
+    static List<BlockPos> reachableUnmarkedGrass(
+            ServerLevel level, Animal animal, OvergrazeGrassData data, int day, int need) {
+        int range = OvergrazingRules.DEFAULT_GRASS_RANGE;
         double rangeSq = (double) range * range;
-        AABB box = animal.getBoundingBox().inflate(range);
-        int count = 0;
-        for (Animal other : level.getEntitiesOfClass(Animal.class, box, Overgrazing::isLivestock)) {
-            if (other.distanceToSqr(animal) <= rangeSq) {
-                count++;
+        BlockPos origin = animal.blockPosition();
+        List<BlockPos> candidates = new ArrayList<>();
+        for (BlockPos pos : BlockPos.betweenClosed(origin.offset(-range, -range, -range), origin.offset(range, range, range))) {
+            if (!level.isLoaded(pos) || !level.getBlockState(pos).is(Blocks.GRASS_BLOCK)) {
+                continue;
+            }
+            if (animal.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) > rangeSq) {
+                continue;
+            }
+            if (data.isMarkedToday(pos, day)) {
+                continue;
+            }
+            candidates.add(pos.immutable());
+        }
+        candidates.sort(Comparator.comparingDouble(
+                pos -> animal.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5)));
+        List<BlockPos> reachable = new ArrayList<>(need);
+        int pathChecks = 0;
+        for (BlockPos pos : candidates) {
+            if (reachable.size() >= need) {
+                break;
+            }
+            if (pathChecks >= OvergrazingRules.MAX_PATH_CHECKS) {
+                break;
+            }
+            pathChecks++;
+            if (canPathTo(animal, pos)) {
+                reachable.add(pos);
             }
         }
-        return count;
+        return reachable;
     }
 
     static boolean tryEatBreedingFood(ServerLevel level, Animal animal, int chestRange) {

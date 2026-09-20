@@ -148,6 +148,8 @@ class AbilityRulesTest {
         assertTrue(AbilityRules.helpFallback(AbilityRules.DETECT_ORE).contains("nether quartz"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.DETECT_ORE).contains("Costs 1 mana"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.DETECT_ORE).contains("approximate distance"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.DETECT_ORE).contains("coal 1"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.DETECT_ORE).contains("ancient debris 10"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.SLOW).contains("Right-click"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.SLOW).contains("string"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.SLOW).contains("20%"));
@@ -511,6 +513,9 @@ class AbilityRulesTest {
 
     @Test
     void detectOreRangeBonusAndLook() {
+        assertEquals(0, AbilityRules.detectOreSkill(0));
+        assertEquals(1, AbilityRules.detectOreSkill(0.6));
+        assertEquals(0, AbilityRules.detectOreSkill(0.4));
         assertEquals(2, AbilityRules.detectOreRange(0));
         assertEquals(3, AbilityRules.detectOreRange(1));
         assertEquals(4, AbilityRules.detectOreRange(2));
@@ -590,8 +595,28 @@ class AbilityRulesTest {
         assertEquals(20, AbilityRules.oreValue("minecraft:nether_quartz_ore"));
         assertEquals(10, AbilityRules.oreValue("minecraft:coal_ore"));
         assertEquals(0, AbilityRules.oreValue("minecraft:stone"));
+        assertEquals(1, AbilityRules.oreDetectLevel("minecraft:coal_ore"));
+        assertEquals(2, AbilityRules.oreDetectLevel("minecraft:nether_quartz_ore"));
+        assertEquals(3, AbilityRules.oreDetectLevel("minecraft:copper_ore"));
+        assertEquals(4, AbilityRules.oreDetectLevel("minecraft:iron_ore"));
+        assertEquals(4, AbilityRules.oreDetectLevel("minecraft:deepslate_iron_ore"));
+        assertEquals(5, AbilityRules.oreDetectLevel("minecraft:redstone_ore"));
+        assertEquals(6, AbilityRules.oreDetectLevel("minecraft:lapis_ore"));
+        assertEquals(7, AbilityRules.oreDetectLevel("minecraft:gold_ore"));
+        assertEquals(8, AbilityRules.oreDetectLevel("minecraft:emerald_ore"));
+        assertEquals(9, AbilityRules.oreDetectLevel("minecraft:diamond_ore"));
+        assertEquals(10, AbilityRules.oreDetectLevel("minecraft:ancient_debris"));
+        assertEquals(0, AbilityRules.oreDetectLevel("minecraft:stone"));
         assertTrue(AbilityRules.isDetectableOre("minecraft:diamond_ore"));
         assertFalse(AbilityRules.isDetectableOre("minecraft:stone"));
+        assertFalse(AbilityRules.canDetectOre("minecraft:coal_ore", 0));
+        assertTrue(AbilityRules.canDetectOre("minecraft:coal_ore", 1));
+        assertTrue(AbilityRules.canDetectOre("minecraft:iron_ore", 4));
+        assertFalse(AbilityRules.canDetectOre("minecraft:redstone_ore", 4));
+        assertFalse(AbilityRules.canDetectOre("minecraft:diamond_ore", 8.4));
+        assertTrue(AbilityRules.canDetectOre("minecraft:diamond_ore", 8.6));
+        assertFalse(AbilityRules.canDetectOre("minecraft:ancient_debris", 9));
+        assertTrue(AbilityRules.canDetectOre("minecraft:ancient_debris", 10));
         assertEquals("ancient debris", AbilityRules.oreFamilyLabel("ancient_debris"));
         assertEquals("lapis lazuli", AbilityRules.oreFamilyLabel("lapis"));
 
@@ -609,6 +634,13 @@ class AbilityRulesTest {
         assertEquals("diamond", best.family());
         assertEquals(1, best.size());
         assertEquals(10, best.lookX());
+        List<AbilityRules.OreSample> skilled = mixed.stream()
+                .filter(sample -> AbilityRules.canDetectOre(sample.blockId(), 4))
+                .toList();
+        AbilityRules.OreDeposit skilledBest =
+                AbilityRules.bestDeposit(AbilityRules.clusterDeposits(skilled, 0, 0, 0));
+        assertEquals("iron", skilledBest.family());
+        assertEquals(2, skilledBest.size());
 
         List<AbilityRules.OreSample> vein = List.of(
                 new AbilityRules.OreSample("minecraft:iron_ore", 4, 0, 0),

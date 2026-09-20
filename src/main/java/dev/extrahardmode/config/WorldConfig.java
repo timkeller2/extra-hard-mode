@@ -98,7 +98,9 @@ public final class WorldConfig {
     private int overcrowdThreshold = 8;
     private boolean overgrazingEnable = true;
     private int overgrazingIntervalTicks = OvergrazingRules.DEFAULT_INTERVAL_TICKS;
-    private int overgrazingCrowdRange = OvergrazingRules.DEFAULT_CROWD_RANGE;
+    private int overgrazingLargeMarks = OvergrazingRules.DEFAULT_LARGE_MARKS;
+    private int overgrazingSmallMarks = OvergrazingRules.DEFAULT_SMALL_MARKS;
+    private int overgrazingLookChance = OvergrazingRules.LOOK_CHANCE_PERCENT;
     private int overgrazingChestRange = OvergrazingRules.DEFAULT_CHEST_RANGE;
     private int cropMatureDurationPercent = 300;
     private int animalBreedCooldownMultiplier = 6;
@@ -456,8 +458,16 @@ public final class WorldConfig {
         return overgrazingIntervalTicks;
     }
 
-    public int overgrazingCrowdRange() {
-        return overgrazingCrowdRange;
+    public int overgrazingLargeMarks() {
+        return overgrazingLargeMarks;
+    }
+
+    public int overgrazingSmallMarks() {
+        return overgrazingSmallMarks;
+    }
+
+    public int overgrazingLookChance() {
+        return overgrazingLookChance;
     }
 
     public int overgrazingChestRange() {
@@ -1293,7 +1303,9 @@ public final class WorldConfig {
                 file.set("farming.overcrowd.threshold", overcrowdThreshold);
                 file.set("farming.overgrazing.enable", overgrazingEnable);
                 file.set("farming.overgrazing.intervalTicks", overgrazingIntervalTicks);
-                file.set("farming.overgrazing.crowdRange", overgrazingCrowdRange);
+                file.set("farming.overgrazing.largeMarks", overgrazingLargeMarks);
+                file.set("farming.overgrazing.smallMarks", overgrazingSmallMarks);
+                file.set("farming.overgrazing.lookChance", overgrazingLookChance);
                 file.set("farming.overgrazing.chestRange", overgrazingChestRange);
                 file.set("farming.cropMatureDurationPercent", cropMatureDurationPercent);
                 file.set("farming.animalBreedCooldownMultiplier", animalBreedCooldownMultiplier);
@@ -1475,8 +1487,12 @@ public final class WorldConfig {
         overgrazingEnable = file.getOrElse("farming.overgrazing.enable", true);
         overgrazingIntervalTicks = OvergrazingRules.clampInterval(
                 getInt(file, "farming.overgrazing.intervalTicks", OvergrazingRules.DEFAULT_INTERVAL_TICKS));
-        overgrazingCrowdRange = OvergrazingRules.clampRange(
-                getInt(file, "farming.overgrazing.crowdRange", OvergrazingRules.DEFAULT_CROWD_RANGE));
+        overgrazingLargeMarks = OvergrazingRules.clampMarks(
+                getInt(file, "farming.overgrazing.largeMarks", OvergrazingRules.DEFAULT_LARGE_MARKS));
+        overgrazingSmallMarks = OvergrazingRules.clampMarks(
+                getInt(file, "farming.overgrazing.smallMarks", OvergrazingRules.DEFAULT_SMALL_MARKS));
+        overgrazingLookChance =
+                clampPercent(getInt(file, "farming.overgrazing.lookChance", OvergrazingRules.LOOK_CHANCE_PERCENT));
         overgrazingChestRange = OvergrazingRules.clampRange(
                 getInt(file, "farming.overgrazing.chestRange", OvergrazingRules.DEFAULT_CHEST_RANGE));
         cropMatureDurationPercent = Math.max(1, getInt(file, "farming.cropMatureDurationPercent", 300));
@@ -1610,7 +1626,7 @@ public final class WorldConfig {
         writeDefaultIfMissing(
                 file,
                 "farming.overgrazing.enable",
-                "Dense livestock pens overgraze. Each animal is checked once per interval at a random offset.",
+                "Livestock graze by claiming nearby grass once per interval. If they cannot claim enough unmarked pathable grass, they may raid chests or starve.",
                 true);
         writeDefaultIfMissing(
                 file,
@@ -1619,9 +1635,19 @@ public final class WorldConfig {
                 OvergrazingRules.DEFAULT_INTERVAL_TICKS);
         writeDefaultIfMissing(
                 file,
-                "farming.overgrazing.crowdRange",
-                "Blocks around an animal counted for the 16-livestock overgrazing threshold. Default 8.",
-                OvergrazingRules.DEFAULT_CROWD_RANGE);
+                "farming.overgrazing.largeMarks",
+                "Grass blocks a large animal (cow, pig, sheep, and similar) must claim each check. Default 9.",
+                OvergrazingRules.DEFAULT_LARGE_MARKS);
+        writeDefaultIfMissing(
+                file,
+                "farming.overgrazing.smallMarks",
+                "Grass blocks a small animal (chicken or rabbit) must claim each check. Default 4.",
+                OvergrazingRules.DEFAULT_SMALL_MARKS);
+        writeDefaultIfMissing(
+                file,
+                "farming.overgrazing.lookChance",
+                "Percent chance an animal that cannot claim enough grass looks in chests (then may starve). Default 33.",
+                OvergrazingRules.LOOK_CHANCE_PERCENT);
         writeDefaultIfMissing(
                 file,
                 "farming.overgrazing.chestRange",

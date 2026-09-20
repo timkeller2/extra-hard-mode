@@ -21,7 +21,7 @@ public final class DetectOre {
 
     private DetectOre() {}
 
-    public static AbilityRules.OreDeposit findBest(ServerPlayer player, int range) {
+    public static AbilityRules.OreDeposit findBest(ServerPlayer player, int range, double power) {
         ServerLevel level = (ServerLevel) player.level();
         BlockPos origin = player.blockPosition();
         List<AbilityRules.OreSample> samples = new ArrayList<>();
@@ -34,7 +34,7 @@ public final class DetectOre {
                 continue;
             }
             String id = blockId(state);
-            if (AbilityRules.isDetectableOre(id)) {
+            if (AbilityRules.canDetectOre(id, power)) {
                 samples.add(new AbilityRules.OreSample(id, pos.getX(), pos.getY(), pos.getZ()));
             }
         }
