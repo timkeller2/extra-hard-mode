@@ -229,7 +229,7 @@ public final class AbilityRules {
         if (ability == null || ability.isEmpty()) {
             return null;
         }
-        return "extrahardmode.ability." + ability;
+        return "tougher.ability." + ability;
     }
 
     public static String nameFallback(String ability) {
@@ -261,7 +261,7 @@ public final class AbilityRules {
         if (ability == null || ability.isEmpty()) {
             return null;
         }
-        return "extrahardmode.ability." + ability + ".help";
+        return "tougher.ability." + ability + ".help";
     }
 
     public static String helpFallback(String ability) {
@@ -284,7 +284,7 @@ public final class AbilityRules {
             case LIGHT ->
                 "Let there be light: Right-click while holding coal. Costs 1 mana. You shine for 30 seconds plus 30 seconds per ability level. Brightness is 9 plus whole minutes remaining, up to torch-bright (14). Right-click again with coal to snuff it. If the glow ends and you still have mana, another mana is spent and it continues, and you gain skill as if you cast it again. An extra coal is consumed for +2 if you have more than one. The last coal is kept.";
             case POWER_MINE ->
-                "Power mining: Right-click while holding any pickaxe. Costs 1 mana. For (ability level × 12) seconds, Extra Hard Mode extra pickaxe wear on hardened stone is suspended. Ends when the timer expires. Pickaxe bonus: wood/stone 0, copper +1, iron +2, diamond +3, gold +4, netherite +5.";
+                "Power mining: Right-click while holding any pickaxe. Costs 1 mana. For (ability level × 12) seconds, Tougher extra pickaxe wear on hardened stone is suspended. Ends when the timer expires. Pickaxe bonus: wood/stone 0, copper +1, iron +2, diamond +3, gold +4, netherite +5.";
             case DETECT_ORE ->
                 "Detect ore: Right-click while holding a compass. Costs 1 mana. Optionally consumes 1 nether quartz from your inventory for +2 (stacks with redstone dust). Turns you to face the highest-value ore deposit within 2 + ability level blocks, even through walls, and tells you the ore and approximate distance.";
             case SLOW ->
@@ -297,8 +297,8 @@ public final class AbilityRules {
         };
     }
 
-    public static final String INDEX_HELP_KEY = "extrahardmode.ability.index.help";
-    public static final String POWER_HELP_KEY = "extrahardmode.ability.power.help";
+    public static final String INDEX_HELP_KEY = "tougher.ability.index.help";
+    public static final String POWER_HELP_KEY = "tougher.ability.power.help";
 
     public static String powerHelpFallback() {
         return "Base power: skill, the square root of times you have used that ability. Extra catalyst, redstone, and tools add to that. Extra catalyst and redstone dust are +2 each. Fire bolt and Magic arrow also add your mana level. Using an ability you have not learned still gains skill, at −3 power (floored at 1), until you have a free slot to learn it.";
@@ -311,20 +311,20 @@ public final class AbilityRules {
     public static List<String> indexHelpKeys() {
         return List.of(
                 INDEX_HELP_KEY,
-                "extrahardmode.ability.index.heal",
-                "extrahardmode.ability.index.iron_heart",
-                "extrahardmode.ability.index.flight",
-                "extrahardmode.ability.index.fire_bolt",
-                "extrahardmode.ability.index.magic_arrow",
-                "extrahardmode.ability.index.grow",
-                "extrahardmode.ability.index.light",
-                "extrahardmode.ability.index.power_mine",
-                "extrahardmode.ability.index.detect_ore",
-                "extrahardmode.ability.index.slow",
-                "extrahardmode.ability.index.sense_evil",
-                "extrahardmode.ability.index.smite_evil",
-                "extrahardmode.ability.index.redstone",
-                "extrahardmode.ability.index.unlock");
+                "tougher.ability.index.heal",
+                "tougher.ability.index.iron_heart",
+                "tougher.ability.index.flight",
+                "tougher.ability.index.fire_bolt",
+                "tougher.ability.index.magic_arrow",
+                "tougher.ability.index.grow",
+                "tougher.ability.index.light",
+                "tougher.ability.index.power_mine",
+                "tougher.ability.index.detect_ore",
+                "tougher.ability.index.slow",
+                "tougher.ability.index.sense_evil",
+                "tougher.ability.index.smite_evil",
+                "tougher.ability.index.redstone",
+                "tougher.ability.index.unlock");
     }
 
     public static List<String> indexHelpLines() {

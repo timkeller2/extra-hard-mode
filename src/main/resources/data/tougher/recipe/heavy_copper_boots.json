@@ -2,14 +2,13 @@
   "type": "minecraft:crafting_shaped",
   "category": "equipment",
   "key": {
-    "X": "minecraft:diamond_block"
+    "X": "minecraft:copper_block"
   },
   "pattern": [
-    "XXX",
     "X X",
     "X X"
   ],
   "result": {
-    "id": "extrahardmode:heavy_diamond_leggings"
+    "id": "tougher:heavy_copper_boots"
   }
 }

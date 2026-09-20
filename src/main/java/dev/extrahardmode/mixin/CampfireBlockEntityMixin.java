@@ -31,7 +31,7 @@ public abstract class CampfireBlockEntityMixin {
         if (!Torches.denyCampfireAt(level, pos) || !state.getValue(CampfireBlock.LIT)) {
             return;
         }
-        CampfireBlock.dowse(null, level, pos, state);
+        CampfireBlock.douse(null, level, pos, state);
         level.setBlock(pos, state.setValue(CampfireBlock.LIT, false), 3);
         ci.cancel();
     }

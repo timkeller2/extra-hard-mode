@@ -17,7 +17,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(BaseFireBlock.class)
 public abstract class BaseFireBlockMixin {
     @Inject(method = "playerWillDestroy", at = @At("HEAD"))
-    private void extrahardmode$igniteOnPunch(
+    private void tougher$igniteOnPunch(
             Level level, BlockPos pos, BlockState state, Player player, CallbackInfoReturnable<BlockState> cir) {
         if (!(level instanceof ServerLevel serverLevel) || !WorldGate.isModuleActive(serverLevel, Players.ID)) {
             return;

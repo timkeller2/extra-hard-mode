@@ -8,11 +8,11 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 @Mixin(Display.TextDisplay.class)
 public interface TextDisplayAccess {
     @Invoker("setText")
-    void extrahardmode$setText(Component text);
+    void tougher$setText(Component text);
 
     @Invoker("setBackgroundColor")
-    void extrahardmode$setBackgroundColor(int color);
+    void tougher$setBackgroundColor(int color);
 
     @Invoker("setFlags")
-    void extrahardmode$setFlags(byte flags);
+    void tougher$setFlags(byte flags);
 }

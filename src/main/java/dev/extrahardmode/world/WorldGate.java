@@ -15,13 +15,13 @@ import net.minecraft.world.level.gamerules.GameRuleCategory;
 import net.minecraft.world.level.storage.LevelResource;
 
 /**
- * Enable gate for Extra Hard Mode.
+ * Enable gate for Tougher.
  *
  * <p>26.2 {@code GameRules} are server-global ({@code ServerLevel.getGameRules()} is
  * {@code MinecraftServer.getGameRules()}). {@link #ENABLED} is a master switch,
  * first-applied once on overworld from TOML {@code enabledByDefault}.
- * {@code /gamerule extrahardmode:enabled false} disables every dimension;
- * {@code /gamerule extrahardmode:enabled true} enables dimensions whose live
+ * {@code /gamerule tougher:enabled false} disables every dimension;
+ * {@code /gamerule tougher:enabled true} enables dimensions whose live
  * {@code enabled} flag is still true (opt-out, default true).
  *
  * <p>{@link #isActive} is gamerule AND that dimension's flag, so
@@ -32,7 +32,7 @@ import net.minecraft.world.level.storage.LevelResource;
 public final class WorldGate {
     public static final GameRule<Boolean> ENABLED = GameRuleBuilder.forBoolean(false)
             .category(GameRuleCategory.MISC)
-            .buildAndRegister(Identifier.fromNamespaceAndPath("extrahardmode", "enabled"));
+            .buildAndRegister(Identifier.fromNamespaceAndPath("tougher", "enabled"));
 
     private static boolean overworldToastPending;
 

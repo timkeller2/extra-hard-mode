@@ -19,7 +19,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(BlockItem.class)
 public abstract class BlockItemPlaceMixin {
     @Inject(method = "place", at = @At("HEAD"), cancellable = true)
-    private void extrahardmode$blockOreAgainstStone(
+    private void tougher$blockOreAgainstStone(
             BlockPlaceContext context, CallbackInfoReturnable<InteractionResult> cir) {
         Level level = context.getLevel();
         if (!FeatureBus.guard(level, Dragon.ID)
@@ -51,7 +51,7 @@ public abstract class BlockItemPlaceMixin {
     }
 
     @Inject(method = "place", at = @At("RETURN"))
-    private void extrahardmode$builderPlace(BlockPlaceContext context, CallbackInfoReturnable<InteractionResult> cir) {
+    private void tougher$builderPlace(BlockPlaceContext context, CallbackInfoReturnable<InteractionResult> cir) {
         InteractionResult result = cir.getReturnValue();
         if (result == null || !result.consumesAction()) {
             return;

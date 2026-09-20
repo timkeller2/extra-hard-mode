@@ -11,15 +11,15 @@ class EhmHelpTest {
     void featureHelpCoversManaAndAbilities() {
         var lines = EhmHelp.featureHelpLines();
         assertEquals(lines.size(), EhmHelp.featureHelpKeys().size());
-        assertTrue(lines.getFirst().contains("/ehm ability help"));
+        assertTrue(lines.getFirst().contains("/tougher ability help"));
         assertTrue(String.join(" ", lines).contains("1/4"));
         assertTrue(String.join(" ", lines).contains("/ 200 per minute"));
         assertTrue(String.join(" ", lines).contains("saturation"));
         assertTrue(String.join(" ", lines).contains("17"));
         assertTrue(String.join(" ", lines).contains("1 quartz per 2 mana"));
         assertTrue(String.join(" ", lines).contains("20 mana"));
-        assertTrue(String.join(" ", lines).contains("/ehm ability help"));
-        assertTrue(String.join(" ", lines).contains("/ehm me"));
+        assertTrue(String.join(" ", lines).contains("/tougher ability help"));
+        assertTrue(String.join(" ", lines).contains("/tougher me"));
         assertFalse(String.join(" ", lines).contains("diversification"));
         assertTrue(String.join(" ", lines).contains("closest slayer"));
         assertTrue(String.join(" ", lines).contains("five closest builder"));
@@ -117,8 +117,8 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("credits"));
         assertTrue(String.join(" ", lines).contains("twice as long"));
         assertTrue(String.join(" ", lines).contains("one traveler"));
-        assertTrue(String.join(" ", lines).contains("/ehm help homes"));
-        assertTrue(String.join(" ", lines).contains("/ehm set inhabitants true"));
+        assertTrue(String.join(" ", lines).contains("/tougher help homes"));
+        assertTrue(String.join(" ", lines).contains("/tougher set inhabitants true"));
         assertTrue(String.join(" ", lines).contains("armorsmiths restock every 30"));
         assertTrue(String.join(" ", lines).contains("25-50%"));
         assertTrue(String.join(" ", lines).contains("random trades"));
@@ -133,7 +133,7 @@ class EhmHelpTest {
         assertEquals(lines.size(), EhmHelp.homesHelpKeys().size());
         assertEquals(7, lines.size());
         String all = String.join(" ", lines);
-        assertTrue(all.contains("/ehm help homes"));
+        assertTrue(all.contains("/tougher help homes"));
         assertTrue(all.contains("24 to 300"));
         assertTrue(all.contains("12 points"));
         assertTrue(all.contains("Each 48 interior air"));

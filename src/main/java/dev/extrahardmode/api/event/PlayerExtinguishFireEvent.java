@@ -5,7 +5,7 @@ import net.fabricmc.fabric.api.event.EventFactory;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
- * Fired when a player punches fire and Extra Hard Mode would ignite them.
+ * Fired when a player punches fire and Tougher would ignite them.
  * Cancel to skip ignition.
  */
 public final class PlayerExtinguishFireEvent {

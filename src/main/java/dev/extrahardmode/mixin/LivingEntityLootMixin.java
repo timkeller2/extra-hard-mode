@@ -19,7 +19,7 @@ public abstract class LivingEntityLootMixin {
             method = "dropFromLootTable(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/damagesource/DamageSource;ZLnet/minecraft/resources/ResourceKey;)V",
             at = @At("HEAD"),
             cancellable = true)
-    private void extrahardmode$lootlessMinions(
+    private void tougher$lootlessMinions(
             ServerLevel level,
             DamageSource source,
             boolean causedByPlayer,

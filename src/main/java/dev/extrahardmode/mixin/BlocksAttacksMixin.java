@@ -18,7 +18,7 @@ public abstract class BlocksAttacksMixin {
                             value = "INVOKE",
                             target =
                                     "Lnet/minecraft/world/item/ItemStack;hurtAndBreak(ILnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/entity/EquipmentSlot;)V"))
-    private void extrahardmode$doubleShieldDurability(
+    private void tougher$doubleShieldDurability(
             ItemStack stack, int amount, LivingEntity entity, EquipmentSlot slot) {
         stack.hurtAndBreak(Players.scaleShieldDurability(entity, entity.level(), amount), entity, slot);
     }

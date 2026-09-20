@@ -91,7 +91,7 @@ public final class LimitedBuilding implements FeatureModule {
 
     public static boolean shouldDeny(Level level, Player player, BlockPlaceContext context, BlockItem blockItem) {
         BlockState placement = blockItem.getBlock().getStateForPlacement(context);
-        if (placement == null || !placement.blocksMotion()) {
+        if (placement == null || placement.getCollisionShape(level, context.getClickedPos()).isEmpty()) {
             return false;
         }
         BlockPos place = context.getClickedPos();

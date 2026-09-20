@@ -6,10 +6,9 @@
   },
   "pattern": [
     "X X",
-    "XXX",
-    "XXX"
+    "X X"
   ],
   "result": {
-    "id": "extrahardmode:heavy_iron_chestplate"
+    "id": "tougher:heavy_iron_boots"
   }
 }

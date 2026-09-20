@@ -10,11 +10,11 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 @Mixin(StemBlock.class)
 public interface StemBlockAccess {
     @Accessor("fruit")
-    ResourceKey<Block> extrahardmode$fruit();
+    ResourceKey<Block> tougher$fruit();
 
     @Accessor("attachedStem")
-    ResourceKey<Block> extrahardmode$attachedStem();
+    ResourceKey<Block> tougher$attachedStem();
 
     @Accessor("fruitSupportBlocks")
-    TagKey<Block> extrahardmode$fruitSupportBlocks();
+    TagKey<Block> tougher$fruitSupportBlocks();
 }

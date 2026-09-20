@@ -118,13 +118,13 @@ public final class Inhabitants implements FeatureModule {
                 CropGrowthRules.beesInactive(AntiFarming.currentSeasonalLossRate(level)),
                 player);
         player.sendSystemMessage(Component.translatableWithFallback(
-                "extrahardmode.message.inhabitant_inspect",
+                "tougher.message.inhabitant_inspect",
                 "%s",
                 Component.literal(InhabitantRules.inspectFallback(result.gates()))));
         InhabitantData.Home home = data.get(ResidenceScan.homeId(result.bed()));
         if (home != null && home.living().isPresent()) {
             player.sendSystemMessage(Component.translatableWithFallback(
-                    "extrahardmode.message.inhabitant_lives_here",
+                    "tougher.message.inhabitant_lives_here",
                     "%s the %s lives here.",
                     Component.literal(home.name()),
                     Component.literal(InhabitantRules.specialtyFallback(home.specialty()))));
@@ -356,7 +356,7 @@ public final class Inhabitants implements FeatureModule {
                 today,
                 today));
         Component message = Component.translatableWithFallback(
-                "extrahardmode.chat.inhabitant_arrive",
+                "tougher.chat.inhabitant_arrive",
                 "%s the %s has taken up residence.",
                 Component.literal(name),
                 Component.literal(InhabitantRules.specialtyFallback(specialty)));
@@ -521,7 +521,7 @@ public final class Inhabitants implements FeatureModule {
 
     static void complain(ServerLevel level, Entity entity, InhabitantData.Home home) {
         Component message = Component.translatableWithFallback(
-                "extrahardmode.chat.inhabitant_uneasy",
+                "tougher.chat.inhabitant_uneasy",
                 "%s is uneasy about this house.",
                 Component.literal(home.name()));
         for (ServerPlayer player : level.players()) {
@@ -533,7 +533,7 @@ public final class Inhabitants implements FeatureModule {
 
     static void leave(ServerLevel level, InhabitantData data, InhabitantData.Home home, Entity entity) {
         Component message = Component.translatableWithFallback(
-                "extrahardmode.chat.inhabitant_leave",
+                "tougher.chat.inhabitant_leave",
                 "%s has moved out.",
                 Component.literal(home.name()));
         for (ServerPlayer player : level.players()) {
@@ -562,7 +562,7 @@ public final class Inhabitants implements FeatureModule {
         long day = AntiFarming.overworldDay(level);
         data.put(home.withEmptyUntil(InhabitantRules.emptyUntilDay(day)).withLastRoll(day));
         Component message = Component.translatableWithFallback(
-                "extrahardmode.chat.inhabitant_slain",
+                "tougher.chat.inhabitant_slain",
                 "%s will not be replaced here for a while.",
                 Component.literal(home.name()));
         for (ServerPlayer player : level.players()) {
@@ -612,7 +612,7 @@ public final class Inhabitants implements FeatureModule {
         }
         if (BiomeBosses.anySpawned(level.getServer())) {
             serverPlayer.sendSystemMessage(Component.translatableWithFallback(
-                    "extrahardmode.message.inhabitant_bounty_boss",
+                    "tougher.message.inhabitant_bounty_boss",
                     "Something huge is out there. You would be wise to be careful."));
         }
     }

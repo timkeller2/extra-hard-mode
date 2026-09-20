@@ -209,7 +209,7 @@ public final class GrowPlants {
         for (Direction direction : Direction.Plane.HORIZONTAL) {
             BlockPos fruitPos = pos.relative(direction);
             if (level.getBlockState(fruitPos).isAir()
-                    && level.getBlockState(fruitPos.below()).is(access.extrahardmode$fruitSupportBlocks())) {
+                    && level.getBlockState(fruitPos.below()).is(access.tougher$fruitSupportBlocks())) {
                 return true;
             }
         }
@@ -218,15 +218,15 @@ public final class GrowPlants {
 
     static boolean growStemFruit(ServerLevel level, BlockPos pos, StemBlock stem) {
         StemBlockAccess access = (StemBlockAccess) stem;
-        Block fruit = resolveBlock(level, access.extrahardmode$fruit());
-        Block attached = resolveBlock(level, access.extrahardmode$attachedStem());
+        Block fruit = resolveBlock(level, access.tougher$fruit());
+        Block attached = resolveBlock(level, access.tougher$attachedStem());
         if (fruit == null || attached == null) {
             return false;
         }
         for (Direction direction : Direction.Plane.HORIZONTAL) {
             BlockPos fruitPos = pos.relative(direction);
             if (!level.getBlockState(fruitPos).isAir()
-                    || !level.getBlockState(fruitPos.below()).is(access.extrahardmode$fruitSupportBlocks())) {
+                    || !level.getBlockState(fruitPos.below()).is(access.tougher$fruitSupportBlocks())) {
                 continue;
             }
             BlockState attachedState = attached.defaultBlockState();

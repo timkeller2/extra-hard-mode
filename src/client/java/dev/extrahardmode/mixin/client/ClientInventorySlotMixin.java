@@ -21,7 +21,7 @@ public abstract class ClientInventorySlotMixin {
     public abstract int getContainerSlot();
 
     @Inject(method = "mayPlace", at = @At("HEAD"), cancellable = true)
-    private void extrahardmode$blockOffhandLight(ItemStack stack, CallbackInfoReturnable<Boolean> cir) {
+    private void tougher$blockOffhandLight(ItemStack stack, CallbackInfoReturnable<Boolean> cir) {
         if (!(this.container instanceof Inventory inventory)) {
             return;
         }

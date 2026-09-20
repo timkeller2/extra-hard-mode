@@ -1,23 +1,23 @@
-# Extra Hard Mode
+# Tougher
 
-Vanilla Hard only punishes mistakes. Extra Hard Mode **changes the rules** so experts still have to think. Stone does not yield to cheap picks, caves collapse when you mine ore, torches fail in the deep, water sources cannot be bucket-cloned, and every mob has a trick.
+Vanilla Hard only punishes mistakes. Tougher **changes the rules** so experts still have to think. Stone does not yield to cheap picks, caves collapse when you mine ore, torches fail in the deep, water sources cannot be bucket-cloned, and every mob has a trick.
 
-A Fabric mod for **Minecraft Java 26.2** (Java 25). Runs in singleplayer (integrated server) and on dedicated Fabric servers. **Not for Realms** — Fabric mods do not run there.
+A Fabric mod for **Minecraft Java 26.3** (Java 25). Runs in singleplayer (integrated server) and on dedicated Fabric servers. **Not for Realms** — Fabric mods do not run there.
 
-This is a greenfield reimplementation of Extra Hard Mode, not a copy of `com.extrahardmode.*`. Licensed **AGPL-3.0-or-later**. See [`LICENSE`](LICENSE), [`NOTICE`](NOTICE), and [`DESIGN.md`](DESIGN.md) for mechanics, Y remaps, and key decisions.
+This is a greenfield reimplementation of Extra Hard Mode, renamed **Tougher**, not a copy of `com.extrahardmode.*`. Licensed **AGPL-3.0-or-later**. See [`LICENSE`](LICENSE), [`NOTICE`](NOTICE), and [`DESIGN.md`](DESIGN.md) for mechanics, Y remaps, and key decisions.
 
 ## Install
 
 Requires:
 
-- **Minecraft Java Edition 26.2** (exact)
+- **Minecraft Java Edition 26.3** (exact)
 - **Java 25**
-- **Fabric Loader** `>=0.19.3`
-- **Fabric API** `>=0.157.0+26.2` (this repo pins `0.158.0+26.2`)
+- **Fabric Loader** `>=0.19.5`
+- **Fabric API** `>=0.161.0+26.3`
 
-Put the Extra Hard Mode jar and Fabric API in `mods/`. The published jar does not bundle Fabric API.
+Put the Tougher jar and Fabric API in `mods/`. The published jar does not bundle Fabric API.
 
-Optional client extras: **Cloth Config** and **Mod Menu** are suggested, not required. Dedicated servers load `main` + mixins and skip client extras. If no 26.2 Cloth Config artifact resolves, there is no in-game config screen — edit TOML instead. Do not invent Cloth or Sodium version pins. The mod does not depend on Sodium, Lithium, Iris, GraviTree, WorldGuard, or any other gameplay/render mod.
+Optional client extras: **Cloth Config** and **Mod Menu** are suggested, not required. Dedicated servers load `main` + mixins and skip client extras. If no 26.3 Cloth Config artifact resolves, there is no in-game config screen — edit TOML instead. Do not invent Cloth or Sodium version pins. The mod does not depend on Sodium, Lithium, Iris, GraviTree, WorldGuard, or any other gameplay/render mod.
 
 Build from source (JDK 25):
 
@@ -31,38 +31,38 @@ On Windows: `.\gradlew.bat build`. Output jars land in `build/libs/`.
 
 ## Enable
 
-The gamerule `extrahardmode:enabled` is a **server-global master switch** (26.2 game rules are not per-dimension). First-apply copies `enabledByDefault` from global TOML into that gamerule once (overworld load).
+The gamerule `tougher:enabled` is a **server-global master switch** (26.3 game rules are not per-dimension). First-apply copies `enabledByDefault` from global TOML into that gamerule once (overworld load).
 
 ```
-/gamerule extrahardmode:enabled true
-/gamerule extrahardmode:enabled false
+/gamerule tougher:enabled true
+/gamerule tougher:enabled false
 ```
 
-`/gamerule extrahardmode:enabled false` turns Extra Hard Mode off everywhere. `/gamerule extrahardmode:enabled true` turns it on in every dimension that has not opted out.
+`/gamerule tougher:enabled false` turns Tougher off everywhere. `/gamerule tougher:enabled true` turns it on in every dimension that has not opted out.
 
-Each dimension has a live `enabled` flag that **defaults true** (opt-out). Custom dimensions inherit the overworld's current live flag so a world that opted Overworld out does not spring EHM on a new datapack dim. Toggle the current dimension with:
+Each dimension has a live `enabled` flag that **defaults true** (opt-out). Custom dimensions inherit the overworld's current live flag so a world that opted Overworld out does not spring Tougher on a new datapack dim. Toggle the current dimension with:
 
 ```
-/ehm set-world true
-/ehm set-world false
+/tougher set-world true
+/tougher set-world false
 ```
 
-(`/ehm enable` / `/ehm disable` are aliases.) `WorldGate.isActive` is the gamerule **and** the dimension flag.
+(`/tougher enable` / `/tougher disable` are aliases. `/ehm` still works as a command alias.) `WorldGate.isActive` is the gamerule **and** the dimension flag.
 
-If `enabledByDefault` is missing, it defaults to `true` in singleplayer and `false` on dedicated servers. Operators who want new dedicated worlds on by default set `enabledByDefault = true` in `config/extrahardmode.toml` **before** first load.
+If `enabledByDefault` is missing, it defaults to `true` in singleplayer and `false` on dedicated servers. Operators who want new dedicated worlds on by default set `enabledByDefault = true` in `config/tougher.toml` **before** first load.
 
-Per-dimension TOML lives under the overworld save: `data/extrahardmode/<namespace>/<path>.toml` (for example `world/data/extrahardmode/minecraft/overworld.toml` on a dedicated server). Global defaults: `config/extrahardmode.toml`.
+Per-dimension TOML lives under the overworld save: `data/tougher/<namespace>/<path>.toml` (for example `world/data/tougher/minecraft/overworld.toml` on a dedicated server). Global defaults: `config/tougher.toml`.
 
-Commands: `/ehm`, `/ehm version`, `/ehm enabled [world]`, `/ehm reload`, `/ehm debug`, `/ehm bypass`, `/ehm set <module> <bool>`, `/ehm set-world <bool>`, `/ehm enable`, `/ehm disable`.
+Commands: `/tougher` (alias `/ehm`), `/tougher version`, `/tougher enabled [world]`, `/tougher reload`, `/tougher debug`, `/tougher bypass`, `/tougher set <module> <bool>`, `/tougher set-world <bool>`, `/tougher enable`, `/tougher disable`.
 
-`/ehm reload` (`extrahardmode.admin`) reloads TOML on the server thread. Datapack tags still reload with vanilla `/reload`.
+`/tougher reload` (`tougher.admin`) reloads TOML on the server thread. Datapack tags still reload with vanilla `/reload`.
 
 ## Limitations (v1)
 
 - **Not for Realms.** Fabric mods do not run on Realms. Do not file Realms tickets.
-- **SMP claim plugins.** There is no WorldGuard / claim-mod explosion or cave-in hook in v1. Cave-ins, falling blocks, and EHM explosions can grief claimed land. That is a stated v1 gap, not a promise to respect claims.
-- **Teleport plugins.** Extra Hard Mode does **not** add `/home`, `/back`, or `/tpa`, and authors must not add them. Those commands fight death-forfeit, weight, and environmental injury. Incompatible with typical teleport plugins; do not implement a compatibility layer in v1.
-- **Villager trade nerf** is not in this release (optional, default off, not an original EHM feature).
+- **SMP claim plugins.** There is no WorldGuard / claim-mod explosion or cave-in hook in v1. Cave-ins, falling blocks, and Tougher explosions can grief claimed land. That is a stated v1 gap, not a promise to respect claims.
+- **Teleport plugins.** Tougher does **not** add `/home`, `/back`, or `/tpa`, and authors must not add them. Those commands fight death-forfeit, weight, and environmental injury. Incompatible with typical teleport plugins; do not implement a compatibility layer in v1.
+- **Villager trade nerf** is optional (default on, not an original Extra Hard Mode feature).
 - **Create drills** that skip the player break event may not drain hardened-stone budgets. Known gap.
 
 ## License (AGPL)
@@ -93,7 +93,7 @@ That starts Loom's dedicated GameTest server (`gameTest` run config). `./gradlew
 
 | Test | Expectation |
 |---|---|
-| Gamerule off | No-op. `WorldGate.isActive` / modules false when `extrahardmode:enabled` is false. |
+| Gamerule off | No-op. `WorldGate.isActive` / modules false when `tougher:enabled` is false. |
 | First-apply | Overworld gamerule matches TOML `enabledByDefault`. Nether first-apply does not rewrite the gamerule. Dimension stamps are independent. |
 | Hardened stone | Wooden pick cannot harvest (speed 0, no drop). Iron pick consumed after **128** stone. Tuff is hardened. |
 | Ore / piston | Placing ore next to stone denied. Pistons cannot push hardened blocks or cave-in ores. |
@@ -113,13 +113,13 @@ Villager-trade nerf is **not** in this suite.
 
 ## Tutorial
 
-Instant denies (torch, pillaring, ore-next-to-stone, hardened-stone help, End building) use the **action bar**. First-time mechanics use a **SystemToast**, at most `tutorial.maxShows` times per player (default 3). `tutorial.maxShows = 0` disables **all** tutorial toasts, including once-only extras (weight, zombie slow, melon seeds). Dragon challenge/defeat still **broadcast chat** and also show a once-toast when toasts are enabled. Shown counts persist on the player as `ehm:tutorial`. Silent permission nodes from the original plugin.yml still work when `bypassing.checkPermission` is true: `extrahardmode.silent.stone_mining_help`, `no_placing_ore_against_stone`, `realistic_building`, `limited_torch_placement`, `no_torches_here`. `/ehm set tutorial false` turns mechanic toasts off; action-bar denies and the overworld first-apply toast still fire.
+Instant denies (torch, pillaring, ore-next-to-stone, hardened-stone help, End building) use the **action bar**. First-time mechanics use a **SystemToast**, at most `tutorial.maxShows` times per player (default 3). `tutorial.maxShows = 0` disables **all** tutorial toasts, including once-only extras (weight, zombie slow, melon seeds). Dragon challenge/defeat still **broadcast chat** and also show a once-toast when toasts are enabled. Shown counts persist on the player as `tougher:tutorial`. Silent permission nodes from the original plugin.yml still work when `bypassing.checkPermission` is true: `tougher.silent.stone_mining_help`, `no_placing_ore_against_stone`, `realistic_building`, `limited_torch_placement`, `no_torches_here`. `/tougher set tutorial false` turns mechanic toasts off; action-bar denies and the overworld first-apply toast still fire.
 
-Dedicated servers do not load client extras. Optional **Cloth Config** + **Mod Menu** add a config screen when those mods are installed (26.2 artifacts `cloth-config-fabric` 26.2.155 and Mod Menu 20.0.1). The published jar does not bundle them.
+Dedicated servers do not load client extras. Optional **Cloth Config** + **Mod Menu** add a config screen when those mods are installed (26.3 artifacts `cloth-config-fabric` 26.3.158 and Mod Menu 21.0.0-beta.1). The published jar does not bundle them.
 
-## Optional villager trade nerf (default off)
+## Optional villager trade nerf (default on)
 
-Not original Extra Hard Mode. `/ehm set villager_nerf true` (gamerule must also be on) removes villager trades whose **result** is diamond or netherite sword/tools/armor. Librarian Mending books are stripped from novice and apprentice; a Master librarian may still sell Mending at **2×** emeralds (20 + a book). Farmer crop trades, cartographer maps, and copper-age trades are left alone. Missing `modules.extrahardmode.villager_nerf` is **true**.
+Not original Extra Hard Mode. `/tougher set villager_nerf true` (gamerule must also be on) removes villager trades whose **result** is diamond or netherite sword/tools/armor. Librarian Mending books are stripped from novice and apprentice; a Master librarian may still sell Mending at **2×** emeralds (20 + a book). Farmer crop trades, cartographer maps, and copper-age trades are left alone. Missing `modules.tougher.villager_nerf` is **true**.
 
 ## Credits
 
@@ -127,4 +127,4 @@ Not original Extra Hard Mode. `/ehm set villager_nerf true` (gamerule must also 
 - Diemex
 - RoboMWM
 - Mitsugaru
-- Grok Design (26.2 Fabric port)
+- Grok Design (26.3 Fabric port)

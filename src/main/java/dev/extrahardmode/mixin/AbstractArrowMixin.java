@@ -19,7 +19,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(AbstractArrow.class)
 public abstract class AbstractArrowMixin {
     @Inject(method = "tick()V", at = @At("HEAD"))
-    private void extrahardmode$seekMagicArrow(CallbackInfo ci) {
+    private void tougher$seekMagicArrow(CallbackInfo ci) {
         ManaAbilities.steerSeeker((AbstractArrow) (Object) this);
     }
 
@@ -55,7 +55,7 @@ public abstract class AbstractArrowMixin {
     }
 
     @Inject(method = "onHitBlock", at = @At("HEAD"), cancellable = true)
-    private void extrahardmode$magicArrowNoStick(BlockHitResult hit, CallbackInfo ci) {
+    private void tougher$magicArrowNoStick(BlockHitResult hit, CallbackInfo ci) {
         AbstractArrow self = (AbstractArrow) (Object) this;
         Integer power = self.getAttached(EhmAttachments.EHM_FIREBOLT_POWER);
         if (power == null || power <= 0) {

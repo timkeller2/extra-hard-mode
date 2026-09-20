@@ -219,7 +219,7 @@ public final class Hunger implements FeatureModule {
             player.giveExperiencePoints(xp);
         }
         player.sendSystemMessage(Component.translatableWithFallback(
-                "extrahardmode.message.food_unique_window",
+                "tougher.message.food_unique_window",
                 "You ate seven different foods! Extra +1 hunger and saturation, and 3 experience."));
         level.playSound(
                 null,
@@ -242,13 +242,13 @@ public final class Hunger implements FeatureModule {
         Component name = foodDisplayName(stack, foodId);
         if (streak >= HungerRules.SICK_STREAK) {
             player.sendSystemMessage(Component.translatableWithFallback(
-                    "extrahardmode.message.food_sick", "You are getting sick of %s!", name));
+                    "tougher.message.food_sick", "You are getting sick of %s!", name));
             level.playSound(
                     null, player.blockPosition(), SoundEvents.PIGLIN_ANGRY, SoundSource.PLAYERS, 0.8F, 1.0F);
             return;
         }
         player.sendSystemMessage(Component.translatableWithFallback(
-                "extrahardmode.message.food_tired",
+                "tougher.message.food_tired",
                 "You are getting tired of %s. Try changing it up.",
                 name));
         level.playSound(null, player.blockPosition(), SoundEvents.VILLAGER_NO, SoundSource.PLAYERS, 0.8F, 1.0F);
@@ -267,7 +267,7 @@ public final class Hunger implements FeatureModule {
 
     static void celebrateVariety(ServerPlayer player, ServerLevel level) {
         player.sendSystemMessage(Component.translatableWithFallback(
-                "extrahardmode.message.food_variety", "You appreciate the food variety! +1 bonus"));
+                "tougher.message.food_variety", "You appreciate the food variety! +1 bonus"));
         level.playSound(
                 null,
                 player.blockPosition(),

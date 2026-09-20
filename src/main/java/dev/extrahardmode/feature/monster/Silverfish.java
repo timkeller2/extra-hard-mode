@@ -61,6 +61,6 @@ public final class Silverfish implements FeatureModule {
         if (!config.silverfishDropCobble()) {
             return;
         }
-        entity.drop(new ItemStack(Items.COBBLESTONE), false, false);
+        entity.drop(new ItemStack(Items.COBBLESTONE), false, net.minecraft.util.Prediction.SERVER_ONLY);
     }
 }

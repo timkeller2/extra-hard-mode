@@ -15,7 +15,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 
 public final class ConfigManager {
-    public static final String FILE_NAME = "extrahardmode.toml";
+    public static final String FILE_NAME = "tougher.toml";
 
     private static GlobalConfig global = GlobalConfig.defaults();
     private static final Map<Identifier, WorldConfig> worlds = new ConcurrentHashMap<>();
@@ -93,7 +93,7 @@ public final class ConfigManager {
         Path bukkit = dir.resolve("config.yml");
         if (Files.exists(bukkit)) {
             ExtraHardModeMod.LOGGER.warn(
-                    "Found config.yml next to Extra Hard Mode — old Bukkit configs are unsupported, see docs");
+                    "Found config.yml next to Tougher — old Bukkit configs are unsupported, see docs");
         }
         Path path = dir.resolve(FILE_NAME);
         boolean defaultEnabled = GlobalConfig.defaultEnabledByDefault();

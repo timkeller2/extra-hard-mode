@@ -61,8 +61,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ExtraHardModeMod implements ModInitializer {
-    public static final String MOD_ID = "extrahardmode";
-    public static final Logger LOGGER = LoggerFactory.getLogger("ExtraHardMode");
+    public static final String MOD_ID = "tougher";
+    public static final Logger LOGGER = LoggerFactory.getLogger("Tougher");
     public static final FeatureRegistry FEATURES = new FeatureRegistry();
     public static final Identifier ARMOR_SLOWDOWN = id("armor_slowdown");
     public static final Identifier ABILITY_SLOW = id("ability_slow");
@@ -136,7 +136,7 @@ public class ExtraHardModeMod implements ModInitializer {
             }
         });
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> ConfigManager.clearWorldCache());
-        LOGGER.info("EHM loaded, {} modules", FEATURES.count());
+        LOGGER.info("Tougher loaded, {} modules", FEATURES.count());
     }
 
     public static Identifier id(String path) {

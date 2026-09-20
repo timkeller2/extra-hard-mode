@@ -38,7 +38,7 @@ public abstract class VillagerTradesMixin {
     protected abstract void resetNumberOfRestocks();
 
     @Inject(method = "updateTrades", at = @At("HEAD"), cancellable = true)
-    private void extrahardmode$skipInhabitantTrades(ServerLevel level, CallbackInfo ci) {
+    private void tougher$skipInhabitantTrades(ServerLevel level, CallbackInfo ci) {
         Villager self = (Villager) (Object) this;
         if (Inhabitants.isInhabitant(self)) {
             Inhabitants.ensureOffers(self);
@@ -47,7 +47,7 @@ public abstract class VillagerTradesMixin {
     }
 
     @Inject(method = "updateTrades", at = @At("RETURN"))
-    private void extrahardmode$nerfGeneratedTrades(ServerLevel level, CallbackInfo ci) {
+    private void tougher$nerfGeneratedTrades(ServerLevel level, CallbackInfo ci) {
         Villager self = (Villager) (Object) this;
         if (Inhabitants.isInhabitant(self)) {
             return;
@@ -59,7 +59,7 @@ public abstract class VillagerTradesMixin {
     }
 
     @Inject(method = "startTrading", at = @At("HEAD"))
-    private void extrahardmode$nerfExistingTrades(Player player, CallbackInfo ci) {
+    private void tougher$nerfExistingTrades(Player player, CallbackInfo ci) {
         Villager self = (Villager) (Object) this;
         if (Inhabitants.isInhabitant(self)) {
             Inhabitants.onStartTrading(self, player);
@@ -72,7 +72,7 @@ public abstract class VillagerTradesMixin {
     }
 
     @Inject(method = "canBreed", at = @At("HEAD"), cancellable = true)
-    private void extrahardmode$noInhabitantBreed(CallbackInfoReturnable<Boolean> cir) {
+    private void tougher$noInhabitantBreed(CallbackInfoReturnable<Boolean> cir) {
         if (Inhabitants.isInhabitant((Villager) (Object) this)) {
             cir.setReturnValue(false);
         }

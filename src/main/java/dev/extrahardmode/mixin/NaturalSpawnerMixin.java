@@ -73,9 +73,9 @@ public abstract class NaturalSpawnerMixin {
             at =
                     @At(
                             value = "INVOKE",
-                            target = "Lnet/minecraft/world/level/biome/MobSpawnSettings$SpawnerData;minCount()I"),
+                            target = "Lnet/minecraft/world/level/biome/MobSpawnSettings$SpawnerData;count()Lnet/minecraft/util/valueproviders/IntProvider;"),
             require = 0)
-    private static int ehm$scalePackMin(
+    private static net.minecraft.util.valueproviders.IntProvider ehm$scalePackCount(
             MobSpawnSettings.SpawnerData data,
             MobCategory category,
             ServerLevel level,
@@ -84,35 +84,22 @@ public abstract class NaturalSpawnerMixin {
             NaturalSpawner.SpawnPredicate predicate,
             NaturalSpawner.AfterSpawnCallback callback) {
         MoreMonsters.markPackCountMixinApplied();
-        int min = data.minCount();
+        net.minecraft.util.valueproviders.IntProvider count = data.count();
+        int min = count.minInclusive();
+        int max = count.maxInclusive();
         if (WorldGate.isModuleActive(level, MoreMonsters.ID)) {
             min = MoreMonsters.maybeScale(min, category, level, pos);
-        }
-        return FishStocks.packCount(min, data.type(), level);
-    }
-
-    @Redirect(
-            method =
-                    "spawnCategoryForPosition(Lnet/minecraft/world/entity/MobCategory;Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/level/chunk/ChunkAccess;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/NaturalSpawner$SpawnPredicate;Lnet/minecraft/world/level/NaturalSpawner$AfterSpawnCallback;)V",
-            at =
-                    @At(
-                            value = "INVOKE",
-                            target = "Lnet/minecraft/world/level/biome/MobSpawnSettings$SpawnerData;maxCount()I"),
-            require = 0)
-    private static int ehm$scalePackMax(
-            MobSpawnSettings.SpawnerData data,
-            MobCategory category,
-            ServerLevel level,
-            ChunkAccess chunk,
-            BlockPos pos,
-            NaturalSpawner.SpawnPredicate predicate,
-            NaturalSpawner.AfterSpawnCallback callback) {
-        MoreMonsters.markPackCountMixinApplied();
-        int max = data.maxCount();
-        if (WorldGate.isModuleActive(level, MoreMonsters.ID)) {
             max = MoreMonsters.maybeScale(max, category, level, pos);
         }
-        return FishStocks.packCount(max, data.type(), level);
+        min = FishStocks.packCount(min, data.type(), level);
+        max = FishStocks.packCount(max, data.type(), level);
+        if (max < min) {
+            max = min;
+        }
+        if (min == max) {
+            return net.minecraft.util.valueproviders.ConstantInt.of(min);
+        }
+        return net.minecraft.util.valueproviders.UniformInt.of(min, max);
     }
 
     @Inject(

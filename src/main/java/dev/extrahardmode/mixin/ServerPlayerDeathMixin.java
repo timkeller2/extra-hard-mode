@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(ServerPlayer.class)
 public abstract class ServerPlayerDeathMixin {
     @Inject(method = "die", at = @At("HEAD"))
-    private void extrahardmode$forfeitInventory(DamageSource source, CallbackInfo ci) {
+    private void tougher$forfeitInventory(DamageSource source, CallbackInfo ci) {
         ServerPlayer player = (ServerPlayer) (Object) this;
         Level level = player.level();
         if (!(level instanceof ServerLevel serverLevel) || !WorldGate.isModuleActive(serverLevel, Players.ID)) {

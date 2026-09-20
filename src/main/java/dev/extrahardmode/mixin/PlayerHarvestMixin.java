@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(Player.class)
 public abstract class PlayerHarvestMixin {
     @Inject(method = "hasCorrectToolForDrops", at = @At("HEAD"), cancellable = true)
-    private void extrahardmode$hardenedHarvest(BlockState state, CallbackInfoReturnable<Boolean> cir) {
+    private void tougher$hardenedHarvest(BlockState state, CallbackInfoReturnable<Boolean> cir) {
         Player self = (Player) (Object) this;
         if (!FeatureBus.guard(self.level(), HardenedStone.ID)) {
             return;

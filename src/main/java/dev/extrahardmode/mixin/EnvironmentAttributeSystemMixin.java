@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(EnvironmentAttributeSystem.class)
 public abstract class EnvironmentAttributeSystemMixin {
-    @Inject(method = "addDefaultLayers", at = @At("RETURN"))
+    @Inject(method = "addDynamicLayers", at = @At("RETURN"))
     private static void ehm$harshSeason(
             EnvironmentAttributeSystem.Builder builder, Level level, CallbackInfo ci) {
         SeasonAtmosphere.addLayers(builder, level);

@@ -45,22 +45,22 @@ public abstract class ServerExplosionMixin
     private Entity source;
 
     @Override
-    public void extrahardmode$setRadius(float radius) {
+    public void tougher$setRadius(float radius) {
         this.radius = radius;
     }
 
     @Override
-    public void extrahardmode$setFire(boolean fire) {
+    public void tougher$setFire(boolean fire) {
         this.fire = fire;
     }
 
     @Override
-    public void extrahardmode$setBlockInteraction(Explosion.BlockInteraction interaction) {
+    public void tougher$setBlockInteraction(Explosion.BlockInteraction interaction) {
         this.blockInteraction = interaction;
     }
 
     @Inject(method = "explode", at = @At("HEAD"))
-    private void extrahardmode$event(CallbackInfoReturnable<Integer> cir) {
+    private void tougher$event(CallbackInfoReturnable<Integer> cir) {
         if (!FeatureBus.guard((Level) this.level, Explosions.ID)) {
             return;
         }
@@ -68,7 +68,7 @@ public abstract class ServerExplosionMixin
     }
 
     @Inject(method = "interactWithBlocks", at = @At("HEAD"))
-    private void extrahardmode$beforeBlocks(List<BlockPos> positions, CallbackInfo ci) {
+    private void tougher$beforeBlocks(List<BlockPos> positions, CallbackInfo ci) {
         if (!FeatureBus.guard((Level) this.level, Explosions.ID)) {
             return;
         }
@@ -76,7 +76,7 @@ public abstract class ServerExplosionMixin
     }
 
     @Inject(method = "interactWithBlocks", at = @At("RETURN"))
-    private void extrahardmode$afterBlocks(List<BlockPos> positions, CallbackInfo ci) {
+    private void tougher$afterBlocks(List<BlockPos> positions, CallbackInfo ci) {
         if (!FeatureBus.guard((Level) this.level, Explosions.ID)) {
             return;
         }

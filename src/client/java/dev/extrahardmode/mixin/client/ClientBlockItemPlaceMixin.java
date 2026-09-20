@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(BlockItem.class)
 public abstract class ClientBlockItemPlaceMixin {
     @Inject(method = "place", at = @At("HEAD"), cancellable = true)
-    private void extrahardmode$clientBlockOreAgainstStone(
+    private void tougher$clientBlockOreAgainstStone(
             BlockPlaceContext context, CallbackInfoReturnable<InteractionResult> cir) {
         if (ExtraHardModeClient.lastSync() == null) {
             return;

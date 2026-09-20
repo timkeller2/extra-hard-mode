@@ -889,13 +889,13 @@ public final class WorldConfig {
                 if (!file.contains("configVersion")) {
                     file.setComment(
                             "configVersion",
-                            "EHM world config schema. extrahardmode:enabled is a server-global master gamerule; this file's enabled is per-dimension.");
+                            "EHM world config schema. tougher:enabled is a server-global master gamerule; this file's enabled is per-dimension.");
                     file.set("configVersion", CONFIG_VERSION);
                 }
                 writeDefaultIfMissing(
                         file,
                         "bypassing.checkPermission",
-                        "Honor extrahardmode.bypass (and silent) permission nodes.",
+                        "Honor tougher.bypass (and silent) permission nodes.",
                         true);
                 writeDefaultIfMissing(
                         file,
@@ -988,7 +988,7 @@ public final class WorldConfig {
                 writeDefaultIfMissing(
                         file,
                         "falling.enable",
-                        "Extra falling blocks (#extrahardmode:extra_falling) drop when unsupported. v1 hooks: player break, BlockItem place, EHM land cascade. Piston/other non-player support removal is not scanned.",
+                        "Extra falling blocks (#tougher:extra_falling) drop when unsupported. v1 hooks: player break, BlockItem place, EHM land cascade. Piston/other non-player support removal is not scanned.",
                         true);
                 writeDefaultIfMissing(
                         file, "falling.breakTorches", "Implemented, default off (upstream buggy).", false);
@@ -1056,17 +1056,17 @@ public final class WorldConfig {
                 writeDefaultIfMissing(
                         file,
                         "replacements.vindicatorPercent",
-                        "NATURAL skeletons in #extrahardmode:vindicator_replace (dark_forest). RootNode 20.",
+                        "NATURAL skeletons in #tougher:vindicator_replace (dark_forest). RootNode 20.",
                         20);
                 writeDefaultIfMissing(
                         file,
                         "replacements.caveSpiderPercent",
-                        "NATURAL spiders in #extrahardmode:cave_spider_replace (swamp, mangrove_swamp). RootNode 5.",
+                        "NATURAL spiders in #tougher:cave_spider_replace (swamp, mangrove_swamp). RootNode 5.",
                         5);
                 writeDefaultIfMissing(
                         file,
                         "replacements.guardianPercent",
-                        "NATURAL squid in #extrahardmode:guardian_replace (#minecraft:is_ocean). RootNode 20 (docs 10).",
+                        "NATURAL squid in #tougher:guardian_replace (#minecraft:is_ocean). RootNode 20 (docs 10).",
                         20);
                 writeDefaultIfMissing(
                         file,
@@ -1150,7 +1150,7 @@ public final class WorldConfig {
                 }
                 writeDefaultIfMissing(
                         file,
-                        "modules.extrahardmode.villager_nerf",
+                        "modules.tougher.villager_nerf",
                         "Optional diamond-gear / novice-Mending trade nerf. Not original EHM; default true.",
                         true);
                 writeDefaultIfMissing(
@@ -1165,7 +1165,7 @@ public final class WorldConfig {
                         true);
                 writeDefaultIfMissing(
                         file,
-                        "modules.extrahardmode.inhabitants",
+                        "modules.tougher.inhabitants",
                         "Homes can attract one traveler. Default true.",
                         true);
                 writeInhabitantDefaults(file);
@@ -1198,7 +1198,7 @@ public final class WorldConfig {
                 if (!file.contains("enabled")) {
                     file.setComment(
                             "enabled",
-                            "Per-dimension opt-out. Default true. The gamerule extrahardmode:enabled is the server-wide master switch.");
+                            "Per-dimension opt-out. Default true. The gamerule tougher:enabled is the server-wide master switch.");
                 }
                 file.set("enabled", enabled);
                 file.set("bypassing.checkPermission", checkPermission);
@@ -1796,7 +1796,7 @@ public final class WorldConfig {
     }
 
     /**
-     * Schema 2: egg lay default 4× → 2× (double the previous Extra Hard Mode rate).
+     * Schema 2: egg lay default 4× → 2× (double the previous Tougher rate).
      * Schema 3: diamond armor slowdown default 40% → 0. Only rewrites a stored 40
      * so a custom value is kept.
      * Schema 4: nether wart farming default true (blocked) → false (growable at 1/20).

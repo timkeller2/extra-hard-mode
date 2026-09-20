@@ -1,9 +1,9 @@
 {
   "replace": false,
   "values": [
-    "extrahardmode:heavy_copper_helmet",
-    "extrahardmode:heavy_iron_helmet",
-    "extrahardmode:heavy_diamond_helmet",
-    "extrahardmode:heavy_netherite_helmet"
+    "tougher:heavy_copper_helmet",
+    "tougher:heavy_iron_helmet",
+    "tougher:heavy_diamond_helmet",
+    "tougher:heavy_netherite_helmet"
   ]
 }

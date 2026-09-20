@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(LivingEntity.class)
 public abstract class LivingEntityHurtMixin {
     @ModifyVariable(method = "hurtServer", at = @At("HEAD"), argsOnly = true, ordinal = 0)
-    private float extrahardmode$scaleEnvironmentalDamage(float amount, ServerLevel level, DamageSource source) {
+    private float tougher$scaleEnvironmentalDamage(float amount, ServerLevel level, DamageSource source) {
         if (!WorldGate.isModuleActive(level, Players.ID)) {
             return amount;
         }
@@ -26,7 +26,7 @@ public abstract class LivingEntityHurtMixin {
     }
 
     @Inject(method = "applyItemBlocking", at = @At("RETURN"), cancellable = true)
-    private void extrahardmode$partialShieldAbsorb(
+    private void tougher$partialShieldAbsorb(
             ServerLevel level, DamageSource source, float amount, CallbackInfoReturnable<Float> cir) {
         Float blocked = cir.getReturnValue();
         if (blocked == null || blocked <= 0.0F) {

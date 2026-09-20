@@ -40,7 +40,7 @@ import net.minecraft.world.phys.Vec3;
 /**
  * Charged NATURAL spawn %, charged explode on damage, primed TNT on death,
  * burning creeper fireworks. Custom blasts go through {@link Explosions} gated
- * on this module, not {@code extrahardmode:explosions}.
+ * on this module, not {@code tougher:explosions}.
  */
 public final class Creepers implements FeatureModule {
     public static final Identifier ID = ExtraHardModeMod.id("creepers");
@@ -96,7 +96,7 @@ public final class Creepers implements FeatureModule {
         }
         int percent = ConfigManager.world(level).monsters().chargedPercent();
         if (EntityHelper.percent(level.getRandom(), percent)) {
-            ((PoweredMutator) creeper).extrahardmode$setPowered(true);
+            ((PoweredMutator) creeper).tougher$setPowered(true);
         }
         return null;
     }
@@ -205,7 +205,7 @@ public final class Creepers implements FeatureModule {
     }
 
     public interface PoweredMutator {
-        void extrahardmode$setPowered(boolean powered);
+        void tougher$setPowered(boolean powered);
     }
 
     private static Player playerFrom(DamageSource source) {

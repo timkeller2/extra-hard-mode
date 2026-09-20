@@ -1,0 +1,21 @@
+{
+  "replace": false,
+  "values": [
+    "tougher:heavy_copper_helmet",
+    "tougher:heavy_copper_chestplate",
+    "tougher:heavy_copper_leggings",
+    "tougher:heavy_copper_boots",
+    "tougher:heavy_iron_helmet",
+    "tougher:heavy_iron_chestplate",
+    "tougher:heavy_iron_leggings",
+    "tougher:heavy_iron_boots",
+    "tougher:heavy_diamond_helmet",
+    "tougher:heavy_diamond_chestplate",
+    "tougher:heavy_diamond_leggings",
+    "tougher:heavy_diamond_boots",
+    "tougher:heavy_netherite_helmet",
+    "tougher:heavy_netherite_chestplate",
+    "tougher:heavy_netherite_leggings",
+    "tougher:heavy_netherite_boots"
+  ]
+}

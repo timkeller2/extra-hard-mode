@@ -26,7 +26,7 @@ public final class VillagerRestockRules {
         return scaleTicks(VANILLA_CATCH_UP_TICKS);
     }
 
-    /** Vanilla resets restock count on a new day; Extra Hard Mode waits this many days. */
+    /** Vanilla resets restock count on a new day; Tougher waits this many days. */
     public static boolean restockPeriodElapsed(long currentDay, long lastCheckDay) {
         if (lastCheckDay <= 0L) {
             return false;

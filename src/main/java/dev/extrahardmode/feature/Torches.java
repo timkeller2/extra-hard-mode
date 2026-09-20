@@ -478,7 +478,7 @@ public final class Torches implements FeatureModule {
             return;
         }
         player.setItemSlot(EquipmentSlot.OFFHAND, ItemStack.EMPTY);
-        player.getInventory().placeItemBackInInventory(offhand);
+        player.getInventory().placeItemBackInInventory(offhand, net.minecraft.util.Prediction.SERVER_ONLY);
         MsgService.deny(player, MessageId.NO_OFFHAND_LIGHT);
     }
 

@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(BlockItem.class)
 public abstract class FallingBlockPlaceMixin {
     @Inject(method = "place", at = @At("RETURN"))
-    private void extrahardmode$fallingPlace(
+    private void tougher$fallingPlace(
             BlockPlaceContext context, CallbackInfoReturnable<InteractionResult> cir) {
         if (!FeatureBus.guard(context.getLevel(), FallingBlocks.ID)) {
             return;

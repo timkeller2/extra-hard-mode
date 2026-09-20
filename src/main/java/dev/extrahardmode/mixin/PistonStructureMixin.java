@@ -28,7 +28,7 @@ public abstract class PistonStructureMixin {
     private List<BlockPos> toDestroy;
 
     @Inject(method = "resolve", at = @At("RETURN"), cancellable = true)
-    private void extrahardmode$blockHardened(CallbackInfoReturnable<Boolean> cir) {
+    private void tougher$blockHardened(CallbackInfoReturnable<Boolean> cir) {
         if (!FeatureBus.guard(this.level, HardenedStone.ID)) {
             return;
         }

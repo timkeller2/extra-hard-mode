@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(DragonFireball.class)
 public abstract class DragonFireballMixin {
     @Inject(method = "onHit", at = @At("HEAD"))
-    private void extrahardmode$explosiveFireball(HitResult hit, CallbackInfo ci) {
+    private void tougher$explosiveFireball(HitResult hit, CallbackInfo ci) {
         DragonFireball self = (DragonFireball) (Object) this;
         if (!FeatureBus.guard(self.level(), Dragon.ID)) {
             return;

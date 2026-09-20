@@ -74,7 +74,7 @@ class InhabitantRulesTest {
         InhabitantRules.GateResult closed = InhabitantRules.gates(true, 40, true, true, true, true, true, poor);
         assertFalse(closed.eligible());
         assertTrue(closed.missing().stream().anyMatch(s -> s.contains("more furnishings")));
-        assertTrue(InhabitantRules.inspectFallback(closed).contains("/ehm help homes"));
+        assertTrue(InhabitantRules.inspectFallback(closed).contains("/tougher help homes"));
         InhabitantRules.AmenityCounts ok =
                 new InhabitantRules.AmenityCounts(3, 2, 8, 1, 1, 1, 1, 1, 1, 0, false);
         assertTrue(InhabitantRules.score(ok) >= InhabitantRules.MIN_SCORE);

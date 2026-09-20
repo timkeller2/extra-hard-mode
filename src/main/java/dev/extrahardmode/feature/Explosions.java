@@ -214,11 +214,11 @@ public final class Explosions implements FeatureModule {
         boolean allowBlocks = !event.isCanceled() && event.worldDamage();
         ALLOW_WORLD_DAMAGE.set(allowBlocks);
         if (!allowBlocks) {
-            ((BlockInteractionMutator) explosion).extrahardmode$setBlockInteraction(Explosion.BlockInteraction.KEEP);
+            ((BlockInteractionMutator) explosion).tougher$setBlockInteraction(Explosion.BlockInteraction.KEEP);
         }
-        ((RadiusMutator) explosion).extrahardmode$setRadius(event.power());
+        ((RadiusMutator) explosion).tougher$setRadius(event.power());
         ((FireMutator) explosion)
-                .extrahardmode$setFire(ExplosionSettings.allowFire(event.isCanceled(), event.worldDamage(), event.fire()));
+                .tougher$setFire(ExplosionSettings.allowFire(event.isCanceled(), event.worldDamage(), event.fire()));
     }
 
     public static void beforeBlocks(ServerLevel level, Explosion explosion, List<BlockPos> positions) {
@@ -338,14 +338,14 @@ public final class Explosions implements FeatureModule {
     private record OreBreak(BlockPos pos, BlockState state) {}
 
     public interface RadiusMutator {
-        void extrahardmode$setRadius(float radius);
+        void tougher$setRadius(float radius);
     }
 
     public interface FireMutator {
-        void extrahardmode$setFire(boolean fire);
+        void tougher$setFire(boolean fire);
     }
 
     public interface BlockInteractionMutator {
-        void extrahardmode$setBlockInteraction(Explosion.BlockInteraction interaction);
+        void tougher$setBlockInteraction(Explosion.BlockInteraction interaction);
     }
 }

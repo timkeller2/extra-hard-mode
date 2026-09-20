@@ -14,7 +14,7 @@ public abstract class CreeperPoweredMixin implements Creepers.PoweredMutator {
     private static EntityDataAccessor<Boolean> DATA_IS_POWERED;
 
     @Override
-    public void extrahardmode$setPowered(boolean powered) {
+    public void tougher$setPowered(boolean powered) {
         ((Creeper) (Object) this).getEntityData().set(DATA_IS_POWERED, powered);
     }
 }

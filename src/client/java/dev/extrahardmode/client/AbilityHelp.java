@@ -14,8 +14,8 @@ import net.minecraft.world.item.ItemStack;
 /** "?" (Shift+/) help for the held mana-ability item. Rebindable in Controls. */
 public final class AbilityHelp {
     public static final KeyMapping KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.extrahardmode.ability_help",
-            InputConstants.Type.KEYSYM,
+            "key.tougher.ability_help",
+            InputConstants.Type.KEYBOARD,
             InputConstants.UNKNOWN.getValue(),
             KeyMapping.Category.GAMEPLAY));
 
@@ -76,14 +76,14 @@ public final class AbilityHelp {
         int hoeBonus = AbilityRules.GROW.equals(ability) ? AbilityRules.growHoeBonus(itemId) : 0;
         if (hoeBonus > 0) {
             client.player.sendSystemMessage(Component.translatableWithFallback(
-                    "extrahardmode.ability.grow.help_bonus",
+                    "tougher.ability.grow.help_bonus",
                     "This hoe adds %s extra growth.",
                     Component.literal(AbilityRules.growHoeBonusLabel(hoeBonus))));
         }
         int pickBonus = AbilityRules.POWER_MINE.equals(ability) ? AbilityRules.pickaxeBonus(itemId) : 0;
         if (pickBonus > 0) {
             client.player.sendSystemMessage(Component.translatableWithFallback(
-                    "extrahardmode.ability.power_mine.help_bonus",
+                    "tougher.ability.power_mine.help_bonus",
                     "This pickaxe adds %s extra mining time.",
                     Component.literal(AbilityRules.materialBonusLabel(pickBonus))));
         }

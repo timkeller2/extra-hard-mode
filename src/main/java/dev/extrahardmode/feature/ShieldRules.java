@@ -18,7 +18,7 @@ public final class ShieldRules {
         return blocked * ABSORB_FRACTION;
     }
 
-    /** Durability points after Extra Hard Mode, from the vanilla item-damage result. */
+    /** Durability points after Tougher, from the vanilla item-damage result. */
     public static int durabilityHit(int vanilla) {
         if (vanilla <= 0) {
             return 0;

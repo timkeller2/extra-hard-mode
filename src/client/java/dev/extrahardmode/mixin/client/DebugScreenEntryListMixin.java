@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(DebugScreenEntryList.class)
 public class DebugScreenEntryListMixin {
     @Inject(method = "toggleDebugOverlay", at = @At("HEAD"), cancellable = true)
-    private void extrahardmode$blockF3Toggle(CallbackInfo ci) {
+    private void tougher$blockF3Toggle(CallbackInfo ci) {
         if (!ExtraHardModeClient.f3Allowed()) {
             ci.cancel();
         }

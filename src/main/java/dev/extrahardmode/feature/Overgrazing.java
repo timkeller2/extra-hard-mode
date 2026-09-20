@@ -257,11 +257,11 @@ public final class Overgrazing implements FeatureModule {
                 animal.getZ(),
                 animal.getYRot(),
                 0.0F);
-        ((ItemDisplayAccess) display).extrahardmode$setItemStack(food);
-        ((ItemDisplayAccess) display).extrahardmode$setItemTransform(ItemDisplayContext.GROUND);
+        ((ItemDisplayAccess) display).tougher$setItemStack(food);
+        ((ItemDisplayAccess) display).tougher$setItemTransform(ItemDisplayContext.GROUND);
         DisplayAccess access = (DisplayAccess) display;
-        access.extrahardmode$setBillboardConstraints(Display.BillboardConstraints.CENTER);
-        access.extrahardmode$setTransformation(new Transformation(
+        access.tougher$setBillboardConstraints(Display.BillboardConstraints.CENTER);
+        access.tougher$setTransformation(new Transformation(
                 new Vector3f(),
                 new Quaternionf(),
                 new Vector3f(0.45F, 0.45F, 0.45F),

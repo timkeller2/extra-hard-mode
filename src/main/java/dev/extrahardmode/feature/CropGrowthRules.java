@@ -4,7 +4,7 @@ import java.util.Random;
 
 /**
  * Crop maturity duration. {@code 100} is vanilla speed, {@code 200} takes twice as long,
- * {@code 50} is twice as fast. Default Extra Hard Mode is {@code 300}.
+ * {@code 50} is twice as fast. Default Tougher is {@code 300}.
  */
 public final class CropGrowthRules {
     public static final int VANILLA_DURATION_PERCENT = 100;

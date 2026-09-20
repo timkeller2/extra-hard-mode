@@ -67,7 +67,7 @@ public final class Exploration implements FeatureModule {
         player.setAttached(EhmAttachments.EHM_LEFT_SPAWN, Boolean.TRUE);
         player.giveExperiencePoints(ExplorationRules.SPAWN_XP);
         player.sendSystemMessage(Component.translatableWithFallback(
-                "extrahardmode.message.explore_spawn",
+                "tougher.message.explore_spawn",
                 "You have traveled %s blocks from spawn. +%s experience.",
                 Component.literal(Integer.toString(ExplorationRules.SPAWN_DISTANCE)),
                 Component.literal(Integer.toString(ExplorationRules.SPAWN_XP))));
@@ -83,7 +83,7 @@ public final class Exploration implements FeatureModule {
         Component name = biomeName(holder);
         player.giveExperiencePoints(ExplorationRules.BIOME_VISIT_XP);
         player.sendSystemMessage(Component.translatableWithFallback(
-                "extrahardmode.message.explore_biome",
+                "tougher.message.explore_biome",
                 "You discovered %s. +%s experience.",
                 name,
                 Component.literal(Integer.toString(ExplorationRules.BIOME_VISIT_XP))));
@@ -99,7 +99,7 @@ public final class Exploration implements FeatureModule {
         }
         player.giveExperiencePoints(ExplorationRules.WORLD_FIRST_BONUS_XP);
         player.sendSystemMessage(Component.translatableWithFallback(
-                "extrahardmode.message.explore_biome_first",
+                "tougher.message.explore_biome_first",
                 "You are the first to visit %s! +%s extra experience.",
                 name,
                 Component.literal(Integer.toString(ExplorationRules.WORLD_FIRST_BONUS_XP))));
@@ -136,7 +136,7 @@ public final class Exploration implements FeatureModule {
         Component name = biomeName(holder);
         player.giveExperiencePoints(xp);
         player.sendSystemMessage(Component.translatableWithFallback(
-                "extrahardmode.message.explore_home_biome",
+                "tougher.message.explore_home_biome",
                 "You built a home in %s. +%s experience.",
                 name,
                 Component.literal(Integer.toString(xp))));

@@ -17,7 +17,7 @@ public class GuiMixin {
     private Minecraft minecraft;
 
     @Inject(method = "handleKeybinds", at = @At("HEAD"))
-    private void extrahardmode$questionHelp(CallbackInfo ci) {
+    private void tougher$questionHelp(CallbackInfo ci) {
         if (!this.minecraft.hasShiftDown()) {
             return;
         }

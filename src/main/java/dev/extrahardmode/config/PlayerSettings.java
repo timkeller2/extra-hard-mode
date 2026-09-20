@@ -219,7 +219,7 @@ public final class PlayerSettings {
         comment(
                 file,
                 "player.death.forfeitEnable",
-                "Forfeit a percent of item stacks on death. Still runs when keepInventory is true; remaining stacks still drop otherwise. Tag extrahardmode:death_item_blacklist is empty by default; datapack in minecraft:recovery_compass and minecraft:totem_of_undying to keep those.");
+                "Forfeit a percent of item stacks on death. Still runs when keepInventory is true; remaining stacks still drop otherwise. Tag tougher:death_item_blacklist is empty by default; datapack in minecraft:recovery_compass and minecraft:totem_of_undying to keep those.");
         setIfMissing(file, "player.death.forfeitEnable", false);
         setIfMissing(file, "player.death.forfeitPercent", 0);
         setIfMissing(file, "player.death.toolDamagePercent", 0);

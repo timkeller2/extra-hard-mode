@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(CrafterBlock.class)
 public abstract class CrafterBlockMixin {
     @Inject(method = "dispenseFrom", at = @At("HEAD"))
-    private void extrahardmode$captureCraftLevel(BlockState state, ServerLevel level, BlockPos pos, CallbackInfo ci) {
+    private void tougher$captureCraftLevel(BlockState state, ServerLevel level, BlockPos pos, CallbackInfo ci) {
         MoreTnt.captureCraftLevel(level);
     }
 
@@ -27,12 +27,12 @@ public abstract class CrafterBlockMixin {
                             target =
                                     "Lnet/minecraft/world/level/block/CrafterBlock;dispenseItem(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/entity/CrafterBlockEntity;Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/item/crafting/RecipeHolder;)V"),
             index = 3)
-    private ItemStack extrahardmode$tntCount(ItemStack stack) {
+    private ItemStack tougher$tntCount(ItemStack stack) {
         return MoreTnt.adjustCaptured(stack);
     }
 
     @Inject(method = "dispenseFrom", at = @At("RETURN"))
-    private void extrahardmode$clearCraftLevel(BlockState state, ServerLevel level, BlockPos pos, CallbackInfo ci) {
+    private void tougher$clearCraftLevel(BlockState state, ServerLevel level, BlockPos pos, CallbackInfo ci) {
         MoreTnt.clearCraftLevel();
     }
 }

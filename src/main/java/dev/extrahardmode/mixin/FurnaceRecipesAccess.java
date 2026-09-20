@@ -10,5 +10,5 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 @Mixin(AbstractFurnaceBlockEntity.class)
 public interface FurnaceRecipesAccess {
     @Accessor("recipesUsed")
-    Reference2IntOpenHashMap<ResourceKey<Recipe<?>>> extrahardmode$recipesUsed();
+    Reference2IntOpenHashMap<ResourceKey<Recipe<?>>> tougher$recipesUsed();
 }

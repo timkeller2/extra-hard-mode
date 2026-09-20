@@ -5,10 +5,11 @@
     "X": "minecraft:diamond_block"
   },
   "pattern": [
+    "X X",
     "XXX",
-    "X X"
+    "XXX"
   ],
   "result": {
-    "id": "extrahardmode:heavy_diamond_helmet"
+    "id": "tougher:heavy_diamond_chestplate"
   }
 }

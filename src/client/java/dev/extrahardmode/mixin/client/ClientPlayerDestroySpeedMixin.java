@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(Player.class)
 public abstract class ClientPlayerDestroySpeedMixin {
     @Inject(method = "getDestroySpeed", at = @At("HEAD"), cancellable = true)
-    private void extrahardmode$clientHardenedDestroySpeed(BlockState state, CallbackInfoReturnable<Float> cir) {
+    private void tougher$clientHardenedDestroySpeed(BlockState state, CallbackInfoReturnable<Float> cir) {
         if (ExtraHardModeClient.lastSync() == null) {
             return;
         }

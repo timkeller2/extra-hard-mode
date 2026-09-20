@@ -16,13 +16,14 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Mixin(ComposterBlock.class)
 public abstract class ComposterBlockMixin {
     @Redirect(
-            method = "addItem",
+            method = "addLayer",
             at =
                     @At(
                             value = "INVOKE",
                             target =
-                                    "Lnet/minecraft/world/level/LevelAccessor;scheduleTick(Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/Block;I)V"))
-    private static void ehm$slowReadyAfterFill(LevelAccessor level, BlockPos pos, Block block, int delay) {
+                                    "Lnet/minecraft/server/level/ServerLevel;scheduleTick(Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/Block;I)V"))
+    private static void ehm$slowReadyAfterFill(
+            net.minecraft.server.level.ServerLevel level, BlockPos pos, Block block, int delay) {
         level.scheduleTick(pos, block, readyDelay(level, delay));
     }
 

@@ -41,7 +41,7 @@ import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Blaze;
-import net.minecraft.world.entity.monster.EnderMan;
+import net.minecraft.world.entity.monster.Enderman;
 import net.minecraft.world.entity.monster.skeleton.Skeleton;
 import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.entity.monster.zombie.ZombieVillager;
@@ -296,7 +296,7 @@ public final class Dragon implements FeatureModule {
             HEALED.remove(id);
             enqueuePattern(level, dragon.getUUID(), id, 1);
             if (config.announcements()) {
-                announce(level, "extrahardmode.chat.dragon_challenge", damager.getScoreboardName());
+                announce(level, "tougher.chat.dragon_challenge", damager.getScoreboardName());
                 ExtraHardModeMod.LOGGER.info("EHM dragon: {} is challenging the dragon", damager.getScoreboardName());
             }
         }
@@ -350,7 +350,7 @@ public final class Dragon implements FeatureModule {
         }
         if (config.announcements()) {
             String names = String.join(", ", FIGHTERS.values());
-            announce(level, "extrahardmode.chat.dragon_killed", names);
+            announce(level, "tougher.chat.dragon_killed", names);
             ExtraHardModeMod.LOGGER.info("EHM dragon defeated by {}", names);
         }
         FIGHTERS.clear();
@@ -393,7 +393,7 @@ public final class Dragon implements FeatureModule {
                     }
                 }
                 if (ConfigManager.world(level).dragon().announcements()) {
-                    announce(level, "extrahardmode.chat.dragon_player_killed", player.getScoreboardName());
+                    announce(level, "tougher.chat.dragon_player_killed", player.getScoreboardName());
                     ExtraHardModeMod.LOGGER.info(
                             "EHM dragon: {} was killed fighting the dragon", player.getScoreboardName());
                 }
@@ -439,12 +439,12 @@ public final class Dragon implements FeatureModule {
             }
         }
         DragonConfig config = ConfigManager.world(level).dragon();
-        boolean ritual = fight != null && ((EnderDragonFightAccess) fight).extrahardmode$respawnStage() != null;
-        boolean killed = fight != null && ((EnderDragonFightAccess) fight).extrahardmode$dragonKilled();
+        boolean ritual = fight != null && ((EnderDragonFightAccess) fight).tougher$respawnStage() != null;
+        boolean killed = fight != null && ((EnderDragonFightAccess) fight).tougher$dragonKilled();
         if (DragonRules.shouldAutoRespawn(config.autoRespawn(), killed, ritual, dragonAlive) && fight != null) {
-            DragonRespawnStage stage = ((EnderDragonFightAccess) fight).extrahardmode$respawnStage();
+            DragonRespawnStage stage = ((EnderDragonFightAccess) fight).tougher$respawnStage();
             if (stage == null) {
-                EnderDragon spawned = ((EnderDragonFightAccess) fight).extrahardmode$createNewDragon();
+                EnderDragon spawned = ((EnderDragonFightAccess) fight).tougher$createNewDragon();
                 if (spawned != null) {
                     applyHealth(spawned, level);
                 }
@@ -546,7 +546,7 @@ public final class Dragon implements FeatureModule {
 
     private static void aggroEndermen(ServerLevel level, ServerPlayer player) {
         AABB box = player.getBoundingBox().inflate(16.0);
-        for (EnderMan enderman : level.getEntities(EntityTypes.ENDERMAN, box, Entity::isAlive)) {
+        for (Enderman enderman : level.getEntities(EntityTypes.ENDERMAN, box, Entity::isAlive)) {
             enderman.setTarget(player);
         }
     }
@@ -622,7 +622,7 @@ public final class Dragon implements FeatureModule {
     private static BlockPos podium(ServerLevel level) {
         EnderDragonFight fight = level.getDragonFight();
         if (fight != null) {
-            BlockPos exit = ((EnderDragonFightAccess) fight).extrahardmode$exitPortalLocation();
+            BlockPos exit = ((EnderDragonFightAccess) fight).tougher$exitPortalLocation();
             if (exit != null) {
                 return exit;
             }

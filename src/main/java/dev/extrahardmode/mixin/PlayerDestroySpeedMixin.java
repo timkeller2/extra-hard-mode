@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(Player.class)
 public abstract class PlayerDestroySpeedMixin {
     @Inject(method = "getDestroySpeed", at = @At("HEAD"), cancellable = true)
-    private void extrahardmode$hardenedDestroySpeed(BlockState state, CallbackInfoReturnable<Float> cir) {
+    private void tougher$hardenedDestroySpeed(BlockState state, CallbackInfoReturnable<Float> cir) {
         Player self = (Player) (Object) this;
         if (!FeatureBus.guard(self.level(), HardenedStone.ID)) {
             return;

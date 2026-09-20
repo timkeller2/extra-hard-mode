@@ -9,8 +9,8 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 @Mixin(Display.ItemDisplay.class)
 public interface ItemDisplayAccess {
     @Invoker("setItemStack")
-    void extrahardmode$setItemStack(ItemStack stack);
+    void tougher$setItemStack(ItemStack stack);
 
     @Invoker("setItemTransform")
-    void extrahardmode$setItemTransform(ItemDisplayContext context);
+    void tougher$setItemTransform(ItemDisplayContext context);
 }

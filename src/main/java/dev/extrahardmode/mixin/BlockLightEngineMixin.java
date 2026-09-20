@@ -15,9 +15,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(BlockLightEngine.class)
 public abstract class BlockLightEngineMixin {
     @Inject(method = "getEmission", at = @At("RETURN"), cancellable = true)
-    private void extrahardmode$dimBurningTorches(
+    private void tougher$dimBurningTorches(
             long packedPos, BlockState state, CallbackInfoReturnable<Integer> cir) {
-        BlockGetter getter = ((LightEngineAccess) (Object) this).extrahardmode$chunkSource().getLevel();
+        BlockGetter getter = ((LightEngineAccess) (Object) this).tougher$chunkSource().getLevel();
         if (!(getter instanceof ServerLevel level) || !WorldGate.isModuleActive(level, Torches.ID)) {
             return;
         }

@@ -1,9 +1,9 @@
 {
   "replace": false,
   "values": [
-    "extrahardmode:heavy_copper_boots",
-    "extrahardmode:heavy_iron_boots",
-    "extrahardmode:heavy_diamond_boots",
-    "extrahardmode:heavy_netherite_boots"
+    "tougher:heavy_copper_boots",
+    "tougher:heavy_iron_boots",
+    "tougher:heavy_diamond_boots",
+    "tougher:heavy_netherite_boots"
   ]
 }

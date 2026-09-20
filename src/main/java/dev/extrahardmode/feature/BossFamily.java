@@ -53,7 +53,7 @@ public enum BossFamily {
     }
 
     public String translationKey() {
-        return "extrahardmode.boss." + id;
+        return "tougher.boss." + id;
     }
 
     public EntityType<?> entityType() {

@@ -2,7 +2,7 @@
   "type": "minecraft:crafting_shaped",
   "category": "equipment",
   "key": {
-    "X": "minecraft:diamond_block"
+    "X": "minecraft:copper_block"
   },
   "pattern": [
     "X X",
@@ -10,6 +10,6 @@
     "XXX"
   ],
   "result": {
-    "id": "extrahardmode:heavy_diamond_chestplate"
+    "id": "tougher:heavy_copper_chestplate"
   }
 }

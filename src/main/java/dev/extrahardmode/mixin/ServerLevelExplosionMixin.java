@@ -20,7 +20,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(ServerLevel.class)
 public abstract class ServerLevelExplosionMixin {
     @Inject(method = "explode", at = @At("HEAD"), cancellable = true)
-    private void extrahardmode$replace(
+    private void tougher$replace(
             Entity source,
             DamageSource damageSource,
             ExplosionDamageCalculator damageCalculator,

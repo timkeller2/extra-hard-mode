@@ -17,7 +17,7 @@ public abstract class EnderDragonMixin {
     @Inject(
             method = "hurt(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/entity/boss/enderdragon/EnderDragonPart;Lnet/minecraft/world/damagesource/DamageSource;F)Z",
             at = @At("RETURN"))
-    private void extrahardmode$extraAttacks(
+    private void tougher$extraAttacks(
             ServerLevel level,
             EnderDragonPart part,
             DamageSource source,

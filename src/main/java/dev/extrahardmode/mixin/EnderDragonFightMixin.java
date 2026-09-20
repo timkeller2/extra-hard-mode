@@ -14,8 +14,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(EnderDragonFight.class)
 public abstract class EnderDragonFightMixin {
     @Inject(method = "setDragonKilled", at = @At("HEAD"))
-    private void extrahardmode$dragonLoot(EnderDragon dragon, CallbackInfo ci) {
-        ServerLevel level = ((EnderDragonFightAccess) this).extrahardmode$level();
+    private void tougher$dragonLoot(EnderDragon dragon, CallbackInfo ci) {
+        ServerLevel level = ((EnderDragonFightAccess) this).tougher$level();
         if (level == null || !FeatureBus.guard((Level) level, Dragon.ID)) {
             return;
         }

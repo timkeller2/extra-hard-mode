@@ -50,7 +50,7 @@ public abstract class CraftingMenuMixin {
     }
 
     @Inject(method = "slotChangedCraftingGrid", at = @At("HEAD"))
-    private static void extrahardmode$captureCraftLevel(
+    private static void tougher$captureCraftLevel(
             AbstractContainerMenu menu,
             ServerLevel level,
             Player player,
@@ -69,12 +69,12 @@ public abstract class CraftingMenuMixin {
                             target =
                                     "Lnet/minecraft/world/inventory/ResultContainer;setItem(ILnet/minecraft/world/item/ItemStack;)V"),
             index = 1)
-    private static ItemStack extrahardmode$tntCount(ItemStack stack) {
+    private static ItemStack tougher$tntCount(ItemStack stack) {
         return MoreTnt.adjustCaptured(stack);
     }
 
     @Inject(method = "slotChangedCraftingGrid", at = @At("RETURN"))
-    private static void extrahardmode$clearCraftLevel(
+    private static void tougher$clearCraftLevel(
             AbstractContainerMenu menu,
             ServerLevel level,
             Player player,

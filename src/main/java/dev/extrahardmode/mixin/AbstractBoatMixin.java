@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(AbstractBoat.class)
 public abstract class AbstractBoatMixin {
     @Inject(method = "checkFallDamage", at = @At("HEAD"), cancellable = true)
-    private void extrahardmode$smashLongFall(
+    private void tougher$smashLongFall(
             double dy, boolean onGround, BlockState state, BlockPos pos, CallbackInfo ci) {
         if (Players.smashBoatIfLongFall((AbstractBoat) (Object) this, onGround)) {
             ci.cancel();

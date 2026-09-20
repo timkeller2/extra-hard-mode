@@ -48,7 +48,7 @@ public final class ClothConfigScreen {
 
         ConfigBuilder builder = ConfigBuilder.create()
                 .setParentScreen(parent)
-                .setTitle(Component.translatableWithFallback("extrahardmode.config.title", "Extra Hard Mode"))
+                .setTitle(Component.translatableWithFallback("tougher.config.title", "Tougher"))
                 .setSavingRunnable(() -> save(
                         enabledByDefault[0],
                         debug[0],
@@ -67,108 +67,108 @@ public final class ClothConfigScreen {
         ConfigEntryBuilder entry = builder.entryBuilder();
 
         ConfigCategory general = builder.getOrCreateCategory(
-                Component.translatableWithFallback("extrahardmode.config.general", "General"));
+                Component.translatableWithFallback("tougher.config.general", "General"));
         general.addEntry(entry.startBooleanToggle(
                         Component.translatableWithFallback(
-                                "extrahardmode.config.enabledByDefault", "Enable by default on first world load"),
+                                "tougher.config.enabledByDefault", "Enable by default on first world load"),
                         enabledByDefault[0])
                 .setDefaultValue(GlobalConfig.defaultEnabledByDefault())
                 .setTooltip(Component.translatableWithFallback(
-                        "extrahardmode.config.enabledByDefault.tooltip",
+                        "tougher.config.enabledByDefault.tooltip",
                         "Copied into the gamerule once per save. Missing key is true in singleplayer and false on dedicated servers."))
                 .setSaveConsumer(v -> enabledByDefault[0] = v)
                 .build());
         general.addEntry(entry.startBooleanToggle(
-                        Component.translatableWithFallback("extrahardmode.config.debug", "Debug logging"), debug[0])
+                        Component.translatableWithFallback("tougher.config.debug", "Debug logging"), debug[0])
                 .setDefaultValue(false)
                 .setSaveConsumer(v -> debug[0] = v)
                 .build());
         general.addEntry(entry.startIntField(
                         Component.translatableWithFallback(
-                                "extrahardmode.config.tutorialMaxShows", "Tutorial toast max shows"),
+                                "tougher.config.tutorialMaxShows", "Tutorial toast max shows"),
                         tutorialMaxShows[0])
                 .setDefaultValue(GlobalConfig.DEFAULT_TUTORIAL_MAX_SHOWS)
                 .setMin(0)
                 .setMax(99)
                 .setTooltip(Component.translatableWithFallback(
-                        "extrahardmode.config.tutorialMaxShows.tooltip",
+                        "tougher.config.tutorialMaxShows.tooltip",
                         "SystemToast first-time mechanics per player, including once-only extras. 0 disables toasts. Instant denies still use the action bar. Connected servers apply this via packet, not the client config file."))
                 .setSaveConsumer(v -> tutorialMaxShows[0] = v)
                 .build());
 
         if (seed.showWorld) {
             ConfigCategory current = builder.getOrCreateCategory(
-                    Component.translatableWithFallback("extrahardmode.config.world", "This world"));
+                    Component.translatableWithFallback("tougher.config.world", "This world"));
             current.addEntry(entry.startBooleanToggle(
                             Component.translatableWithFallback(
-                                    "extrahardmode.config.checkPermission", "Honor permission nodes"),
+                                    "tougher.config.checkPermission", "Honor permission nodes"),
                             checkPermission[0])
                     .setDefaultValue(true)
                     .setSaveConsumer(v -> checkPermission[0] = v)
                     .build());
             current.addEntry(entry.startBooleanToggle(
                             Component.translatableWithFallback(
-                                    "extrahardmode.config.creativeBypasses", "Creative bypasses player rules"),
+                                    "tougher.config.creativeBypasses", "Creative bypasses player rules"),
                             creativeBypasses[0])
                     .setDefaultValue(true)
                     .setSaveConsumer(v -> creativeBypasses[0] = v)
                     .build());
             current.addEntry(entry.startBooleanToggle(
                             Component.translatableWithFallback(
-                                    "extrahardmode.config.operatorsBypass", "Operators bypass player rules"),
+                                    "tougher.config.operatorsBypass", "Operators bypass player rules"),
                             operatorsBypass[0])
                     .setDefaultValue(false)
                     .setSaveConsumer(v -> operatorsBypass[0] = v)
                     .build());
             current.addEntry(entry.startBooleanToggle(
                             Component.translatableWithFallback(
-                                    "extrahardmode.config.limitedBuilding", "Limited block placement"),
+                                    "tougher.config.limitedBuilding", "Limited block placement"),
                             limitedBuilding[0])
                     .setDefaultValue(true)
                     .setSaveConsumer(v -> limitedBuilding[0] = v)
                     .build());
             current.addEntry(entry.startBooleanToggle(
                             Component.translatableWithFallback(
-                                    "extrahardmode.config.torchYDeny", "Deny torches and campfires below Y"),
+                                    "tougher.config.torchYDeny", "Deny torches and campfires below Y"),
                             torchYDeny[0])
                     .setDefaultValue(true)
                     .setSaveConsumer(v -> torchYDeny[0] = v)
                     .build());
             current.addEntry(entry.startIntField(
                             Component.translatableWithFallback(
-                                    "extrahardmode.config.torchNoPlacementUnderY", "Torch cutoff Y"),
+                                    "tougher.config.torchNoPlacementUnderY", "Torch cutoff Y"),
                             torchY[0])
                     .setDefaultValue(0)
                     .setSaveConsumer(v -> torchY[0] = v)
                     .build());
             current.addEntry(entry.startBooleanToggle(
                             Component.translatableWithFallback(
-                                    "extrahardmode.config.torchSoftDeny", "No torches on soft surfaces"),
+                                    "tougher.config.torchSoftDeny", "No torches on soft surfaces"),
                             torchSoftDeny[0])
                     .setDefaultValue(true)
                     .setSaveConsumer(v -> torchSoftDeny[0] = v)
                     .build());
             current.addEntry(entry.startBooleanToggle(
-                            Component.translatableWithFallback("extrahardmode.config.torchFizz", "Torch deny fizz"),
+                            Component.translatableWithFallback("tougher.config.torchFizz", "Torch deny fizz"),
                             torchFizz[0])
                     .setDefaultValue(true)
                     .setSaveConsumer(v -> torchFizz[0] = v)
                     .build());
             current.addEntry(entry.startIntField(
                             Component.translatableWithFallback(
-                                    "extrahardmode.config.torchBurnDays", "Torch burn days"),
+                                    "tougher.config.torchBurnDays", "Torch burn days"),
                             torchBurnDays[0])
                     .setDefaultValue(TorchLifetimeRules.DEFAULT_DAYS)
                     .setMin(0)
                     .setMax(TorchLifetimeRules.MAX_DAYS)
                     .setTooltip(Component.translatableWithFallback(
-                            "extrahardmode.config.torchBurnDays.tooltip",
+                            "tougher.config.torchBurnDays.tooltip",
                             "Minecraft days a newly placed torch or campfire lasts before it disappears. Copper torches last twice as long. Torches pull coal or charcoal from a chest within 16 blocks for 30 more days (60 for copper). Campfires pull one log from a chest within 12 blocks to add another period. 0 = permanent. Lights placed before this setting never burn out."))
                     .setSaveConsumer(v -> torchBurnDays[0] = v)
                     .build());
             current.addEntry(entry.startBooleanToggle(
                             Component.translatableWithFallback(
-                                    "extrahardmode.config.creeperTntWarning", "Creeper TNT warning sound"),
+                                    "tougher.config.creeperTntWarning", "Creeper TNT warning sound"),
                             creeperTntWarning[0])
                     .setDefaultValue(true)
                     .setSaveConsumer(v -> creeperTntWarning[0] = v)

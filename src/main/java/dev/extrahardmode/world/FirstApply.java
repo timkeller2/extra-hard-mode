@@ -8,7 +8,7 @@ import java.util.Set;
  *
  * <p>26.2 game rules are server-global. {@code enabledByDefault} is copied into
  * the gamerule once (overworld). Dimension {@code enabled} flags default true
- * (opt-out) so {@code /gamerule extrahardmode:enabled true} can actually enable
+ * (opt-out) so {@code /gamerule tougher:enabled true} can actually enable
  * EHM. Custom dimensions inherit the overworld's <em>live</em> flag.
  */
 public final class FirstApply {

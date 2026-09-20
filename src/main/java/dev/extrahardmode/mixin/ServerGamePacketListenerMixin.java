@@ -3,7 +3,7 @@ package dev.extrahardmode.mixin;
 import dev.extrahardmode.feature.Hunger;
 import dev.extrahardmode.feature.Torches;
 import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
-import net.minecraft.network.protocol.game.ServerboundSwingPacket;
+import net.minecraft.network.protocol.game.ServerboundPunchPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import org.spongepowered.asm.mixin.Mixin;
@@ -17,8 +17,8 @@ public abstract class ServerGamePacketListenerMixin {
     @Shadow
     public ServerPlayer player;
 
-    @Inject(method = "handleAnimate", at = @At("TAIL"))
-    private void extrahardmode$manaAbilitySwing(ServerboundSwingPacket packet, CallbackInfo ci) {
+    @Inject(method = "handlePunch", at = @At("TAIL"))
+    private void tougher$manaAbilitySwing(ServerboundPunchPacket packet, CallbackInfo ci) {
         if (this.player == null) {
             return;
         }
@@ -26,7 +26,7 @@ public abstract class ServerGamePacketListenerMixin {
     }
 
     @Inject(method = "handlePlayerAction", at = @At("HEAD"), cancellable = true)
-    private void extrahardmode$blockOffhandLightSwap(ServerboundPlayerActionPacket packet, CallbackInfo ci) {
+    private void tougher$blockOffhandLightSwap(ServerboundPlayerActionPacket packet, CallbackInfo ci) {
         if (this.player == null) {
             return;
         }

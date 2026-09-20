@@ -99,7 +99,7 @@ public final class CouncilMissions {
         }
         if (mission.active()) {
             player.sendSystemMessage(Component.translatableWithFallback(
-                    "extrahardmode.message.council_mission_progress",
+                    "tougher.message.council_mission_progress",
                     "Your bounty: %s / %s %s.",
                     Component.literal(Integer.toString(mission.kills())),
                     Component.literal(Integer.toString(mission.target())),
@@ -119,7 +119,7 @@ public final class CouncilMissions {
         setMission(player, next);
         String who = home == null || home.name().isEmpty() ? "The council" : home.name();
         player.sendSystemMessage(Component.translatableWithFallback(
-                "extrahardmode.message.council_mission_new",
+                "tougher.message.council_mission_new",
                 "%s wants you to slay %s %s. You have 7 Minecraft days.",
                 Component.literal(who),
                 Component.literal(Integer.toString(next.target())),
@@ -133,7 +133,7 @@ public final class CouncilMissions {
         player.giveExperiencePoints(xp);
         setMission(player, done);
         player.sendSystemMessage(Component.translatableWithFallback(
-                "extrahardmode.message.council_mission_complete",
+                "tougher.message.council_mission_complete",
                 "Bounty complete! +%s experience.",
                 Component.literal(Integer.toString(xp))));
         level.playSound(
@@ -154,7 +154,7 @@ public final class CouncilMissions {
         setMission(player, mission.clearHunt());
         String who = home == null || home.name().isEmpty() ? "The council" : home.name();
         player.sendSystemMessage(Component.translatableWithFallback(
-                "extrahardmode.message.council_mission_payout",
+                "tougher.message.council_mission_payout",
                 "%s pays you %s emeralds for the completed bounty.",
                 Component.literal(who),
                 Component.literal(Integer.toString(emeralds))));
@@ -178,7 +178,7 @@ public final class CouncilMissions {
         String label = mission.label() == null || mission.label().isEmpty() ? "your quarry" : mission.label();
         setMission(player, mission.clearHunt());
         player.sendSystemMessage(Component.translatableWithFallback(
-                "extrahardmode.message.council_mission_expired",
+                "tougher.message.council_mission_expired",
                 "The bounty on %s has expired.",
                 Component.literal(label)));
     }
@@ -188,7 +188,7 @@ public final class CouncilMissions {
         while (left > 0) {
             int n = Math.min(64, left);
             ItemStack stack = new ItemStack(Items.EMERALD, n);
-            player.getInventory().placeItemBackInInventory(stack);
+            player.getInventory().placeItemBackInInventory(stack, net.minecraft.util.Prediction.SERVER_ONLY);
             left -= n;
         }
     }

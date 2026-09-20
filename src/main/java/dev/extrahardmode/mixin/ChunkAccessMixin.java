@@ -21,7 +21,7 @@ public abstract class ChunkAccessMixin {
             BiConsumer<BlockPos, BlockState> output);
 
     @Inject(method = "findBlockLightSources", at = @At("HEAD"), cancellable = true)
-    private void extrahardmode$skipBurnableTorchesOnClient(
+    private void tougher$skipBurnableTorchesOnClient(
             BiConsumer<BlockPos, BlockState> output, CallbackInfo ci) {
         if (!(((Object) this) instanceof LevelChunk chunk)) {
             return;

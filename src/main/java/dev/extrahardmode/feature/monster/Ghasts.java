@@ -83,7 +83,7 @@ public final class Ghasts implements FeatureModule {
         if (!WorldGate.isModuleActive(level, ID)) {
             return;
         }
-        Entity entity = context.getOptionalParameter(LootContextParams.THIS_ENTITY);
+        Entity entity = context.getOptional(LootContextParams.THIS_ENTITY);
         if (!(entity instanceof Ghast ghast)) {
             return;
         }

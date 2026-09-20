@@ -10,6 +10,8 @@ import net.minecraft.world.attribute.EnvironmentAttributeSystem;
 import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.attribute.modifier.ColorModifier;
 import net.minecraft.world.level.Level;
+import org.joml.Vector3fc;
+import org.joml.Vector4fc;
 
 /**
  * Harsh-season atmosphere. When seasonal crop loss is above
@@ -66,20 +68,27 @@ public final class SeasonAtmosphere {
                 EnvironmentAttributes.BEES_STAY_IN_HIVE,
                 (value, time) -> beesInactive(level) ? Boolean.TRUE : value);
         builder.addTimeBasedLayer(
-                EnvironmentAttributes.SKY_COLOR, (value, time) -> graySky(level, value, SKY_GRAY));
+                EnvironmentAttributes.SKY_COLOR, (value, time) -> graySkyRgb(level, value, SKY_GRAY));
         builder.addTimeBasedLayer(
-                EnvironmentAttributes.FOG_COLOR, (value, time) -> graySky(level, value, SKY_GRAY));
+                EnvironmentAttributes.FOG_COLOR, (value, time) -> graySkyRgb(level, value, SKY_GRAY));
         builder.addTimeBasedLayer(
-                EnvironmentAttributes.CLOUD_COLOR, (value, time) -> graySky(level, value, CLOUD_GRAY));
+                EnvironmentAttributes.CLOUD_COLOR, (value, time) -> graySkyArgb(level, value, CLOUD_GRAY));
         builder.addTimeBasedLayer(EnvironmentAttributes.FOG_END_DISTANCE, (value, time) -> closerFog(level, value));
         builder.addTimeBasedLayer(EnvironmentAttributes.AMBIENT_PARTICLES, (value, time) -> blightSpores(level, value));
     }
 
-    static Integer graySky(Level level, Integer value, ColorModifier.BlendToGray gray) {
+    static Vector3fc graySkyRgb(Level level, Vector3fc value, ColorModifier.BlendToGray gray) {
         if (!blightVisuals(level) || value == null) {
             return value;
         }
-        return ColorModifier.BLEND_TO_GRAY.apply(value, gray);
+        return ColorModifier.BLEND_TO_GRAY_RGB.apply(value, gray);
+    }
+
+    static Vector4fc graySkyArgb(Level level, Vector4fc value, ColorModifier.BlendToGray gray) {
+        if (!blightVisuals(level) || value == null) {
+            return value;
+        }
+        return ColorModifier.BLEND_TO_GRAY_ARGB.apply(value, gray);
     }
 
     static Float closerFog(Level level, Float value) {

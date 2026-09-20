@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(Player.class)
 public abstract class ClientPlayerHarvestMixin {
     @Inject(method = "hasCorrectToolForDrops", at = @At("HEAD"), cancellable = true)
-    private void extrahardmode$clientHardenedHarvest(BlockState state, CallbackInfoReturnable<Boolean> cir) {
+    private void tougher$clientHardenedHarvest(BlockState state, CallbackInfoReturnable<Boolean> cir) {
         if (ExtraHardModeClient.lastSync() == null) {
             return;
         }

@@ -59,7 +59,7 @@ import net.minecraft.world.level.block.BaseFireBlock;
 import net.minecraft.world.phys.BlockHitResult;
 
 /**
- * Player-triggered Extra Hard Mode rules: death forfeit, weak respawn, bed-camp
+ * Player-triggered Tougher rules: death forfeit, weak respawn, bed-camp
  * clear, environmental injuries, punching fire, inventory-weight drowning,
  * armor slowdown, leaky shields, and boats that smash on long falls.
  */
@@ -162,7 +162,7 @@ public final class Players implements FeatureModule {
         return true;
     }
 
-    /** Vanilla blocked amount after Extra Hard Mode: 75% soak, 25% leak. */
+    /** Vanilla blocked amount after Tougher: 75% soak, 25% leak. */
     public static float scaleBlockedDamage(LivingEntity entity, ServerLevel level, float blocked) {
         if (blocked <= 0.0F || !WorldGate.isModuleActive(level, ID)) {
             return blocked;
@@ -173,7 +173,7 @@ public final class Players implements FeatureModule {
         return ShieldRules.absorbed(blocked);
     }
 
-    /** Vanilla shield item-damage after Extra Hard Mode: twice the durability hit. */
+    /** Vanilla shield item-damage after Tougher: twice the durability hit. */
     public static int scaleShieldDurability(LivingEntity entity, Level level, int amount) {
         if (amount <= 0 || !(level instanceof ServerLevel server) || !WorldGate.isModuleActive(server, ID)) {
             return amount;

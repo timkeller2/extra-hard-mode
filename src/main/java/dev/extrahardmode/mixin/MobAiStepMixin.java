@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(Mob.class)
 public abstract class MobAiStepMixin {
     @Inject(method = "aiStep", at = @At("HEAD"))
-    private void extrahardmode$breakWebs(CallbackInfo ci) {
+    private void tougher$breakWebs(CallbackInfo ci) {
         if (!FeatureBus.guard(((Mob) (Object) this).level(), Spiders.ID)) {
             return;
         }

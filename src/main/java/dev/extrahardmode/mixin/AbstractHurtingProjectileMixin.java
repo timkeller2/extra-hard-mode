@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(AbstractHurtingProjectile.class)
 public abstract class AbstractHurtingProjectileMixin {
     @Inject(method = "tick()V", at = @At("HEAD"))
-    private void extrahardmode$seekFireBolt(CallbackInfo ci) {
+    private void tougher$seekFireBolt(CallbackInfo ci) {
         AbstractHurtingProjectile self = (AbstractHurtingProjectile) (Object) this;
         if (self instanceof SmallFireball bolt) {
             ManaAbilities.steerFireBolt(bolt);

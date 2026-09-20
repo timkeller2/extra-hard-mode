@@ -21,7 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(MultiPlayerGameMode.class)
 public class MultiPlayerGameModeMixin {
     @Inject(method = "useItemOn", at = @At("HEAD"), cancellable = true)
-    private void extrahardmode$cancelPlace(
+    private void tougher$cancelPlace(
             LocalPlayer player, InteractionHand hand, BlockHitResult hit, CallbackInfoReturnable<InteractionResult> cir) {
         // lastSync() null / inactive() is the client WorldGate skip (payload-only, never TOML).
         ClientboundSyncPayload sync = ExtraHardModeClient.lastSync();

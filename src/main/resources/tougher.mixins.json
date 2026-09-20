@@ -33,6 +33,7 @@
     "EntityFloatTextMixin",
     "DragonFireballMixin",
     "EnderDragonFightAccess",
+    "EntityHurtAccess",
     "EnderDragonFightMixin",
     "EnderDragonMixin",
     "EnderManMixin",

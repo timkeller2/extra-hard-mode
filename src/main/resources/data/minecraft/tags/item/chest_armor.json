@@ -1,9 +1,9 @@
 {
   "replace": false,
   "values": [
-    "extrahardmode:heavy_copper_chestplate",
-    "extrahardmode:heavy_iron_chestplate",
-    "extrahardmode:heavy_diamond_chestplate",
-    "extrahardmode:heavy_netherite_chestplate"
+    "tougher:heavy_copper_chestplate",
+    "tougher:heavy_iron_chestplate",
+    "tougher:heavy_diamond_chestplate",
+    "tougher:heavy_netherite_chestplate"
   ]
 }

@@ -39,7 +39,7 @@ public final class FurnaceXp {
     public static int getMilli(Container container) {
         if (container instanceof CompoundContainer compound) {
             CompoundContainerAccess access = (CompoundContainerAccess) compound;
-            return getMilli(access.extrahardmode$container1()) + getMilli(access.extrahardmode$container2());
+            return getMilli(access.tougher$container1()) + getMilli(access.tougher$container2());
         }
         AttachmentTarget target = target(container);
         if (target == null) {
@@ -56,10 +56,10 @@ public final class FurnaceXp {
         if (container instanceof CompoundContainer compound) {
             CompoundContainerAccess access = (CompoundContainerAccess) compound;
             if (milli > 0) {
-                addMilli(access.extrahardmode$container1(), milli);
+                addMilli(access.tougher$container1(), milli);
             } else {
-                int taken = takeMilli(access.extrahardmode$container1(), -milli);
-                takeMilli(access.extrahardmode$container2(), -milli - taken);
+                int taken = takeMilli(access.tougher$container1(), -milli);
+                takeMilli(access.tougher$container2(), -milli - taken);
             }
             return;
         }
@@ -81,8 +81,8 @@ public final class FurnaceXp {
         }
         if (container instanceof CompoundContainer compound) {
             CompoundContainerAccess access = (CompoundContainerAccess) compound;
-            int first = takeMilli(access.extrahardmode$container1(), amount);
-            return first + takeMilli(access.extrahardmode$container2(), amount - first);
+            int first = takeMilli(access.tougher$container1(), amount);
+            return first + takeMilli(access.tougher$container2(), amount - first);
         }
         int have = getMilli(container);
         int take = Math.min(have, amount);
@@ -111,7 +111,7 @@ public final class FurnaceXp {
 
     public static int takeOneRecipeMilli(AbstractFurnaceBlockEntity furnace, ServerLevel level) {
         Reference2IntOpenHashMap<ResourceKey<Recipe<?>>> used =
-                ((FurnaceRecipesAccess) furnace).extrahardmode$recipesUsed();
+                ((FurnaceRecipesAccess) furnace).tougher$recipesUsed();
         if (used == null || used.isEmpty()) {
             return 0;
         }

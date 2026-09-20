@@ -76,7 +76,7 @@ public final class CoolCreeperExplosion {
         if (!creeper.isRemoved() && age >= launchAt && age < explodeAt) {
             creeper.setTarget(null);
             creeper.setDeltaMovement(creeper.getDeltaMovement().x, launchSpeed, creeper.getDeltaMovement().z);
-            creeper.hurtMarked = true;
+            ((dev.extrahardmode.mixin.EntityHurtAccess) creeper).tougher$markHurt();
         }
         if (age < explodeAt) {
             return false;

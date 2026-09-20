@@ -16,7 +16,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(Mob.class)
 public abstract class MobFinalizeSpawnMixin {
     @Inject(method = "finalizeSpawn", at = @At("HEAD"))
-    private void extrahardmode$ignoreReinforcements(
+    private void tougher$ignoreReinforcements(
             ServerLevelAccessor level,
             DifficultyInstance difficulty,
             EntitySpawnReason reason,
@@ -29,7 +29,7 @@ public abstract class MobFinalizeSpawnMixin {
     }
 
     @Inject(method = "finalizeSpawn", at = @At("RETURN"))
-    private void extrahardmode$zombieSpeedVariance(
+    private void tougher$zombieSpeedVariance(
             ServerLevelAccessor level,
             DifficultyInstance difficulty,
             EntitySpawnReason reason,

@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(SmallFireball.class)
 public abstract class SmallFireballMixin {
     @Inject(method = "onHitEntity", at = @At("HEAD"), cancellable = true)
-    private void extrahardmode$manaFireBolt(EntityHitResult hit, CallbackInfo ci) {
+    private void tougher$manaFireBolt(EntityHitResult hit, CallbackInfo ci) {
         SmallFireball self = (SmallFireball) (Object) this;
         Integer power = self.getAttached(EhmAttachments.EHM_FIREBOLT_POWER);
         if (power == null || power <= 0 || !(self.level() instanceof ServerLevel level)) {
@@ -32,7 +32,7 @@ public abstract class SmallFireballMixin {
     }
 
     @Inject(method = "onHitBlock", at = @At("HEAD"), cancellable = true)
-    private void extrahardmode$manaFireBoltNoDrop(BlockHitResult hit, CallbackInfo ci) {
+    private void tougher$manaFireBoltNoDrop(BlockHitResult hit, CallbackInfo ci) {
         SmallFireball self = (SmallFireball) (Object) this;
         Integer power = self.getAttached(EhmAttachments.EHM_FIREBOLT_POWER);
         if (power == null || power <= 0) {

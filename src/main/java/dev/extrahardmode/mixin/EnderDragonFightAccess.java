@@ -12,17 +12,17 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 @Mixin(EnderDragonFight.class)
 public interface EnderDragonFightAccess {
     @Accessor("respawnStage")
-    DragonRespawnStage extrahardmode$respawnStage();
+    DragonRespawnStage tougher$respawnStage();
 
     @Accessor("dragonKilled")
-    boolean extrahardmode$dragonKilled();
+    boolean tougher$dragonKilled();
 
     @Accessor("exitPortalLocation")
-    BlockPos extrahardmode$exitPortalLocation();
+    BlockPos tougher$exitPortalLocation();
 
     @Accessor("level")
-    ServerLevel extrahardmode$level();
+    ServerLevel tougher$level();
 
     @Invoker("createNewDragon")
-    EnderDragon extrahardmode$createNewDragon();
+    EnderDragon tougher$createNewDragon();
 }

@@ -3,7 +3,7 @@ package dev.extrahardmode.api.event;
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.monster.EnderMan;
+import net.minecraft.world.entity.monster.Enderman;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -21,11 +21,11 @@ public final class EndermanTeleportPlayerEvent {
     });
 
     private final ServerPlayer player;
-    private final EnderMan enderman;
+    private final Enderman enderman;
     private Vec3 teleportTo;
     private boolean canceled;
 
-    public EndermanTeleportPlayerEvent(ServerPlayer player, EnderMan enderman, Vec3 teleportTo) {
+    public EndermanTeleportPlayerEvent(ServerPlayer player, Enderman enderman, Vec3 teleportTo) {
         this.player = player;
         this.enderman = enderman;
         this.teleportTo = teleportTo;
@@ -35,7 +35,7 @@ public final class EndermanTeleportPlayerEvent {
         return player;
     }
 
-    public EnderMan enderman() {
+    public Enderman enderman() {
         return enderman;
     }
 

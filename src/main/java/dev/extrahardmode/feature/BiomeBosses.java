@@ -427,7 +427,7 @@ public final class BiomeBosses implements FeatureModule {
 
     static void announce(ServerLevel level, Mob mob, BossFamily family) {
         Component message = Component.translatableWithFallback(
-                "extrahardmode.chat.biome_boss",
+                "tougher.chat.biome_boss",
                 "A %s prowls nearby!",
                 Component.translatableWithFallback(family.translationKey(), family.fallbackName()));
         for (ServerPlayer player : level.players()) {
@@ -536,10 +536,10 @@ public final class BiomeBosses implements FeatureModule {
     static void onBossDefeated(ServerLevel level, LivingEntity entity, int defeated) {
         Component name = entity.hasCustomName()
                 ? entity.getCustomName()
-                : Component.translatableWithFallback("extrahardmode.boss.unknown", "biome boss");
+                : Component.translatableWithFallback("tougher.boss.unknown", "biome boss");
         Component count = Component.literal(Integer.toString(defeated));
         Component defeat = Component.translatableWithFallback(
-                "extrahardmode.chat.biome_boss_defeat",
+                "tougher.chat.biome_boss_defeat",
                 "%s has been defeated! Bosses vanquished: %s",
                 name,
                 count);
@@ -547,28 +547,28 @@ public final class BiomeBosses implements FeatureModule {
         localSpectacle(level, entity.getX(), entity.getY(), entity.getZ());
         if (BiomeBossesRules.isThirdMilestone(defeated)) {
             Component third = Component.translatableWithFallback(
-                    "extrahardmode.chat.third_boss",
+                    "tougher.chat.third_boss",
                     "The third boss is vanquished!  Your fame is growing!");
             level.getServer().getPlayerList().broadcastSystemMessage(third, false);
             worldSpectacle(
                     level.getServer(),
                     Component.translatableWithFallback(
-                            "extrahardmode.title.third_boss", "The third boss is vanquished!"),
+                            "tougher.title.third_boss", "The third boss is vanquished!"),
                     Component.translatableWithFallback(
-                            "extrahardmode.subtitle.third_boss", "Your fame is growing!"),
+                            "tougher.subtitle.third_boss", "Your fame is growing!"),
                     BiomeBossesRules.TITLE_STAY_TICKS,
                     false);
         }
         if (BiomeBossesRules.isCreditsMilestone(defeated)) {
             Component victory = Component.translatableWithFallback(
-                    "extrahardmode.chat.ehm_defeated", "Extra Hard Mode Defeated!");
+                    "tougher.chat.ehm_defeated", "Tougher Defeated!");
             level.getServer().getPlayerList().broadcastSystemMessage(victory, false);
             worldSpectacle(
                     level.getServer(),
                     Component.translatableWithFallback(
-                            "extrahardmode.title.ehm_defeated", "Extra Hard Mode Defeated!"),
+                            "tougher.title.ehm_defeated", "Tougher Defeated!"),
                     Component.translatableWithFallback(
-                            "extrahardmode.subtitle.ehm_defeated", "You may continue if you like."),
+                            "tougher.subtitle.ehm_defeated", "You may continue if you like."),
                     BiomeBossesRules.SEVENTH_TITLE_STAY_TICKS,
                     true);
             creditsAtTick = level.getServer().overworld().getGameTime() + BiomeBossesRules.CREDITS_DELAY_TICKS;

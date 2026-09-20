@@ -111,7 +111,7 @@ public final class PlacementRules {
 
     public static boolean isSolidSupport(BlockGetter level, BlockPos pos) {
         BlockState state = level.getBlockState(pos);
-        return !state.isAir() && (state.isSolid() || state.blocksMotion());
+        return !state.isAir() && state.isSolid();
     }
 
     /** The block the player clicked, not the placement cell. */

@@ -20,7 +20,7 @@ public final class HungerRules {
 
     private HungerRules() {}
 
-    /** Vanilla starves every 80 ticks; Extra Hard Mode uses 1/5 that rate. */
+    /** Vanilla starves every 80 ticks; Tougher uses 1/5 that rate. */
     public static int starveTicks() {
         return VANILLA_STARVE_TICKS * STARVE_SLOW_DIVISOR;
     }

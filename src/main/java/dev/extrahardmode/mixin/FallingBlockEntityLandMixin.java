@@ -19,7 +19,7 @@ public abstract class FallingBlockEntityLandMixin {
             method = "tick",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/item/FallingBlockEntity;onGround()Z"),
             cancellable = true)
-    private void extrahardmode$flyAutoremove(CallbackInfo ci) {
+    private void tougher$flyAutoremove(CallbackInfo ci) {
         FallingBlockEntity self = (FallingBlockEntity) (Object) this;
         if (!FeatureBus.guard(self.level(), Explosions.ID)) {
             return;
@@ -30,7 +30,7 @@ public abstract class FallingBlockEntityLandMixin {
     }
 
     @Inject(method = "tick", at = @At("RETURN"))
-    private void extrahardmode$fallingLand(CallbackInfo ci) {
+    private void tougher$fallingLand(CallbackInfo ci) {
         FallingBlockEntity self = (FallingBlockEntity) (Object) this;
         if (!FeatureBus.guard(self.level(), FallingBlocks.ID)
                 && !FeatureBus.guard(self.level(), CaveIns.ID)

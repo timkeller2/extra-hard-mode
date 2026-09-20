@@ -89,7 +89,7 @@ class AbilityRulesTest {
             String ability = AbilityRules.abilityForItem(item);
             String help = AbilityRules.helpFallback(ability);
             assertTrue(help != null && !help.isBlank(), item);
-            assertEquals("extrahardmode.ability." + ability + ".help", AbilityRules.helpKey(ability));
+            assertEquals("tougher.ability." + ability + ".help", AbilityRules.helpKey(ability));
         }
         String healHelp = AbilityRules.helpFallback(AbilityRules.HEAL);
         assertTrue(healHelp.contains("heal yourself"));
@@ -207,7 +207,7 @@ class AbilityRulesTest {
         assertEquals("Sense Evil", AbilityRules.nameFallback(AbilityRules.SENSE_EVIL));
         assertEquals("Smite Evil", AbilityRules.nameFallback(AbilityRules.SMITE_EVIL));
         assertEquals("Let there be light", AbilityRules.nameFallback(AbilityRules.LIGHT));
-        assertEquals("extrahardmode.ability.detect_ore", AbilityRules.nameKey(AbilityRules.DETECT_ORE));
+        assertEquals("tougher.ability.detect_ore", AbilityRules.nameKey(AbilityRules.DETECT_ORE));
         assertTrue(AbilityRules.lockedFallback(AbilityRules.HEAL).contains("Healing"));
         assertTrue(AbilityRules.lockedFallback(AbilityRules.DETECT_ORE).contains("Detect ore"));
         assertFalse(AbilityRules.lockedFallback(AbilityRules.FLIGHT).contains("this ability"));

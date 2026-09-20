@@ -21,7 +21,7 @@ public class MinecraftMixin {
     public Options options;
 
     @Inject(method = "handleKeybinds", at = @At("HEAD"))
-    private void extrahardmode$blockOffhandLightSwap(CallbackInfo ci) {
+    private void tougher$blockOffhandLightSwap(CallbackInfo ci) {
         if (this.player == null || this.options == null) {
             return;
         }

@@ -5,10 +5,11 @@
     "X": "minecraft:copper_block"
   },
   "pattern": [
+    "XXX",
     "X X",
     "X X"
   ],
   "result": {
-    "id": "extrahardmode:heavy_copper_boots"
+    "id": "tougher:heavy_copper_leggings"
   }
 }

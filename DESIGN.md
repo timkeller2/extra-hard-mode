@@ -1,16 +1,18 @@
-# Extra Hard Mode — Minecraft Java 26.2 Fabric Port
+# Tougher — Minecraft Java 26.3 Fabric Port
+
+Shipped identity: display name **Tougher**, mod id `tougher`, gamerule `tougher:enabled`, command `/tougher` (alias `/ehm`), Maven group `dev.tougher`. Java package remains `dev.extrahardmode`. Identifiers in the body that still say `extrahardmode` map to `tougher` in the live tree. The rest of this document was written for Extra Hard Mode on 26.2.
 
 | Field | Value |
 |---|---|
-| **Title** | Extra Hard Mode for Minecraft Java 26.2 (Fabric) |
+| **Title** | Tougher for Minecraft Java 26.3 (Fabric) |
 | **Author** | Grok Design |
-| **Date** | 2026-08-31 |
-| **Status** | Draft |
-| **Target** | Minecraft Java Edition 26.2 (“Chaos Cubed”), Java 25 LTS |
-| **Loader** | Fabric Loader 0.19.3+ / Fabric API **≥0.157.0+26.2** (example-mod pin `0.158.0+26.2` at implement time) |
+| **Date** | 2026-09-19 |
+| **Status** | Shipped as Tougher on 26.3 |
+| **Target** | Minecraft Java Edition 26.3 (“Wilderness Bound”), Java 25 LTS |
+| **Loader** | Fabric Loader 0.19.5+ / Fabric API **≥0.161.0+26.3** |
 | **License** | GNU Affero GPL v3.0 |
-| **Mod ID** | `extrahardmode` |
-| **Maven group** | `dev.extrahardmode` |
+| **Mod ID** | `tougher` |
+| **Maven group** | `dev.tougher` |
 | **Java package** | `dev.extrahardmode` (do **not** use `com.extrahardmode`) |
 | **Workspace** | `C:\client\grok\minecraft` (greenfield) |
 

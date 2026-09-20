@@ -9,11 +9,11 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 @Mixin(Display.class)
 public interface DisplayAccess {
     @Invoker("setBillboardConstraints")
-    void extrahardmode$setBillboardConstraints(Display.BillboardConstraints constraints);
+    void tougher$setBillboardConstraints(Display.BillboardConstraints constraints);
 
     @Invoker("setTransformation")
-    void extrahardmode$setTransformation(Transformation transformation);
+    void tougher$setTransformation(Transformation transformation);
 
     @Invoker("setBrightnessOverride")
-    void extrahardmode$setBrightnessOverride(Brightness brightness);
+    void tougher$setBrightnessOverride(Brightness brightness);
 }

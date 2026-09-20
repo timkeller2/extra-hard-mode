@@ -148,12 +148,12 @@ public final class AntiFarming implements FeatureModule {
         player.setAttached(EhmAttachments.EHM_ABILITY_HANDLED_TICK, level.getGameTime());
         double loss = currentSeasonalLossRate(level);
         player.sendSystemMessage(Component.translatableWithFallback(
-                "extrahardmode.message.crop_season_loss",
+                "tougher.message.crop_season_loss",
                 "The current crop loss rate is %s%%.",
                 CropGrowthRules.lossRateLabel(loss)));
         if (CropGrowthRules.beesInactive(loss)) {
             player.sendSystemMessage(Component.translatableWithFallback(
-                    "extrahardmode.message.crop_season_bees",
+                    "tougher.message.crop_season_bees",
                     "Bees are staying in their hives."));
         }
         ManaAbilities.sendMeReport(player, player::sendSystemMessage);
@@ -215,25 +215,25 @@ public final class AntiFarming implements FeatureModule {
             return;
         }
         WorldConfig cfg = ConfigManager.world(level);
-        Entity entity = context.getOptionalParameter(LootContextParams.THIS_ENTITY);
+        Entity entity = context.getOptional(LootContextParams.THIS_ENTITY);
         if (cfg.ironGolemNerf() && entity instanceof IronGolem) {
             drops.clear();
             return;
         }
         if (entity != null) {
-            Entity killer = context.getOptionalParameter(LootContextParams.LAST_DAMAGE_PLAYER);
+            Entity killer = context.getOptional(LootContextParams.LAST_DAMAGE_PLAYER);
             if (!(killer instanceof ServerPlayer player && EhmApi.playerBypasses(player))) {
                 reduceSeasonalMeat(entity, drops, currentSeasonalLossRate(level));
             }
         }
-        BlockState state = context.getOptionalParameter(LootContextParams.BLOCK_STATE);
+        BlockState state = context.getOptional(LootContextParams.BLOCK_STATE);
         if (state != null
                 && isFarmHarvestBlock(state.getBlock())
                 && !(entity instanceof Player)) {
-            net.minecraft.world.phys.Vec3 origin = context.getOptionalParameter(LootContextParams.ORIGIN);
+            net.minecraft.world.phys.Vec3 origin = context.getOptional(LootContextParams.ORIGIN);
             if (origin != null) {
                 ItemStack tool = ItemStack.EMPTY;
-                Object rawTool = context.getOptionalParameter(LootContextParams.TOOL);
+                Object rawTool = context.getOptional(LootContextParams.TOOL);
                 if (rawTool instanceof ItemStack stack) {
                     tool = stack;
                 }

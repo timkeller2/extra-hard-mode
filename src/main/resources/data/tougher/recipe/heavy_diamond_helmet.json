@@ -2,14 +2,13 @@
   "type": "minecraft:crafting_shaped",
   "category": "equipment",
   "key": {
-    "X": "minecraft:iron_block"
+    "X": "minecraft:diamond_block"
   },
   "pattern": [
     "XXX",
-    "X X",
     "X X"
   ],
   "result": {
-    "id": "extrahardmode:heavy_iron_leggings"
+    "id": "tougher:heavy_diamond_helmet"
   }
 }

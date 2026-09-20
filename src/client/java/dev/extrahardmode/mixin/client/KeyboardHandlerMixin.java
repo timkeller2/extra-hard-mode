@@ -22,14 +22,14 @@ public class KeyboardHandlerMixin {
     private Minecraft minecraft;
 
     @Inject(method = "handleDebugKeys", at = @At("HEAD"), cancellable = true)
-    private void extrahardmode$blockF3Combos(KeyEvent event, CallbackInfoReturnable<Boolean> cir) {
+    private void tougher$blockF3Combos(KeyEvent event, CallbackInfoReturnable<Boolean> cir) {
         if (!ExtraHardModeClient.f3Allowed()) {
             cir.setReturnValue(false);
         }
     }
 
     @Inject(method = "keyPress", at = @At("HEAD"), cancellable = true)
-    private void extrahardmode$abilityHelpKey(long window, int action, KeyEvent event, CallbackInfo ci) {
+    private void tougher$abilityHelpKey(long window, int action, KeyEvent event, CallbackInfo ci) {
         if (action != InputConstants.PRESS) {
             return;
         }
@@ -45,7 +45,7 @@ public class KeyboardHandlerMixin {
     }
 
     @Inject(method = "charTyped", at = @At("HEAD"), cancellable = true)
-    private void extrahardmode$abilityHelpChar(long window, CharacterEvent event, CallbackInfo ci) {
+    private void tougher$abilityHelpChar(long window, CharacterEvent event, CallbackInfo ci) {
         if (event.codepoint() != '?') {
             return;
         }

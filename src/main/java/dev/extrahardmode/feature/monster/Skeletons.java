@@ -344,6 +344,6 @@ public final class Skeletons implements FeatureModule {
             return;
         }
         victim.setDeltaMovement(event.velocity());
-        victim.hurtMarked = true;
+        ((dev.extrahardmode.mixin.EntityHurtAccess) victim).tougher$markHurt();
     }
 }

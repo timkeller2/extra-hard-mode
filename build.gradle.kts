@@ -25,7 +25,7 @@ repositories {
 loom {
 	splitEnvironmentSourceSets()
 	mods {
-		register("extrahardmode") {
+		register("tougher") {
 			sourceSet(sourceSets.main.get())
 			sourceSet(sourceSets.named("client").get())
 		}
@@ -110,7 +110,7 @@ val deployDirs = listOf(
 
 tasks.register("deployJar") {
 	group = "distribution"
-	description = "Copy the remapped Extra Hard Mode jar to the local server and client mods folders."
+	description = "Copy the remapped Tougher jar to the local server and client mods folders."
 	dependsOn("assemble")
 	doLast {
 		val src = layout.buildDirectory
@@ -120,11 +120,11 @@ tasks.register("deployJar") {
 				.listFiles()
 				?.firstOrNull { file ->
 					file.isFile
-							&& file.name.startsWith("extrahardmode-")
+							&& file.name.startsWith("tougher-")
 							&& file.name.endsWith(".jar")
 							&& !file.name.contains("sources")
 				}
-				?: error("No Extra Hard Mode jar in build/libs")
+				?: error("No Tougher jar in build/libs")
 		val failed = mutableListOf<String>()
 		for (dir in deployDirs) {
 			dir.mkdirs()
@@ -134,9 +134,9 @@ tasks.register("deployJar") {
 			src.copyTo(tmp, overwrite = true)
 			val stale = dir.listFiles()?.filter { file ->
 				file.isFile
-						&& file.name.startsWith("extrahardmode-")
 						&& file.name.endsWith(".jar")
 						&& file.name != src.name
+						&& (file.name.startsWith("tougher-") || file.name.startsWith("extrahardmode-"))
 			} ?: emptyList()
 			stale.forEach { file ->
 				if (!file.delete()) {

@@ -266,7 +266,7 @@ public final class InhabitantRules {
             reasons.add("too close to another resident");
         }
         if (score < MIN_SCORE) {
-            reasons.add("more furnishings (see /ehm help homes)");
+            reasons.add("more furnishings (see /tougher help homes)");
         }
         return reasons;
     }
@@ -316,14 +316,14 @@ public final class InhabitantRules {
             return head + " Eligible for a resident.";
         }
         if (result.missing().isEmpty()) {
-            return head + " Not yet eligible. Type /ehm help homes for the checklist.";
+            return head + " Not yet eligible. Type /tougher help homes for the checklist.";
         }
         return head + " Missing: " + String.join(", ", result.missing()) + ".";
     }
 
     public static List<String> homesHelpLines() {
         return List.of(
-                "Homes: Right-click a bed with a clock to score the room. Type /ehm help homes anytime for this list.",
+                "Homes: Right-click a bed with a clock to score the room. Type /tougher help homes anytime for this list.",
                 "Need all of these: an enclosed room (solid walls, floor, and roof; doors and trapdoors are openings, not holes), 24 to 300 interior air blocks, a bed, a door or fence gate that faces outside, block light 8 on every floor tile, and 48 blocks from another occupied home.",
                 "Furnishings need 12 points. Each 48 interior air blocks: 1 point, max 5. Each enclosed room connected by doors, trapdoors, or fence gates: 1 point, max 3. Windows (glass or panes looking out of the room): 2 each, max 6. Art (paintings and filled item frames): 1 each, max 6. Rugs (wool carpets): 1 point per 4 carpets, max 3. Seating (stairs and slabs): 1 each, max 2.",
                 "Storage (chests, barrels, shulker boxes): 1 each, max 2. Workstations (crafting table, furnace, smoker, anvil, and similar): 1 each, max 2. Extra lights (torches, lanterns, glowstone, campfires): 1 each, max 2. Plants (pots, flowers, saplings): 1 each, max 2. Books (bookshelf, lectern): 1 each, max 2. A second bed: +1. Kitchen (a furnace, smoker, or campfire AND a cauldron): +2.",
@@ -807,7 +807,7 @@ public final class InhabitantRules {
 
     static List<TradeListing> armorListings(boolean master) {
         int uses = ARMOR_TRADE_USES;
-        String prefix = master ? "extrahardmode:heavy_diamond_" : "extrahardmode:heavy_iron_";
+        String prefix = master ? "tougher:heavy_diamond_" : "tougher:heavy_iron_";
         return List.of(
                 sellOf(prefix + "boots", 1, armorEmeralds(master, "boots"), uses),
                 sellOf(prefix + "helmet", 1, armorEmeralds(master, "helmet"), uses),

@@ -90,7 +90,7 @@ public final class EhmCommands {
             CommandDispatcher<CommandSourceStack> dispatcher,
             CommandBuildContext buildContext,
             Commands.CommandSelection selection) {
-        dispatcher.register(Commands.literal("ehm")
+        var root = Commands.literal("tougher")
                 .executes(EhmCommands::featureHelp)
                 .then(Commands.literal("help")
                         .executes(EhmCommands::featureHelp)
@@ -121,7 +121,9 @@ public final class EhmCommands {
                 .then(Commands.literal("set-world")
                         .then(Commands.argument("value", BoolArgumentType.bool()).executes(EhmCommands::setWorld)))
                 .then(Commands.literal("enable").executes(context -> setWorldEnabled(context, true)))
-                .then(Commands.literal("disable").executes(context -> setWorldEnabled(context, false))));
+                .then(Commands.literal("disable").executes(context -> setWorldEnabled(context, false)));
+        var node = dispatcher.register(root);
+        dispatcher.register(Commands.literal("ehm").redirect(node));
     }
 
     private static boolean canStaff(CommandSourceStack source) {
@@ -136,8 +138,8 @@ public final class EhmCommands {
 
     private static int denyStaff(CommandSourceStack source) {
         source.sendFailure(Component.translatableWithFallback(
-                "extrahardmode.command.staff.denied",
-                "You need operator permission for that Extra Hard Mode command. From the server console, run: op <your name>"));
+                "tougher.command.staff.denied",
+                "You need operator permission for that Tougher command. From the server console, run: op <your name>"));
         return 0;
     }
 
@@ -196,8 +198,8 @@ public final class EhmCommands {
         context.getSource()
                 .sendSuccess(
                         () -> Component.translatableWithFallback(
-                                "extrahardmode.command.version",
-                                "Extra Hard Mode %s (Minecraft %s, Fabric Loader %s)",
+                                "tougher.command.version",
+                                "Tougher %s (Minecraft %s, Fabric Loader %s)",
                                 mod,
                                 mc,
                                 loader),
@@ -218,8 +220,8 @@ public final class EhmCommands {
         boolean enabled = WorldGate.isActive(level);
         source.sendSuccess(
                 () -> Component.translatableWithFallback(
-                        enabled ? "extrahardmode.command.enabled.true" : "extrahardmode.command.enabled.false",
-                        "Extra Hard Mode is %s in %s",
+                        enabled ? "tougher.command.enabled.true" : "tougher.command.enabled.false",
+                        "Tougher is %s in %s",
                         enabled ? "on" : "off",
                         level.dimension().identifier().toString()),
                 false);
@@ -234,7 +236,7 @@ public final class EhmCommands {
         ConfigManager.reload(server);
         context.getSource()
                 .sendSuccess(
-                        () -> Component.translatableWithFallback("extrahardmode.command.reload", "Reloaded Extra Hard Mode config"),
+                        () -> Component.translatableWithFallback("tougher.command.reload", "Reloaded Tougher config"),
                         true);
         return Command.SINGLE_SUCCESS;
     }
@@ -253,8 +255,8 @@ public final class EhmCommands {
         context.getSource()
                 .sendSuccess(
                         () -> Component.translatableWithFallback(
-                                "extrahardmode.command.debug",
-                                "EHM debug %s (queue=%s live=%s dropped=%s lastTick=%s)",
+                                "tougher.command.debug",
+                                "Tougher debug %s (queue=%s live=%s dropped=%s lastTick=%s)",
                                 next ? "on" : "off",
                                 depth,
                                 live,
@@ -275,7 +277,7 @@ public final class EhmCommands {
         context.getSource()
                 .sendSuccess(
                         () -> Component.translatableWithFallback(
-                                "extrahardmode.command.bypass", "Personal EHM bypass %s", next ? "on" : "off"),
+                                "tougher.command.bypass", "Personal Tougher bypass %s", next ? "on" : "off"),
                         false);
         return Command.SINGLE_SUCCESS;
     }
@@ -289,7 +291,7 @@ public final class EhmCommands {
         if (moduleId == null) {
             context.getSource()
                     .sendFailure(Component.translatableWithFallback(
-                            "extrahardmode.command.module.invalid",
+                            "tougher.command.module.invalid",
                             "Invalid module id '%s'",
                             StringArgumentType.getString(context, "module")));
             return 0;
@@ -300,13 +302,13 @@ public final class EhmCommands {
         if (!saveAndSync(level)) {
             context.getSource()
                     .sendFailure(Component.translatableWithFallback(
-                            "extrahardmode.command.set.failed", "Failed to save Extra Hard Mode config for this dimension"));
+                            "tougher.command.set.failed", "Failed to save Tougher config for this dimension"));
             return 0;
         }
         context.getSource()
                 .sendSuccess(
                         () -> Component.translatableWithFallback(
-                                "extrahardmode.command.set",
+                                "tougher.command.set",
                                 "Set %s to %s in %s",
                                 moduleId.toString(),
                                 value,
@@ -329,14 +331,14 @@ public final class EhmCommands {
         if (!saveAndSync(level)) {
             context.getSource()
                     .sendFailure(Component.translatableWithFallback(
-                            "extrahardmode.command.set.failed", "Failed to save Extra Hard Mode config for this dimension"));
+                            "tougher.command.set.failed", "Failed to save Tougher config for this dimension"));
             return 0;
         }
         context.getSource()
                 .sendSuccess(
                         () -> Component.translatableWithFallback(
-                                "extrahardmode.command.set-world",
-                                "Set Extra Hard Mode for %s to %s",
+                                "tougher.command.set-world",
+                                "Set Tougher for %s to %s",
                                 level.dimension().identifier().toString(),
                                 value ? "on" : "off"),
                         true);

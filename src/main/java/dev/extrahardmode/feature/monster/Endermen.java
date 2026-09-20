@@ -16,7 +16,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.monster.EnderMan;
+import net.minecraft.world.entity.monster.Enderman;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.Vec3;
@@ -37,7 +37,7 @@ public final class Endermen implements FeatureModule {
         return ID;
     }
 
-    public static void tick(EnderMan enderman, ServerLevel level) {
+    public static void tick(Enderman enderman, ServerLevel level) {
         if (!WorldGate.isModuleActive(level, ID)) {
             return;
         }
@@ -100,7 +100,7 @@ public final class Endermen implements FeatureModule {
         return losBlocked || above1Blocks || above2Blocks;
     }
 
-    static boolean isCheese(ServerLevel level, EnderMan enderman, ServerPlayer player) {
+    static boolean isCheese(ServerLevel level, Enderman enderman, ServerPlayer player) {
         BlockPos feet = player.blockPosition();
         return isTwoHighRoof(
                 !enderman.hasLineOfSight(player),
@@ -108,7 +108,7 @@ public final class Endermen implements FeatureModule {
                 blocksPath(level, feet.above(2)));
     }
 
-    static BlockPos findLanding(ServerLevel level, EnderMan enderman, ServerPlayer player) {
+    static BlockPos findLanding(ServerLevel level, Enderman enderman, ServerPlayer player) {
         BlockPos origin = enderman.blockPosition();
         if (isSafeLanding(level, origin, player)) {
             return origin;

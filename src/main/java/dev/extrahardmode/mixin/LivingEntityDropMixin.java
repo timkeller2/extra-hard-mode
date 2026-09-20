@@ -18,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(LivingEntity.class)
 public abstract class LivingEntityDropMixin {
     @Inject(method = "dropFromLootTable", at = @At("HEAD"), cancellable = true)
-    private void extrahardmode$skipLootless(ServerLevel level, DamageSource source, boolean playerKill, CallbackInfo ci) {
+    private void tougher$skipLootless(ServerLevel level, DamageSource source, boolean playerKill, CallbackInfo ci) {
         if (!FeatureBus.guard((Level) level, lootlessModule((LivingEntity) (Object) this))) {
             return;
         }

@@ -8,8 +8,8 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 @Mixin(CompoundContainer.class)
 public interface CompoundContainerAccess {
     @Accessor("container1")
-    Container extrahardmode$container1();
+    Container tougher$container1();
 
     @Accessor("container2")
-    Container extrahardmode$container2();
+    Container tougher$container2();
 }

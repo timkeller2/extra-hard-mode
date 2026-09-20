@@ -1,9 +1,9 @@
 {
   "type": "minecraft:smithing_transform",
   "addition": "#minecraft:netherite_tool_materials",
-  "base": "extrahardmode:heavy_diamond_helmet",
+  "base": "tougher:heavy_diamond_chestplate",
   "result": {
-    "id": "extrahardmode:heavy_netherite_helmet"
+    "id": "tougher:heavy_netherite_chestplate"
   },
   "template": "minecraft:netherite_upgrade_smithing_template"
 }

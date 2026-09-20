@@ -8,7 +8,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Fired when Extra Hard Mode is about to forfeit item stacks on player death.
+ * Fired when Tougher is about to forfeit item stacks on player death.
  *
  * <p>Forfeit still runs when {@code keepInventory} is true — suicide-reset is the
  * thing this punishes. Remaining stacks still drop via vanilla when

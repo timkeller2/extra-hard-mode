@@ -342,7 +342,7 @@ public final class ManaAbilities implements FeatureModule {
             markHandled(player);
             return true;
         }
-        if (blockedByCooldownOrMana(player, AbilityRules.FLIGHT, "extrahardmode.ability.flight", "Flight")) {
+        if (blockedByCooldownOrMana(player, AbilityRules.FLIGHT, "tougher.ability.flight", "Flight")) {
             return true;
         }
         int bonus = withRedstoneBonus(player, AbilityRules.catalystBonus(player.getMainHandItem().getCount()));
@@ -350,9 +350,9 @@ public final class ManaAbilities implements FeatureModule {
         consumeManaAndHeld(player, Items.FEATHER);
         recordAbilityUse(player, AbilityRules.FLIGHT);
         startFlight(player, power);
-        tellAbilityUse(player, "extrahardmode.ability.flight", "Flight", power);
+        tellAbilityUse(player, "tougher.ability.flight", "Flight", power);
         player.sendSystemMessage(Component.translatableWithFallback(
-                "extrahardmode.message.flight_start", "Jump to rise, sneak to descend. Land to stop flying."));
+                "tougher.message.flight_start", "Jump to rise, sneak to descend. Land to stop flying."));
         markHandled(player);
         return true;
     }
@@ -373,16 +373,16 @@ public final class ManaAbilities implements FeatureModule {
             return false;
         }
         if (blockedByCooldownOrMana(
-                player, AbilityRules.HEAL, "extrahardmode.ability.heal", "Healing", honey)) {
+                player, AbilityRules.HEAL, "tougher.ability.heal", "Healing", honey)) {
             return true;
         }
         if (honey && InventorySearch.consumeOneMain(player, Items.HONEY_BOTTLE)) {
-            player.getInventory().placeItemBackInInventory(new ItemStack(Items.GLASS_BOTTLE));
+            player.getInventory().placeItemBackInInventory(new ItemStack(Items.GLASS_BOTTLE), net.minecraft.util.Prediction.SERVER_ONLY);
         }
         target.heal((float) power);
         spend(player, Items.PAPER, AbilityRules.HEAL);
         startHealSparkle(target);
-        tellAbilityUse(player, "extrahardmode.ability.heal", "Healing", power);
+        tellAbilityUse(player, "tougher.ability.heal", "Healing", power);
         return true;
     }
 
@@ -407,14 +407,14 @@ public final class ManaAbilities implements FeatureModule {
             return false;
         }
         if (blockedByCooldownOrMana(
-                player, AbilityRules.IRON_HEART, "extrahardmode.ability.iron_heart", "Iron Heart")) {
+                player, AbilityRules.IRON_HEART, "tougher.ability.iron_heart", "Iron Heart")) {
             return true;
         }
         spend(player, Items.IRON_INGOT, AbilityRules.IRON_HEART);
         startIronHeartLock(player, duration);
         applyIronHeartBuff(player, target, health, duration);
         startIronHeartSparkle(target);
-        tellAbilityUse(player, "extrahardmode.ability.iron_heart", "Iron Heart", power);
+        tellAbilityUse(player, "tougher.ability.iron_heart", "Iron Heart", power);
         return true;
     }
 
@@ -496,7 +496,7 @@ public final class ManaAbilities implements FeatureModule {
         clearIronHeartBuff(player, false);
         sendAbilityDurations(player);
         player.sendSystemMessage(Component.translatableWithFallback(
-                "extrahardmode.message.iron_heart_cancel", "You cancel Iron Heart."));
+                "tougher.message.iron_heart_cancel", "You cancel Iron Heart."));
     }
 
     static void clearIronHeartBuff(ServerPlayer player, boolean message) {
@@ -523,7 +523,7 @@ public final class ManaAbilities implements FeatureModule {
         }
         if (message && had) {
             player.sendSystemMessage(Component.translatableWithFallback(
-                    "extrahardmode.message.iron_heart_end", "Your Iron Heart fades."));
+                    "tougher.message.iron_heart_end", "Your Iron Heart fades."));
         }
     }
 
@@ -591,7 +591,7 @@ public final class ManaAbilities implements FeatureModule {
         startIronHeartLock(caster, duration);
         applyIronHeartBuff(caster, target, health, duration);
         startIronHeartSparkle(target);
-        tellAbilityUse(caster, "extrahardmode.ability.iron_heart", "Iron Heart", power);
+        tellAbilityUse(caster, "tougher.ability.iron_heart", "Iron Heart", power);
         return true;
     }
 
@@ -648,12 +648,12 @@ public final class ManaAbilities implements FeatureModule {
         if (target == null) {
             return false;
         }
-        if (blockedByCooldownOrMana(player, AbilityRules.FIRE_BOLT, "extrahardmode.ability.fire_bolt", "Fire bolt")) {
+        if (blockedByCooldownOrMana(player, AbilityRules.FIRE_BOLT, "tougher.ability.fire_bolt", "Fire bolt")) {
             return true;
         }
         hurlFireBolt(player, power, target);
         spend(player, Items.CHARCOAL, AbilityRules.FIRE_BOLT);
-        tellAbilityUse(player, "extrahardmode.ability.fire_bolt", "Fire bolt", power);
+        tellAbilityUse(player, "tougher.ability.fire_bolt", "Fire bolt", power);
         return true;
     }
 
@@ -672,12 +672,12 @@ public final class ManaAbilities implements FeatureModule {
             return false;
         }
         if (blockedByCooldownOrMana(
-                player, AbilityRules.MAGIC_ARROW, "extrahardmode.ability.magic_arrow", "Magic arrow")) {
+                player, AbilityRules.MAGIC_ARROW, "tougher.ability.magic_arrow", "Magic arrow")) {
             return true;
         }
         hurlMagicArrow(player, power, target);
         spend(player, Items.ARROW, AbilityRules.MAGIC_ARROW);
-        tellAbilityUse(player, "extrahardmode.ability.magic_arrow", "Magic arrow", power);
+        tellAbilityUse(player, "tougher.ability.magic_arrow", "Magic arrow", power);
         return true;
     }
 
@@ -696,7 +696,7 @@ public final class ManaAbilities implements FeatureModule {
             return false;
         }
         if (blockedByCooldownOrMana(
-                player, AbilityRules.SMITE_EVIL, "extrahardmode.ability.smite_evil", "Smite Evil")) {
+                player, AbilityRules.SMITE_EVIL, "tougher.ability.smite_evil", "Smite Evil")) {
             return true;
         }
         spend(player, null, AbilityRules.SMITE_EVIL);
@@ -704,12 +704,12 @@ public final class ManaAbilities implements FeatureModule {
         if (target.isAlive() && isUndead(target)) {
             float extra = AbilityRules.smiteUndeadBonus(power);
             if (extra > 0.0F) {
-                target.invulnerableTime = 0;
+                target.setInvulnerableTime(0);
                 target.hurt(player.damageSources().playerAttack(player), extra);
             }
         }
         spawnSmiteFlash(target, (ServerLevel) player.level());
-        tellAbilityUse(player, "extrahardmode.ability.smite_evil", "Smite Evil", power);
+        tellAbilityUse(player, "tougher.ability.smite_evil", "Smite Evil", power);
         return true;
     }
 
@@ -737,7 +737,7 @@ public final class ManaAbilities implements FeatureModule {
         if (GrowPlants.findGrowable(level, origin, AbilityRules.GROW_RANGE).isEmpty()) {
             return false;
         }
-        if (blockedByCooldownOrMana(player, AbilityRules.GROW, "extrahardmode.ability.grow", "Let it grow")) {
+        if (blockedByCooldownOrMana(player, AbilityRules.GROW, "tougher.ability.grow", "Let it grow")) {
             return true;
         }
         int hoeBonus = withRedstoneBonus(player, AbilityRules.growHoeBonus(heldItemId(held)));
@@ -767,7 +767,7 @@ public final class ManaAbilities implements FeatureModule {
         if (!canTarget && !canScatter) {
             return false;
         }
-        if (blockedByCooldownOrMana(player, AbilityRules.GROW, "extrahardmode.ability.grow", "Let it grow")) {
+        if (blockedByCooldownOrMana(player, AbilityRules.GROW, "tougher.ability.grow", "Let it grow")) {
             return true;
         }
         int hoeBonus = withRedstoneBonus(player, AbilityRules.growHoeBonus(heldItemId(held)));
@@ -788,7 +788,7 @@ public final class ManaAbilities implements FeatureModule {
         if (hoe.is(ItemTags.HOES) && hoe.isDamageableItem()) {
             hurtGrowHoe(player, hoe);
         }
-        tellAbilityUse(player, "extrahardmode.ability.grow", "Let it grow", power);
+        tellAbilityUse(player, "tougher.ability.grow", "Let it grow", power);
         return true;
     }
 
@@ -818,7 +818,7 @@ public final class ManaAbilities implements FeatureModule {
         if (hoe.isBroken()) {
             Item item = hoe.getItem();
             hoe.shrink(1);
-            player.onEquippedItemBroken(item, EquipmentSlot.MAINHAND);
+            player.onEquippedItemBroken(new ItemStack(item), EquipmentSlot.MAINHAND);
         }
     }
 
@@ -835,7 +835,7 @@ public final class ManaAbilities implements FeatureModule {
             return true;
         }
         if (blockedByCooldownOrMana(
-                player, AbilityRules.POWER_MINE, "extrahardmode.ability.power_mine", "Power mining")) {
+                player, AbilityRules.POWER_MINE, "tougher.ability.power_mine", "Power mining")) {
             return true;
         }
         int bonus = withRedstoneBonus(player, AbilityRules.pickaxeBonus(heldItemId(held)));
@@ -847,7 +847,7 @@ public final class ManaAbilities implements FeatureModule {
         player.setAttached(EhmAttachments.EHM_POWER_MINE_ITEM, heldItemId(held));
         sendPowerMine(player);
         sendAbilityDurations(player);
-        tellAbilityUse(player, "extrahardmode.ability.power_mine", "Power mining", power);
+        tellAbilityUse(player, "tougher.ability.power_mine", "Power mining", power);
         return true;
     }
 
@@ -879,7 +879,7 @@ public final class ManaAbilities implements FeatureModule {
         sendAbilityDurations(player);
         if (message && wasActive) {
             player.sendSystemMessage(Component.translatableWithFallback(
-                    "extrahardmode.message.power_mine_end", "Power mining ended."));
+                    "tougher.message.power_mine_end", "Power mining ended."));
         }
     }
 
@@ -895,7 +895,7 @@ public final class ManaAbilities implements FeatureModule {
             return false;
         }
         if (blockedByCooldownOrMana(
-                player, AbilityRules.DETECT_ORE, "extrahardmode.ability.detect_ore", "Detect ore")) {
+                player, AbilityRules.DETECT_ORE, "tougher.ability.detect_ore", "Detect ore")) {
             return true;
         }
         int bonus = detectOreInventoryBonus(player);
@@ -904,16 +904,16 @@ public final class ManaAbilities implements FeatureModule {
         AbilityRules.OreDeposit best = DetectOre.findBest(player, range);
         consumeDetectOreQuartz(player);
         spend(player, null, AbilityRules.DETECT_ORE);
-        tellAbilityUse(player, "extrahardmode.ability.detect_ore", "Detect ore", power);
+        tellAbilityUse(player, "tougher.ability.detect_ore", "Detect ore", power);
         if (best == null) {
             player.sendSystemMessage(Component.translatableWithFallback(
-                    "extrahardmode.message.detect_ore_none", "The compass finds no ore nearby."));
+                    "tougher.message.detect_ore_none", "The compass finds no ore nearby."));
         } else {
             DetectOre.lookAt(player, best);
             int blocks = AbilityRules.depositDistanceBlocks(best);
             String family = AbilityRules.oreFamilyLabel(best.family());
             player.sendSystemMessage(Component.translatableWithFallback(
-                    "extrahardmode.message.detect_ore_found",
+                    "tougher.message.detect_ore_found",
                     AbilityRules.detectOreFoundFallback(family, blocks),
                     Component.literal(family),
                     Component.literal(Integer.toString(blocks))));
@@ -928,7 +928,7 @@ public final class ManaAbilities implements FeatureModule {
         if (alreadyHandled(player, (ServerLevel) player.level())) {
             return true;
         }
-        if (blockedByCooldownOrMana(player, AbilityRules.SLOW, "extrahardmode.ability.slow", "Slow")) {
+        if (blockedByCooldownOrMana(player, AbilityRules.SLOW, "tougher.ability.slow", "Slow")) {
             return true;
         }
         int bonus = withRedstoneBonus(player, AbilityRules.catalystBonus(player.getMainHandItem().getCount()));
@@ -943,7 +943,7 @@ public final class ManaAbilities implements FeatureModule {
             }
         }
         spend(player, Items.STRING, AbilityRules.SLOW);
-        tellAbilityUse(player, "extrahardmode.ability.slow", "Slow", power);
+        tellAbilityUse(player, "tougher.ability.slow", "Slow", power);
         return true;
     }
 
@@ -955,17 +955,17 @@ public final class ManaAbilities implements FeatureModule {
             return true;
         }
         if (blockedByCooldownOrMana(
-                player, AbilityRules.SENSE_EVIL, "extrahardmode.ability.sense_evil", "Sense Evil")) {
+                player, AbilityRules.SENSE_EVIL, "tougher.ability.sense_evil", "Sense Evil")) {
             return true;
         }
         int bonus = withRedstoneBonus(player, AbilityRules.catalystBonus(player.getMainHandItem().getCount()));
         double power = abilityPower(player, AbilityRules.SENSE_EVIL, bonus);
         spend(player, Items.SPIDER_EYE, AbilityRules.SENSE_EVIL);
-        tellAbilityUse(player, "extrahardmode.ability.sense_evil", "Sense Evil", power);
+        tellAbilityUse(player, "tougher.ability.sense_evil", "Sense Evil", power);
         if (!BiomeBosses.anySpawned(player.level().getServer())) {
             startHealSparkle(player);
             player.sendSystemMessage(Component.translatableWithFallback(
-                    "extrahardmode.message.sense_evil_none", AbilityRules.senseEvilNoneFallback()));
+                    "tougher.message.sense_evil_none", AbilityRules.senseEvilNoneFallback()));
             return true;
         }
         startCreepySparkle(player);
@@ -975,7 +975,7 @@ public final class ManaAbilities implements FeatureModule {
             double distance = Math.sqrt(player.distanceToSqr(nearest));
             if (AbilityRules.senseEvilShowsDistance(distance, power)) {
                 player.sendSystemMessage(Component.translatableWithFallback(
-                        "extrahardmode.message.sense_evil_found_near",
+                        "tougher.message.sense_evil_found_near",
                         AbilityRules.senseEvilFoundNearFallback(AbilityRules.roughBlocks(distance)),
                         Component.literal(Integer.toString(AbilityRules.roughBlocks(distance)))));
                 return true;
@@ -984,7 +984,7 @@ public final class ManaAbilities implements FeatureModule {
             lookAt(player, nearest.getX(), nearest.getY() + nearest.getBbHeight() * 0.5, nearest.getZ());
         }
         player.sendSystemMessage(Component.translatableWithFallback(
-                "extrahardmode.message.sense_evil_found", AbilityRules.senseEvilFoundFallback()));
+                "tougher.message.sense_evil_found", AbilityRules.senseEvilFoundFallback()));
         return true;
     }
 
@@ -1048,19 +1048,19 @@ public final class ManaAbilities implements FeatureModule {
         if (remainingPlayerLight(player) > 0) {
             stopPlayerLight(player);
             player.sendSystemMessage(Component.translatableWithFallback(
-                    "extrahardmode.message.light_off", "You snuff the light."));
+                    "tougher.message.light_off", "You snuff the light."));
             markHandled(player);
             return true;
         }
         if (blockedByCooldownOrMana(
-                player, AbilityRules.LIGHT, "extrahardmode.ability.light", "Let there be light")) {
+                player, AbilityRules.LIGHT, "tougher.ability.light", "Let there be light")) {
             return true;
         }
         int bonus = withRedstoneBonus(player, AbilityRules.catalystBonus(held.getCount()));
         double power = abilityPower(player, AbilityRules.LIGHT, bonus);
         spend(player, held.getItem(), AbilityRules.LIGHT);
         startPlayerLight(player, power);
-        tellAbilityUse(player, "extrahardmode.ability.light", "Let there be light", power);
+        tellAbilityUse(player, "tougher.ability.light", "Let there be light", power);
         return true;
     }
 
@@ -1100,12 +1100,12 @@ public final class ManaAbilities implements FeatureModule {
             Achievements.sendMana(player);
             recordAbilityUse(player, AbilityRules.LIGHT);
             startPlayerLight(player, power);
-            tellAbilityUse(player, "extrahardmode.ability.light", "Let there be light", power);
+            tellAbilityUse(player, "tougher.ability.light", "Let there be light", power);
             return;
         }
         stopPlayerLight(player);
         player.sendSystemMessage(Component.translatableWithFallback(
-                "extrahardmode.message.light_end", "Your light fades."));
+                "tougher.message.light_end", "Your light fades."));
     }
 
     static int remainingPlayerLight(ServerPlayer player) {
@@ -1309,7 +1309,7 @@ public final class ManaAbilities implements FeatureModule {
         var skills = AbilityRules.playerSkills(usesMap(player));
         if (skills.isEmpty()) {
             send.accept(Component.translatableWithFallback(
-                    "extrahardmode.command.me.paragraph_empty",
+                    "tougher.command.me.paragraph_empty",
                     "Mana level: %s. You have not used any mana abilities yet.",
                     mana));
             return 0;
@@ -1326,13 +1326,13 @@ public final class ManaAbilities implements FeatureModule {
                 name = Component.empty().append(name).append(AbilityRules.UNLEARNED_MARK);
             }
             list.append(Component.translatableWithFallback(
-                    "extrahardmode.command.me.line",
+                    "tougher.command.me.line",
                     "%s: %s",
                     name,
                     Component.literal(meLineValue(player, skill))));
         }
         send.accept(Component.translatableWithFallback(
-                "extrahardmode.command.me.paragraph",
+                "tougher.command.me.paragraph",
                 "Mana level: %s. Your mana abilities: %s",
                 mana,
                 list));
@@ -1434,11 +1434,11 @@ public final class ManaAbilities implements FeatureModule {
             applyFlightAbilities(player, speed);
             sendFlight(player);
             sendAbilityDurations(player);
-            tellAbilityUse(player, "extrahardmode.ability.flight", "Flight", power);
+            tellAbilityUse(player, "tougher.ability.flight", "Flight", power);
             return;
         }
         player.sendSystemMessage(Component.translatableWithFallback(
-                "extrahardmode.message.flight_fall", "You are out of mana and fall."));
+                "tougher.message.flight_fall", "You are out of mana and fall."));
         stopFlight(player, false);
     }
 
@@ -1454,7 +1454,7 @@ public final class ManaAbilities implements FeatureModule {
         Vec3 motion = player.getDeltaMovement();
         player.setDeltaMovement(motion.x, AbilityRules.flightLaunchY(motion.y), motion.z);
         player.setOnGround(false);
-        player.hurtMarked = true;
+        ((dev.extrahardmode.mixin.EntityHurtAccess) player).tougher$markHurt();
         sendFlight(player);
         sendAbilityDurations(player);
     }
@@ -1511,7 +1511,7 @@ public final class ManaAbilities implements FeatureModule {
         }
         if (held.is(Items.IRON_INGOT) && remainingIronHeartBuff(player) > 0) {
             player.sendOverlayMessage(Component.translatableWithFallback(
-                    "extrahardmode.message.ability_hint_iron_heart_off",
+                    "tougher.message.ability_hint_iron_heart_off",
                     "Right click to cancel %s...",
                     abilityName(ability)));
             return;
@@ -1540,13 +1540,13 @@ public final class ManaAbilities implements FeatureModule {
         if (held.is(ItemTags.HOES)) {
             if (hoeBonus > 0) {
                 player.sendOverlayMessage(Component.translatableWithFallback(
-                        "extrahardmode.message.ability_hint_air_bonus",
+                        "tougher.message.ability_hint_air_bonus",
                         "Right-click a plant to activate %s... (+%s)",
                         abilityName,
                         Component.literal(Integer.toString(hoeBonus))));
             } else {
                 player.sendOverlayMessage(Component.translatableWithFallback(
-                        "extrahardmode.message.ability_hint_air",
+                        "tougher.message.ability_hint_air",
                         "Right-click a plant to activate %s...",
                         abilityName));
             }
@@ -1554,7 +1554,7 @@ public final class ManaAbilities implements FeatureModule {
         }
         if (isLightCoal(held) && remainingPlayerLight(player) > 0) {
             player.sendOverlayMessage(Component.translatableWithFallback(
-                    "extrahardmode.message.ability_hint_torch_off",
+                    "tougher.message.ability_hint_torch_off",
                     "Right click to snuff %s...",
                     abilityName));
             return;
@@ -1571,13 +1571,13 @@ public final class ManaAbilities implements FeatureModule {
                 || isLightCoal(held)) {
             if (hoeBonus > 0) {
                 player.sendOverlayMessage(Component.translatableWithFallback(
-                        "extrahardmode.message.ability_hint_right_bonus",
+                        "tougher.message.ability_hint_right_bonus",
                         "Right click to activate %s... (+%s)",
                         abilityName,
                         Component.literal(Integer.toString(hoeBonus))));
             } else {
                 player.sendOverlayMessage(Component.translatableWithFallback(
-                        "extrahardmode.message.ability_hint_right",
+                        "tougher.message.ability_hint_right",
                         "Right click to activate %s...",
                         abilityName));
             }
@@ -1585,14 +1585,14 @@ public final class ManaAbilities implements FeatureModule {
         }
         if (hoeBonus > 0) {
             player.sendOverlayMessage(Component.translatableWithFallback(
-                    "extrahardmode.message.ability_hint_bonus",
+                    "tougher.message.ability_hint_bonus",
                     "Left click to activate %s... (+%s)",
                     abilityName,
                     Component.literal(Integer.toString(hoeBonus))));
             return;
         }
         player.sendOverlayMessage(Component.translatableWithFallback(
-                "extrahardmode.message.ability_hint", "Left click to activate %s...", abilityName));
+                "tougher.message.ability_hint", "Left click to activate %s...", abilityName));
     }
 
     static String heldItemId(ItemStack held) {
@@ -1607,7 +1607,7 @@ public final class ManaAbilities implements FeatureModule {
 
     static void tellAbilityUse(ServerPlayer player, String nameKey, String fallback, double power) {
         player.sendSystemMessage(Component.translatableWithFallback(
-                "extrahardmode.message.ability_use",
+                "tougher.message.ability_use",
                 "You are using the %s ability at level %s!",
                 Component.translatableWithFallback(nameKey, fallback),
                 Component.literal(AbilityRules.powerLabel(power))));
@@ -1822,7 +1822,7 @@ public final class ManaAbilities implements FeatureModule {
         if (remaining > 0) {
             Component name = Component.translatableWithFallback(nameKey, fallback);
             player.sendSystemMessage(Component.translatableWithFallback(
-                    "extrahardmode.message.ability_cooldown",
+                    "tougher.message.ability_cooldown",
                     "%s is ready in %s.",
                     name,
                     AbilityRules.cooldownLabel(remaining)));
@@ -1834,7 +1834,7 @@ public final class ManaAbilities implements FeatureModule {
                 : AbilityRules.hasManaToUse(ability, Achievements.currentMana(player));
         if (!enoughMana) {
             player.sendSystemMessage(Component.translatableWithFallback(
-                    "extrahardmode.message.ability_no_mana", "You need mana to do that."));
+                    "tougher.message.ability_no_mana", "You need mana to do that."));
             markHandled(player);
             return true;
         }

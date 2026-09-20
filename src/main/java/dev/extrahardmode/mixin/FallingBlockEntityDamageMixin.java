@@ -18,7 +18,7 @@ public abstract class FallingBlockEntityDamageMixin {
     private boolean hurtEntities;
 
     @Inject(method = "causeFallDamage", at = @At("HEAD"))
-    private void extrahardmode$fallingDamage(
+    private void tougher$fallingDamage(
             double fallDistance, float multiplier, DamageSource source, CallbackInfoReturnable<Boolean> cir) {
         FallingBlockEntity self = (FallingBlockEntity) (Object) this;
         if (!FeatureBus.guard(self.level(), FallingBlocks.ID)

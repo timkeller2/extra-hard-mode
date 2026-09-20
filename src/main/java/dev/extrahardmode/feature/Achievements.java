@@ -155,7 +155,7 @@ public final class Achievements implements FeatureModule {
         if (EntityHelper.lootless(entity) || Dragon.skipLoot(entity)) {
             return false;
         }
-        return ((LivingEntityLootAccess) entity).extrahardmode$shouldDropLoot(level);
+        return ((LivingEntityLootAccess) entity).tougher$shouldDropLoot(level);
     }
 
     static void tickMana(ServerPlayer player) {
@@ -236,12 +236,12 @@ public final class Achievements implements FeatureModule {
     static void announce(ServerPlayer player, boolean builder, Component subject) {
         Component message = builder
                 ? Component.translatableWithFallback(
-                        "extrahardmode.chat.builder",
+                        "tougher.chat.builder",
                         "%s has achieved the %s builder achievement!",
                         player.getName(),
                         subject)
                 : Component.translatableWithFallback(
-                        "extrahardmode.chat.slayer",
+                        "tougher.chat.slayer",
                         "%s has gained the %s slayer achievement!",
                         player.getName(),
                         subject);
@@ -268,7 +268,7 @@ public final class Achievements implements FeatureModule {
 
     static void give(ServerPlayer player, ItemStack stack) {
         if (!player.addItem(stack)) {
-            ItemEntity dropped = player.drop(stack, false);
+            ItemEntity dropped = player.drop(stack, false, net.minecraft.util.Prediction.SERVER_ONLY);
             if (dropped != null) {
                 dropped.setNoPickUpDelay();
             }
@@ -304,7 +304,7 @@ public final class Achievements implements FeatureModule {
 
     static void announceMana(ServerPlayer player) {
         Component message = Component.translatableWithFallback(
-                "extrahardmode.chat.mana_grow",
+                "tougher.chat.mana_grow",
                 "%s grows in special abilities to level %s!",
                 player.getName(),
                 Component.literal(String.valueOf(manaLevel(player))));
@@ -317,7 +317,7 @@ public final class Achievements implements FeatureModule {
         int required = requiredLapis(player);
         if (AchievementRules.shouldHintLapis(diamonds, lapis, required)) {
             player.sendSystemMessage(Component.translatableWithFallback(
-                    "extrahardmode.message.mana_lapis_needed",
+                    "tougher.message.mana_lapis_needed",
                     "You need %s lapis lazuli blocks to gain a mana level this way.",
                     Component.literal(Integer.toString(required))));
             return false;
@@ -378,12 +378,12 @@ public final class Achievements implements FeatureModule {
         AchievementRules.Progress last = lastPlacedOf(player);
         if (closest.isEmpty() && last == null) {
             send.accept(Component.translatableWithFallback(
-                    "extrahardmode.command.achieve.empty",
+                    "tougher.command.achieve.empty",
                     "You have no in-progress achievements yet. Place blocks or defeat monsters to start them."));
             return 0;
         }
         send.accept(Component.translatableWithFallback(
-                "extrahardmode.command.achieve.paragraph",
+                "tougher.command.achieve.paragraph",
                 "Closest achievements: %s",
                 joinProgress(closest, last)));
         return closest.size() + (last == null ? 0 : 1);
@@ -402,7 +402,7 @@ public final class Achievements implements FeatureModule {
             return;
         }
         send.accept(Component.translatableWithFallback(
-                "extrahardmode.command.achieve.paragraph",
+                "tougher.command.achieve.paragraph",
                 "Closest achievements: %s",
                 joinProgress(closest, last)));
     }
@@ -451,14 +451,14 @@ public final class Achievements implements FeatureModule {
         Component next = Component.literal(Integer.toString(progress.nextTarget()));
         if (lastPlaced) {
             return Component.translatableWithFallback(
-                    "extrahardmode.command.achieve.last_placed",
+                    "tougher.command.achieve.last_placed",
                     "Last placed %s: %s / %s",
                     name,
                     count,
                     next);
         }
         return Component.translatableWithFallback(
-                "extrahardmode.command.achieve.line", "%s: %s / %s", name, count, next);
+                "tougher.command.achieve.line", "%s: %s / %s", name, count, next);
     }
 
     public static Component displayName(AchievementRules.Progress progress) {

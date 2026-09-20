@@ -87,8 +87,8 @@ public enum MessageId {
             false,
             "This is a dangerous place. Make sure you come prepared with arrows and good gear."),
     LOST_ITEMS("lost_items", Kind.TOAST, false, "On death there is a chance you might lose some of your items!"),
-    ENABLED_ON("enabled_on", Kind.TOAST, false, "Extra Hard Mode is on. /gamerule extrahardmode:enabled"),
-    ENABLED_OFF("enabled_off", Kind.TOAST, false, "Extra Hard Mode is off. /gamerule extrahardmode:enabled"),
+    ENABLED_ON("enabled_on", Kind.TOAST, false, "Tougher is on. /gamerule tougher:enabled"),
+    ENABLED_OFF("enabled_off", Kind.TOAST, false, "Tougher is off. /gamerule tougher:enabled"),
     NO_OFFHAND_LIGHT(
             "no_offhand_light",
             Kind.ACTION_BAR,
@@ -131,11 +131,11 @@ public enum MessageId {
     }
 
     public String messageKey() {
-        return "extrahardmode.message." + id;
+        return "tougher.message." + id;
     }
 
     public String toastKey() {
-        return "extrahardmode.toast." + id;
+        return "tougher.toast." + id;
     }
 
     public String silentPermissionPath() {

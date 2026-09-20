@@ -1,7 +1,7 @@
 package dev.extrahardmode.feature;
 
 /**
- * Boats ignore vanilla fall damage. Extra Hard Mode smashes occupied boats
+ * Boats ignore vanilla fall damage. Tougher smashes occupied boats
  * that drop farther than this. Minecraft-free so JUnit can cover the gate.
  */
 public final class BoatRules {

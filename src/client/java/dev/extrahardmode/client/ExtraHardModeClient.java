@@ -367,9 +367,9 @@ public class ExtraHardModeClient implements ClientModInitializer {
     }
 
     private static void showToast(Minecraft client, String messageId, String arg) {
-        Component title = Component.translatableWithFallback("extrahardmode.toast.title", "Extra Hard Mode");
+        Component title = Component.translatableWithFallback("tougher.toast.title", "Tougher");
         Component body = Component.translatableWithFallback(
-                "extrahardmode.toast." + messageId, toastFallback(messageId, arg), arg == null ? "" : arg);
+                "tougher.toast." + messageId, toastFallback(messageId, arg), arg == null ? "" : arg);
         SystemToast.addOrUpdate(client.gui.toastManager(), toastId(messageId), title, body);
     }
 

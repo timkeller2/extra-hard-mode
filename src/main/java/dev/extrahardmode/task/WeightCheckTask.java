@@ -68,7 +68,7 @@ public final class WeightCheckTask {
         player.setAirSupply(Math.max(-20, player.getAirSupply() - 60));
         Vec3 motion = player.getDeltaMovement();
         player.setDeltaMovement(motion.x, Math.min(motion.y, -0.5), motion.z);
-        player.hurtMarked = true;
+        ((dev.extrahardmode.mixin.EntityHurtAccess) player).tougher$markHurt();
     }
 
     public static double inventoryWeight(ServerPlayer player, PlayerSettings settings) {

@@ -18,7 +18,7 @@ public abstract class ServerPlayerHungerMixin {
     private float ehm$lastSyncedSaturation = Float.NaN;
 
     @Inject(method = "checkMovementStatistics", at = @At("HEAD"))
-    private void extrahardmode$movingHunger(double dx, double dy, double dz, CallbackInfo ci) {
+    private void tougher$movingHunger(double dx, double dy, double dz, CallbackInfo ci) {
         Hunger.noteMovement((ServerPlayer) (Object) this, dx, dy, dz);
     }
 

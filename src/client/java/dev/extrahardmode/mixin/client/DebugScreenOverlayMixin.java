@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(DebugScreenOverlay.class)
 public class DebugScreenOverlayMixin {
     @Inject(method = "showDebugScreen", at = @At("HEAD"), cancellable = true)
-    private void extrahardmode$hideF3(CallbackInfoReturnable<Boolean> cir) {
+    private void tougher$hideF3(CallbackInfoReturnable<Boolean> cir) {
         if (!ExtraHardModeClient.f3Allowed()) {
             cir.setReturnValue(false);
         }
