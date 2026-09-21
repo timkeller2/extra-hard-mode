@@ -1,0 +1,66 @@
+name: Release Tougher
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: release-latest
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build remapped jar
+        run: |
+          chmod +x gradlew
+          ./gradlew test remapJar -x runGameTest --no-daemon
+
+      - name: Stage release jars
+        id: jars
+        run: |
+          mkdir -p dist
+          jar=$(find build/libs -maxdepth 1 -name 'tougher-*.jar' ! -name '*sources*' | head -n 1)
+          if [ -z "$jar" ]; then
+            echo "No remapped Tougher jar in build/libs" >&2
+            ls -la build/libs || true
+            exit 1
+          fi
+          cp "$jar" dist/tougher.jar
+          cp "$jar" "dist/$(basename "$jar")"
+          echo "versioned=$(basename "$jar")" >> "$GITHUB_OUTPUT"
+
+      - name: Publish latest GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: latest
+          name: Tougher ${{ github.sha }}
+          body: |
+            Rolling build from `main` (`${{ github.sha }}`).
+
+            Download `tougher.jar` (stable name) or `${{ steps.jars.outputs.versioned }}`.
+
+            Put the jar in `mods/` with Fabric API for Minecraft 26.3, then restart the client and server.
+          artifacts: dist/*
+          artifactErrorsFailBuild: true
+          allowUpdates: true
+          replacesArtifacts: true
+          makeLatest: true
+          omitNameDuringUpdate: false
+          omitBodyDuringUpdate: false

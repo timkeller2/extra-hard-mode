@@ -159,6 +159,10 @@ tasks.register("deployJar") {
 	}
 }
 
+tasks.named("deployJar") {
+	onlyIf { System.getenv("CI").isNullOrEmpty() }
+}
+
 tasks.matching { it.name == "assemble" || it.name == "remapJar" }.configureEach {
 	finalizedBy("deployJar")
 }
