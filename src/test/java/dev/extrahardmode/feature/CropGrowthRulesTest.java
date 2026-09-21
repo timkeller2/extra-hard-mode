@@ -152,6 +152,9 @@ class CropGrowthRulesTest {
         assertEquals(74.0, CropGrowthRules.seasonalLossRate(25, 12 + 63), 1e-9);
         assertEquals(13.0, CropGrowthRules.seasonalLossRate(25, 12 + 124), 1e-9);
         assertEquals(14.0, CropGrowthRules.seasonalLossRate(25, 12 + 125), 1e-9);
+        assertEquals(25.0, CropGrowthRules.seasonalLossRate(25, 12 + 62, false), 1e-9);
+        assertEquals(0.0, CropGrowthRules.seasonalLossRate(0, 40, false), 1e-9);
+        assertEquals(75.0, CropGrowthRules.seasonalLossRate(25, 12 + 62, true), 1e-9);
         assertEquals("26", CropGrowthRules.lossRateLabel(26.0));
         assertEquals("12.5", CropGrowthRules.lossRateLabel(12.5));
         assertEquals(60.0, CropGrowthRules.BEE_INACTIVE_LOSS_RATE, 1e-9);

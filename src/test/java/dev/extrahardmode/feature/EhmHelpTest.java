@@ -48,6 +48,8 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("half as many saplings"));
         assertTrue(String.join(" ", lines).contains("clock"));
         assertTrue(String.join(" ", lines).contains("falls 1% per day"));
+        assertTrue(String.join(" ", lines).contains("changing seasons off"));
+        assertTrue(String.join(" ", lines).contains("base crop loss rate"));
         assertTrue(String.join(" ", lines).contains("soil modifier of the plant's own plot"));
         assertTrue(String.join(" ", lines).contains("never faster than vanilla"));
         assertTrue(String.join(" ", lines).contains("51% loss and"));
@@ -63,8 +65,8 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("8 times as long to restock"));
         assertTrue(String.join(" ", lines).contains("positive is good"));
         assertTrue(String.join(" ", lines).contains("13%"));
-        assertTrue(String.join(" ", lines).contains("Hold a hoe"));
-        assertTrue(String.join(" ", lines).contains("empty hand"));
+        assertTrue(String.join(" ", lines).contains("Look at farmland"));
+        assertTrue(String.join(" ", lines).contains("Look at a torch"));
         assertTrue(String.join(" ", lines).contains("bone meal"));
         assertTrue(String.join(" ", lines).contains("small percent"));
         assertTrue(String.join(" ", lines).contains("red when below 0"));
@@ -115,9 +117,11 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("25 extra experience"));
         assertTrue(String.join(" ", lines).contains("3 experience"));
         assertTrue(String.join(" ", lines).contains("faster hit softer"));
+        assertTrue(String.join(" ", lines).contains("1% per 10 blocks"));
+        assertTrue(String.join(" ", lines).contains("1000 blocks or farther"));
         assertTrue(String.join(" ", lines).contains("look smaller"));
-        assertTrue(String.join(" ", lines).contains("Shields absorb 75%"));
-        assertTrue(String.join(" ", lines).contains("double the durability"));
+        assertTrue(String.join(" ", lines).contains("Shields absorb 100%"));
+        assertTrue(String.join(" ", lines).contains("3 times the durability"));
         assertTrue(String.join(" ", lines).contains("30% harder"));
         assertTrue(String.join(" ", lines).contains("credits"));
         assertTrue(String.join(" ", lines).contains("twice as long"));

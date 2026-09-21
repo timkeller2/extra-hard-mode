@@ -167,7 +167,18 @@ public final class CropGrowthRules {
      * normal, then repeats between those bounds.
      */
     public static double seasonalLossRate(double normalLoss, long dayIndex) {
+        return seasonalLossRate(normalLoss, dayIndex, true);
+    }
+
+    /**
+     * {@code changingSeasons} false always returns the base rate. True swings
+     * from half to {@link #SEASON_MAX_MULTIPLIER} times that rate.
+     */
+    public static double seasonalLossRate(double normalLoss, long dayIndex, boolean changingSeasons) {
         double normal = Math.max(0.0, normalLoss);
+        if (!changingSeasons) {
+            return Math.min(100.0, normal);
+        }
         if (normal == 0.0) {
             return 0.0;
         }
@@ -406,10 +417,7 @@ public final class CropGrowthRules {
         return displayed < 0 ? SOIL_LOOK_COLOR_BAD : SOIL_LOOK_COLOR_GOOD;
     }
 
-    /**
-     * Empty hand, hoes, bone meal, and plantable seeds/seed-crops show the soil
-     * modifier when looking at a plot that has one.
-     */
+    /** Empty hand, hoes, bone meal, and plantable seeds/seed-crops. */
     public static boolean showsSoilLook(String itemId) {
         if (itemId == null || itemId.isEmpty()) {
             return true;

@@ -28,17 +28,20 @@ public final class SeasonAtmosphere {
 
     private static volatile boolean clientFarming;
     private static volatile int clientLossRate = 25;
+    private static volatile boolean clientChangingSeasons = true;
 
     private SeasonAtmosphere() {}
 
-    public static void syncClient(boolean farmingActive, int lossRate) {
+    public static void syncClient(boolean farmingActive, int lossRate, boolean changingSeasons) {
         clientFarming = farmingActive;
         clientLossRate = Math.max(0, lossRate);
+        clientChangingSeasons = changingSeasons;
     }
 
     public static void clearClient() {
         clientFarming = false;
         clientLossRate = 25;
+        clientChangingSeasons = true;
     }
 
     public static boolean beesInactive(Level level) {
@@ -60,7 +63,9 @@ public final class SeasonAtmosphere {
             return 0.0;
         }
         return CropGrowthRules.seasonalLossRate(
-                clientLossRate, CropGrowthRules.dayIndex(level.getOverworldClockTime()));
+                clientLossRate,
+                CropGrowthRules.dayIndex(level.getOverworldClockTime()),
+                clientChangingSeasons);
     }
 
     public static void addLayers(EnvironmentAttributeSystem.Builder builder, Level level) {

@@ -1,6 +1,7 @@
 package dev.extrahardmode.config;
 
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
+import dev.extrahardmode.feature.ShieldRules;
 
 /** Per-dimension player death / environment / weight / armor settings. RootNode defaults. */
 public final class PlayerSettings {
@@ -47,6 +48,8 @@ public final class PlayerSettings {
     private boolean armorEnable = true;
     private double baseSpeed = 0.22;
     private int fullDiamondSlowdownPercent = 0;
+    private int shieldAbsorbPercent = ShieldRules.DEFAULT_ABSORB_PERCENT;
+    private int shieldDurabilityMultiplier = ShieldRules.DEFAULT_DURABILITY_MULTIPLIER;
 
     public boolean environmentEnable() {
         return environmentEnable;
@@ -188,6 +191,14 @@ public final class PlayerSettings {
         return fullDiamondSlowdownPercent;
     }
 
+    public int shieldAbsorbPercent() {
+        return shieldAbsorbPercent;
+    }
+
+    public int shieldDurabilityMultiplier() {
+        return shieldDurabilityMultiplier;
+    }
+
     static void writeDefaults(CommentedFileConfig file) {
         comment(
                 file,
@@ -252,6 +263,16 @@ public final class PlayerSettings {
                 "player.armor.fullDiamondSlowdownPercent",
                 "Movement penalty at 20 armor (full diamond), interpolated by armor points. Default 0 (off). Raise this if a host wants armor to slow players.");
         setIfMissing(file, "player.armor.fullDiamondSlowdownPercent", 0);
+        comment(
+                file,
+                "player.shield.absorbPercent",
+                "Percent of a blocked hit the shield soaks. 100 blocks all of it; 75 lets 25% through. Default 100.");
+        setIfMissing(file, "player.shield.absorbPercent", ShieldRules.DEFAULT_ABSORB_PERCENT);
+        comment(
+                file,
+                "player.shield.durabilityMultiplier",
+                "Shield durability loss is vanilla times this. 1 is vanilla; 3 wears three times as fast. Default 3.");
+        setIfMissing(file, "player.shield.durabilityMultiplier", ShieldRules.DEFAULT_DURABILITY_MULTIPLIER);
     }
 
     void read(CommentedFileConfig file) {
@@ -296,6 +317,10 @@ public final class PlayerSettings {
         armorEnable = file.getOrElse("player.armor.enable", true);
         baseSpeed = number(file, "player.armor.baseSpeed", 0.22);
         fullDiamondSlowdownPercent = file.getOrElse("player.armor.fullDiamondSlowdownPercent", 0);
+        shieldAbsorbPercent = ShieldRules.clampAbsorbPercent(
+                file.getOrElse("player.shield.absorbPercent", ShieldRules.DEFAULT_ABSORB_PERCENT));
+        shieldDurabilityMultiplier = ShieldRules.clampDurabilityMultiplier(
+                file.getOrElse("player.shield.durabilityMultiplier", ShieldRules.DEFAULT_DURABILITY_MULTIPLIER));
     }
 
     void write(CommentedFileConfig file) {
@@ -338,6 +363,8 @@ public final class PlayerSettings {
         file.set("player.armor.enable", armorEnable);
         file.set("player.armor.baseSpeed", baseSpeed);
         file.set("player.armor.fullDiamondSlowdownPercent", fullDiamondSlowdownPercent);
+        file.set("player.shield.absorbPercent", shieldAbsorbPercent);
+        file.set("player.shield.durabilityMultiplier", shieldDurabilityMultiplier);
     }
 
     private static void comment(CommentedFileConfig file, String path, String comment) {

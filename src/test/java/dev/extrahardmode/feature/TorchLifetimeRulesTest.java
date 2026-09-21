@@ -124,23 +124,4 @@ class TorchLifetimeRulesTest {
         assertEquals(TorchLifetimeRules.LIGHT_LOOK_PERMANENT_COLOR, TorchLifetimeRules.lightLookColor(-1));
         assertEquals(TorchLifetimeRules.LIGHT_LOOK_COLOR, TorchLifetimeRules.lightLookColor(24000));
     }
-
-    @Test
-    void showsLightLookForEmptyHandFuelAndTorches() {
-        assertTrue(TorchLifetimeRules.showsLightLook(""));
-        assertTrue(TorchLifetimeRules.showsLightLook(null));
-        assertTrue(TorchLifetimeRules.showsLightLook("minecraft:wooden_hoe"));
-        assertTrue(TorchLifetimeRules.showsLightLook("minecraft:bone_meal"));
-        assertTrue(TorchLifetimeRules.showsLightLook("minecraft:wheat_seeds"));
-        assertTrue(TorchLifetimeRules.showsLightLook("minecraft:torch"));
-        assertTrue(TorchLifetimeRules.showsLightLook("minecraft:copper_torch"));
-        assertTrue(TorchLifetimeRules.showsLightLook("minecraft:copper_wall_torch"));
-        assertTrue(TorchLifetimeRules.showsLightLook("minecraft:campfire"));
-        assertTrue(TorchLifetimeRules.showsLightLook("minecraft:soul_campfire"));
-        assertTrue(TorchLifetimeRules.showsLightLook("minecraft:coal"));
-        assertTrue(TorchLifetimeRules.showsLightLook("minecraft:charcoal"));
-        assertTrue(TorchLifetimeRules.showsLightLook("minecraft:oak_log"));
-        assertFalse(TorchLifetimeRules.showsLightLook("minecraft:stick"));
-        assertFalse(TorchLifetimeRules.showsLightLook("minecraft:diamond"));
-    }
 }

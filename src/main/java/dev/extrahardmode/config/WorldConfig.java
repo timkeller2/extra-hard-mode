@@ -85,6 +85,7 @@ public final class WorldConfig {
     private final PlayerSettings player = new PlayerSettings();
     private boolean weakCrops = true;
     private int lossRate = 25;
+    private boolean changingSeasons = true;
     private boolean infertileDeserts = true;
     private boolean snowBreaksCrops = true;
     private boolean cantCraftMelonSeeds = true;
@@ -401,6 +402,10 @@ public final class WorldConfig {
 
     public int lossRate() {
         return lossRate;
+    }
+
+    public boolean changingSeasons() {
+        return changingSeasons;
     }
 
     public boolean infertileDeserts() {
@@ -1019,7 +1024,11 @@ public final class WorldConfig {
                         file, "falling.dropAsItemWhenBlocked", "Drop an item when a falling block cannot place.", false);
                 writeDefaultIfMissing(
                         file, "skeletons.snowballEnable", "Bogged share this table; strays/wither skeletons do not.", true);
-                writeDefaultIfMissing(file, "skeletons.snowballPercent", "Ordered specials: first success wins.", 20);
+                writeDefaultIfMissing(
+                        file,
+                        "skeletons.snowballPercent",
+                        "Ordered specials: first success wins. The table only runs when a spawn-distance roll succeeds: 1% per 10 blocks from world spawn, certain at 1000.",
+                        20);
                 writeDefaultIfMissing(file, "skeletons.snowballBlindTicks", "Blindness duration on tagged arrow hit.", 100);
                 writeDefaultIfMissing(file, "skeletons.fireworkEnable", true);
                 writeDefaultIfMissing(file, "skeletons.fireworkPercent", 30);
@@ -1290,6 +1299,7 @@ public final class WorldConfig {
                 player.write(file);
                 file.set("farming.weakCrops", weakCrops);
                 file.set("farming.lossRate", lossRate);
+                file.set("farming.changingSeasons", changingSeasons);
                 file.set("farming.infertileDeserts", infertileDeserts);
                 file.set("farming.snowBreaksCrops", snowBreaksCrops);
                 file.set("farming.cantCraftMelonSeeds", cantCraftMelonSeeds);
@@ -1473,6 +1483,7 @@ public final class WorldConfig {
         player.read(file);
         weakCrops = file.getOrElse("farming.weakCrops", true);
         lossRate = file.getOrElse("farming.lossRate", 25);
+        changingSeasons = file.getOrElse("farming.changingSeasons", true);
         infertileDeserts = file.getOrElse("farming.infertileDeserts", true);
         snowBreaksCrops = file.getOrElse("farming.snowBreaksCrops", true);
         cantCraftMelonSeeds = file.getOrElse("farming.cantCraftMelonSeeds", true);
@@ -1598,6 +1609,11 @@ public final class WorldConfig {
                 "Crops may die at full growth. 25% even when tended; dark always dies; no separate needWater toggle.",
                 true);
         writeDefaultIfMissing(file, "farming.lossRate", "Base death percent at full growth (original 25).", 25);
+        writeDefaultIfMissing(
+                file,
+                "farming.changingSeasons",
+                "If true, crop loss and growth swing each day from half the base loss up to three times it. If false, always use farming.lossRate. Default true.",
+                true);
         writeDefaultIfMissing(
                 file, "farming.infertileDeserts", "Desert biomes add +50% crop death; trees/mushrooms will not grow.", true);
         writeDefaultIfMissing(file, "farming.snowBreaksCrops", "Snow-covered crops die on random tick.", true);

@@ -155,7 +155,9 @@ public record ClientboundSyncPayload(
                         global.tutorialMaxShows(),
                         config.f3Enabled(),
                         new DisplayExtras.SeasonBits(
-                                WorldGate.isModuleActive(level, AntiFarming.ID), config.lossRate())));
+                                WorldGate.isModuleActive(level, AntiFarming.ID),
+                                config.lossRate(),
+                                config.changingSeasons())));
     }
 
     private Flags flags() {
@@ -256,14 +258,16 @@ public record ClientboundSyncPayload(
                 DisplayExtras::season,
                 DisplayExtras::new);
 
-        public record SeasonBits(boolean antiFarming, int lossRate) {
-            static final SeasonBits INACTIVE = new SeasonBits(false, 25);
+        public record SeasonBits(boolean antiFarming, int lossRate, boolean changingSeasons) {
+            static final SeasonBits INACTIVE = new SeasonBits(false, 25, true);
 
             static final StreamCodec<ByteBuf, SeasonBits> STREAM_CODEC = StreamCodec.composite(
                     ByteBufCodecs.BOOL,
                     SeasonBits::antiFarming,
                     ByteBufCodecs.VAR_INT,
                     SeasonBits::lossRate,
+                    ByteBufCodecs.BOOL,
+                    SeasonBits::changingSeasons,
                     SeasonBits::new);
         }
     }

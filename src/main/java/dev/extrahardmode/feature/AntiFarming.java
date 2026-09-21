@@ -169,12 +169,17 @@ public final class AntiFarming implements FeatureModule {
     }
 
     public static double currentSeasonalLossRate(ServerLevel level) {
-        return CropGrowthRules.seasonalLossRate(ConfigManager.world(level).lossRate(), overworldDay(level));
+        WorldConfig config = ConfigManager.world(level);
+        return CropGrowthRules.seasonalLossRate(
+                config.lossRate(), overworldDay(level), config.changingSeasons());
     }
 
     public static int currentSeasonalDurationPercent(ServerLevel level, int baseDurationPercent) {
-        return CropGrowthRules.seasonalDurationPercent(
-                baseDurationPercent, ConfigManager.world(level).lossRate(), overworldDay(level));
+        return CropGrowthRules.durationPercent(
+                baseDurationPercent,
+                ConfigManager.world(level).lossRate(),
+                currentSeasonalLossRate(level),
+                0);
     }
 
     public static int currentDurationPercent(ServerLevel level, BlockPos pos, int baseDurationPercent) {
@@ -525,7 +530,7 @@ public final class AntiFarming implements FeatureModule {
             sendSoilLook(player, null);
             return;
         }
-        if (EhmApi.playerBypasses(player) || !showsSoilLook(player.getMainHandItem())) {
+        if (EhmApi.playerBypasses(player)) {
             sendSoilLook(player, null);
             return;
         }
@@ -541,25 +546,6 @@ public final class AntiFarming implements FeatureModule {
             return;
         }
         sendSoilLook(player, CropGrowthRules.displayedModifier(data.modifier(soil)));
-    }
-
-    static boolean showsSoilLook(ItemStack stack) {
-        if (stack == null || stack.isEmpty()) {
-            return true;
-        }
-        if (stack.is(ItemTags.HOES) || stack.is(Items.BONE_MEAL)) {
-            return true;
-        }
-        if (stack.getItem() instanceof BlockItem blockItem) {
-            Block block = blockItem.getBlock();
-            if (isPlantedCrop(block)
-                    || isFarmHarvestBlock(block)
-                    || block instanceof NetherWartBlock
-                    || block instanceof CocoaBlock) {
-                return true;
-            }
-        }
-        return CropGrowthRules.showsSoilLook(itemId(stack));
     }
 
     static BlockPos soilForLook(ServerLevel level, BlockPos pos) {

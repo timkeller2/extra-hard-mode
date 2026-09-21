@@ -14,7 +14,10 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
+import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.storage.LevelData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
@@ -41,10 +44,15 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * Ordered special projectiles for Skeleton and Bogged only (KD-16). First success
- * wins; a 100% earlier entry starves later ones.
+ * wins; a 100% earlier entry starves later ones. The whole table is skipped unless
+ * a distance roll from world spawn succeeds: 1% per 10 blocks, certain at 1000+.
  */
 public final class Skeletons implements FeatureModule {
     public static final Identifier ID = ExtraHardModeMod.id("skeletons");
+    /** One percent of special attacks per this many blocks from world spawn. */
+    public static final int SPECIAL_BLOCKS_PER_PERCENT = 10;
+    /** At this distance and farther, special attacks are always allowed. */
+    public static final int SPECIAL_FULL_DISTANCE = 1000;
 
     public static final String SPECIAL_SNOWBALL = "snowball";
     public static final String SPECIAL_FIREWORK = "firework";
@@ -71,6 +79,7 @@ public final class Skeletons implements FeatureModule {
         bus.listen(ServerLivingEntityEvents.ALLOW_DAMAGE, ID, Skeletons::onAllowDamage);
         bus.listen(ServerLivingEntityEvents.AFTER_DAMAGE, ID, Skeletons::onAfterDamage);
         bus.listen(ServerLivingEntityEvents.AFTER_DEATH, ID, Skeletons::onAfterDeath);
+        bus.listen(ServerEntityEvents.ENTITY_LOAD, ID, Skeletons::onLoad);
     }
 
     /** Strays, wither skeletons, and Parched are excluded (KD-16). */
@@ -90,6 +99,21 @@ public final class Skeletons implements FeatureModule {
             ExtraHardModeMod.LOGGER.warn(
                     "EHM AbstractSkeleton performRangedAttack inject did not apply; skeleton special projectiles disabled. Lithium or another mixin may have replaced performRangedAttack.");
         }
+    }
+
+    /**
+     * 0 at spawn, 1% per {@link #SPECIAL_BLOCKS_PER_PERCENT} blocks, 100 at
+     * {@link #SPECIAL_FULL_DISTANCE} and farther. Horizontal distance.
+     */
+    public static int specialChancePercent(double horizontalBlocks) {
+        if (!Double.isFinite(horizontalBlocks) || horizontalBlocks <= 0.0) {
+            return 0;
+        }
+        long percent = (long) Math.floor(horizontalBlocks / SPECIAL_BLOCKS_PER_PERCENT);
+        if (percent >= 100L) {
+            return 100;
+        }
+        return (int) percent;
     }
 
     public static boolean percentChance(RandomSource random, int percent) {
@@ -157,13 +181,50 @@ public final class Skeletons implements FeatureModule {
             float velocity,
             float inaccuracy) {
         WorldConfig config = ConfigManager.world(level);
-        Special special = roll(skeleton, config);
+        Special special = Special.NONE;
+        if (percentChance(skeleton.getRandom(), specialChance(skeleton, level))) {
+            special = roll(skeleton, config);
+        }
         if (special == Special.SILVERFISH && spawnSilverfish(skeleton, level, config, x, y, z, velocity)) {
             return arrow;
         }
         Projectile spawned = Projectile.spawnProjectileUsingShoot(arrow, level, stack, x, y, z, velocity, inaccuracy);
         applySpecial(skeleton, spawned, special, level);
         return spawned;
+    }
+
+    static void onLoad(Entity entity, ServerLevel level) {
+        if (!WorldGate.isModuleActive(level, ID)
+                || !(entity instanceof AbstractSkeleton skeleton)
+                || !isSpecialShooter(skeleton)) {
+            return;
+        }
+        if (skeleton.getAttached(EhmAttachments.EHM_SKELETON_SPECIAL_PERCENT) != null) {
+            return;
+        }
+        stampSpecialChance(skeleton, level);
+    }
+
+    /** Stored spawn-distance chance, stamped once so walking closer does not change it. */
+    static int specialChance(AbstractSkeleton skeleton, ServerLevel level) {
+        Integer stored = skeleton.getAttached(EhmAttachments.EHM_SKELETON_SPECIAL_PERCENT);
+        if (stored != null) {
+            return Math.max(0, Math.min(100, stored));
+        }
+        return stampSpecialChance(skeleton, level);
+    }
+
+    static int stampSpecialChance(AbstractSkeleton skeleton, ServerLevel level) {
+        int percent = 100;
+        LevelData.RespawnData respawn = level.getServer().getRespawnData();
+        if (respawn.dimension().equals(level.dimension())) {
+            BlockPos spawn = respawn.pos();
+            double dx = skeleton.getX() - (spawn.getX() + 0.5);
+            double dz = skeleton.getZ() - (spawn.getZ() + 0.5);
+            percent = specialChancePercent(Math.sqrt(dx * dx + dz * dz));
+        }
+        skeleton.setAttached(EhmAttachments.EHM_SKELETON_SPECIAL_PERCENT, percent);
+        return percent;
     }
 
     public static boolean tryDeflect(AbstractArrow arrow, Entity target) {

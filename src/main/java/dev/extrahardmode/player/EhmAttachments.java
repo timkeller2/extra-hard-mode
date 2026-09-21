@@ -101,6 +101,13 @@ public final class EhmAttachments {
     /** Transient shot tag: snowball / firework / fireball. */
     public static final AttachmentType<String> EHM_SKELETON_SPECIAL =
             AttachmentRegistry.create(ExtraHardModeMod.id("skeleton_special"));
+    /**
+     * Chance (0–100) this skeleton's attacks use a special, stamped from horizontal
+     * distance to world spawn when it first loads. 1% per 10 blocks, 100 at 1000+.
+     */
+    public static final AttachmentType<Integer> EHM_SKELETON_SPECIAL_PERCENT = AttachmentRegistry.create(
+            ExtraHardModeMod.id("skeleton_special_percent"),
+            builder -> builder.persistent(Codec.INT));
 
     /** Transient; caches the one deflect roll for this arrow so mixin + ALLOW_DAMAGE cannot double-roll. */
     public static final AttachmentType<Boolean> EHM_ARROW_DEFLECT =

@@ -162,7 +162,7 @@ public final class Players implements FeatureModule {
         return true;
     }
 
-    /** Vanilla blocked amount after Tougher: 75% soak, 25% leak. */
+    /** Vanilla blocked amount after Tougher. Config percent of that amount is soaked. */
     public static float scaleBlockedDamage(LivingEntity entity, ServerLevel level, float blocked) {
         if (blocked <= 0.0F || !WorldGate.isModuleActive(level, ID)) {
             return blocked;
@@ -170,10 +170,10 @@ public final class Players implements FeatureModule {
         if (entity instanceof ServerPlayer player && EhmApi.playerBypasses(player)) {
             return blocked;
         }
-        return ShieldRules.absorbed(blocked);
+        return ShieldRules.absorbed(blocked, ConfigManager.world(level).player().shieldAbsorbPercent());
     }
 
-    /** Vanilla shield item-damage after Tougher: twice the durability hit. */
+    /** Vanilla shield item-damage after Tougher, times the configured durability multiplier. */
     public static int scaleShieldDurability(LivingEntity entity, Level level, int amount) {
         if (amount <= 0 || !(level instanceof ServerLevel server) || !WorldGate.isModuleActive(server, ID)) {
             return amount;
@@ -181,7 +181,7 @@ public final class Players implements FeatureModule {
         if (entity instanceof ServerPlayer player && EhmApi.playerBypasses(player)) {
             return amount;
         }
-        return ShieldRules.durabilityHit(amount);
+        return ShieldRules.durabilityHit(amount, ConfigManager.world(server).player().shieldDurabilityMultiplier());
     }
 
     /**

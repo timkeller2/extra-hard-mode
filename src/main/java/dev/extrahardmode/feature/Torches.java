@@ -492,7 +492,7 @@ public final class Torches implements FeatureModule {
             sendLightLook(player, null);
             return;
         }
-        if (EhmApi.playerBypasses(player) || !showsLightLook(player.getMainHandItem())) {
+        if (EhmApi.playerBypasses(player)) {
             sendLightLook(player, null);
             return;
         }
@@ -514,36 +514,6 @@ public final class Torches implements FeatureModule {
                 player,
                 TorchLifetimeRules.remainingTicks(
                         TorchLifetimeData.of(level).placedAt(pos), level.getGameTime(), burnDays));
-    }
-
-    static boolean showsLightLook(ItemStack stack) {
-        if (stack == null || stack.isEmpty()) {
-            return true;
-        }
-        if (stack.is(Items.COAL)
-                || stack.is(Items.CHARCOAL)
-                || stack.is(Items.BONE_MEAL)
-                || stack.is(ItemTags.LOGS)
-                || stack.is(ItemTags.HOES)) {
-            return true;
-        }
-        if (stack.getItem() instanceof BlockItem blockItem) {
-            Block block = blockItem.getBlock();
-            if (isBurnableTorch(block) || isCampfire(block)) {
-                return true;
-            }
-        }
-        return TorchLifetimeRules.showsLightLook(itemId(stack));
-    }
-
-    static String itemId(ItemStack stack) {
-        if (stack == null || stack.isEmpty()) {
-            return "";
-        }
-        return stack.typeHolder()
-                .unwrapKey()
-                .map(key -> key.identifier().toString())
-                .orElse("");
     }
 
     static void sendLightLook(ServerPlayer player, Integer remainingTicks) {

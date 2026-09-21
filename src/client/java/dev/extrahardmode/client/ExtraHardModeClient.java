@@ -292,7 +292,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(ClientboundSyncPayload.TYPE, (payload, context) -> {
             lastSync = payload;
             ClientboundSyncPayload.DisplayExtras.SeasonBits season = payload.extras().season();
-            SeasonAtmosphere.syncClient(season.antiFarming(), season.lossRate());
+            SeasonAtmosphere.syncClient(season.antiFarming(), season.lossRate(), season.changingSeasons());
         });
         ClientPlayNetworking.registerGlobalReceiver(ClientboundToastPayload.TYPE, ExtraHardModeClient::onToast);
         ClientPlayNetworking.registerGlobalReceiver(

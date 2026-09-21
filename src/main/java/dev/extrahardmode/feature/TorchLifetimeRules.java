@@ -169,35 +169,4 @@ public final class TorchLifetimeRules {
     public static int lightLookColor(int remainingTicks) {
         return remainingTicks < 0 ? LIGHT_LOOK_PERMANENT_COLOR : LIGHT_LOOK_COLOR;
     }
-
-    /**
-     * Empty hand, hoe, seeds, bone meal, torches, campfires, coal, charcoal, and logs
-     * show remaining burn time when looking at a torch or campfire.
-     */
-    public static boolean showsLightLook(String itemId) {
-        if (CropGrowthRules.showsSoilLook(itemId)) {
-            return true;
-        }
-        if (itemId == null || itemId.isEmpty()) {
-            return true;
-        }
-        String path = itemId;
-        int slash = itemId.indexOf(':');
-        if (slash >= 0) {
-            path = itemId.substring(slash + 1);
-        }
-        if (isTorchFuelItemId(itemId) || "coal".equals(path) || "charcoal".equals(path)) {
-            return true;
-        }
-        if (path.endsWith("_torch") || "torch".equals(path)) {
-            return true;
-        }
-        if (path.contains("campfire")) {
-            return true;
-        }
-        return path.endsWith("_log")
-                || path.endsWith("_wood")
-                || path.endsWith("_stem")
-                || path.endsWith("_hyphae");
-    }
 }
