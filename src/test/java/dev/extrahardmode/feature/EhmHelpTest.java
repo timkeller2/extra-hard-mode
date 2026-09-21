@@ -2,8 +2,14 @@ package dev.extrahardmode.feature;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 
 class EhmHelpTest {
@@ -12,6 +18,9 @@ class EhmHelpTest {
         var lines = EhmHelp.featureHelpLines();
         assertEquals(lines.size(), EhmHelp.featureHelpKeys().size());
         assertTrue(lines.getFirst().contains("/tougher ability help"));
+        for (String line : lines) {
+            assertTrue(line.length() <= EhmHelp.MAX_LINE_CHARS, line);
+        }
         assertTrue(String.join(" ", lines).contains("1/4"));
         assertTrue(String.join(" ", lines).contains("/ 200 per minute"));
         assertTrue(String.join(" ", lines).contains("saturation"));
@@ -34,6 +43,9 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("a golden sword for Smite Evil"));
         assertTrue(String.join(" ", lines).contains("+2 on any ability"));
         assertTrue(String.join(" ", lines).contains("half your mana level"));
+        assertTrue(String.join(" ", lines).contains("wise teacher"));
+        assertTrue(String.join(" ", lines).contains("48 emeralds"));
+        assertTrue(String.join(" ", lines).contains("lapis lazuli block"));
         assertTrue(String.join(" ", lines).contains("Redstone dust"));
         assertTrue(String.join(" ", lines).contains("Pumpkins and melons"));
         assertTrue(String.join(" ", lines).contains("drop no seeds"));
@@ -140,7 +152,10 @@ class EhmHelpTest {
     void homesHelpListsChecklistAndPoints() {
         var lines = EhmHelp.homesHelpLines();
         assertEquals(lines.size(), EhmHelp.homesHelpKeys().size());
-        assertEquals(7, lines.size());
+        assertTrue(lines.size() > 7);
+        for (String line : lines) {
+            assertTrue(line.length() <= EhmHelp.MAX_LINE_CHARS, line);
+        }
         String all = String.join(" ", lines);
         assertTrue(all.contains("/tougher help homes"));
         assertTrue(all.contains("24 to 300"));
@@ -172,20 +187,102 @@ class EhmHelpTest {
         var lines = EhmHelp.abilityHelpLines();
         var keys = EhmHelp.abilityHelpKeys();
         assertEquals(lines.size(), keys.size());
-        assertEquals(1 + AbilityRules.indexHelpLines().size() + AbilityRules.ABILITY_IDS.size(), lines.size());
+        assertEquals(AbilityRules.powerHelpLines().size() + AbilityRules.indexHelpLines().size(), lines.size());
         assertTrue(lines.getFirst().startsWith("Base power:"));
-        assertTrue(lines.stream().anyMatch(line -> line.startsWith("Healing:")));
-        assertTrue(lines.stream().anyMatch(line -> line.startsWith("Iron Heart:")));
-        assertTrue(lines.stream().anyMatch(line -> line.startsWith("Fire bolt:")));
-        assertTrue(lines.stream().anyMatch(line -> line.startsWith("Magic arrow:")));
-        assertTrue(lines.stream().anyMatch(line -> line.startsWith("Flight:")));
-        assertTrue(lines.stream().anyMatch(line -> line.startsWith("Let it grow:")));
-        assertTrue(lines.stream().anyMatch(line -> line.contains("Unbreaking can skip that wear")));
-        assertTrue(lines.stream().anyMatch(line -> line.startsWith("Power mining:")));
-        assertTrue(lines.stream().anyMatch(line -> line.startsWith("Detect ore:")));
-        assertTrue(lines.stream().anyMatch(line -> line.startsWith("Slow:")));
-        assertTrue(lines.stream().anyMatch(line -> line.startsWith("Sense Evil:")));
-        assertTrue(lines.stream().anyMatch(line -> line.startsWith("Smite Evil:")));
-        assertTrue(lines.stream().anyMatch(line -> line.startsWith("Let there be light:")));
+        String index = String.join(" ", lines);
+        assertTrue(index.contains("Paper: Healing"));
+        assertTrue(index.contains("Golden sword: Smite Evil"));
+        assertTrue(index.contains("/tougher ability help <name>"));
+        assertTrue(lines.stream().noneMatch(line -> line.startsWith("Healing:")));
+        for (String ability : AbilityRules.ABILITY_IDS) {
+            var page = EhmHelp.abilityPage(ability);
+            assertEquals(page.lines().size(), page.keys().size());
+            assertTrue(page.lines().stream().anyMatch(line -> line.contains(":")));
+            for (String line : page.lines()) {
+                assertTrue(line.length() <= EhmHelp.MAX_LINE_CHARS, line);
+            }
+        }
+        assertTrue(EhmHelp.resolve("healing").lines().stream().anyMatch(line -> line.startsWith("Healing:")));
+        assertTrue(EhmHelp.resolve("iron heart").lines().stream().anyMatch(line -> line.startsWith("Iron Heart:")));
+        assertTrue(EhmHelp.resolve("fire bolt").lines().stream().anyMatch(line -> line.startsWith("Fire bolt:")));
+        assertTrue(EhmHelp.resolve("magic arrow").lines().stream().anyMatch(line -> line.contains("does not ignite")));
+        assertTrue(EhmHelp.resolve("flight").lines().stream().anyMatch(line -> line.startsWith("Flight:")));
+        assertTrue(EhmHelp.resolve("grow").lines().stream().anyMatch(line -> line.contains("Unbreaking can skip that wear")));
+        assertTrue(EhmHelp.resolve("power mine").lines().stream().anyMatch(line -> line.startsWith("Power mining:")));
+        assertTrue(EhmHelp.resolve("detect ore").lines().stream().anyMatch(line -> line.startsWith("Detect ore:")));
+        assertTrue(EhmHelp.resolve("slow").lines().stream().anyMatch(line -> line.startsWith("Slow:")));
+        assertTrue(EhmHelp.resolve("sense evil").lines().stream().anyMatch(line -> line.startsWith("Sense Evil:")));
+        assertTrue(EhmHelp.resolve("smite evil").lines().stream().anyMatch(line -> line.startsWith("Smite Evil:")));
+        assertTrue(EhmHelp.resolve("light").lines().stream().anyMatch(line -> line.startsWith("Let there be light:")));
+        assertTrue(EhmHelp.resolve("ability fire bolt").lines().stream().anyMatch(line -> line.startsWith("Fire bolt:")));
+    }
+
+    @Test
+    void topicsStaySeparateAndShort() {
+        var farming = EhmHelp.resolve("farming");
+        String farmText = String.join(" ", farming.lines());
+        assertTrue(farmText.contains("overgraze"));
+        assertTrue(farmText.contains("1d10"));
+        assertTrue(farmText.contains("bone meal"));
+        assertFalse(farmText.contains("Stone and deepslate"));
+        assertTrue(farming.lines().size() < 40);
+        assertEquals(null, EhmHelp.resolve("nope"));
+        assertEquals(null, EhmHelp.resolve("  "));
+        var mining = EhmHelp.resolve("mining");
+        assertFalse(String.join(" ", mining.lines()).contains("overgraze"));
+        for (String topic : EhmHelp.topicSuggestions()) {
+            var page = EhmHelp.resolve(topic);
+            assertTrue(page != null && !page.lines().isEmpty(), topic);
+            for (String line : page.lines()) {
+                assertTrue(line.length() <= EhmHelp.MAX_LINE_CHARS, topic + ": " + line);
+            }
+        }
+    }
+
+    @Test
+    void languageFileDoesNotRestoreLongHelp() throws Exception {
+        Map<String, String> lang = langEntries();
+        assertFalse(lang.containsKey("tougher.help.feature.5"));
+        assertFalse(lang.containsKey("tougher.help.homes.5"));
+        assertFalse(lang.containsKey("tougher.ability.heal.help"));
+        assertFalse(lang.containsKey("tougher.ability.power.help"));
+        var pages = new java.util.ArrayList<EhmHelp.Page>();
+        pages.add(EhmHelp.abilityIndex());
+        for (String ability : AbilityRules.ABILITY_IDS) {
+            pages.add(EhmHelp.abilityPage(ability));
+        }
+        for (String topic : EhmHelp.topicSuggestions()) {
+            pages.add(EhmHelp.resolve(topic));
+        }
+        for (EhmHelp.Page page : pages) {
+            for (int i = 0; i < page.lines().size(); i++) {
+                String key = page.keys().get(i);
+                String line = page.lines().get(i);
+                if (lang.containsKey(key)) {
+                    assertEquals(line, lang.get(key), key);
+                }
+                assertTrue(line.length() <= EhmHelp.MAX_LINE_CHARS, key);
+            }
+        }
+        for (var entry : lang.entrySet()) {
+            String key = entry.getKey();
+            if (key.startsWith("tougher.help.") || key.contains(".help")) {
+                assertTrue(entry.getValue().length() <= EhmHelp.MAX_LINE_CHARS, key);
+            }
+        }
+    }
+
+    private static Map<String, String> langEntries() throws Exception {
+        try (var in = EhmHelp.class.getResourceAsStream("/assets/tougher/lang/en_us.json")) {
+            assertNotNull(in);
+            String text = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+            Matcher matcher = Pattern.compile("\"(tougher\\.[^\"]+)\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"")
+                    .matcher(text);
+            Map<String, String> entries = new HashMap<>();
+            while (matcher.find()) {
+                entries.put(matcher.group(1), matcher.group(2));
+            }
+            return entries;
+        }
     }
 }

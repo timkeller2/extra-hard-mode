@@ -289,7 +289,7 @@ public final class Achievements implements FeatureModule {
         }
     }
 
-    static void grantMana(ServerPlayer player, int levels) {
+    public static void grantMana(ServerPlayer player, int levels) {
         if (levels <= 0) {
             return;
         }

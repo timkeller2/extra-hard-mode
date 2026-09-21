@@ -2094,6 +2094,28 @@ public final class ManaAbilities implements FeatureModule {
                 AbilityRules.isTrained(manaLevel, learnedSet(player), ability));
     }
 
+    /**
+     * Learn an ability from a wise teacher. Ignores the mana-level slot cap.
+     * False when it is already known or not a real ability.
+     */
+    public static boolean teachAbility(ServerPlayer player, String ability) {
+        if (player == null || !AbilityRules.ABILITY_IDS.contains(ability)) {
+            return false;
+        }
+        ensureLearnedMigrated(player);
+        if (AbilityRules.isLearned(learnedSet(player), ability)) {
+            return false;
+        }
+        List<String> next = new ArrayList<>(learnedSet(player));
+        next.add(ability);
+        player.setAttached(EhmAttachments.EHM_ABILITY_LEARNED, next);
+        return true;
+    }
+
+    public static boolean knowsAbility(ServerPlayer player, String ability) {
+        return AbilityRules.isLearned(learnedSet(player), ability);
+    }
+
     static void recordAbilityUse(ServerPlayer player, String ability) {
         ensureLearnedMigrated(player);
         putInt(player, EhmAttachments.EHM_ABILITY_USES, ability, uses(player, ability) + 1);

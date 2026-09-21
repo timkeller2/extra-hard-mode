@@ -10,6 +10,7 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.config.WorldConfig;
+import dev.extrahardmode.feature.AbilityRules;
 import dev.extrahardmode.feature.Achievements;
 import dev.extrahardmode.feature.EhmHelp;
 import dev.extrahardmode.feature.ManaAbilities;
@@ -80,6 +81,12 @@ public final class EhmCommands {
     private static final SuggestionProvider<CommandSourceStack> MODULE_SUGGESTOR =
             (context, builder) -> SharedSuggestionProvider.suggest(MODULE_SUGGESTIONS, builder);
 
+    private static final SuggestionProvider<CommandSourceStack> TOPIC_SUGGESTOR =
+            (context, builder) -> SharedSuggestionProvider.suggest(EhmHelp.topicSuggestions(), builder);
+
+    private static final SuggestionProvider<CommandSourceStack> ABILITY_SUGGESTOR =
+            (context, builder) -> SharedSuggestionProvider.suggest(AbilityRules.abilityTopics(), builder);
+
     private EhmCommands() {}
 
     public static void register() {
@@ -95,10 +102,17 @@ public final class EhmCommands {
                 .then(Commands.literal("help")
                         .executes(EhmCommands::featureHelp)
                         .then(Commands.literal("ability").executes(EhmCommands::abilityHelp))
-                        .then(Commands.literal("homes").executes(EhmCommands::homesHelp)))
+                        .then(Commands.literal("homes").executes(EhmCommands::homesHelp))
+                        .then(Commands.argument("topic", StringArgumentType.greedyString())
+                                .suggests(TOPIC_SUGGESTOR)
+                                .executes(EhmCommands::topicHelp)))
                 .then(Commands.literal("ability")
                         .executes(EhmCommands::abilityHelp)
-                        .then(Commands.literal("help").executes(EhmCommands::abilityHelp)))
+                        .then(Commands.literal("help")
+                                .executes(EhmCommands::abilityHelp)
+                                .then(Commands.argument("name", StringArgumentType.greedyString())
+                                        .suggests(ABILITY_SUGGESTOR)
+                                        .executes(EhmCommands::abilityTopicHelp))))
                 .then(Commands.literal("homes")
                         .executes(EhmCommands::homesHelp)
                         .then(Commands.literal("help").executes(EhmCommands::homesHelp)))
@@ -144,15 +158,43 @@ public final class EhmCommands {
     }
 
     private static int featureHelp(CommandContext<CommandSourceStack> context) {
-        return sendLines(context.getSource(), EhmHelp.featureHelpKeys(), EhmHelp.featureHelpLines());
+        return sendPage(context.getSource(), EhmHelp.overview());
+    }
+
+    private static int topicHelp(CommandContext<CommandSourceStack> context) {
+        String topic = StringArgumentType.getString(context, "topic");
+        EhmHelp.Page page = EhmHelp.resolve(topic);
+        if (page == null) {
+            context.getSource()
+                    .sendFailure(Component.translatableWithFallback(
+                            EhmHelp.UNKNOWN_TOPIC_KEY, EhmHelp.UNKNOWN_TOPIC_FALLBACK, topic.trim()));
+            return 0;
+        }
+        return sendPage(context.getSource(), page);
     }
 
     private static int abilityHelp(CommandContext<CommandSourceStack> context) {
-        return sendLines(context.getSource(), EhmHelp.abilityHelpKeys(), EhmHelp.abilityHelpLines());
+        return sendPage(context.getSource(), EhmHelp.abilityIndex());
+    }
+
+    private static int abilityTopicHelp(CommandContext<CommandSourceStack> context) {
+        String name = StringArgumentType.getString(context, "name");
+        String ability = AbilityRules.abilityByTopic(name);
+        if (ability == null) {
+            context.getSource()
+                    .sendFailure(Component.translatableWithFallback(
+                            EhmHelp.UNKNOWN_ABILITY_KEY, EhmHelp.UNKNOWN_ABILITY_FALLBACK, name.trim()));
+            return 0;
+        }
+        return sendPage(context.getSource(), EhmHelp.abilityPage(ability));
     }
 
     private static int homesHelp(CommandContext<CommandSourceStack> context) {
-        return sendLines(context.getSource(), EhmHelp.homesHelpKeys(), EhmHelp.homesHelpLines());
+        return sendPage(context.getSource(), EhmHelp.resolve("homes"));
+    }
+
+    private static int sendPage(CommandSourceStack source, EhmHelp.Page page) {
+        return sendLines(source, page.keys(), page.lines());
     }
 
     private static int achieve(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {

@@ -129,6 +129,9 @@ class InhabitantRulesTest {
                 List.of("hauler", "cook", "farm", "bounty", "trader", "wealthy", "council"),
                 InhabitantRules.unseenSpecialties(List.of(), 18));
         assertTrue(InhabitantRules.unseenSpecialties(List.of(), 24).contains(InhabitantRules.ARMORSMITH));
+        assertTrue(InhabitantRules.unseenSpecialties(List.of(), 24).contains(InhabitantRules.WISE_TEACHER));
+        assertFalse(InhabitantRules.specialtyAllowed(InhabitantRules.WISE_TEACHER, 23));
+        assertTrue(InhabitantRules.specialtyAllowed(InhabitantRules.WISE_TEACHER, 24));
         assertTrue(InhabitantRules.unseenSpecialties(List.of(), 30).contains(InhabitantRules.MASTER_ARMORSMITH));
         assertFalse(InhabitantRules.specialtyAllowed(InhabitantRules.ARMORSMITH, 23));
         assertTrue(InhabitantRules.specialtyAllowed(InhabitantRules.ARMORSMITH, 24));
@@ -151,6 +154,24 @@ class InhabitantRulesTest {
         assertEquals("master armorsmith", InhabitantRules.specialtyFallback(InhabitantRules.MASTER_ARMORSMITH));
         assertEquals("wealthy trader", InhabitantRules.specialtyFallback(InhabitantRules.WEALTHY));
         assertEquals("council member", InhabitantRules.specialtyFallback(InhabitantRules.COUNCIL));
+        assertEquals("wise teacher", InhabitantRules.specialtyFallback(InhabitantRules.WISE_TEACHER));
+        assertEquals(48, InhabitantRules.WISE_ABILITY_EMERALDS);
+        assertEquals(AbilityRules.HEAL, InhabitantRules.pickWiseAbility(0));
+        assertEquals(AbilityRules.ABILITY_IDS.get(1), InhabitantRules.pickWiseAbility(1));
+        assertTrue(InhabitantRules.shouldTeachAbility(false, 48, 48));
+        assertFalse(InhabitantRules.shouldTeachAbility(true, 48, 48));
+        assertFalse(InhabitantRules.shouldTeachAbility(false, 47, 48));
+        assertTrue(InhabitantRules.shouldTeachMana(true, true, true, false));
+        assertFalse(InhabitantRules.shouldTeachMana(true, true, true, true));
+        assertFalse(InhabitantRules.shouldTeachMana(false, true, true, false));
+        assertTrue(InhabitantRules.alreadyTookManaLesson(List.of("abc"), "abc"));
+        assertFalse(InhabitantRules.alreadyTookManaLesson(List.of("abc"), "def"));
+        assertTrue(InhabitantRules.scaledListings(InhabitantRules.WISE_TEACHER, 30, 0, false, new java.util.Random(1))
+                .isEmpty());
+        for (String ability : AbilityRules.ABILITY_IDS) {
+            assertFalse(AbilityRules.teacherFlavor(ability).isEmpty());
+            assertFalse(AbilityRules.teacherInstruction(ability).isEmpty());
+        }
         assertTrue(InhabitantRules.specialtyAllowed(InhabitantRules.COUNCIL, 12));
         assertEquals(4, InhabitantRules.defaultTradeTypeCount(InhabitantRules.COUNCIL));
         boolean sawCookAfterAll = false;

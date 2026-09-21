@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.Set;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -64,6 +65,7 @@ public final class Inhabitants implements FeatureModule {
     @Override
     public void bootstrap(FeatureBus bus) {
         bus.listen(UseBlockCallback.EVENT, ID, Inhabitants::onUseBlock);
+        bus.listen(UseEntityCallback.EVENT, ID, Inhabitants::onUseEntity);
         bus.listen(ServerLivingEntityEvents.AFTER_DEATH, ID, Inhabitants::onDeath);
         bus.listen(ServerLivingEntityEvents.AFTER_DAMAGE, ID, Inhabitants::onDamage);
     }
@@ -98,6 +100,91 @@ public final class Inhabitants implements FeatureModule {
         }
         inspect(serverPlayer, server, hit.getBlockPos());
         return InteractionResult.PASS;
+    }
+
+    static InteractionResult onUseEntity(
+            Player player, Level level, InteractionHand hand, Entity entity, net.minecraft.world.phys.EntityHitResult hit) {
+        if (!(entity instanceof Villager villager) || !isInhabitant(villager)) {
+            return InteractionResult.PASS;
+        }
+        if (!(level instanceof ServerLevel server) || !WorldGate.isModuleActive(server, ID)) {
+            return InteractionResult.PASS;
+        }
+        InhabitantData.Home home = InhabitantData.of(server).byLiving(villager.getUUID());
+        if (home == null || !InhabitantRules.WISE_TEACHER.equals(home.specialty())) {
+            return InteractionResult.PASS;
+        }
+        if (hand != InteractionHand.MAIN_HAND || !(player instanceof ServerPlayer serverPlayer)) {
+            return InteractionResult.SUCCESS;
+        }
+        teach(serverPlayer, villager, server);
+        return InteractionResult.SUCCESS;
+    }
+
+    static void teach(ServerPlayer player, Villager villager, ServerLevel level) {
+        String ability = ensureWiseAbility(villager, level);
+        String teacherId = villager.getStringUUID();
+        List<String> taughtMana = player.getAttachedOrElse(EhmAttachments.EHM_WISE_MANA, List.of());
+        boolean alreadyMana = InhabitantRules.alreadyTookManaLesson(taughtMana, teacherId);
+        boolean knows = ManaAbilities.knowsAbility(player, ability);
+        int emeralds = InventorySearch.count(player, Items.EMERALD);
+        boolean hasDiamond = InventorySearch.count(player, Items.DIAMOND_BLOCK) >= 1;
+        boolean hasLapis = InventorySearch.count(player, Items.LAPIS_BLOCK) >= 1;
+        if (InhabitantRules.shouldTeachMana(player.isShiftKeyDown(), hasDiamond, hasLapis, alreadyMana)) {
+            InventorySearch.consume(player, Items.DIAMOND_BLOCK, 1);
+            InventorySearch.consume(player, Items.LAPIS_BLOCK, 1);
+            List<String> next = new ArrayList<>(taughtMana == null ? List.of() : taughtMana);
+            next.add(teacherId);
+            player.setAttached(EhmAttachments.EHM_WISE_MANA, next);
+            Achievements.grantMana(player, 1);
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.wise.mana",
+                    "Your mana answers more readily now."));
+            level.playSound(null, villager.blockPosition(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.NEUTRAL, 1.0F, 1.0F);
+            return;
+        }
+        if (InhabitantRules.shouldTeachAbility(knows, emeralds, InhabitantRules.WISE_ABILITY_EMERALDS)) {
+            InventorySearch.consume(player, Items.EMERALD, InhabitantRules.WISE_ABILITY_EMERALDS);
+            ManaAbilities.teachAbility(player, ability);
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.wise.flavor." + ability, AbilityRules.teacherFlavor(ability)));
+            String how = AbilityRules.teacherInstruction(ability);
+            if (!how.isEmpty()) {
+                player.sendSystemMessage(Component.translatableWithFallback(
+                        "tougher.wise.how." + ability, how));
+            }
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.wise.learned",
+                    "You have learned %s.",
+                    Component.literal(AbilityRules.nameFallback(ability))));
+            level.playSound(null, villager.blockPosition(), SoundEvents.VILLAGER_YES, SoundSource.NEUTRAL, 1.0F, 1.0F);
+            return;
+        }
+        player.sendSystemMessage(Component.translatableWithFallback(
+                "tougher.wise.offer",
+                "I teach %s, for %s emeralds. Hold them and speak to me again. Sneak while you carry a diamond block and a lapis lazuli block, and I will raise your mana — once, for you.",
+                Component.literal(AbilityRules.nameFallback(ability)),
+                Component.literal(Integer.toString(InhabitantRules.WISE_ABILITY_EMERALDS))));
+        if (knows) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.wise.already",
+                    "You already know %s.",
+                    Component.literal(AbilityRules.nameFallback(ability))));
+        }
+        if (alreadyMana) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.wise.mana_done",
+                    "I have already deepened your mana."));
+        }
+    }
+
+    static String ensureWiseAbility(Villager villager, ServerLevel level) {
+        String ability = villager.getAttached(EhmAttachments.EHM_WISE_ABILITY);
+        if (ability == null || ability.isEmpty() || !AbilityRules.ABILITY_IDS.contains(ability)) {
+            ability = InhabitantRules.pickWiseAbility(level.getRandom().nextInt());
+            villager.setAttached(EhmAttachments.EHM_WISE_ABILITY, ability);
+        }
+        return ability;
     }
 
     static void inspect(ServerPlayer player, ServerLevel level, BlockPos bed) {
@@ -330,6 +417,10 @@ public final class Inhabitants implements FeatureModule {
                 result.amenities(), result.gates().score(), random.nextInt(), data.spawnedSpecialties());
         String name = InhabitantRules.pickName(random.nextInt());
         stamp(villager, ResidenceScan.homeId(result.bed()), specialty, name);
+        if (InhabitantRules.WISE_TEACHER.equals(specialty)) {
+            villager.setAttached(
+                    EhmAttachments.EHM_WISE_ABILITY, InhabitantRules.pickWiseAbility(random.nextInt()));
+        }
         applyOffers(
                 villager,
                 specialty,

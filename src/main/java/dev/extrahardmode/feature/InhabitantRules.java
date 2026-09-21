@@ -74,10 +74,22 @@ public final class InhabitantRules {
     public static final String WEALTHY = "wealthy";
     public static final String ARMORSMITH = "armorsmith";
     public static final String MASTER_ARMORSMITH = "master_armorsmith";
+    public static final String WISE_TEACHER = "wise_teacher";
     public static final String COUNCIL = "council";
+    /** Emeralds a wise teacher charges to teach their one ability. */
+    public static final int WISE_ABILITY_EMERALDS = 48;
 
-    public static final List<String> SPECIALTIES =
-            List.of(HAULER, COOK, FARM, BOUNTY, TRADER, WEALTHY, ARMORSMITH, MASTER_ARMORSMITH, COUNCIL);
+    public static final List<String> SPECIALTIES = List.of(
+            HAULER,
+            COOK,
+            FARM,
+            BOUNTY,
+            TRADER,
+            WEALTHY,
+            ARMORSMITH,
+            MASTER_ARMORSMITH,
+            WISE_TEACHER,
+            COUNCIL);
 
     public record WealthyListing(String itemId, int count, int emeralds) {}
 
@@ -321,15 +333,74 @@ public final class InhabitantRules {
         return head + " Missing: " + String.join(", ", result.missing()) + ".";
     }
 
-    public static List<String> homesHelpLines() {
+    public static List<String> homesIntroLines() {
         return List.of(
                 "Homes: Right-click a bed with a clock to score the room. Type /tougher help homes anytime for this list.",
-                "Need all of these: an enclosed room (solid walls, floor, and roof; doors and trapdoors are openings, not holes), 24 to 300 interior air blocks, a bed, a door or fence gate that faces outside, block light 8 on every floor tile, and 48 blocks from another occupied home.",
-                "Furnishings need 12 points. Each 48 interior air blocks: 1 point, max 5. Each enclosed room connected by doors, trapdoors, or fence gates: 1 point, max 3. Windows (glass or panes looking out of the room): 2 each, max 6. Art (paintings and filled item frames): 1 each, max 6. Rugs (wool carpets): 1 point per 4 carpets, max 3. Seating (stairs and slabs): 1 each, max 2.",
-                "Storage (chests, barrels, shulker boxes): 1 each, max 2. Workstations (crafting table, furnace, smoker, anvil, and similar): 1 each, max 2. Extra lights (torches, lanterns, glowstone, campfires): 1 each, max 2. Plants (pots, flowers, saplings): 1 each, max 2. Books (bookshelf, lectern): 1 each, max 2. A second bed: +1. Kitchen (a furnace, smoker, or campfire AND a cauldron): +2.",
-                "Eligible loaded homes are checked at dawn. An empty eligible home is timestamped the day it becomes inhabitable. When you visit later, each missed day is rolled once (same chances as dawn), then the timestamp is set to today, so houses in unloaded chunks can still fill. Chance starts at 8% at 12 points and rises with extra points (halved in blight). Chests bias a hauler, a kitchen biases a cook, plants or workstations bias a farm neighbor. 18 points can attract a bounty board or wealthy trader, 24 an armorsmith, and 30 a master armorsmith. A council member can appear in any eligible home. New residents prefer a type that has not appeared yet (and that the house can host); once every type has spawned, the usual furnishing biases apply, and council members are three times as likely as the most common other type. One resident per home. Most residents restock every 3 Minecraft days; armorsmiths restock every 30 days.",
-                "Shop stock follows the house score versus that resident's requirement. A home that only just qualifies rolls 25-50% of the usual trade types and 25-50% of each listing's uses (at least one of each). Every point above the requirement raises both ranges by 10%. Each listing rolls its uses separately. If that calls for more types than the usual shop, the extra listings are random trades.",
-                "Council members give each player a personal kill bounty when you check in. The first hunt is 6-18 common mobs; each success is 30% larger and rarer. You have 7 Minecraft days. Finishing grants XP equal to one quarter of the slain mobs' health plus 25, with 10% more per extra house point, a congratulations message, and a sound. Return to collect emeralds equal to one tenth of that XP (with a sound) and take a new bounty. A small counter such as Zombie Bounty 3/12 sits above the bottom-left ability icons.");
+                "Homes: An enclosed, well-lit room with a bed, a door, and furnishings may attract one traveler. They dislike crowding.",
+                "Homes: Subjects: rooms, furnishings, residents, shops, bounties. Each is also /tougher help <subject>.",
+                "Homes: Residents may buy spare blocks, trade food, post bounties, keep a shop, teach a mana ability, or sell armor.",
+                "Homes: Staff can toggle residents with /tougher set inhabitants true (requires operator).");
+    }
+
+    public static List<String> homesRoomLines() {
+        return List.of(
+                "Rooms: Need an enclosed room (solid walls, floor, and roof; doors and trapdoors are openings, not holes).",
+                "Rooms: Also need 24 to 300 interior air blocks, a bed, and a door or fence gate that faces outside.",
+                "Rooms: Block light 8 on every floor tile, and stay 48 blocks from another occupied home.");
+    }
+
+    public static List<String> homesFurnishingLines() {
+        return List.of(
+                "Furnishings: Furnishings need 12 points. Each 48 interior air blocks: 1 point, max 5.",
+                "Furnishings: Each enclosed room connected by doors, trapdoors, or fence gates: 1 point, max 3.",
+                "Furnishings: Windows (glass or panes looking out of the room): 2 each, max 6.",
+                "Furnishings: Art (paintings and filled item frames): 1 each, max 6. Rugs (wool carpets): 1 point per 4 carpets, max 3.",
+                "Furnishings: Seating (stairs and slabs): 1 each, max 2. Storage (chests, barrels, shulker boxes): 1 each, max 2.",
+                "Furnishings: Workstations (crafting table, furnace, smoker, anvil, and similar): 1 each, max 2.",
+                "Furnishings: Extra lights (torches, lanterns, glowstone, campfires): 1 each, max 2. Plants (pots, flowers, saplings): 1 each, max 2.",
+                "Furnishings: Books (bookshelf, lectern): 1 each, max 2. A second bed: +1.",
+                "Furnishings: Kitchen (a furnace, smoker, or campfire AND a cauldron): +2.");
+    }
+
+    public static List<String> homesResidentLines() {
+        return List.of(
+                "Residents: Eligible loaded homes are checked at dawn. An empty eligible home is timestamped the day it becomes inhabitable.",
+                "Residents: When you visit later, each missed day is rolled once (same chances as dawn), then the timestamp is set to today.",
+                "Residents: Houses in unloaded chunks can still fill. Chance starts at 8% at 12 points and rises with extra points (halved in blight).",
+                "Residents: Chests bias a hauler, a kitchen biases a cook, and plants or workstations bias a farm neighbor.",
+                "Residents: 18 points can attract a bounty board or wealthy trader, 24 an armorsmith or a wise teacher, and 30 a master armorsmith.",
+                "Residents: A council member can appear in any eligible home. New residents prefer a type that has not appeared yet.",
+                "Residents: The house must be able to host that type. Once every type has spawned, the usual furnishing biases apply.",
+                "Residents: Council members are three times as likely as the most common other type. One resident per home.",
+                "Residents: Most residents restock every 3 Minecraft days; armorsmiths restock every 30 days.");
+    }
+
+    public static List<String> homesShopLines() {
+        return List.of(
+                "Shops: Shop stock follows the house score versus that resident's requirement.",
+                "Shops: A home that only just qualifies rolls 25-50% of the usual trade types and 25-50% of each listing's uses.",
+                "Shops: There is at least one of each. Every point above the requirement raises both ranges by 10%.",
+                "Shops: Each listing rolls its uses separately. Extra types beyond the usual shop are random trades.");
+    }
+
+    public static List<String> homesBountyLines() {
+        return List.of(
+                "Bounties: Council members give each player a personal kill bounty when you check in.",
+                "Bounties: The first hunt is 6-18 common mobs; each success is 30% larger and rarer. You have 7 Minecraft days.",
+                "Bounties: Finishing grants XP equal to one quarter of the slain mobs' health plus 25, with 10% more per extra house point.",
+                "Bounties: You also get a congratulations message and a sound. Return to collect emeralds equal to one tenth of that XP.",
+                "Bounties: Collecting plays a sound and offers a new bounty. Zombie Bounty 3/12 sits above the bottom-left ability icons.");
+    }
+
+    public static List<String> homesHelpLines() {
+        List<String> lines = new ArrayList<>();
+        lines.addAll(homesIntroLines());
+        lines.addAll(homesRoomLines());
+        lines.addAll(homesFurnishingLines());
+        lines.addAll(homesResidentLines());
+        lines.addAll(homesShopLines());
+        lines.addAll(homesBountyLines());
+        return List.copyOf(lines);
     }
 
     public static boolean farEnough(int dx, int dz, int spacing) {
@@ -391,7 +462,7 @@ public final class InhabitantRules {
         }
         return switch (type) {
             case MASTER_ARMORSMITH -> MASTER_SCORE;
-            case ARMORSMITH -> NOTABLE_SCORE;
+            case ARMORSMITH, WISE_TEACHER -> NOTABLE_SCORE;
             case WEALTHY, BOUNTY -> FINE_SCORE;
             default -> MIN_SCORE;
         };
@@ -445,6 +516,8 @@ public final class InhabitantRules {
             bag.add(BOUNTY);
             bag.add(ARMORSMITH);
             bag.add(ARMORSMITH);
+            bag.add(WISE_TEACHER);
+            bag.add(WISE_TEACHER);
         }
         if (score >= MASTER_SCORE) {
             bag.add(MASTER_ARMORSMITH);
@@ -482,6 +555,7 @@ public final class InhabitantRules {
             case WEALTHY -> "wealthy trader";
             case ARMORSMITH -> "armorsmith";
             case MASTER_ARMORSMITH -> "master armorsmith";
+            case WISE_TEACHER -> "wise teacher";
             case COUNCIL -> "council member";
             default -> "traveler";
         };
@@ -529,6 +603,25 @@ public final class InhabitantRules {
             return MAX_CATCH_UP_ROLLS;
         }
         return (int) missed;
+    }
+
+    /** Which ability this teacher offers. Stable for a given roll. */
+    public static String pickWiseAbility(int roll) {
+        List<String> ids = AbilityRules.ABILITY_IDS;
+        return ids.get(Math.floorMod(roll, ids.size()));
+    }
+
+    public static boolean shouldTeachAbility(boolean alreadyKnown, int emeralds, int cost) {
+        return !alreadyKnown && emeralds >= Math.max(1, cost);
+    }
+
+    /** Sneak-right-click, once per player per teacher. */
+    public static boolean shouldTeachMana(boolean sneaking, boolean hasDiamondBlock, boolean hasLapisBlock, boolean already) {
+        return sneaking && hasDiamondBlock && hasLapisBlock && !already;
+    }
+
+    public static boolean alreadyTookManaLesson(Collection<String> teacherIds, String teacherId) {
+        return teacherId != null && !teacherId.isEmpty() && teacherIds != null && teacherIds.contains(teacherId);
     }
 
     public static int restockDays(String specialty) {
@@ -627,6 +720,7 @@ public final class InhabitantRules {
                     buyOf("minecraft:bone", 16, 6));
             case ARMORSMITH -> armorListings(false);
             case MASTER_ARMORSMITH -> armorListings(true);
+            case WISE_TEACHER -> List.of();
             case COUNCIL -> List.of(
                     sellOf("minecraft:paper", 12, 1, 8),
                     sellOf("minecraft:book", 1, 3, 4),
@@ -702,6 +796,7 @@ public final class InhabitantRules {
                     sellOf("minecraft:lava_bucket", 1, 3, ARMOR_TRADE_USES),
                     sellOf("minecraft:chainmail_helmet", 1, 8, ARMOR_TRADE_USES),
                     sellOf("minecraft:chainmail_boots", 1, 6, ARMOR_TRADE_USES));
+            case WISE_TEACHER -> List.of();
             case MASTER_ARMORSMITH -> List.of(
                     sellOf("minecraft:diamond", 1, 8, ARMOR_TRADE_USES),
                     sellOf("minecraft:diamond_horse_armor", 1, 14, ARMOR_TRADE_USES),
@@ -763,6 +858,9 @@ public final class InhabitantRules {
             String specialty, int score, int storage, boolean blight, Random random) {
         Random rng = random == null ? new Random(0L) : random;
         String type = specialty == null || specialty.isEmpty() ? TRADER : specialty;
+        if (WISE_TEACHER.equals(type)) {
+            return List.of();
+        }
         List<TradeListing> defaults;
         List<TradeListing> extras;
         if (WEALTHY.equals(type)) {

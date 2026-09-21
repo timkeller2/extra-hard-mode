@@ -79,6 +79,14 @@ public final class EhmAttachments {
     public static final AttachmentType<String> EHM_INHABITANT_HOME = AttachmentRegistry.create(
             ExtraHardModeMod.id("inhabitant_home"),
             builder -> builder.persistent(Codec.STRING).initializer(() -> ""));
+    /** Ability id this wise teacher offers. Persistent on the villager. */
+    public static final AttachmentType<String> EHM_WISE_ABILITY = AttachmentRegistry.create(
+            ExtraHardModeMod.id("wise_ability"),
+            builder -> builder.persistent(Codec.STRING).initializer(() -> ""));
+    /** Teacher UUIDs that have already raised this player's mana. Once each. */
+    public static final AttachmentType<List<String>> EHM_WISE_MANA = AttachmentRegistry.create(
+            ExtraHardModeMod.id("wise_mana"),
+            builder -> builder.persistent(Codec.STRING.listOf()).copyOnDeath().initializer(ArrayList::new));
 
     public static final AttachmentType<UUID> EHM_SILVERFISH_OWNER = AttachmentRegistry.create(
             ExtraHardModeMod.id("silverfish_owner"), builder -> builder.persistent(UUIDUtil.CODEC));

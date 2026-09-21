@@ -208,7 +208,10 @@ public final class PhysicsQueue {
         }
         FallingBlockEntity entity = FallingBlockEntity.fall(level, request.pos, place);
         WorldConfig config = ConfigManager.world(level);
-        entity.dropItem = config.fallingDropAsItemWhenBlocked();
+        // Vanilla deletes a falling block that cannot place when dropItem is false.
+        // Trunk logs often share a landing cell while the piece below is still an
+        // entity (the block under them is air), so those logs must drop as items.
+        entity.dropItem = config.fallingDropAsItemWhenBlocked() || place.is(EhmTags.FELLABLE_LOGS);
         entity.setAttached(EhmAttachments.EHM_OURS, Boolean.TRUE);
         int amount = Math.max(0, config.fallingDamage());
         if (amount > 0) {

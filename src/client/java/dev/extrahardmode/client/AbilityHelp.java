@@ -62,17 +62,16 @@ public final class AbilityHelp {
                 .map(key -> key.identifier().toString())
                 .orElse("");
         String ability = AbilityRules.abilityForItem(itemId);
-        String fallback = AbilityRules.helpFallback(ability);
-        String key = AbilityRules.helpKey(ability);
-        if (fallback == null || key == null) {
+        List<String> parts = AbilityRules.helpParts(ability);
+        List<String> partKeys = AbilityRules.helpKeys(ability);
+        if (parts == null || parts.isEmpty() || partKeys.isEmpty()) {
             return false;
         }
         if (!markShown()) {
             return true;
         }
-        client.player.sendSystemMessage(Component.translatableWithFallback(
-                AbilityRules.POWER_HELP_KEY, AbilityRules.powerHelpFallback()));
-        client.player.sendSystemMessage(Component.translatableWithFallback(key, fallback));
+        sendLines(client, AbilityRules.powerHelpKeys(), AbilityRules.powerHelpLines());
+        sendLines(client, partKeys, parts);
         int hoeBonus = AbilityRules.GROW.equals(ability) ? AbilityRules.growHoeBonus(itemId) : 0;
         if (hoeBonus > 0) {
             client.player.sendSystemMessage(Component.translatableWithFallback(
@@ -94,14 +93,18 @@ public final class AbilityHelp {
         if (!markShown()) {
             return true;
         }
-        client.player.sendSystemMessage(Component.translatableWithFallback(
-                AbilityRules.POWER_HELP_KEY, AbilityRules.powerHelpFallback()));
-        List<String> keys = AbilityRules.indexHelpKeys();
-        List<String> lines = AbilityRules.indexHelpLines();
-        for (int i = 0; i < lines.size(); i++) {
-            client.player.sendSystemMessage(Component.translatableWithFallback(keys.get(i), lines.get(i)));
-        }
+        sendLines(client, AbilityRules.powerHelpKeys(), AbilityRules.powerHelpLines());
+        sendLines(client, AbilityRules.indexHelpKeys(), AbilityRules.indexHelpLines());
         return true;
+    }
+
+    private static void sendLines(Minecraft client, List<String> keys, List<String> lines) {
+        int n = Math.min(keys.size(), lines.size());
+        for (int i = 0; i < n; i++) {
+            String key = keys.get(i);
+            String line = lines.get(i);
+            client.player.sendSystemMessage(Component.translatableWithFallback(key, line));
+        }
     }
 
     private static boolean markShown() {

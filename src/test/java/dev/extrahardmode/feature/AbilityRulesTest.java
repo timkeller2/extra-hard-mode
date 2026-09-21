@@ -185,8 +185,25 @@ class AbilityRulesTest {
         assertTrue(AbilityRules.indexHelpFallback().contains("Redstone dust"));
         assertEquals(null, AbilityRules.helpFallback(null));
         assertEquals(null, AbilityRules.helpFallback("unknown"));
-        assertEquals(15, AbilityRules.indexHelpLines().size());
         assertEquals(AbilityRules.indexHelpLines().size(), AbilityRules.indexHelpKeys().size());
+        assertEquals(AbilityRules.powerHelpLines().size(), AbilityRules.powerHelpKeys().size());
+        assertTrue(AbilityRules.indexHelpLines().size() > 15);
+        assertEquals(AbilityRules.HEAL, AbilityRules.abilityByTopic("healing"));
+        assertEquals(AbilityRules.IRON_HEART, AbilityRules.abilityByTopic("Iron Heart"));
+        assertEquals(AbilityRules.FIRE_BOLT, AbilityRules.abilityByTopic("fire-bolt"));
+        assertEquals(AbilityRules.LIGHT, AbilityRules.abilityByTopic("let there be light"));
+        assertEquals(null, AbilityRules.abilityByTopic("mining"));
+        for (String line : AbilityRules.indexHelpLines()) {
+            assertTrue(line.length() <= EhmHelp.MAX_LINE_CHARS, line);
+        }
+        for (String line : AbilityRules.powerHelpLines()) {
+            assertTrue(line.length() <= EhmHelp.MAX_LINE_CHARS, line);
+        }
+        for (String ability : AbilityRules.ABILITY_IDS) {
+            for (String line : AbilityRules.helpParts(ability)) {
+                assertTrue(line.length() <= EhmHelp.MAX_LINE_CHARS, line);
+            }
+        }
         assertTrue(AbilityRules.indexHelpFallback().contains("Paper: Healing"));
         assertTrue(AbilityRules.indexHelpFallback().contains("Any hoe: Let it grow"));
         assertTrue(AbilityRules.indexHelpFallback().contains("Coal: Let there be light"));

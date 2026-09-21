@@ -27,10 +27,12 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Build remapped jar
+      - name: Build jar
         run: |
           chmod +x gradlew
-          ./gradlew test remapJar -x runGameTest --no-daemon
+          # Minecraft 26.3 uses non-remapping Loom, which has no remapJar task.
+          # assemble produces build/libs/tougher-*.jar (the mod) and the sources jar.
+          ./gradlew test assemble -x runGameTest --no-daemon
 
       - name: Stage release jars
         id: jars

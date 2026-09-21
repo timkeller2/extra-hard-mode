@@ -253,6 +253,55 @@ public final class AbilityRules {
         };
     }
 
+    /** Short line a wise teacher says about the ability. */
+    public static String teacherFlavor(String ability) {
+        if (ability == null) {
+            return "There is a lesson here, if you can pay for it.";
+        }
+        return switch (ability) {
+            case HEAL -> "Mercy is a craft. I can put it in your hands.";
+            case IRON_HEART -> "There is a second heart, if you ask the iron to remember you.";
+            case FIRE_BOLT -> "Charcoal still remembers the fire.";
+            case MAGIC_ARROW -> "An arrow can be taught to want a target.";
+            case FLIGHT -> "The sky is only heavy if you agree that it is.";
+            case GROW -> "Green things listen, if you speak with a hoe.";
+            case LIGHT -> "Carry a coal, and the dark will negotiate.";
+            case POWER_MINE -> "Stone yields to a pick that has been properly introduced.";
+            case DETECT_ORE -> "The ground is talkative, if you hold a compass still.";
+            case SLOW -> "Haste is a habit. String can interrupt it.";
+            case SENSE_EVIL -> "Large hungers leave a smell on the wind.";
+            case SMITE_EVIL -> "A golden sword is a polite way to end a monster.";
+            default -> "There is a lesson here, if you can pay for it.";
+        };
+    }
+
+    /** How to cast the ability, told after the lesson. */
+    public static String teacherInstruction(String ability) {
+        if (ability == null) {
+            return "";
+        }
+        return switch (ability) {
+            case HEAL ->
+                "Hold paper and right-click an injured person, or yourself if you are hurt. It costs 1 mana.";
+            case IRON_HEART ->
+                "Hold an iron ingot and right-click. Right-click again with an ingot to cancel your own.";
+            case FIRE_BOLT -> "Hold charcoal and right-click. The bolt seeks a creature along your aim.";
+            case MAGIC_ARROW ->
+                "Hold an arrow and right-click. It seeks a creature along your aim and does not ignite.";
+            case FLIGHT -> "Hold a feather and right-click. Jump to rise, sneak to descend, and land to stop.";
+            case GROW -> "Hold any hoe and right-click a plant. It costs 1 mana and some hoe durability.";
+            case LIGHT -> "Hold coal and right-click to shine. Right-click again with coal to snuff it.";
+            case POWER_MINE -> "Hold any pickaxe and right-click. Hardened stone stops eating extra durability for a while.";
+            case DETECT_ORE ->
+                "Hold a compass and right-click. You turn toward the best ore you are skilled enough to sense.";
+            case SLOW -> "Hold string and right-click. Nearby enemies slow down.";
+            case SENSE_EVIL -> "Hold a spider eye and right-click. You turn toward a living biome boss, if one is out.";
+            case SMITE_EVIL ->
+                "Hold a golden sword and right-click. It strikes a creature along your aim. Undead take extra damage.";
+            default -> "";
+        };
+    }
+
     public static String lockedFallback(String ability) {
         return "Gain more mana levels to unlock " + nameFallback(ability) + "...";
     }
@@ -264,48 +313,167 @@ public final class AbilityRules {
         return "tougher.ability." + ability + ".help";
     }
 
-    public static String helpFallback(String ability) {
+    /** Chat topics for {@code /tougher ability help <name>}. */
+    public static List<String> abilityTopics() {
+        return List.of(
+                "healing",
+                "iron heart",
+                "fire bolt",
+                "magic arrow",
+                "flight",
+                "grow",
+                "light",
+                "power mine",
+                "detect ore",
+                "slow",
+                "sense evil",
+                "smite evil");
+    }
+
+    public static String abilityByTopic(String topic) {
+        if (topic == null || topic.isBlank()) {
+            return null;
+        }
+        String key = topic.trim().toLowerCase(java.util.Locale.ROOT).replace('-', ' ').replace('_', ' ');
+        while (key.contains("  ")) {
+            key = key.replace("  ", " ");
+        }
+        return switch (key) {
+            case "heal", "healing" -> HEAL;
+            case "iron heart", "ironheart" -> IRON_HEART;
+            case "fire bolt", "firebolt" -> FIRE_BOLT;
+            case "magic arrow", "magicarrow" -> MAGIC_ARROW;
+            case "flight" -> FLIGHT;
+            case "grow", "let it grow", "letitgrow" -> GROW;
+            case "light", "let there be light" -> LIGHT;
+            case "power mine", "power mining", "powermine" -> POWER_MINE;
+            case "detect ore", "detectore" -> DETECT_ORE;
+            case "slow" -> SLOW;
+            case "sense evil", "senseevil" -> SENSE_EVIL;
+            case "smite", "smite evil", "smiteevil" -> SMITE_EVIL;
+            default -> null;
+        };
+    }
+
+    /**
+     * Short chat lines for one ability. Each line is its own message so it fits
+     * in chat. {@link #helpFallback} joins them.
+     */
+    public static List<String> helpParts(String ability) {
         if (ability == null) {
             return null;
         }
         return switch (ability) {
-            case HEAL ->
-                "Healing: Right-click an injured teammate within 2 + ability level blocks while holding paper. If no teammate is targeted and you are injured, you heal yourself instead. Costs 1 mana. A honey bottle in your main inventory (not a bundle) is consumed for +6, with or without mana. If you have no mana, a honey bottle still lets you heal, even with no mana levels. The recipient sparkles blue for 6 seconds. An extra paper is consumed for +2 if you have more than one. The last paper is kept.";
-            case IRON_HEART ->
-                "Iron Heart: Right-click while holding an iron ingot. Costs 1 mana. Raises maximum health by ability level for ability level minutes. If another player is targeted within 2 + ability level blocks, they receive the buff instead. Right-click again with an iron ingot to cancel your own; you cannot cancel another player's Iron Heart. The recipient sparkles silver for 3 seconds. An extra iron ingot is consumed for +2 if you have more than one. The last ingot is kept. If it ends and you still have mana, another mana is spent and it continues, and you gain skill as if you cast it again.";
-            case FIRE_BOLT ->
-                "Fire bolt: Right-click while holding charcoal. Costs 1 mana. The bolt seeks the nearest creature along your aim. Range scales with ability level. Ability level includes your mana level. Cooldown is 10 seconds minus (mana level + skill). An extra charcoal is consumed for +2 if you have more than one. The last charcoal is kept.";
-            case MAGIC_ARROW ->
-                "Magic arrow: Right-click while holding an arrow. Costs 1 mana. The arrow seeks the nearest creature along your aim and deals arrow damage; it does not ignite. Range scales with ability level. Ability level includes your mana level. Cooldown is 10 seconds minus (mana level + skill). An extra arrow is consumed for +2 if you have more than one. The last arrow is kept.";
-            case FLIGHT ->
-                "Flight: Right-click while holding a feather. Costs 1 mana. Jump to rise, sneak to descend, land to stop. Speed scales with ability level and reaches 70% of walking speed at 10. An extra feather is consumed for +2 if you have more than one. The last feather is kept. If it ends and you still have mana, another mana is spent and it continues, and you gain skill as if you cast it again.";
-            case GROW ->
-                "Let it grow: Right-click a plant while holding any hoe to grow it by your ability level in stages (leftover stages go to the nearest plant within 2 blocks). Right-click also still grows random plants around you. Costs 1 mana and 3 durability. Unbreaking can skip that wear with the same chance as tilling. Does not replace tilling. Each plant grown improves that soil's shown crop-loss modifier by 3. Random growth: one plant within 2 blocks by 1 stage, repeated (ability level + hoe bonus) times. Hoe bonus: wood/stone 0, copper +1, iron +2, diamond +3, gold +4, netherite +5.";
-            case LIGHT ->
-                "Let there be light: Right-click while holding coal. Costs 1 mana. You shine for 30 seconds plus 30 seconds per ability level. Brightness is 9 plus whole minutes remaining, up to torch-bright (14). Right-click again with coal to snuff it. If the glow ends and you still have mana, another mana is spent and it continues, and you gain skill as if you cast it again. An extra coal is consumed for +2 if you have more than one. The last coal is kept.";
-            case POWER_MINE ->
-                "Power mining: Right-click while holding any pickaxe. Costs 1 mana. For (ability level × 12) seconds, Tougher extra pickaxe wear on hardened stone is suspended. Ends when the timer expires. Pickaxe bonus: wood/stone 0, copper +1, iron +2, diamond +3, gold +4, netherite +5.";
-            case DETECT_ORE ->
-                "Detect ore: Right-click while holding a compass. Costs 1 mana. Optionally consumes 1 nether quartz from your inventory for +2 (stacks with redstone dust). Turns you to face the best ore you can detect within 2 + ability level blocks, even through walls, and tells you the ore and approximate distance. You only sense ores at or below your ability level: coal 1, quartz 2, copper 3, iron 4, redstone 5, lapis 6, gold 7, emerald 8, diamond 9, ancient debris 10.";
-            case SLOW ->
-                "Slow: Right-click while holding string. Costs 1 mana. Slows enemy mobs within ability level blocks by 20% + 5% per ability level (max 80%) for (ability level × 6) seconds. Mobs with more than 100 health are affected half as much. An extra string is consumed for +2 if you have more than one. The last string is kept.";
-            case SENSE_EVIL ->
-                "Sense Evil: Right-click while holding a spider eye. Costs 1 mana. If a biome boss is spawned, you turn toward the nearest one and sparkle with a creepy aura for 6 seconds. If it is within 250 × ability level blocks, you also learn the rough distance. If none are spawned, you sparkle as with Healing. An extra spider eye is consumed for +2 if you have more than one. The last spider eye is kept.";
-            case SMITE_EVIL ->
-                "Smite Evil: Right-click while holding a golden sword. Costs 1 mana. Strikes a creature along your aim up to your ability level in blocks with a normal melee attack from that sword, including enchantments, durability, and attack cooldown. Undead take extra damage equal to your ability level. A small flash of light appears on the creature hit.";
+            case HEAL -> List.of(
+                    "Healing: Right-click an injured teammate within 2 + ability level blocks while holding paper.",
+                    "Healing: If no teammate is targeted and you are injured, you heal yourself instead.",
+                    "Healing: Costs 1 mana. A honey bottle in your main inventory (not a bundle) is consumed for +6, with or without mana.",
+                    "Healing: If you have no mana, a honey bottle still lets you heal, even with no mana levels.",
+                    "Healing: The recipient sparkles blue for 6 seconds. An extra paper is consumed for +2 if you have more than one. The last paper is kept.");
+            case IRON_HEART -> List.of(
+                    "Iron Heart: Right-click while holding an iron ingot. Costs 1 mana. Raises maximum health by ability level for ability level minutes.",
+                    "Iron Heart: If another player is targeted within 2 + ability level blocks, they receive the buff instead.",
+                    "Iron Heart: Right-click again with an iron ingot to cancel your own; you cannot cancel another player's Iron Heart.",
+                    "Iron Heart: The recipient sparkles silver for 3 seconds. An extra iron ingot is consumed for +2 if you have more than one.",
+                    "Iron Heart: The last ingot is kept. If it ends and you still have mana, another mana is spent and it continues, and you gain skill as if you cast it again.");
+            case FIRE_BOLT -> List.of(
+                    "Fire bolt: Right-click while holding charcoal. Costs 1 mana. The bolt seeks the nearest creature along your aim.",
+                    "Fire bolt: Range scales with ability level. Ability level includes your mana level. Cooldown is 10 seconds minus (mana level + skill).",
+                    "Fire bolt: An extra charcoal is consumed for +2 if you have more than one. The last charcoal is kept.");
+            case MAGIC_ARROW -> List.of(
+                    "Magic arrow: Right-click while holding an arrow. Costs 1 mana. The arrow seeks the nearest creature along your aim.",
+                    "Magic arrow: It deals arrow damage; it does not ignite. Range scales with ability level. Ability level includes your mana level.",
+                    "Magic arrow: Cooldown is 10 seconds minus (mana level + skill). An extra arrow is consumed for +2 if you have more than one. The last arrow is kept.");
+            case FLIGHT -> List.of(
+                    "Flight: Right-click while holding a feather. Costs 1 mana. Jump to rise, sneak to descend, land to stop.",
+                    "Flight: Speed scales with ability level and reaches 70% of walking speed at 10.",
+                    "Flight: An extra feather is consumed for +2 if you have more than one. The last feather is kept.",
+                    "Flight: If it ends and you still have mana, another mana is spent and it continues, and you gain skill as if you cast it again.");
+            case GROW -> List.of(
+                    "Let it grow: Right-click a plant while holding any hoe to grow it by your ability level in stages.",
+                    "Let it grow: Leftover stages go to the nearest plant within 2 blocks. Right-click also still grows random plants around you.",
+                    "Let it grow: Costs 1 mana and 3 durability. Unbreaking can skip that wear with the same chance as tilling. Does not replace tilling.",
+                    "Let it grow: Each plant grown improves that soil's shown crop-loss modifier by 3.",
+                    "Let it grow: Random growth is one plant within 2 blocks by 1 stage, repeated (ability level + hoe bonus) times.",
+                    "Let it grow: Hoe bonus: wood/stone 0, copper +1, iron +2, diamond +3, gold +4, netherite +5.");
+            case LIGHT -> List.of(
+                    "Let there be light: Right-click while holding coal. Costs 1 mana. You shine for 30 seconds plus 30 seconds per ability level.",
+                    "Let there be light: Brightness is 9 plus whole minutes remaining, up to torch-bright (14). Right-click again with coal to snuff it.",
+                    "Let there be light: If the glow ends and you still have mana, another mana is spent and it continues, and you gain skill as if you cast it again.",
+                    "Let there be light: An extra coal is consumed for +2 if you have more than one. The last coal is kept.");
+            case POWER_MINE -> List.of(
+                    "Power mining: Right-click while holding any pickaxe. Costs 1 mana.",
+                    "Power mining: For (ability level × 12) seconds, Tougher extra pickaxe wear on hardened stone is suspended. Ends when the timer expires.",
+                    "Power mining: Pickaxe bonus: wood/stone 0, copper +1, iron +2, diamond +3, gold +4, netherite +5.");
+            case DETECT_ORE -> List.of(
+                    "Detect ore: Right-click while holding a compass. Costs 1 mana. Optionally consumes 1 nether quartz from your inventory for +2.",
+                    "Detect ore: Quartz stacks with redstone dust. Turns you to face the best ore you can detect within 2 + ability level blocks, even through walls.",
+                    "Detect ore: It tells you the ore and approximate distance. You only sense ores at or below your ability level.",
+                    "Detect ore: coal 1, quartz 2, copper 3, iron 4, redstone 5, lapis 6, gold 7, emerald 8, diamond 9, ancient debris 10.");
+            case SLOW -> List.of(
+                    "Slow: Right-click while holding string. Costs 1 mana. Slows enemy mobs within ability level blocks.",
+                    "Slow: The slow is 20% + 5% per ability level (max 80%) for (ability level × 6) seconds.",
+                    "Slow: Mobs with more than 100 health are affected half as much. An extra string is consumed for +2 if you have more than one. The last string is kept.");
+            case SENSE_EVIL -> List.of(
+                    "Sense Evil: Right-click while holding a spider eye. Costs 1 mana.",
+                    "Sense Evil: If a biome boss is spawned, you turn toward the nearest one and sparkle with a creepy aura for 6 seconds.",
+                    "Sense Evil: If it is within 250 × ability level blocks, you also learn the rough distance.",
+                    "Sense Evil: If none are spawned, you sparkle as with Healing. An extra spider eye is consumed for +2 if you have more than one. The last spider eye is kept.");
+            case SMITE_EVIL -> List.of(
+                    "Smite Evil: Right-click while holding a golden sword. Costs 1 mana.",
+                    "Smite Evil: Strikes a creature along your aim up to your ability level in blocks with a normal melee attack from that sword.",
+                    "Smite Evil: The strike includes enchantments, durability, and attack cooldown. Undead take extra damage equal to your ability level.",
+                    "Smite Evil: A small flash of light appears on the creature hit.");
             default -> null;
         };
+    }
+
+    public static List<String> helpKeys(String ability) {
+        List<String> parts = helpParts(ability);
+        if (parts == null) {
+            return List.of();
+        }
+        String base = helpKey(ability);
+        List<String> keys = new ArrayList<>(parts.size());
+        for (int i = 0; i < parts.size(); i++) {
+            keys.add(i == 0 ? base : base + "." + (i + 1));
+        }
+        return keys;
+    }
+
+    public static String helpFallback(String ability) {
+        List<String> parts = helpParts(ability);
+        if (parts == null) {
+            return null;
+        }
+        return String.join(" ", parts);
     }
 
     public static final String INDEX_HELP_KEY = "tougher.ability.index.help";
     public static final String POWER_HELP_KEY = "tougher.ability.power.help";
 
+    public static List<String> powerHelpLines() {
+        return List.of(
+                "Base power: skill, the square root of times you have used that ability.",
+                "Extra catalyst, redstone, and tools add to that. Extra catalyst and redstone dust are +2 each.",
+                "Fire bolt and Magic arrow also add your mana level.",
+                "Using an ability you have not learned still gains skill, at −3 power (floored at 1), until you have a free slot to learn them.");
+    }
+
+    public static List<String> powerHelpKeys() {
+        return List.of(
+                POWER_HELP_KEY,
+                "tougher.ability.power.help.2",
+                "tougher.ability.power.help.3",
+                "tougher.ability.power.help.4");
+    }
+
     public static String powerHelpFallback() {
-        return "Base power: skill, the square root of times you have used that ability. Extra catalyst, redstone, and tools add to that. Extra catalyst and redstone dust are +2 each. Fire bolt and Magic arrow also add your mana level. Using an ability you have not learned still gains skill, at −3 power (floored at 1), until you have a free slot to learn it.";
+        return String.join(" ", powerHelpLines());
     }
 
     public static String indexHelpFallback() {
-        return "Mana abilities — hold the item and press ? for details: Paper: Healing. Iron ingot: Iron Heart. Feather: Flight. Charcoal: Fire bolt. Arrow: Magic arrow. Any hoe: Let it grow. Coal: Let there be light. Any pickaxe: Power mining. Compass: Detect ore. String: Slow. Spider eye: Sense Evil. Golden sword: Smite Evil. Redstone dust in your inventory: +2 to any ability (1 is consumed). You can learn up to half your mana level in abilities, rounded up. Unlearned abilities can be used and still gain skill, at −3 power (floored at 1), until you have a free slot to learn them.";
+        return String.join(" ", indexHelpLines());
     }
 
     public static List<String> indexHelpKeys() {
@@ -324,7 +492,11 @@ public final class AbilityRules {
                 "tougher.ability.index.sense_evil",
                 "tougher.ability.index.smite_evil",
                 "tougher.ability.index.redstone",
-                "tougher.ability.index.unlock");
+                "tougher.ability.index.unlock",
+                "tougher.ability.index.unlock.2",
+                "tougher.ability.index.wise",
+                "tougher.ability.index.wise.2",
+                "tougher.ability.index.topic");
     }
 
     public static List<String> indexHelpLines() {
@@ -343,7 +515,11 @@ public final class AbilityRules {
                 "Spider eye: Sense Evil",
                 "Golden sword: Smite Evil",
                 "Redstone dust in your inventory: +2 to any ability (1 is consumed)",
-                "You can learn up to half your mana level in abilities, rounded up. Unlearned abilities can be used and still gain skill, at −3 power (floored at 1), until you have a free slot to learn them.");
+                "You can learn up to half your mana level in abilities, rounded up.",
+                "Unlearned abilities can be used and still gain skill, at −3 power (floored at 1), until you have a free slot to learn them.",
+                "A wise teacher can teach an ability for 48 emeralds with no mana-level limit.",
+                "That teacher will raise your mana once for a diamond block and a lapis lazuli block.",
+                "Type /tougher ability help <name> for one ability.");
     }
 
     /** Growth applications: rounded ability level + hoe bonus, at least 1. */
