@@ -4,12 +4,14 @@ package dev.extrahardmode.feature;
  * Hunger drain, variety bonus, and regen timing. Minecraft-free so JUnit can cover the math.
  */
 public final class HungerRules {
-    public static final float DEFAULT_MOVING_EXHAUSTION_PER_SECOND = 0.175F;
+    /** 80 exhaustion / 600s: a full bar with no saturation lasts 10 minutes. */
+    public static final float DEFAULT_MOVING_EXHAUSTION_PER_SECOND = 4.0F / 30.0F;
     public static final int DEFAULT_FOOD_HISTORY = 7;
     public static final int UNIQUE_WINDOW_EXPERIENCE = 3;
     public static final int TIRED_STREAK = 5;
     public static final int SICK_STREAK = 7;
-    public static final int DEFAULT_SLOW_REGEN_TICKS = 600;
+    /** 300 ticks = 15 seconds per 1 HP of food regen. */
+    public static final int DEFAULT_SLOW_REGEN_TICKS = 300;
     public static final int DEFAULT_AFK_TIMEOUT_SECONDS = 30;
     public static final int VANILLA_SLOW_REGEN_TICKS = 80;
     public static final int VANILLA_STARVE_TICKS = 80;

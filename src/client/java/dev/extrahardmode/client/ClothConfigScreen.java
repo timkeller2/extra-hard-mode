@@ -163,7 +163,7 @@ public final class ClothConfigScreen {
                     .setMax(TorchLifetimeRules.MAX_DAYS)
                     .setTooltip(Component.translatableWithFallback(
                             "tougher.config.torchBurnDays.tooltip",
-                            "Minecraft days a newly placed torch or campfire lasts before it disappears. Copper torches last twice as long. Torches pull coal or charcoal from a chest within 16 blocks for 30 more days (60 for copper). Campfires pull one log from a chest within 12 blocks to add another period. 0 = permanent. Lights placed before this setting never burn out."))
+                            "Minecraft days a newly placed torch or campfire lasts before it disappears. Copper torches last twice as long. Torches that pull coal or charcoal from a chest within 16 blocks become permanent. Campfires pull one log from a chest within 12 blocks to add another period. 0 = permanent. Lights placed before this setting never burn out."))
                     .setSaveConsumer(v -> torchBurnDays[0] = v)
                     .build());
             current.addEntry(entry.startBooleanToggle(

@@ -64,6 +64,8 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("positive is good"));
         assertTrue(String.join(" ", lines).contains("13%"));
         assertTrue(String.join(" ", lines).contains("Hold a hoe"));
+        assertTrue(String.join(" ", lines).contains("empty hand"));
+        assertTrue(String.join(" ", lines).contains("bone meal"));
         assertTrue(String.join(" ", lines).contains("small percent"));
         assertTrue(String.join(" ", lines).contains("red when below 0"));
         assertTrue(String.join(" ", lines).contains("soil under the cane"));
@@ -87,9 +89,10 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("campfires also need airflow"));
         assertTrue(String.join(" ", lines).contains("burn out after 7 Minecraft days"));
         assertTrue(String.join(" ", lines).contains("coal or charcoal"));
-        assertTrue(String.join(" ", lines).contains("30 more days"));
+        assertTrue(String.join(" ", lines).contains("become permanent"));
         assertTrue(String.join(" ", lines).contains("Copper torches last twice as long"));
-        assertTrue(String.join(" ", lines).contains("60 days"));
+        assertTrue(String.join(" ", lines).contains("remaining time"));
+        assertTrue(String.join(" ", lines).contains("Permanent if it never burns out"));
         assertTrue(String.join(" ", lines).contains("dim after 2 days"));
         assertTrue(String.join(" ", lines).contains("pull a log"));
         assertTrue(String.join(" ", lines).contains("12 blocks"));
@@ -108,8 +111,8 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("habitable home in a biome"));
         assertTrue(String.join(" ", lines).contains("house points × 3"));
         assertTrue(String.join(" ", lines).contains("300 blocks from spawn"));
-        assertTrue(String.join(" ", lines).contains("first player to claim"));
-        assertTrue(String.join(" ", lines).contains("upcoming list"));
+        assertTrue(String.join(" ", lines).contains("Everyone can earn every achievement"));
+        assertTrue(String.join(" ", lines).contains("25 extra experience"));
         assertTrue(String.join(" ", lines).contains("3 experience"));
         assertTrue(String.join(" ", lines).contains("faster hit softer"));
         assertTrue(String.join(" ", lines).contains("look smaller"));

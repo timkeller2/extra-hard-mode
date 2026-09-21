@@ -18,12 +18,14 @@ public final class TorchLifetimeRules {
     public static final int CAMPFIRE_REFUEL_RANGE = 12;
     /** Torches pull coal or charcoal from a chest at most this many blocks away. */
     public static final int TORCH_REFUEL_RANGE = 16;
-    /** Extra Minecraft days a torch lasts after consuming coal or charcoal. */
-    public static final int TORCH_REFUEL_DAYS = 30;
     /** Copper torches last this many times as long as a regular torch. */
     public static final int COPPER_DURATION_FACTOR = 2;
-    /** Extra Minecraft days a copper torch lasts after consuming coal or charcoal. */
-    public static final int COPPER_REFUEL_DAYS = 60;
+    /** Minecraft hours in a day; 24000 ticks / 24. */
+    public static final long TICKS_PER_HOUR = 1000L;
+    /** Crosshair remaining-time color. */
+    public static final int LIGHT_LOOK_COLOR = 0xFFFFC14A;
+    /** Crosshair color when the light never burns out. */
+    public static final int LIGHT_LOOK_PERMANENT_COLOR = 0xFFFFE082;
 
     private TorchLifetimeRules() {}
 
@@ -42,10 +44,6 @@ public final class TorchLifetimeRules {
             return MAX_DAYS;
         }
         return (int) doubled;
-    }
-
-    public static int refuelDaysFor(boolean copper) {
-        return copper ? COPPER_REFUEL_DAYS : TORCH_REFUEL_DAYS;
     }
 
     public static int clampDays(int days) {
@@ -129,5 +127,77 @@ public final class TorchLifetimeRules {
 
     public static boolean isTorchFuelItemId(String itemId) {
         return "minecraft:coal".equals(itemId) || "minecraft:charcoal".equals(itemId);
+    }
+
+    /**
+     * Remaining burn ticks. {@code -1} means permanent (no stamp or config days is 0).
+     */
+    public static int remainingTicks(long placedAt, long now, int days) {
+        if (placedAt < 0L || permanent(days)) {
+            return -1;
+        }
+        long elapsed = now <= placedAt ? 0L : now - placedAt;
+        long remaining = lifetimeTicks(days) - elapsed;
+        if (remaining <= 0L) {
+            return 0;
+        }
+        if (remaining >= Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        }
+        return (int) remaining;
+    }
+
+    /** Crosshair label: {@code Permanent}, {@code 6d 12h}, {@code 6d}, {@code 12h}, or {@code <1h}. */
+    public static String remainingLabel(int remainingTicks) {
+        if (remainingTicks < 0) {
+            return "Permanent";
+        }
+        int days = remainingTicks / (int) TICKS_PER_DAY;
+        int hours = (remainingTicks % (int) TICKS_PER_DAY) / (int) TICKS_PER_HOUR;
+        if (days > 0 && hours > 0) {
+            return days + "d " + hours + "h";
+        }
+        if (days > 0) {
+            return days + "d";
+        }
+        if (hours > 0) {
+            return hours + "h";
+        }
+        return "<1h";
+    }
+
+    public static int lightLookColor(int remainingTicks) {
+        return remainingTicks < 0 ? LIGHT_LOOK_PERMANENT_COLOR : LIGHT_LOOK_COLOR;
+    }
+
+    /**
+     * Empty hand, hoe, seeds, bone meal, torches, campfires, coal, charcoal, and logs
+     * show remaining burn time when looking at a torch or campfire.
+     */
+    public static boolean showsLightLook(String itemId) {
+        if (CropGrowthRules.showsSoilLook(itemId)) {
+            return true;
+        }
+        if (itemId == null || itemId.isEmpty()) {
+            return true;
+        }
+        String path = itemId;
+        int slash = itemId.indexOf(':');
+        if (slash >= 0) {
+            path = itemId.substring(slash + 1);
+        }
+        if (isTorchFuelItemId(itemId) || "coal".equals(path) || "charcoal".equals(path)) {
+            return true;
+        }
+        if (path.endsWith("_torch") || "torch".equals(path)) {
+            return true;
+        }
+        if (path.contains("campfire")) {
+            return true;
+        }
+        return path.endsWith("_log")
+                || path.endsWith("_wood")
+                || path.endsWith("_stem")
+                || path.endsWith("_hyphae");
     }
 }

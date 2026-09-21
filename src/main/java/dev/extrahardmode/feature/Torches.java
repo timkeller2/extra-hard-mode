@@ -6,6 +6,9 @@ import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.config.WorldConfig;
 import dev.extrahardmode.module.MessageId;
 import dev.extrahardmode.module.MsgService;
+import dev.extrahardmode.network.ClientboundLightLookPayload;
+import dev.extrahardmode.network.EhmNetworking;
+import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.task.RemoveExposedTorchesTask;
 import dev.extrahardmode.task.TorchBurnTask;
 import dev.extrahardmode.world.EhmTags;
@@ -47,6 +50,7 @@ import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import org.jspecify.annotations.Nullable;
 
 public final class Torches implements FeatureModule {
@@ -71,6 +75,7 @@ public final class Torches implements FeatureModule {
         TorchBurnTask.run(level, config.torchBurnDays());
         for (ServerPlayer player : level.players()) {
             ejectOffhandLight(player);
+            tickLightLook(player);
         }
     }
 
@@ -332,7 +337,7 @@ public final class Torches implements FeatureModule {
 
     /**
      * Consume one coal or charcoal from the nearest chest in range. True when the
-     * torch should keep burning.
+     * torch should become permanent.
      */
     public static boolean tryRefuelTorch(ServerLevel level, BlockPos torch) {
         List<BlockPos> chests = chestsInRange(level, torch, TorchLifetimeRules.TORCH_REFUEL_RANGE);
@@ -480,6 +485,79 @@ public final class Torches implements FeatureModule {
         player.setItemSlot(EquipmentSlot.OFFHAND, ItemStack.EMPTY);
         player.getInventory().placeItemBackInInventory(offhand, net.minecraft.util.Prediction.SERVER_ONLY);
         MsgService.deny(player, MessageId.NO_OFFHAND_LIGHT);
+    }
+
+    static void tickLightLook(ServerPlayer player) {
+        if (!(player.level() instanceof ServerLevel level) || !WorldGate.isModuleActive(level, ID)) {
+            sendLightLook(player, null);
+            return;
+        }
+        if (EhmApi.playerBypasses(player) || !showsLightLook(player.getMainHandItem())) {
+            sendLightLook(player, null);
+            return;
+        }
+        HitResult hit = player.pick(player.blockInteractionRange(), 1.0F, false);
+        if (!(hit instanceof BlockHitResult blockHit) || blockHit.getType() == HitResult.Type.MISS) {
+            sendLightLook(player, null);
+            return;
+        }
+        BlockPos pos = blockHit.getBlockPos();
+        BlockState state = level.getBlockState(pos);
+        if (!isBurnableTorch(state) && !isCampfire(state)) {
+            sendLightLook(player, null);
+            return;
+        }
+        int burnDays = isCampfire(state)
+                ? ConfigManager.world(level).torchBurnDays()
+                : burnDaysFor(state, ConfigManager.world(level).torchBurnDays());
+        sendLightLook(
+                player,
+                TorchLifetimeRules.remainingTicks(
+                        TorchLifetimeData.of(level).placedAt(pos), level.getGameTime(), burnDays));
+    }
+
+    static boolean showsLightLook(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return true;
+        }
+        if (stack.is(Items.COAL)
+                || stack.is(Items.CHARCOAL)
+                || stack.is(Items.BONE_MEAL)
+                || stack.is(ItemTags.LOGS)
+                || stack.is(ItemTags.HOES)) {
+            return true;
+        }
+        if (stack.getItem() instanceof BlockItem blockItem) {
+            Block block = blockItem.getBlock();
+            if (isBurnableTorch(block) || isCampfire(block)) {
+                return true;
+            }
+        }
+        return TorchLifetimeRules.showsLightLook(itemId(stack));
+    }
+
+    static String itemId(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return "";
+        }
+        return stack.typeHolder()
+                .unwrapKey()
+                .map(key -> key.identifier().toString())
+                .orElse("");
+    }
+
+    static void sendLightLook(ServerPlayer player, Integer remainingTicks) {
+        String key = remainingTicks == null ? "" : TorchLifetimeRules.remainingLabel(remainingTicks);
+        String last = player.getAttachedOrElse(EhmAttachments.EHM_LIGHT_LOOK, "");
+        if (key.equals(last)) {
+            return;
+        }
+        player.setAttached(EhmAttachments.EHM_LIGHT_LOOK, key);
+        EhmNetworking.sendLightLook(
+                player,
+                remainingTicks == null
+                        ? ClientboundLightLookPayload.HIDDEN
+                        : new ClientboundLightLookPayload(true, remainingTicks));
     }
 
     public enum DenyReason {

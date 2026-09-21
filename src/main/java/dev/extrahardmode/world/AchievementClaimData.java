@@ -13,8 +13,8 @@ import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 
 /**
- * First player to claim each builder/slayer tier. Stored on the overworld so
- * every dimension shares the same competitive board.
+ * First player to claim each builder/slayer tier, used for the extra XP bonus.
+ * Stored on the overworld so every dimension shares the same board.
  */
 public final class AchievementClaimData extends SavedData {
     public static final Codec<AchievementClaimData> CODEC = RecordCodecBuilder.create(instance -> instance.group(

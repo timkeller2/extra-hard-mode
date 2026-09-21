@@ -12,7 +12,6 @@ import dev.extrahardmode.world.WorldGate;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Consumer;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
@@ -219,13 +218,10 @@ public final class Achievements implements FeatureModule {
         for (int i = already; i < awarded; i++) {
             String claimKey = AchievementRules.claimKey(builder, key, i);
             boolean first = claims.tryClaim(claimKey);
-            if (competitive && !first) {
-                continue;
-            }
             grantedThrough = i + 1;
             announce(player, builder, subject);
             celebrate(player);
-            giveReward(player);
+            giveReward(player, competitive && first);
             grantDiamond(player);
         }
         if (grantedThrough != already) {
@@ -275,8 +271,8 @@ public final class Achievements implements FeatureModule {
         }
     }
 
-    static void giveReward(ServerPlayer player) {
-        player.giveExperiencePoints(AchievementRules.REWARD_EXPERIENCE_POINTS);
+    static void giveReward(ServerPlayer player, boolean firstClaim) {
+        player.giveExperiencePoints(AchievementRules.rewardExperience(firstClaim));
         int gained = 0;
         if (AchievementRules.manaFromExperience(player.experienceLevel, player.getRandom().nextInt(100))) {
             gained++;
@@ -367,14 +363,12 @@ public final class Achievements implements FeatureModule {
     }
 
     public static int sendClosest(ServerPlayer player, Consumer<Component> send) {
-        Set<String> claimed = claimedKeys(player);
         List<AchievementRules.Progress> closest = AchievementRules.closest(
                 player.getAttachedOrElse(EhmAttachments.EHM_BLOCK_PLACE_COUNTS, Map.of()),
                 player.getAttachedOrElse(EhmAttachments.EHM_KILL_COUNTS, Map.of()),
                 player.getAttachedOrElse(EhmAttachments.EHM_BLOCK_AWARDED, Map.of()),
                 player.getAttachedOrElse(EhmAttachments.EHM_KILL_AWARDED, Map.of()),
-                AchievementRules.CLOSEST_LIST_LIMIT,
-                claimed);
+                AchievementRules.CLOSEST_LIST_LIMIT);
         AchievementRules.Progress last = lastPlacedOf(player);
         if (closest.isEmpty() && last == null) {
             send.accept(Component.translatableWithFallback(
@@ -390,13 +384,11 @@ public final class Achievements implements FeatureModule {
     }
 
     public static void sendWatchReport(ServerPlayer player, Consumer<Component> send) {
-        Set<String> claimed = claimedKeys(player);
         List<AchievementRules.Progress> closest = AchievementRules.closestWatch(
                 player.getAttachedOrElse(EhmAttachments.EHM_BLOCK_PLACE_COUNTS, Map.of()),
                 player.getAttachedOrElse(EhmAttachments.EHM_KILL_COUNTS, Map.of()),
                 player.getAttachedOrElse(EhmAttachments.EHM_BLOCK_AWARDED, Map.of()),
-                player.getAttachedOrElse(EhmAttachments.EHM_KILL_AWARDED, Map.of()),
-                claimed);
+                player.getAttachedOrElse(EhmAttachments.EHM_KILL_AWARDED, Map.of()));
         AchievementRules.Progress last = lastPlacedOf(player);
         if (closest.isEmpty() && last == null) {
             return;
@@ -415,15 +407,7 @@ public final class Achievements implements FeatureModule {
         return AchievementRules.lastPlaced(
                 id,
                 countOf(player, EhmAttachments.EHM_BLOCK_PLACE_COUNTS, id),
-                countOf(player, EhmAttachments.EHM_BLOCK_AWARDED, id),
-                claimedKeys(player));
-    }
-
-    static Set<String> claimedKeys(ServerPlayer player) {
-        if (!ConfigManager.world(player.level()).competitiveAchievements()) {
-            return Set.of();
-        }
-        return AchievementClaimData.of(player.level()).snapshot();
+                countOf(player, EhmAttachments.EHM_BLOCK_AWARDED, id));
     }
 
     static Component joinProgress(List<AchievementRules.Progress> closest, AchievementRules.Progress lastPlaced) {

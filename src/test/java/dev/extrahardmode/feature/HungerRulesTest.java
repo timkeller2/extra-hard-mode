@@ -18,9 +18,13 @@ class HungerRulesTest {
 
     @Test
     void exhaustionPerTickIsPerSecondOverTwenty() {
-        assertEquals(0.175F, HungerRules.DEFAULT_MOVING_EXHAUSTION_PER_SECOND, 1.0E-6F);
+        assertEquals(4.0F / 30.0F, HungerRules.DEFAULT_MOVING_EXHAUSTION_PER_SECOND, 1.0E-6F);
+        assertEquals(600.0F, 80.0F / HungerRules.DEFAULT_MOVING_EXHAUSTION_PER_SECOND, 0.01F);
         assertEquals(0.0125F, HungerRules.exhaustionPerTick(0.25F), 1.0E-6F);
-        assertEquals(0.00875F, HungerRules.exhaustionPerTick(HungerRules.DEFAULT_MOVING_EXHAUSTION_PER_SECOND), 1.0E-6F);
+        assertEquals(
+                HungerRules.DEFAULT_MOVING_EXHAUSTION_PER_SECOND / 20.0F,
+                HungerRules.exhaustionPerTick(HungerRules.DEFAULT_MOVING_EXHAUSTION_PER_SECOND),
+                1.0E-6F);
     }
 
     @Test
@@ -42,6 +46,13 @@ class HungerRulesTest {
         assertTrue(HungerRules.isAfk(100, null, 600));
         assertFalse(HungerRules.isAfk(10_000, 0L, 0));
         assertEquals(-2.0F, HungerRules.wrapDegrees(358.0F), 0.001F);
+    }
+
+    @Test
+    void defaultSlowRegenIsFifteenSeconds() {
+        assertEquals(300, HungerRules.DEFAULT_SLOW_REGEN_TICKS);
+        assertEquals(15, HungerRules.DEFAULT_SLOW_REGEN_TICKS / HungerRules.TICKS_PER_SECOND);
+        assertEquals(80, HungerRules.VANILLA_SLOW_REGEN_TICKS);
     }
 
     @Test

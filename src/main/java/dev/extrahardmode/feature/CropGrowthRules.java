@@ -406,6 +406,39 @@ public final class CropGrowthRules {
         return displayed < 0 ? SOIL_LOOK_COLOR_BAD : SOIL_LOOK_COLOR_GOOD;
     }
 
+    /**
+     * Empty hand, hoes, bone meal, and plantable seeds/seed-crops show the soil
+     * modifier when looking at a plot that has one.
+     */
+    public static boolean showsSoilLook(String itemId) {
+        if (itemId == null || itemId.isEmpty()) {
+            return true;
+        }
+        String path = itemId;
+        int slash = itemId.indexOf(':');
+        if (slash >= 0) {
+            path = itemId.substring(slash + 1);
+        }
+        if ("bone_meal".equals(path) || path.endsWith("_hoe") || "hoe".equals(path)) {
+            return true;
+        }
+        return switch (path) {
+            case "wheat_seeds",
+                    "pumpkin_seeds",
+                    "melon_seeds",
+                    "beetroot_seeds",
+                    "torchflower_seeds",
+                    "pitcher_pod",
+                    "potato",
+                    "carrot",
+                    "nether_wart",
+                    "cocoa_beans",
+                    "sugar_cane" ->
+                true;
+            default -> false;
+        };
+    }
+
     public static String signedPercentLabel(int displayed) {
         if (displayed > 0) {
             return "+" + displayed + "%";

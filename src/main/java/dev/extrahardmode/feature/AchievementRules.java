@@ -29,6 +29,8 @@ public final class AchievementRules {
     /** Stored mana cannot exceed this (10 crystals). */
     public static final double MANA_HARD_CAP = 20.0;
     public static final int REWARD_EXPERIENCE_POINTS = 50;
+    /** Extra XP for the first player to claim a given achievement server-wide. */
+    public static final int FIRST_CLAIM_BONUS_EXPERIENCE = 25;
     public static final int MANA_DIAMOND_COST = 1;
     public static final int MANA_LAPIS_COST_START = 1;
 
@@ -154,6 +156,11 @@ public final class AchievementRules {
         return Math.max(0.0, credit - Math.max(0, consumed) * QUARTZ_MANA_PER_ITEM);
     }
 
+    /** Base 50 XP, plus 25 when this player is first server-wide. */
+    public static int rewardExperience(boolean firstClaim) {
+        return REWARD_EXPERIENCE_POINTS + (firstClaim ? FIRST_CLAIM_BONUS_EXPERIENCE : 0);
+    }
+
     /** Experience-level percent chance of a bonus mana level, 0–100. */
     public static int manaChancePercent(int experienceLevel) {
         return Math.min(100, Math.max(0, experienceLevel));
@@ -204,16 +211,21 @@ public final class AchievementRules {
 
     /**
      * Next achievement that has not already been granted. Already-earned tiers
-     * are skipped even if the action count later dropped below them.
+     * are skipped even if the action count later dropped below them. Server-wide
+     * first-claim bonuses do not hide a tier from other players.
      */
     public static int nextTarget(int count, int[] thresholds, int alreadyAwarded) {
-        return nextTarget(count, thresholds, alreadyAwarded, Set.of(), true, "");
+        if (thresholds == null || thresholds.length == 0) {
+            return 0;
+        }
+        int start = Math.max(0, alreadyAwarded);
+        if (start >= thresholds.length) {
+            return 0;
+        }
+        return thresholds[start];
     }
 
-    /**
-     * Next unawarded, unclaimed tier. Competitive claims skip that tier for
-     * every player, including those who never earned it.
-     */
+    /** Same next tier as {@link #nextTarget(int, int[], int)}; claimed keys do not skip. */
     public static int nextTarget(
             int count,
             int[] thresholds,
@@ -221,17 +233,7 @@ public final class AchievementRules {
             Collection<String> claimed,
             boolean builder,
             String id) {
-        if (thresholds == null || thresholds.length == 0) {
-            return 0;
-        }
-        int start = Math.max(0, alreadyAwarded);
-        for (int i = start; i < thresholds.length; i++) {
-            if (isClaimed(claimed, builder, id, i)) {
-                continue;
-            }
-            return thresholds[i];
-        }
-        return 0;
+        return nextTarget(count, thresholds, alreadyAwarded);
     }
 
     public static boolean isClaimed(Collection<String> claimed, boolean builder, String id, int tierIndex) {

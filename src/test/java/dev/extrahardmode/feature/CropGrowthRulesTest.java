@@ -238,6 +238,16 @@ class CropGrowthRulesTest {
         assertEquals(-13, CropGrowthRules.afterHandHarvest(-18));
         assertEquals(-5, CropGrowthRules.displayedDelta(-13, -18));
         assertEquals("13%", CropGrowthRules.percentLabel(13));
+        assertTrue(CropGrowthRules.showsSoilLook(""));
+        assertTrue(CropGrowthRules.showsSoilLook(null));
+        assertTrue(CropGrowthRules.showsSoilLook("minecraft:wooden_hoe"));
+        assertTrue(CropGrowthRules.showsSoilLook("minecraft:bone_meal"));
+        assertTrue(CropGrowthRules.showsSoilLook("minecraft:wheat_seeds"));
+        assertTrue(CropGrowthRules.showsSoilLook("minecraft:potato"));
+        assertTrue(CropGrowthRules.showsSoilLook("minecraft:carrot"));
+        assertTrue(CropGrowthRules.showsSoilLook("minecraft:nether_wart"));
+        assertFalse(CropGrowthRules.showsSoilLook("minecraft:stick"));
+        assertFalse(CropGrowthRules.showsSoilLook("minecraft:diamond"));
         assertEquals(CropGrowthRules.SOIL_LOOK_COLOR_GOOD, CropGrowthRules.soilLookColor(13));
         assertEquals(CropGrowthRules.SOIL_LOOK_COLOR_GOOD, CropGrowthRules.soilLookColor(0));
         assertEquals(CropGrowthRules.SOIL_LOOK_COLOR_BAD, CropGrowthRules.soilLookColor(-1));

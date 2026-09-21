@@ -15,6 +15,7 @@ import dev.extrahardmode.network.ClientboundCouncilBountyPayload;
 import dev.extrahardmode.network.ClientboundFlightPayload;
 import dev.extrahardmode.network.ClientboundManaPayload;
 import dev.extrahardmode.network.ClientboundPowerMinePayload;
+import dev.extrahardmode.network.ClientboundLightLookPayload;
 import dev.extrahardmode.network.ClientboundSoilLookPayload;
 import dev.extrahardmode.network.ClientboundSyncPayload;
 import dev.extrahardmode.network.ClientboundToastPayload;
@@ -54,6 +55,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
     private static volatile ClientboundPowerMinePayload lastPowerMine;
     private static volatile ClientboundAbilityDurationsPayload lastDurations;
     private static volatile ClientboundSoilLookPayload lastSoilLook;
+    private static volatile ClientboundLightLookPayload lastLightLook;
     private static volatile ClientboundCouncilBountyPayload lastCouncilBounty;
 
     public static ClientboundSyncPayload lastSync() {
@@ -78,6 +80,10 @@ public class ExtraHardModeClient implements ClientModInitializer {
 
     public static ClientboundSoilLookPayload lastSoilLook() {
         return lastSoilLook;
+    }
+
+    public static ClientboundLightLookPayload lastLightLook() {
+        return lastLightLook;
     }
 
     public static ClientboundCouncilBountyPayload lastCouncilBounty() {
@@ -300,6 +306,8 @@ public class ExtraHardModeClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(
                 ClientboundSoilLookPayload.TYPE, (payload, context) -> lastSoilLook = payload);
         ClientPlayNetworking.registerGlobalReceiver(
+                ClientboundLightLookPayload.TYPE, (payload, context) -> lastLightLook = payload);
+        ClientPlayNetworking.registerGlobalReceiver(
                 ClientboundCouncilBountyPayload.TYPE, (payload, context) -> lastCouncilBounty = payload);
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             lastSync = null;
@@ -308,6 +316,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
             lastPowerMine = null;
             lastDurations = null;
             lastSoilLook = null;
+            lastLightLook = null;
             lastCouncilBounty = null;
             SeasonAtmosphere.clearClient();
         });
@@ -315,6 +324,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
         AbilityDurationHud.register();
         CouncilBountyHud.register();
         SoilLookHud.register();
+        LightLookHud.register();
         AbilityHelp.register();
         UseEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {
             if (!level.isClientSide() || lastSync == null) {

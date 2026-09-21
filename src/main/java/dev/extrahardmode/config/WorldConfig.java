@@ -5,6 +5,7 @@ import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.electronwill.nightconfig.toml.TomlFormat;
 import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.feature.HardenedBudget;
+import dev.extrahardmode.feature.HungerRules;
 import dev.extrahardmode.feature.OvergrazingRules;
 import dev.extrahardmode.feature.SoftenMap;
 import dev.extrahardmode.feature.TorchLifetimeRules;
@@ -21,7 +22,7 @@ import net.minecraft.world.level.storage.LevelResource;
 
 /** Per-dimension TOML, stored under the overworld save and keyed by {@code dimension().identifier()}. */
 public final class WorldConfig {
-    public static final int CONFIG_VERSION = 4;
+    public static final int CONFIG_VERSION = 6;
 
     private final Identifier dimensionId;
     private final Map<Identifier, Boolean> modules = new LinkedHashMap<>();
@@ -106,9 +107,9 @@ public final class WorldConfig {
     private int animalBreedCooldownMultiplier = 6;
     private int eggLayTimeMultiplier = 6;
     private int hiveHoneycombCount = 1;
-    private float movingExhaustionPerSecond = 0.175F;
+    private float movingExhaustionPerSecond = HungerRules.DEFAULT_MOVING_EXHAUSTION_PER_SECOND;
     private int foodHistorySize = 7;
-    private int slowRegenTicks = 600;
+    private int slowRegenTicks = HungerRules.DEFAULT_SLOW_REGEN_TICKS;
     private boolean disableFastSaturationRegen = true;
     private int afkTimeoutSeconds = 30;
     private int fishHealthyCount = 3;
@@ -932,7 +933,7 @@ public final class WorldConfig {
                 writeDefaultIfMissing(
                         file,
                         "achievements.competitive",
-                        "Only the first player to claim a builder or slayer achievement gets it. Claimed achievements leave everyone's upcoming list. Default true.",
+                        "The first player to claim a builder or slayer achievement server-wide gets 25 extra experience. Everyone can still earn every achievement. Default true.",
                         true);
                 writeDefaultIfMissing(
                         file,
@@ -967,7 +968,7 @@ public final class WorldConfig {
                 writeDefaultIfMissing(
                         file,
                         "torches.burnDays",
-                        "Minecraft days (24000 ticks) a newly placed torch or campfire lasts before it disappears. Copper torches last twice as long. Torches pull coal or charcoal from a chest within 16 blocks for 30 more days (60 for copper). Campfires pull one log from a chest within 12 blocks to add another period. 0 = permanent. Lights with no recorded place time (older worlds, worldgen) never burn out. Default 7.",
+                        "Minecraft days (24000 ticks) a newly placed torch or campfire lasts before it disappears. Copper torches last twice as long. Torches that pull coal or charcoal from a chest within 16 blocks become permanent. Campfires pull one log from a chest within 12 blocks to add another period. 0 = permanent. Lights with no recorded place time (older worlds, worldgen) never burn out. Default 7.",
                         TorchLifetimeRules.DEFAULT_DAYS);
                 writeDefaultIfMissing(
                         file, "campfires.rainExtinguishes", "Optional. Same rain pass as torches; default off.", false);
@@ -1499,9 +1500,10 @@ public final class WorldConfig {
         animalBreedCooldownMultiplier = Math.max(1, getInt(file, "farming.animalBreedCooldownMultiplier", 6));
         eggLayTimeMultiplier = Math.max(1, getInt(file, "farming.eggLayTimeMultiplier", 6));
         hiveHoneycombCount = Math.clamp(getInt(file, "farming.hiveHoneycombCount", 1), 0, 64);
-        movingExhaustionPerSecond = (float) getDouble(file, "hunger.movingExhaustionPerSecond", 0.175);
+        movingExhaustionPerSecond = (float) getDouble(
+                file, "hunger.movingExhaustionPerSecond", HungerRules.DEFAULT_MOVING_EXHAUSTION_PER_SECOND);
         foodHistorySize = Math.max(1, getInt(file, "hunger.foodHistorySize", 7));
-        slowRegenTicks = Math.max(1, getInt(file, "hunger.slowRegenTicks", 600));
+        slowRegenTicks = Math.max(1, getInt(file, "hunger.slowRegenTicks", HungerRules.DEFAULT_SLOW_REGEN_TICKS));
         disableFastSaturationRegen = file.getOrElse("hunger.disableFastSaturationRegen", true);
         afkTimeoutSeconds = Math.max(0, getInt(file, "hunger.afkTimeoutSeconds", 30));
         fishHealthyCount = Math.max(0, getInt(file, "fish.healthyCount", 3));
@@ -1676,14 +1678,14 @@ public final class WorldConfig {
         writeDefaultIfMissing(
                 file,
                 "hunger.movingExhaustionPerSecond",
-                "Extra exhaustion per second while the player is doing anything. Suspended only after afkTimeoutSeconds with no activity.",
-                0.175);
+                "Extra exhaustion per second while the player is doing anything. Suspended only after afkTimeoutSeconds with no activity. Default 0.1333 empties a full bar with no saturation in 10 minutes.",
+                HungerRules.DEFAULT_MOVING_EXHAUSTION_PER_SECOND);
         writeDefaultIfMissing(file, "hunger.foodHistorySize", "Last N distinct-slot foods. A food not in that list restores +1 hunger, or +1 saturation if the bar is full.", 7);
         writeDefaultIfMissing(
                 file,
                 "hunger.slowRegenTicks",
-                "Ticks per heart of food regen after fast saturation regen is disabled. 600 = 30 seconds.",
-                600);
+                "Ticks per 1 HP of food regen after fast saturation regen is disabled. 300 = 15 seconds. Configurable; vanilla slow regen is 80 ticks (4 seconds).",
+                HungerRules.DEFAULT_SLOW_REGEN_TICKS);
         writeDefaultIfMissing(
                 file,
                 "hunger.disableFastSaturationRegen",
@@ -1826,6 +1828,8 @@ public final class WorldConfig {
      * Schema 3: diamond armor slowdown default 40% → 0. Only rewrites a stored 40
      * so a custom value is kept.
      * Schema 4: nether wart farming default true (blocked) → false (growable at 1/20).
+     * Schema 5: hunger drain 0.175/s → 0.1333/s (full bar, no saturation, 10 minutes).
+     * Schema 6: food regen 600 ticks (30s) → 300 ticks (15s per 1 HP).
      */
     private static void migrate(CommentedFileConfig file) {
         int version = getInt(file, "configVersion", 1);
@@ -1840,6 +1844,13 @@ public final class WorldConfig {
         }
         if (version < 4 && file.getOrElse("farming.noFarmNetherWart", true)) {
             file.set("farming.noFarmNetherWart", false);
+        }
+        if (version < 5
+                && Math.abs(getDouble(file, "hunger.movingExhaustionPerSecond", 0.175) - 0.175) < 1.0e-6) {
+            file.set("hunger.movingExhaustionPerSecond", (double) HungerRules.DEFAULT_MOVING_EXHAUSTION_PER_SECOND);
+        }
+        if (version < 6 && getInt(file, "hunger.slowRegenTicks", 600) == 600) {
+            file.set("hunger.slowRegenTicks", HungerRules.DEFAULT_SLOW_REGEN_TICKS);
         }
         file.set("configVersion", CONFIG_VERSION);
     }

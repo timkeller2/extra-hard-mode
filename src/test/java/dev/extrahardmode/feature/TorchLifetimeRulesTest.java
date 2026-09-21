@@ -77,21 +77,16 @@ class TorchLifetimeRulesTest {
         assertEquals(0L, TorchLifetimeRules.extendPlacedAt(0L, 0));
         assertEquals(-1L, TorchLifetimeRules.extendPlacedAt(-1L, 7));
         assertEquals(16, TorchLifetimeRules.TORCH_REFUEL_RANGE);
-        assertEquals(30, TorchLifetimeRules.TORCH_REFUEL_DAYS);
         assertTrue(TorchLifetimeRules.chestInRange(16, 0, 0, 16));
         assertFalse(TorchLifetimeRules.chestInRange(17, 0, 0, 16));
-        long torchExtended = TorchLifetimeRules.extendPlacedAt(0L, 30);
-        assertEquals(720000L, torchExtended);
-        assertFalse(TorchLifetimeRules.expired(torchExtended, 168000L, 7));
         assertTrue(TorchLifetimeRules.isTorchFuelItemId("minecraft:coal"));
         assertTrue(TorchLifetimeRules.isTorchFuelItemId("minecraft:charcoal"));
         assertFalse(TorchLifetimeRules.isTorchFuelItemId("minecraft:oak_log"));
     }
 
     @Test
-    void copperTorchLastsTwiceAsLongAndRefuelsSixtyDays() {
+    void copperTorchLastsTwiceAsLong() {
         assertEquals(2, TorchLifetimeRules.COPPER_DURATION_FACTOR);
-        assertEquals(60, TorchLifetimeRules.COPPER_REFUEL_DAYS);
         assertTrue(TorchLifetimeRules.isCopperTorchId("minecraft:copper_torch"));
         assertTrue(TorchLifetimeRules.isCopperTorchId("minecraft:copper_wall_torch"));
         assertFalse(TorchLifetimeRules.isCopperTorchId("minecraft:torch"));
@@ -100,16 +95,52 @@ class TorchLifetimeRulesTest {
         assertEquals(14, TorchLifetimeRules.burnDaysFor(7, true));
         assertEquals(0, TorchLifetimeRules.burnDaysFor(0, true));
         assertEquals(TorchLifetimeRules.MAX_DAYS, TorchLifetimeRules.burnDaysFor(TorchLifetimeRules.MAX_DAYS, true));
-        assertEquals(30, TorchLifetimeRules.refuelDaysFor(false));
-        assertEquals(60, TorchLifetimeRules.refuelDaysFor(true));
         assertFalse(TorchLifetimeRules.expired(0L, 167999L, 7));
         assertTrue(TorchLifetimeRules.expired(0L, 168000L, 7));
         assertFalse(TorchLifetimeRules.expired(0L, 335999L, 14));
         assertTrue(TorchLifetimeRules.expired(0L, 336000L, 14));
-        long copperRefuel = TorchLifetimeRules.extendPlacedAt(0L, 60);
-        assertEquals(1_440_000L, copperRefuel);
-        assertFalse(TorchLifetimeRules.expired(copperRefuel, 336000L, 14));
-        assertFalse(TorchLifetimeRules.expired(copperRefuel, 1_775_999L, 14));
-        assertTrue(TorchLifetimeRules.expired(copperRefuel, 1_776_000L, 14));
+    }
+
+    @Test
+    void remainingTicksIsPermanentWhenUnstampedOrConfigPermanent() {
+        assertEquals(-1, TorchLifetimeRules.remainingTicks(-1L, 999_999L, 7));
+        assertEquals(-1, TorchLifetimeRules.remainingTicks(0L, 100L, 0));
+        assertEquals(24000, TorchLifetimeRules.remainingTicks(0L, 0L, 1));
+        assertEquals(1, TorchLifetimeRules.remainingTicks(0L, 23999L, 1));
+        assertEquals(0, TorchLifetimeRules.remainingTicks(0L, 24000L, 1));
+        assertEquals(168000, TorchLifetimeRules.remainingTicks(0L, 0L, 7));
+        assertEquals(12000, TorchLifetimeRules.remainingTicks(0L, 156000L, 7));
+        assertEquals(14 * 24000, TorchLifetimeRules.remainingTicks(0L, 0L, 14));
+    }
+
+    @Test
+    void remainingLabelShowsPermanentAndDaysHours() {
+        assertEquals("Permanent", TorchLifetimeRules.remainingLabel(-1));
+        assertEquals("7d", TorchLifetimeRules.remainingLabel(7 * 24000));
+        assertEquals("6d 12h", TorchLifetimeRules.remainingLabel(6 * 24000 + 12 * 1000));
+        assertEquals("3h", TorchLifetimeRules.remainingLabel(3000));
+        assertEquals("<1h", TorchLifetimeRules.remainingLabel(500));
+        assertEquals("<1h", TorchLifetimeRules.remainingLabel(0));
+        assertEquals(TorchLifetimeRules.LIGHT_LOOK_PERMANENT_COLOR, TorchLifetimeRules.lightLookColor(-1));
+        assertEquals(TorchLifetimeRules.LIGHT_LOOK_COLOR, TorchLifetimeRules.lightLookColor(24000));
+    }
+
+    @Test
+    void showsLightLookForEmptyHandFuelAndTorches() {
+        assertTrue(TorchLifetimeRules.showsLightLook(""));
+        assertTrue(TorchLifetimeRules.showsLightLook(null));
+        assertTrue(TorchLifetimeRules.showsLightLook("minecraft:wooden_hoe"));
+        assertTrue(TorchLifetimeRules.showsLightLook("minecraft:bone_meal"));
+        assertTrue(TorchLifetimeRules.showsLightLook("minecraft:wheat_seeds"));
+        assertTrue(TorchLifetimeRules.showsLightLook("minecraft:torch"));
+        assertTrue(TorchLifetimeRules.showsLightLook("minecraft:copper_torch"));
+        assertTrue(TorchLifetimeRules.showsLightLook("minecraft:copper_wall_torch"));
+        assertTrue(TorchLifetimeRules.showsLightLook("minecraft:campfire"));
+        assertTrue(TorchLifetimeRules.showsLightLook("minecraft:soul_campfire"));
+        assertTrue(TorchLifetimeRules.showsLightLook("minecraft:coal"));
+        assertTrue(TorchLifetimeRules.showsLightLook("minecraft:charcoal"));
+        assertTrue(TorchLifetimeRules.showsLightLook("minecraft:oak_log"));
+        assertFalse(TorchLifetimeRules.showsLightLook("minecraft:stick"));
+        assertFalse(TorchLifetimeRules.showsLightLook("minecraft:diamond"));
     }
 }

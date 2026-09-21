@@ -35,7 +35,7 @@ import net.minecraft.world.level.Level;
 /**
  * Extra exhaustion while the player is doing anything, paused only when AFK.
  * Variety bonus on a new food in the last 7 eaten, repeat-food penalty,
- * no saturation-fast regen, slow regen 1 heart / 30s.
+ * no saturation-fast regen, slow regen 1 HP / 15s.
  */
 public final class Hunger implements FeatureModule {
     public static final Identifier ID = ExtraHardModeMod.id("hunger");

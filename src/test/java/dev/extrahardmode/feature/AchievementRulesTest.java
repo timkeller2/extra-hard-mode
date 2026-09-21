@@ -80,6 +80,9 @@ class AchievementRulesTest {
     @Test
     void achievementRewardUsesExperienceLevelChanceAndBlockPayment() {
         assertEquals(50, AchievementRules.REWARD_EXPERIENCE_POINTS);
+        assertEquals(25, AchievementRules.FIRST_CLAIM_BONUS_EXPERIENCE);
+        assertEquals(50, AchievementRules.rewardExperience(false));
+        assertEquals(75, AchievementRules.rewardExperience(true));
         assertEquals(0, AchievementRules.manaChancePercent(0));
         assertEquals(15, AchievementRules.manaChancePercent(15));
         assertEquals(100, AchievementRules.manaChancePercent(100));
@@ -267,12 +270,12 @@ class AchievementRulesTest {
     }
 
     @Test
-    void competitiveClaimsSkipUpcomingTiers() {
+    void firstClaimDoesNotHideTiersFromOthers() {
         assertEquals("b:minecraft:oak_planks:0", AchievementRules.claimKey(true, "minecraft:oak_planks", 0));
         assertEquals("s:minecraft:zombie:1", AchievementRules.claimKey(false, "minecraft:zombie", 1));
         var claimed = Set.of(AchievementRules.claimKey(true, "minecraft:oak_planks", 0));
         assertEquals(
-                512,
+                256,
                 AchievementRules.nextTarget(
                         200, AchievementRules.BUILDER_THRESHOLDS, 0, claimed, true, "minecraft:oak_planks"));
         assertEquals(256, AchievementRules.nextTarget(200, AchievementRules.BUILDER_THRESHOLDS, 0));
@@ -280,17 +283,19 @@ class AchievementRulesTest {
         List<AchievementRules.Progress> closest = AchievementRules.closest(
                 builders, Map.of(), Map.of(), Map.of(), 15, claimed);
         assertEquals(2, closest.size());
-        assertEquals("minecraft:dirt", closest.get(0).id());
+        assertEquals("minecraft:oak_planks", closest.get(0).id());
         assertEquals(256, closest.get(0).nextTarget());
-        assertEquals("minecraft:oak_planks", closest.get(1).id());
-        assertEquals(512, closest.get(1).nextTarget());
+        assertEquals("minecraft:dirt", closest.get(1).id());
+        assertEquals(256, closest.get(1).nextTarget());
         var allOak = Set.of(
                 AchievementRules.claimKey(true, "minecraft:oak_planks", 0),
                 AchievementRules.claimKey(true, "minecraft:oak_planks", 1),
                 AchievementRules.claimKey(true, "minecraft:oak_planks", 2));
-        assertTrue(AchievementRules.closest(Map.of("minecraft:oak_planks", 200), Map.of(), Map.of(), Map.of(), 15, allOak)
-                .isEmpty());
+        List<AchievementRules.Progress> stillListed =
+                AchievementRules.closest(Map.of("minecraft:oak_planks", 200), Map.of(), Map.of(), Map.of(), 15, allOak);
+        assertEquals(1, stillListed.size());
+        assertEquals(256, stillListed.get(0).nextTarget());
         assertEquals(
-                512, AchievementRules.lastPlaced("minecraft:oak_planks", 200, 0, claimed).nextTarget());
+                256, AchievementRules.lastPlaced("minecraft:oak_planks", 200, 0, claimed).nextTarget());
     }
 }

@@ -271,6 +271,9 @@ public final class EhmAttachments {
     /** Last hoe-look soil HUD key, empty when hidden. */
     public static final AttachmentType<String> EHM_SOIL_LOOK = AttachmentRegistry.create(
             ExtraHardModeMod.id("soil_look"), builder -> builder.initializer(() -> ""));
+    /** Last look-at torch/campfire remaining-time HUD key, empty when hidden. */
+    public static final AttachmentType<String> EHM_LIGHT_LOOK = AttachmentRegistry.create(
+            ExtraHardModeMod.id("light_look"), builder -> builder.initializer(() -> ""));
 
     /** Cooking XP millipoints (1000 = 1 XP) stored on hoppers/chests that received furnace output. */
     public static final AttachmentType<Integer> EHM_COOKING_XP_MILLI = AttachmentRegistry.create(

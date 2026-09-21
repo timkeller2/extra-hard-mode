@@ -43,6 +43,7 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -51,8 +52,10 @@ import net.minecraft.world.level.block.AttachedStemBlock;
 import net.minecraft.world.level.block.BeehiveBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.CactusBlock;
+import net.minecraft.world.level.block.CocoaBlock;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CropBlock;
+import net.minecraft.world.level.block.NetherWartBlock;
 import net.minecraft.world.level.block.FarmlandBlock;
 import net.minecraft.world.level.block.StemBlock;
 import net.minecraft.world.level.block.SugarCaneBlock;
@@ -522,7 +525,7 @@ public final class AntiFarming implements FeatureModule {
             sendSoilLook(player, null);
             return;
         }
-        if (EhmApi.playerBypasses(player) || !player.getMainHandItem().is(ItemTags.HOES)) {
+        if (EhmApi.playerBypasses(player) || !showsSoilLook(player.getMainHandItem())) {
             sendSoilLook(player, null);
             return;
         }
@@ -538,6 +541,25 @@ public final class AntiFarming implements FeatureModule {
             return;
         }
         sendSoilLook(player, CropGrowthRules.displayedModifier(data.modifier(soil)));
+    }
+
+    static boolean showsSoilLook(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return true;
+        }
+        if (stack.is(ItemTags.HOES) || stack.is(Items.BONE_MEAL)) {
+            return true;
+        }
+        if (stack.getItem() instanceof BlockItem blockItem) {
+            Block block = blockItem.getBlock();
+            if (isPlantedCrop(block)
+                    || isFarmHarvestBlock(block)
+                    || block instanceof NetherWartBlock
+                    || block instanceof CocoaBlock) {
+                return true;
+            }
+        }
+        return CropGrowthRules.showsSoilLook(itemId(stack));
     }
 
     static BlockPos soilForLook(ServerLevel level, BlockPos pos) {

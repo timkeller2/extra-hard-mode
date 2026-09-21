@@ -31,6 +31,8 @@ public final class EhmNetworking {
         PayloadTypeRegistry.clientboundPlay()
                 .register(ClientboundSoilLookPayload.TYPE, ClientboundSoilLookPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay()
+                .register(ClientboundLightLookPayload.TYPE, ClientboundLightLookPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay()
                 .register(ClientboundCouncilBountyPayload.TYPE, ClientboundCouncilBountyPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(ServerboundConfigPayload.TYPE, ServerboundConfigPayload.STREAM_CODEC);
         ServerPlayNetworking.registerGlobalReceiver(ServerboundConfigPayload.TYPE, EhmNetworking::onConfig);
@@ -47,6 +49,10 @@ public final class EhmNetworking {
     }
 
     public static void sendSoilLook(ServerPlayer player, ClientboundSoilLookPayload payload) {
+        ServerPlayNetworking.send(player, payload);
+    }
+
+    public static void sendLightLook(ServerPlayer player, ClientboundLightLookPayload payload) {
         ServerPlayNetworking.send(player, payload);
     }
 
