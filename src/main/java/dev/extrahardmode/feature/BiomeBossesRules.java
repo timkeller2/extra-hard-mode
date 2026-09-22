@@ -30,6 +30,31 @@ public final class BiomeBossesRules {
     public static final int TITLE_FADE_OUT_TICKS = 20;
     public static final int SEVENTH_TITLE_STAY_TICKS = 120;
     public static final int CREDITS_DELAY_TICKS = 140;
+    /** Euclidean blocks. A boss must spawn strictly farther than this from every player and chest. */
+    public static final int SPAWN_CLEARANCE_BLOCKS = 80;
+    /** Added to clearance so block-center vs player feet still clears the radius. */
+    public static final int SPAWN_RING_SLACK = 4;
+    /** Random extra blocks past the slack, so the search is a ring rather than one circle. */
+    public static final int SPAWN_SEARCH_EXTRA = 32;
+    /** Brood mothers look a little farther than a vanilla spider (16). */
+    public static final double BROOD_FOLLOW_RANGE = 24.0;
+    /** Added to movement speed as ADD_MULTIPLIED_BASE. 0.15 is 15% faster. */
+    public static final double BROOD_SPEED_BONUS = 0.15;
+    /** 5 seconds between spits. */
+    public static final int BROOD_SPIT_INTERVAL_TICKS = 100;
+    /** 3 seconds of blindness. */
+    public static final int BROOD_SPIT_BLIND_TICKS = 60;
+    public static final double BROOD_SPIT_DAMAGE_FRACTION = 0.5;
+    public static final double BROOD_SPIT_RANGE = 20.0;
+    public static final float BROOD_SPIT_VELOCITY = 1.5F;
+    /** Lower than a llama's 10 so the shot is a real threat. */
+    public static final float BROOD_SPIT_INACCURACY = 4.0F;
+    /** Vanilla divisor when the tool is allowed to harvest the block. */
+    public static final int CORRECT_TOOL_DIVISOR = 30;
+    /** Vanilla divisor when the tool is the wrong one for drops. */
+    public static final int WRONG_TOOL_DIVISOR = 100;
+    /** How often a boss rechecks whether it can walk to its target. */
+    public static final int BOSS_PATH_RECHECK_TICKS = 20;
 
     private BiomeBossesRules() {}
 
@@ -144,5 +169,63 @@ public final class BiomeBossesRules {
 
     public static int scaleXp(int base, double multiplier) {
         return Math.max(0, (int) Math.round(base * Math.max(0.0, multiplier)));
+    }
+
+    /**
+     * A family that has spawned in this dimension, or been recorded on the campaign, does not spawn again.
+     * {@code lastSpawnEpochMs <= 0} means this dimension has never spawned it.
+     */
+    public static boolean familyAlreadyUsed(long lastSpawnEpochMs, boolean recordedOnCampaign) {
+        return recordedOnCampaign || lastSpawnEpochMs > 0L;
+    }
+
+    /** True when the distance is {@code blocks} or closer. */
+    public static boolean tooClose(double dx, double dy, double dz, int blocks) {
+        if (blocks <= 0) {
+            return false;
+        }
+        double min = blocks;
+        return dx * dx + dy * dy + dz * dz <= min * min;
+    }
+
+    /** Horizontal search distance: clearance, plus slack, plus {@code roll} within {@code extra}. */
+    public static int spawnSearchDistance(int roll, int clearance, int extra) {
+        int span = Math.max(1, extra);
+        return Math.max(0, clearance) + SPAWN_RING_SLACK + Math.floorMod(roll, span);
+    }
+
+    /** Half of the boss's attack damage. Zero when the bite does not hurt. */
+    public static float spitDamage(double attackDamage) {
+        if (attackDamage <= 0.0 || BROOD_SPIT_DAMAGE_FRACTION <= 0.0) {
+            return 0.0F;
+        }
+        return (float) (attackDamage * BROOD_SPIT_DAMAGE_FRACTION);
+    }
+
+    /** {@code lastTick <= 0} is not primed yet, so the first check does not fire immediately. */
+    public static boolean spitReady(long nowTick, long lastTick, int intervalTicks) {
+        if (intervalTicks <= 0) {
+            return true;
+        }
+        if (lastTick <= 0L) {
+            return false;
+        }
+        return nowTick - lastTick >= intervalTicks;
+    }
+
+    /**
+     * One tick of vanilla mining progress for a tool, without haste, fatigue, or water.
+     * {@code hardness < 0} cannot be broken. {@code hardness == 0} finishes in one tick.
+     */
+    public static float toolDestroyProgress(float hardness, float toolSpeed, boolean correctForDrops) {
+        if (Float.isNaN(hardness) || hardness < 0.0F) {
+            return 0.0F;
+        }
+        if (hardness == 0.0F) {
+            return 1.0F;
+        }
+        float speed = Math.max(0.0F, toolSpeed);
+        int divisor = correctForDrops ? CORRECT_TOOL_DIVISOR : WRONG_TOOL_DIVISOR;
+        return speed / hardness / divisor;
     }
 }

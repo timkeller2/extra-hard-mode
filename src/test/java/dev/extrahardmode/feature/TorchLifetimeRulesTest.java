@@ -76,12 +76,24 @@ class TorchLifetimeRulesTest {
         assertTrue(TorchLifetimeRules.expired(extended, 336000L, 7));
         assertEquals(0L, TorchLifetimeRules.extendPlacedAt(0L, 0));
         assertEquals(-1L, TorchLifetimeRules.extendPlacedAt(-1L, 7));
-        assertEquals(16, TorchLifetimeRules.TORCH_REFUEL_RANGE);
-        assertTrue(TorchLifetimeRules.chestInRange(16, 0, 0, 16));
-        assertFalse(TorchLifetimeRules.chestInRange(17, 0, 0, 16));
         assertTrue(TorchLifetimeRules.isTorchFuelItemId("minecraft:coal"));
         assertTrue(TorchLifetimeRules.isTorchFuelItemId("minecraft:charcoal"));
         assertFalse(TorchLifetimeRules.isTorchFuelItemId("minecraft:oak_log"));
+    }
+
+    @Test
+    void handRefuelAddsFortyDaysOrEightyOnCopper() {
+        assertEquals(40, TorchLifetimeRules.HAND_REFUEL_DAYS);
+        assertEquals(40, TorchLifetimeRules.handRefuelDays(false));
+        assertEquals(80, TorchLifetimeRules.handRefuelDays(true));
+        long now = 5L * TorchLifetimeRules.TICKS_PER_DAY;
+        assertEquals(2 * TorchLifetimeRules.TICKS_PER_DAY, TorchLifetimeRules.remainingTicks(0L, now, 7));
+        long extended = TorchLifetimeRules.extendPlacedAt(0L, TorchLifetimeRules.handRefuelDays(false));
+        assertEquals(42L * TorchLifetimeRules.TICKS_PER_DAY, TorchLifetimeRules.remainingTicks(extended, now, 7));
+        assertFalse(TorchLifetimeRules.expired(extended, now, 7));
+        long copper = TorchLifetimeRules.extendPlacedAt(0L, TorchLifetimeRules.handRefuelDays(true));
+        assertEquals(89L * TorchLifetimeRules.TICKS_PER_DAY, TorchLifetimeRules.remainingTicks(copper, now, 14));
+        assertEquals(-1L, TorchLifetimeRules.extendPlacedAt(-1L, 40));
     }
 
     @Test
@@ -123,5 +135,16 @@ class TorchLifetimeRulesTest {
         assertEquals("<1h", TorchLifetimeRules.remainingLabel(0));
         assertEquals(TorchLifetimeRules.LIGHT_LOOK_PERMANENT_COLOR, TorchLifetimeRules.lightLookColor(-1));
         assertEquals(TorchLifetimeRules.LIGHT_LOOK_COLOR, TorchLifetimeRules.lightLookColor(24000));
+    }
+
+    @Test
+    void breakingUnderThreeDaysDestroysTheTorch() {
+        long threeDays = 3L * TorchLifetimeRules.TICKS_PER_DAY;
+        assertEquals(3, TorchLifetimeRules.BREAK_DESTROY_UNDER_DAYS);
+        assertFalse(TorchLifetimeRules.destroyOnBreak(-1));
+        assertFalse(TorchLifetimeRules.destroyOnBreak((int) threeDays));
+        assertTrue(TorchLifetimeRules.destroyOnBreak((int) threeDays - 1));
+        assertTrue(TorchLifetimeRules.destroyOnBreak(2 * (int) TorchLifetimeRules.TICKS_PER_DAY));
+        assertTrue(TorchLifetimeRules.destroyOnBreak(0));
     }
 }

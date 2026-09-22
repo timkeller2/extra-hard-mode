@@ -34,9 +34,12 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.FluidTags;
+import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityTypes;
@@ -52,6 +55,8 @@ import net.minecraft.world.entity.monster.cubemob.MagmaCube;
 import net.minecraft.world.entity.monster.hoglin.Hoglin;
 import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
+import net.minecraft.world.entity.projectile.LlamaSpit;
+import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -63,23 +68,28 @@ import net.minecraft.world.item.component.Fireworks;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.ChestBlockEntity;
+import net.minecraft.world.level.block.entity.EnderChestBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.storage.LevelData;
 
 /**
- * Rare persistent biome-family bosses. Cooldown is per family on wall-clock time.
+ * Rare persistent biome-family bosses. Each family appears once per game.
  * Biome is sampled at the player (caves included); Deep Dark and the End are skipped.
  */
 public final class BiomeBosses implements FeatureModule {
     public static final Identifier ID = ExtraHardModeMod.id("biome_bosses");
-    private static final int SPAWN_TRIES = 16;
+    private static final int SPAWN_TRIES = 32;
     private static final Identifier HEALTH_MOD = ExtraHardModeMod.id("biome_boss_health");
     private static final Identifier SCALE_MOD = ExtraHardModeMod.id("biome_boss_scale");
     private static final Identifier ATTACK_MOD = ExtraHardModeMod.id("biome_boss_attack");
     private static final Identifier KNOCKBACK_MOD = ExtraHardModeMod.id("biome_boss_knockback");
     private static final Identifier DISTANCE_MOD = ExtraHardModeMod.id("biome_boss_distance");
     private static final Identifier DEFEAT_MOD = ExtraHardModeMod.id("biome_boss_defeats");
+    private static final Identifier BROOD_SPEED_MOD = ExtraHardModeMod.id("biome_boss_brood_speed");
     private static long creditsAtTick = -1L;
     private static final EquipmentSlot[] ARMOR_SLOTS = {
         EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET
@@ -110,11 +120,16 @@ public final class BiomeBosses implements FeatureModule {
     @Override
     public void bootstrap(FeatureBus bus) {
         bus.listen(ServerLivingEntityEvents.AFTER_DEATH, ID, BiomeBosses::onDeath);
+        bus.listen(ServerLivingEntityEvents.AFTER_DAMAGE, ID, BiomeBosses::onAttacked);
     }
 
     @Override
     public void serverTick(ServerLevel level) {
         tickCredits(level);
+        if (WorldGate.isModuleActive(level, ID)) {
+            tickBroods(level);
+            BossMining.ensureGoals(level);
+        }
         if (level.getDifficulty() == Difficulty.PEACEFUL || level.dimension() == Level.END) {
             return;
         }
@@ -131,6 +146,9 @@ public final class BiomeBosses implements FeatureModule {
     static void onDeath(LivingEntity entity, DamageSource source) {
         if (!(entity.level() instanceof ServerLevel level) || !isBoss(entity)) {
             return;
+        }
+        if (entity instanceof Mob mob) {
+            BossMining.stop(mob);
         }
         BiomeBossData.of(level).onDeath(entity.getUUID());
         if (!WorldGate.isModuleActive(level, ID)) {
@@ -213,6 +231,14 @@ public final class BiomeBosses implements FeatureModule {
         return BossFamily.byId(entity.getAttached(EhmAttachments.EHM_BOSS_FAMILY));
     }
 
+    public static boolean isBroodBoss(Entity entity) {
+        if (!isBoss(entity)) {
+            return false;
+        }
+        BossFamily family = familyOf(entity);
+        return family != null && family.brood();
+    }
+
     static void trySpawnNear(ServerLevel level, ServerPlayer player, WorldConfig config) {
         if (player.isSpectator() || player.isCreative()) {
             return;
@@ -230,18 +256,17 @@ public final class BiomeBosses implements FeatureModule {
         if (data.hasLiving(level, family)) {
             return;
         }
-        long now = System.currentTimeMillis();
-        if (!BiomeBossesRules.cooldownElapsed(
-                now, data.state(family).lastSpawnEpochMs(), BiomeBossesRules.cooldownMillis(config.bossCooldownHours()))) {
-            return;
-        }
-        if (!BiomeBossesRules.spawnRoll(level.getRandom().nextInt(100), config.bossSpawnChancePercent())) {
+        if (familySpent(level, family)) {
             return;
         }
         BlockPos pos = findSpawnPos(level, player, family);
         if (pos == null) {
             return;
         }
+        if (!BiomeBossesRules.spawnRoll(level.getRandom().nextInt(100), config.bossSpawnChancePercent())) {
+            return;
+        }
+        long now = System.currentTimeMillis();
         Entity spawned = family.entityType().spawn(level, pos, EntitySpawnReason.EVENT);
         if (!(spawned instanceof Mob mob)) {
             if (spawned != null) {
@@ -253,8 +278,18 @@ public final class BiomeBosses implements FeatureModule {
                 mob.getX() - origin.getX(), mob.getZ() - origin.getZ());
         stampBoss(mob, family, config, distance);
         data.markSpawned(family, mob.getUUID(), now);
+        BiomeBossData.campaign(level).markAppeared(family);
         announce(level, mob, family);
         thunderAll(level.getServer());
+    }
+
+    /** True once this family has spawned in any dimension of this game. */
+    static boolean familySpent(ServerLevel level, BossFamily family) {
+        long lastSpawn = 0L;
+        for (ServerLevel world : level.getServer().getAllLevels()) {
+            lastSpawn = Math.max(lastSpawn, BiomeBossData.of(world).state(family).lastSpawnEpochMs());
+        }
+        return BiomeBossesRules.familyAlreadyUsed(lastSpawn, BiomeBossData.campaign(level).hasAppeared(family));
     }
 
     static BossFamily familyAt(ServerLevel level, BlockPos pos) {
@@ -281,24 +316,74 @@ public final class BiomeBosses implements FeatureModule {
     static BlockPos findSpawnPos(ServerLevel level, ServerPlayer player, BossFamily family) {
         RandomSource random = level.getRandom();
         BlockPos playerPos = player.blockPosition();
+        int clearance = BiomeBossesRules.SPAWN_CLEARANCE_BLOCKS;
         for (int attempt = 0; attempt < SPAWN_TRIES; attempt++) {
             double angle = random.nextDouble() * Math.PI * 2.0;
-            int dist = 10 + random.nextInt(12);
+            int dist = BiomeBossesRules.spawnSearchDistance(
+                    random.nextInt(), clearance, BiomeBossesRules.SPAWN_SEARCH_EXTRA);
             int x = playerPos.getX() + (int) Math.round(Math.cos(angle) * dist);
             int z = playerPos.getZ() + (int) Math.round(Math.sin(angle) * dist);
-            int y = playerPos.getY() + random.nextInt(9) - 4;
+            int y = playerPos.getY() + random.nextInt(17) - 8;
             BlockPos cursor = new BlockPos(x, y, z);
-            for (int drop = 0; drop < 12; drop++) {
+            for (int drop = 0; drop < 24; drop++) {
                 if (!level.isLoaded(cursor)) {
                     break;
                 }
-                if (suitable(level, cursor, family.aquatic()) && familyAt(level, cursor) == family) {
+                if (suitable(level, cursor, family.aquatic())
+                        && familyAt(level, cursor) == family
+                        && clearOfPlayersAndChests(level, cursor, clearance)) {
                     return cursor;
                 }
                 cursor = cursor.below();
             }
         }
         return null;
+    }
+
+    /**
+     * 3D distance. Chests are read from loaded chunks only, so a chest in an unloaded chunk is not seen.
+     * The candidate itself is loaded, and it sits just past 80 blocks from a player, so nearby bases usually are too.
+     */
+    static boolean clearOfPlayersAndChests(ServerLevel level, BlockPos pos, int clearance) {
+        double x = pos.getX() + 0.5;
+        double y = pos.getY();
+        double z = pos.getZ() + 0.5;
+        for (ServerPlayer player : level.players()) {
+            if (BiomeBossesRules.tooClose(player.getX() - x, player.getY() - y, player.getZ() - z, clearance)) {
+                return false;
+            }
+        }
+        return !chestWithin(level, pos, x, y, z, clearance);
+    }
+
+    static boolean chestWithin(ServerLevel level, BlockPos pos, double x, double y, double z, int clearance) {
+        int minCx = (pos.getX() - clearance) >> 4;
+        int maxCx = (pos.getX() + clearance) >> 4;
+        int minCz = (pos.getZ() - clearance) >> 4;
+        int maxCz = (pos.getZ() + clearance) >> 4;
+        for (int cx = minCx; cx <= maxCx; cx++) {
+            for (int cz = minCz; cz <= maxCz; cz++) {
+                if (!level.hasChunk(cx, cz)) {
+                    continue;
+                }
+                LevelChunk chunk = level.getChunk(cx, cz);
+                for (BlockEntity blockEntity : chunk.getBlockEntities().values()) {
+                    if (!isChest(blockEntity)) {
+                        continue;
+                    }
+                    BlockPos chest = blockEntity.getBlockPos();
+                    if (BiomeBossesRules.tooClose(
+                            chest.getX() + 0.5 - x, chest.getY() + 0.5 - y, chest.getZ() + 0.5 - z, clearance)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    static boolean isChest(BlockEntity blockEntity) {
+        return blockEntity instanceof ChestBlockEntity || blockEntity instanceof EnderChestBlockEntity;
     }
 
     static boolean suitable(ServerLevel level, BlockPos pos, boolean aquatic) {
@@ -406,6 +491,144 @@ public final class BiomeBosses implements FeatureModule {
                 defeatBonus,
                 AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
         mob.setHealth(mob.getMaxHealth());
+        if (family.brood()) {
+            tuneBrood(mob);
+        }
+    }
+
+    static void onAttacked(
+            LivingEntity entity, DamageSource source, float baseDamageTaken, float damageTaken, boolean blocked) {
+        if (!(entity instanceof Mob mob) || !(entity.level() instanceof ServerLevel level)) {
+            return;
+        }
+        if (!WorldGate.isModuleActive(level, ID) || !isBroodBoss(mob)) {
+            return;
+        }
+        if (!(source.getEntity() instanceof LivingEntity attacker) || !attacker.isAlive() || attacker == mob) {
+            return;
+        }
+        if (attacker instanceof ServerPlayer player && (player.isCreative() || player.isSpectator())) {
+            return;
+        }
+        mob.setTarget(attacker);
+        tuneBrood(mob);
+    }
+
+    static void tickBroods(ServerLevel level) {
+        BiomeBossData data = BiomeBossData.of(level);
+        long now = level.getGameTime();
+        for (BossFamily family : BossFamily.values()) {
+            if (!family.brood()) {
+                continue;
+            }
+            Optional<UUID> living = data.state(family).living();
+            if (living.isEmpty()) {
+                continue;
+            }
+            if (!(level.getEntity(living.get()) instanceof Mob mob) || !mob.isAlive() || !isBroodBoss(mob)) {
+                continue;
+            }
+            tuneBrood(mob);
+            trySpit(level, mob, now);
+        }
+    }
+
+    static void tuneBrood(Mob mob) {
+        if (Boolean.TRUE.equals(mob.getAttachedOrElse(EhmAttachments.EHM_BROOD_TUNED, Boolean.FALSE))) {
+            return;
+        }
+        AttributeInstance follow = mob.getAttribute(Attributes.FOLLOW_RANGE);
+        if (follow != null) {
+            follow.setBaseValue(BiomeBossesRules.BROOD_FOLLOW_RANGE);
+        }
+        AttributeInstance speed = mob.getAttribute(Attributes.MOVEMENT_SPEED);
+        if (speed != null && !speed.hasModifier(BROOD_SPEED_MOD)) {
+            speed.addOrReplacePermanentModifier(new AttributeModifier(
+                    BROOD_SPEED_MOD,
+                    BiomeBossesRules.BROOD_SPEED_BONUS,
+                    AttributeModifier.Operation.ADD_MULTIPLIED_BASE));
+        }
+        if (mob.level() instanceof ServerLevel server && mob.getAttached(EhmAttachments.EHM_BROOD_SPIT_TICK) == null) {
+            mob.setAttached(EhmAttachments.EHM_BROOD_SPIT_TICK, server.getGameTime());
+        }
+        mob.setAttached(EhmAttachments.EHM_BROOD_TUNED, Boolean.TRUE);
+    }
+
+    static void trySpit(ServerLevel level, Mob mob, long now) {
+        LivingEntity target = mob.getTarget();
+        if (target == null || !target.isAlive() || target == mob) {
+            return;
+        }
+        if (target instanceof ServerPlayer player && (player.isCreative() || player.isSpectator())) {
+            return;
+        }
+        double range = BiomeBossesRules.BROOD_SPIT_RANGE;
+        if (mob.distanceToSqr(target) > range * range || !mob.hasLineOfSight(target)) {
+            return;
+        }
+        long last = mob.getAttachedOrElse(EhmAttachments.EHM_BROOD_SPIT_TICK, 0L);
+        if (!BiomeBossesRules.spitReady(now, last, BiomeBossesRules.BROOD_SPIT_INTERVAL_TICKS)) {
+            if (last <= 0L) {
+                mob.setAttached(EhmAttachments.EHM_BROOD_SPIT_TICK, now);
+            }
+            return;
+        }
+        mob.setAttached(EhmAttachments.EHM_BROOD_SPIT_TICK, now);
+        launchSpit(level, mob, target);
+    }
+
+    static void launchSpit(ServerLevel level, Mob mob, LivingEntity target) {
+        LlamaSpit spit = new LlamaSpit(EntityTypes.LLAMA_SPIT, level);
+        spit.setOwner(mob);
+        float yawRad = mob.yBodyRot * ((float) Math.PI / 180.0F);
+        double forward = (mob.getBbWidth() + 1.0F) * 0.5D;
+        spit.setPos(
+                mob.getX() - forward * Mth.sin(yawRad),
+                mob.getEyeY() - 0.1D,
+                mob.getZ() + forward * Mth.cos(yawRad));
+        double dx = target.getX() - mob.getX();
+        double dy = target.getY(0.3333333333333333D) - spit.getY();
+        double dz = target.getZ() - mob.getZ();
+        double lift = Math.sqrt(dx * dx + dz * dz) * 0.2D;
+        Projectile.spawnProjectileUsingShoot(
+                spit,
+                level,
+                ItemStack.EMPTY,
+                dx,
+                dy + lift,
+                dz,
+                BiomeBossesRules.BROOD_SPIT_VELOCITY,
+                BiomeBossesRules.BROOD_SPIT_INACCURACY);
+        level.playSound(
+                null,
+                mob.getX(),
+                mob.getY(),
+                mob.getZ(),
+                SoundEvents.LLAMA_SPIT,
+                mob.getSoundSource(),
+                1.0F,
+                0.6F + level.getRandom().nextFloat() * 0.2F);
+    }
+
+    public static void onBroodSpitHit(ServerLevel level, LlamaSpit spit, Entity target) {
+        Entity owner = spit.getOwner();
+        if (!(target instanceof LivingEntity living) || !living.isAlive() || target == owner) {
+            return;
+        }
+        if (living instanceof ServerPlayer player && (player.isCreative() || player.isSpectator())) {
+            return;
+        }
+        if (owner instanceof LivingEntity attacker) {
+            float damage = BiomeBossesRules.spitDamage(attacker.getAttributeValue(Attributes.ATTACK_DAMAGE));
+            if (damage > 0.0F) {
+                DamageSource source = level.damageSources().spit(spit, attacker);
+                if (living.hurtServer(level, source, damage)) {
+                    EnchantmentHelper.doPostAttackEffects(level, living, source);
+                }
+            }
+        }
+        living.addEffect(
+                new MobEffectInstance(MobEffects.BLINDNESS, BiomeBossesRules.BROOD_SPIT_BLIND_TICKS, 0), owner);
     }
 
     static void equipRandomArmor(Mob mob, int tier) {

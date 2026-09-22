@@ -159,6 +159,28 @@ public final class EhmAttachments {
     public static final AttachmentType<Integer> EHM_BOSS_DEFEAT_COUNT = AttachmentRegistry.create(
             ExtraHardModeMod.id("boss_defeat_count"),
             builder -> builder.persistent(Codec.INT).initializer(() -> 0));
+    /** Persistent so a brood mother's speed and follow-range tune is applied once. */
+    public static final AttachmentType<Boolean> EHM_BROOD_TUNED = AttachmentRegistry.create(
+            ExtraHardModeMod.id("brood_tuned"),
+            builder -> builder.persistent(Codec.BOOL).initializer(() -> Boolean.FALSE));
+    /** Game time of the last brood spit. Not saved; a reload waits out a fresh interval. */
+    public static final AttachmentType<Long> EHM_BROOD_SPIT_TICK =
+            AttachmentRegistry.create(ExtraHardModeMod.id("brood_spit_tick"));
+    /** Packed block position a boss is currently breaking. Not saved. */
+    public static final AttachmentType<Long> EHM_BOSS_MINE_POS =
+            AttachmentRegistry.create(ExtraHardModeMod.id("boss_mine_pos"));
+    /** Accumulated iron-pickaxe break progress, 0 to 1. Not saved. */
+    public static final AttachmentType<Float> EHM_BOSS_MINE_PROGRESS =
+            AttachmentRegistry.create(ExtraHardModeMod.id("boss_mine_progress"));
+    /** Game time of the last "can I walk there?" check. Not saved. */
+    public static final AttachmentType<Long> EHM_BOSS_PATH_CHECK =
+            AttachmentRegistry.create(ExtraHardModeMod.id("boss_path_check"));
+    /** Result of that check. Not saved. */
+    public static final AttachmentType<Boolean> EHM_BOSS_PATH_REACHES =
+            AttachmentRegistry.create(ExtraHardModeMod.id("boss_path_reaches"));
+    /** The dig goal was added to this entity instance. Not saved; goals are not reloaded. */
+    public static final AttachmentType<Boolean> EHM_BOSS_MINE_GOAL =
+            AttachmentRegistry.create(ExtraHardModeMod.id("boss_mine_goal"));
 
     public static final AttachmentType<Map<String, Integer>> EHM_BLOCK_PLACE_COUNTS = AttachmentRegistry.create(
             ExtraHardModeMod.id("block_place_counts"),

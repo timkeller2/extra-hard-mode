@@ -25,6 +25,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -406,13 +407,13 @@ public final class AntiFarming implements FeatureModule {
     public static void onSoilTilled(ServerLevel level, BlockPos soil, ItemStack hoe) {
         FarmlandData data = FarmlandData.of(level);
         int before = data.modifier(soil);
+        int quality = AbilityRules.growHoeBonus(itemId(hoe));
         int modifier;
         if (!data.hasModifier(soil)) {
             int d10 = 1 + level.getRandom().nextInt(CropGrowthRules.FIRST_TILL_DIE);
             modifier = CropGrowthRules.firstTillModifier(
-                    d10, countWaterSources(level, soil, CropGrowthRules.FIRST_TILL_WATER_RANGE));
+                    d10, countWaterSources(level, soil, CropGrowthRules.FIRST_TILL_WATER_RANGE), quality);
         } else {
-            int quality = AbilityRules.growHoeBonus(itemId(hoe));
             modifier = CropGrowthRules.afterHoeWork(before, quality);
         }
         data.setModifier(soil, modifier);
@@ -588,7 +589,13 @@ public final class AntiFarming implements FeatureModule {
         if (!isFarmHarvestBlock(state.getBlock())) {
             return;
         }
-        onCropHarvested(level, pos, player.getMainHandItem(), state.getBlock());
+        ItemStack tool = player.getMainHandItem();
+        onCropHarvested(level, pos, tool, state.getBlock());
+        if (player instanceof ServerPlayer serverPlayer
+                && CropGrowthRules.chargeHoeForInstantHarvest(
+                        tool.is(ItemTags.HOES), state.getDestroySpeed(level, pos))) {
+            tool.hurtAndBreak(CropGrowthRules.HOE_INSTANT_HARVEST_DAMAGE, serverPlayer, EquipmentSlot.MAINHAND);
+        }
     }
 
     public static boolean isFarmHarvestBlock(Block block) {

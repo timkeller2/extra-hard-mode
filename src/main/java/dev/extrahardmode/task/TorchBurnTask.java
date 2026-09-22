@@ -14,8 +14,8 @@ import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * Burns out stamped torches and campfires after {@code burnDays} Minecraft days.
- * Torches that pull coal or charcoal become permanent. Lit campfires pull a
- * nearby log to last another period. Unstamped lights are never touched.
+ * Lit campfires pull a nearby log to last another period. Unstamped lights are
+ * never touched. Torches are refueled by hand, not from chests.
  */
 public final class TorchBurnTask {
     private static final Map<ServerLevel, Long2IntOpenHashMap> LAST_LIGHT_DAYS = new WeakHashMap<>();
@@ -73,16 +73,6 @@ public final class TorchBurnTask {
         for (int i = 0; i < expired.size(); i++) {
             long packed = expired.getLong(i);
             BlockPos pos = BlockPos.of(packed);
-            BlockState state = level.getBlockState(pos);
-            if (Torches.isBurnableTorch(state) && Torches.tryRefuelTorch(level, pos)) {
-                data.removePacked(packed);
-                Long2IntOpenHashMap lastDays = LAST_LIGHT_DAYS.get(level);
-                if (lastDays != null) {
-                    lastDays.remove(packed);
-                }
-                level.getLightEngine().checkBlock(pos);
-                continue;
-            }
             Torches.burnOut(level, pos);
             data.removePacked(packed);
             Long2IntOpenHashMap lastDays = LAST_LIGHT_DAYS.get(level);

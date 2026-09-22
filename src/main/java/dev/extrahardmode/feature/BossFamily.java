@@ -64,6 +64,11 @@ public enum BossFamily {
         return aquatic;
     }
 
+    /** Lush, forest, and jungle spider bosses. They spit and do not flee light once hit. */
+    public boolean brood() {
+        return this == LUSH_CAVES || this == FOREST || this == JUNGLE;
+    }
+
     public TagKey<Biome> biomes() {
         return biomes;
     }

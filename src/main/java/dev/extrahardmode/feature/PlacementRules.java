@@ -7,6 +7,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
  * Placement predicates shared by server callbacks and the client place-cancel mixin.
@@ -61,11 +62,33 @@ public final class PlacementRules {
     }
 
     /**
-     * Jump-place under feet only: {@code place} equals {@code player.blockPosition().below()}
-     * while airborne. Does not deny the whole column.
+     * In the air for placement: not swimming, climbing, or riding, and either off the ground
+     * or only clipping a neighboring block (the cell under the feet does not support them).
      */
-    public static boolean denyPillar(boolean enable, boolean onGround, BlockPos place, BlockPos underFeet) {
-        return enable && !onGround && place.equals(underFeet);
+    public static boolean airborneForPlacement(
+            boolean onGround, boolean feetSupported, boolean inWater, boolean climbing, boolean passenger) {
+        if (inWater || climbing || passenger) {
+            return false;
+        }
+        if (!onGround) {
+            return true;
+        }
+        return !feetSupported;
+    }
+
+    /** Any solid placement while {@link #airborneForPlacement} is true. */
+    public static boolean denyAirPlacement(boolean enable, boolean airborne) {
+        return enable && airborne;
+    }
+
+    /** The cell under the player's position can hold them, not merely a block their hitbox clips. */
+    public static boolean canStandOn(BlockGetter level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        if (state.isAir() || state.liquid()) {
+            return false;
+        }
+        VoxelShape shape = state.getCollisionShape(level, pos);
+        return !shape.isEmpty();
     }
 
     /**

@@ -96,7 +96,13 @@ public final class LimitedBuilding implements FeatureModule {
         }
         BlockPos place = context.getClickedPos();
         BlockPos underFeet = player.blockPosition().below();
-        if (PlacementRules.denyPillar(true, player.onGround(), place, underFeet)) {
+        boolean airborne = PlacementRules.airborneForPlacement(
+                player.onGround(),
+                PlacementRules.canStandOn(level, underFeet),
+                player.isInWater(),
+                player.onClimbable(),
+                player.isPassenger());
+        if (PlacementRules.denyAirPlacement(true, airborne)) {
             return true;
         }
         return PlacementRules.denySkyBridge(true, level, place, PlacementRules.againstBlock(context), underFeet);

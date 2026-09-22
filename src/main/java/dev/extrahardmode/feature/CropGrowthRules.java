@@ -39,6 +39,8 @@ public final class CropGrowthRules {
     public static final int HAND_HARVEST_SOIL_INCREASE = 5;
     /** Added when the same crop is planted again on a plot. */
     public static final int SAME_CROP_REPLANT_INCREASE = 5;
+    /** Durability a hoe pays to harvest a crop vanilla would break for free. */
+    public static final int HOE_INSTANT_HARVEST_DAMAGE = 1;
     /** Hoe till/harvest step when the stored modifier improves (gets better). */
     public static final int HOE_WORK_STEP = 3;
     /** Shown soil modifier gained when bone meal is used on a plant. */
@@ -48,10 +50,13 @@ public final class CropGrowthRules {
     public static final int HOE_WORK_STEP_WORSE_MAX = 4;
     /** Negative hoe targets (diamond/gold/netherite) are multiplied by this. */
     public static final int HOE_SOIL_GOOD_FACTOR = 2;
-    /** First till: 1d10 minus water sources within this Chebyshev range. */
+    /** First till: 1d10 subtracted from the water score, within this Chebyshev range. */
     public static final int FIRST_TILL_DIE = 10;
     public static final int FIRST_TILL_WATER_RANGE = 2;
-    public static final int FIRST_TILL_MIN_MODIFIER = -25;
+    /** Water sources add this much, then each source past it subtracts one, down to 0. */
+    public static final int FIRST_TILL_WATER_PEAK = 50;
+    /** Shown first-till bonus per hoe quality point. Wood/stone 0 … netherite 10. */
+    public static final int FIRST_TILL_HOE_BONUS_PER_QUALITY = 2;
     /** Vanilla sugar cane AGE when a new segment is placed. */
     public static final int SUGAR_CANE_GROW_AGE = 15;
     /** Hoe look-at HUD: green at or above 0, red below. */
@@ -285,6 +290,14 @@ public final class CropGrowthRules {
     }
 
     /**
+     * Vanilla skips tool damage when the block's destroy speed is 0. A hoe
+     * used to harvest those crops still wears.
+     */
+    public static boolean chargeHoeForInstantHarvest(boolean hoe, float destroySpeed) {
+        return hoe && destroySpeed == 0.0F;
+    }
+
+    /**
      * Extra crop-loss percent from hoe quality (Let it grow material bonus).
      * Wood/stone 10, copper 5, iron 0, diamond −10, gold −20, netherite −30.
      */
@@ -342,10 +355,27 @@ public final class CropGrowthRules {
         return Math.clamp(tenth, HOE_WORK_STEP_WORSE_MIN, HOE_WORK_STEP_WORSE_MAX);
     }
 
-    /** Stored modifier on first till: {@code 1d10 - waterSources}, not below {@link #FIRST_TILL_MIN_MODIFIER}. */
-    public static int firstTillModifier(int d10, int waterSources) {
+    /**
+     * Water sources within range. Counts up to {@link #FIRST_TILL_WATER_PEAK}, then each extra
+     * source subtracts one from that peak, and the result does not go below 0.
+     */
+    public static int waterSourceScore(int sources) {
+        int count = Math.max(0, sources);
+        if (count <= FIRST_TILL_WATER_PEAK) {
+            return count;
+        }
+        int over = count - FIRST_TILL_WATER_PEAK;
+        return Math.max(0, FIRST_TILL_WATER_PEAK - over);
+    }
+
+    /**
+     * Stored modifier on first till. Shown value is the negation: water score, minus 1d10,
+     * plus {@link #FIRST_TILL_HOE_BONUS_PER_QUALITY} per hoe quality point.
+     */
+    public static int firstTillModifier(int d10, int waterSources, int hoeQuality) {
         int roll = Math.clamp(d10, 1, FIRST_TILL_DIE);
-        return Math.max(FIRST_TILL_MIN_MODIFIER, roll - Math.max(0, waterSources));
+        int hoe = Math.max(0, hoeQuality) * FIRST_TILL_HOE_BONUS_PER_QUALITY;
+        return roll - waterSourceScore(waterSources) - hoe;
     }
 
     /** Let it grow: stored modifier drops by {@link #HOE_WORK_STEP} (shown value rises by 3). */

@@ -65,6 +65,7 @@ public final class Torches implements FeatureModule {
     public void bootstrap(FeatureBus bus) {
         bus.listen(UseBlockCallback.EVENT, ID, Torches::onUseBlock);
         bus.listen(BlockEvents.USE_ITEM_ON, ID, Torches::onUseItemOn);
+        bus.listen(PlayerBlockBreakEvents.BEFORE, ID, Torches::onBreakBefore);
         bus.listen(PlayerBlockBreakEvents.AFTER, ID, Torches::onBreak);
     }
 
@@ -86,6 +87,10 @@ public final class Torches implements FeatureModule {
     }
 
     static InteractionResult onUseBlock(Player player, Level level, InteractionHand hand, BlockHitResult hit) {
+        InteractionResult refuel = tryHandRefuel(player, level, hand, hit);
+        if (refuel.consumesAction()) {
+            return refuel;
+        }
         ItemStack stack = player.getItemInHand(hand);
         BlockPlaceContext context = new BlockPlaceContext(new UseOnContext(level, player, hand, stack, hit));
         return tryDenyPlacement(context);
@@ -243,6 +248,26 @@ public final class Torches implements FeatureModule {
         TorchLifetimeData.of(level).record(pos, level.getGameTime());
     }
 
+    /** Cancel the vanilla drop when the torch has less than 3 days left, and remove it ourselves. */
+    static boolean onBreakBefore(
+            Level level, Player player, BlockPos pos, BlockState state, BlockEntity blockEntity) {
+        if (!(level instanceof ServerLevel serverLevel) || !WorldGate.isModuleActive(serverLevel, ID)) {
+            return true;
+        }
+        if (!isBurnableTorch(state) || isCampfire(state)) {
+            return true;
+        }
+        int days = burnDaysFor(state, ConfigManager.world(serverLevel).torchBurnDays());
+        int remaining = TorchLifetimeRules.remainingTicks(
+                TorchLifetimeData.of(serverLevel).placedAt(pos), serverLevel.getGameTime(), days);
+        if (!TorchLifetimeRules.destroyOnBreak(remaining)) {
+            return true;
+        }
+        forgetPlaced(serverLevel, pos);
+        serverLevel.destroyBlock(pos, false, player, 512);
+        return false;
+    }
+
     static void onBreak(
             Level level,
             Player player,
@@ -336,21 +361,49 @@ public final class Torches implements FeatureModule {
     }
 
     /**
-     * Consume one coal or charcoal from the nearest chest in range. True when the
-     * torch should become permanent.
+     * Coal or charcoal in the clicking hand adds days to a burning torch.
+     * Permanent torches are left alone and the item is not consumed.
      */
-    public static boolean tryRefuelTorch(ServerLevel level, BlockPos torch) {
-        List<BlockPos> chests = chestsInRange(level, torch, TorchLifetimeRules.TORCH_REFUEL_RANGE);
-        chests.sort(Comparator.comparingLong(pos -> TorchLifetimeRules.distanceSq(
-                pos.getX() - torch.getX(), pos.getY() - torch.getY(), pos.getZ() - torch.getZ())));
-        for (BlockPos chestPos : chests) {
-            if (takeOneTorchFuel(level, chestPos)) {
-                level.playSound(null, torch, SoundEvents.FIRECHARGE_USE, SoundSource.BLOCKS, 0.4F, 1.4F);
-                level.playSound(null, chestPos, SoundEvents.ITEM_PICKUP, SoundSource.BLOCKS, 0.3F, 0.8F);
-                return true;
-            }
+    static InteractionResult tryHandRefuel(Player player, Level level, InteractionHand hand, BlockHitResult hit) {
+        if (level.isClientSide()
+                || !(level instanceof ServerLevel server)
+                || !(player instanceof ServerPlayer serverPlayer)
+                || serverPlayer.isSpectator()) {
+            return InteractionResult.PASS;
         }
-        return false;
+        if (!WorldGate.isModuleActive(server, ID)) {
+            return InteractionResult.PASS;
+        }
+        ItemStack held = player.getItemInHand(hand);
+        if (!isTorchFuel(held)) {
+            return InteractionResult.PASS;
+        }
+        BlockPos pos = hit.getBlockPos();
+        BlockState state = server.getBlockState(pos);
+        if (!isBurnableTorch(state) || isCampfire(state)) {
+            return InteractionResult.PASS;
+        }
+        int burnDays = ConfigManager.world(server).torchBurnDays();
+        if (TorchLifetimeRules.permanent(burnDays)) {
+            return InteractionResult.PASS;
+        }
+        TorchLifetimeData data = TorchLifetimeData.of(server);
+        long placedAt = data.placedAt(pos);
+        if (placedAt < 0L) {
+            return InteractionResult.PASS;
+        }
+        int extraDays = TorchLifetimeRules.handRefuelDays(isCopperTorch(state));
+        data.record(pos, TorchLifetimeRules.extendPlacedAt(placedAt, extraDays));
+        if (!serverPlayer.hasInfiniteMaterials()) {
+            held.shrink(1);
+        }
+        server.getLightEngine().checkBlock(pos);
+        server.playSound(null, pos, SoundEvents.FIRECHARGE_USE, SoundSource.BLOCKS, 0.4F, 1.2F);
+        return InteractionResult.SUCCESS;
+    }
+
+    static boolean isTorchFuel(ItemStack stack) {
+        return stack.is(Items.COAL) || stack.is(Items.CHARCOAL);
     }
 
     static List<BlockPos> chestsInRange(ServerLevel level, BlockPos origin, int range) {
@@ -386,10 +439,6 @@ public final class Torches implements FeatureModule {
 
     static boolean takeOneLog(ServerLevel level, BlockPos pos) {
         return takeOneFromChest(level, pos, stack -> stack.is(ItemTags.LOGS));
-    }
-
-    static boolean takeOneTorchFuel(ServerLevel level, BlockPos pos) {
-        return takeOneFromChest(level, pos, stack -> stack.is(Items.COAL) || stack.is(Items.CHARCOAL));
     }
 
     static boolean takeOneFromChest(

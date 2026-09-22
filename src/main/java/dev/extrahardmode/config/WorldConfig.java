@@ -923,7 +923,7 @@ public final class WorldConfig {
                 writeDefaultIfMissing(
                         file,
                         "worldRules.limitedBlockPlacement",
-                        "No jump-pillaring / unsupported sky bridges.",
+                        "No placing solid blocks while in the air, including from the edge of a block. Unsupported sky bridges are still blocked.",
                         true);
                 writeDefaultIfMissing(
                         file,
@@ -973,7 +973,7 @@ public final class WorldConfig {
                 writeDefaultIfMissing(
                         file,
                         "torches.burnDays",
-                        "Minecraft days (24000 ticks) a newly placed torch or campfire lasts before it disappears. Copper torches last twice as long. Torches that pull coal or charcoal from a chest within 16 blocks become permanent. Campfires pull one log from a chest within 12 blocks to add another period. 0 = permanent. Lights with no recorded place time (older worlds, worldgen) never burn out. Default 7.",
+                        "Minecraft days (24000 ticks) a newly placed torch or campfire lasts before it disappears. Copper torches last twice as long. Right-click a torch with coal or charcoal to add 40 days (80 for copper); that does not make it permanent. Campfires pull one log from a chest within 12 blocks to add another period. 0 = permanent. Lights with no recorded place time (older worlds, worldgen) never burn out. Default 7.",
                         TorchLifetimeRules.DEFAULT_DAYS);
                 writeDefaultIfMissing(
                         file, "campfires.rainExtinguishes", "Optional. Same rain pass as torches; default off.", false);
@@ -1757,7 +1757,7 @@ public final class WorldConfig {
         writeDefaultIfMissing(
                 file,
                 "bosses.cooldownHours",
-                "Wall-clock hours after a family spawns before that family can spawn again. Living bosses still block a second spawn.",
+                "Kept for old configs. A biome boss family appears once per game and does not return after it spawns.",
                 8);
         writeDefaultIfMissing(
                 file,

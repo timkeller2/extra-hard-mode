@@ -121,4 +121,61 @@ class BiomeBossesRulesTest {
         assertEquals(40, BiomeBossesRules.scaleXp(40, 1.0));
         assertEquals(52, BiomeBossesRules.scaleXp(40, 1.3));
     }
+
+    @Test
+    void familyThatHasSpawnedDoesNotReturn() {
+        assertFalse(BiomeBossesRules.familyAlreadyUsed(0L, false));
+        assertFalse(BiomeBossesRules.familyAlreadyUsed(-1L, false));
+        assertTrue(BiomeBossesRules.familyAlreadyUsed(1L, false));
+        assertTrue(BiomeBossesRules.familyAlreadyUsed(0L, true));
+    }
+
+    @Test
+    void spawnClearsEightyBlocksAndSearchesPastThat() {
+        assertEquals(80, BiomeBossesRules.SPAWN_CLEARANCE_BLOCKS);
+        assertTrue(BiomeBossesRules.tooClose(79.9, 0, 0, 80));
+        assertTrue(BiomeBossesRules.tooClose(80, 0, 0, 80));
+        assertFalse(BiomeBossesRules.tooClose(80.1, 0, 0, 80));
+        assertTrue(BiomeBossesRules.tooClose(0, 0, 0, 80));
+        assertTrue(BiomeBossesRules.tooClose(46, 46, 46, 80));
+        assertFalse(BiomeBossesRules.tooClose(50, 50, 50, 80));
+        assertFalse(BiomeBossesRules.tooClose(10, 0, 0, 0));
+        assertEquals(84, BiomeBossesRules.spawnSearchDistance(0, 80, 32));
+        assertEquals(115, BiomeBossesRules.spawnSearchDistance(31, 80, 32));
+        assertEquals(84, BiomeBossesRules.spawnSearchDistance(32, 80, 32));
+    }
+
+    @Test
+    void broodSpitIsHalfDamageOnAFiveSecondClock() {
+        assertEquals(100, BiomeBossesRules.BROOD_SPIT_INTERVAL_TICKS);
+        assertEquals(60, BiomeBossesRules.BROOD_SPIT_BLIND_TICKS);
+        assertEquals(0.5, BiomeBossesRules.BROOD_SPIT_DAMAGE_FRACTION, 0.0);
+        assertEquals(1.75F, BiomeBossesRules.spitDamage(3.5), 0.0001F);
+        assertEquals(0.0F, BiomeBossesRules.spitDamage(0.0), 0.0F);
+        assertEquals(0.0F, BiomeBossesRules.spitDamage(-2.0), 0.0F);
+        assertFalse(BiomeBossesRules.spitReady(100L, 0L, 100));
+        assertFalse(BiomeBossesRules.spitReady(100L, 1L, 100));
+        assertTrue(BiomeBossesRules.spitReady(101L, 1L, 100));
+        assertTrue(BiomeBossesRules.spitReady(50L, 1L, 0));
+        assertEquals(24.0, BiomeBossesRules.BROOD_FOLLOW_RANGE, 0.0);
+        assertEquals(0.15, BiomeBossesRules.BROOD_SPEED_BONUS, 0.0);
+    }
+
+    @Test
+    void ironPickaxeBreaksStoneInEightTicksAndCannotBreakBedrock() {
+        assertEquals(0.0F, BiomeBossesRules.toolDestroyProgress(-1.0F, 6.0F, true), 0.0F);
+        assertEquals(1.0F, BiomeBossesRules.toolDestroyProgress(0.0F, 6.0F, true), 0.0F);
+        float stone = BiomeBossesRules.toolDestroyProgress(1.5F, 6.0F, true);
+        assertEquals(6.0F / 1.5F / 30.0F, stone, 0.00001F);
+        float accumulated = 0.0F;
+        int ticks = 0;
+        while (accumulated < 1.0F && ticks < 20) {
+            accumulated += stone;
+            ticks++;
+        }
+        assertEquals(8, ticks);
+        float obsidian = BiomeBossesRules.toolDestroyProgress(50.0F, 6.0F, false);
+        assertEquals(6.0F / 50.0F / 100.0F, obsidian, 0.0000001F);
+        assertEquals(1.0F / 0.5F / 30.0F, BiomeBossesRules.toolDestroyProgress(0.5F, 1.0F, true), 0.00001F);
+    }
 }

@@ -219,7 +219,7 @@ public final class EhmHelp {
         return Page.of(
                 "tougher.help.building.",
                 List.of(
-                        "Building: You cannot place blocks in mid-air.",
+                        "Building: You cannot place blocks while in the air, even from the edge of a block.",
                         "Building: You cannot carry a torch, lantern, or glowstone in your off hand.",
                         "Building: Bucketed water evaporates; use ice if you need a water source.",
                         "Building: A boat that falls more than 3 blocks with you in it breaks and drops nothing.",
@@ -233,8 +233,9 @@ public final class EhmHelp {
                         "Torches: Placed torches need airflow and a firm block, and campfires also need airflow.",
                         "Torches: Placed torches burn out after 7 Minecraft days (set burn days to 0 to keep them) and dim after 2 days.",
                         "Torches: Light is 14 − (days burning − 2). Copper torches last twice as long.",
-                        "Torches: If they find coal or charcoal in a chest within 16 blocks, they consume one and become permanent.",
+                        "Torches: Right-click a torch with coal or charcoal to add 40 days (80 on a copper torch). One item is consumed. That does not make it permanent.",
                         "Torches: Look at a torch, copper torch, or campfire to see remaining time (Permanent if it never burns out).",
+                        "Torches: Breaking a torch with less than 3 days left destroys it. Permanent torches still drop.",
                         "Torches: Permanent torches stay full-bright.",
                         "Torches: Placed campfires also burn out after 7 days and disappear, unless they pull a log from a chest within 12 blocks.",
                         "Torches: Pulling that log adds 7 more days."));
@@ -293,7 +294,8 @@ public final class EhmHelp {
                 List.of(
                         "Soil: Unworked soil starts at 0. Look at farmland, a crop, or sugar cane to see that plot's shown soil modifier.",
                         "Soil: It is a small percent, green when at or above 0, red when below 0; positive is good, for example 13%.",
-                        "Soil: The first time you till a plot, its shown modifier is (water source blocks within 2) minus 1d10, at most +25.",
+                        "Soil: The first till adds water sources within 2, up to 50. Past 50, each extra source subtracts 1 from 50, down to 0.",
+                        "Soil: A 1d10 is then subtracted, and twice the hoe quality is added: wood/stone 0, copper 2, iron 4, diamond 6, gold 8, netherite 10.",
                         "Soil: Later tilling or harvesting with a hoe moves that shown value toward the hoe's target.",
                         "Soil: Hoe targets: wood/stone −10, copper −5, iron 0, diamond +10, gold +20, netherite +30.",
                         "Soil: If that would make the plot worse, the step is 1/10 of the gap to the target (at least 1, at most 4).",
@@ -324,6 +326,10 @@ public final class EhmHelp {
                         "Combat: Zombies vary ±20% in speed (faster hit softer and look smaller, slower hit harder and look larger).",
                         "Combat: Zombies can rise again. Shields absorb 100% of a blocked hit and take 3 times the durability.",
                         "Combat: Creepers may drop live TNT. Strong biome bosses can appear far from spawn.",
+                        "Combat: Each biome boss appears once. After it is defeated, it does not return in that game.",
+                        "Combat: Bosses do not spawn within 80 blocks of a player or a chest.",
+                        "Combat: Brood mothers chase when hit. Every few seconds they spit for half damage and a brief blind.",
+                        "Combat: A biome boss breaks blocks in its way at iron pickaxe speed when that is how it reaches you.",
                         "Combat: Each defeated boss makes the next 30% harder and richer. The third is a world event.",
                         "Combat: The seventh rolls the Minecraft credits, and you can keep playing."));
     }

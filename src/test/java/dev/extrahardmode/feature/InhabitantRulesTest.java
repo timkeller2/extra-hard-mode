@@ -218,15 +218,15 @@ class InhabitantRulesTest {
     }
 
     @Test
-    void restockEveryThreeDays() {
-        assertEquals(3, InhabitantRules.RESTOCK_DAYS);
+    void restockEveryFourteenDays() {
+        assertEquals(14, InhabitantRules.RESTOCK_DAYS);
         assertTrue(InhabitantRules.shouldRestock(-1, 0));
         assertTrue(InhabitantRules.shouldRestock(-1, 10));
         assertFalse(InhabitantRules.shouldRestock(5, 5));
-        assertFalse(InhabitantRules.shouldRestock(5, 7));
-        assertTrue(InhabitantRules.shouldRestock(5, 8));
-        assertTrue(InhabitantRules.shouldRestock(5, 9));
-        assertEquals(3, InhabitantRules.restockDays(InhabitantRules.TRADER));
+        assertFalse(InhabitantRules.shouldRestock(5, 18));
+        assertTrue(InhabitantRules.shouldRestock(5, 19));
+        assertTrue(InhabitantRules.shouldRestock(5, 20));
+        assertEquals(14, InhabitantRules.restockDays(InhabitantRules.TRADER));
         assertEquals(30, InhabitantRules.restockDays(InhabitantRules.ARMORSMITH));
         assertEquals(30, InhabitantRules.restockDays(InhabitantRules.MASTER_ARMORSMITH));
         assertFalse(InhabitantRules.shouldRestock(0, 29, 30));
@@ -266,15 +266,20 @@ class InhabitantRulesTest {
         assertEquals(4, InhabitantRules.defaultTradeTypeCount(InhabitantRules.MASTER_ARMORSMITH));
         assertEquals(8, InhabitantRules.defaultTradeTypeCount(InhabitantRules.WEALTHY));
         assertEquals(0, InhabitantRules.extraTradePoints(12, InhabitantRules.HAULER));
-        assertEquals(25, InhabitantRules.tradeMinPercent(12, InhabitantRules.HAULER));
-        assertEquals(50, InhabitantRules.tradeMaxPercent(12, InhabitantRules.HAULER));
-        assertEquals(25, InhabitantRules.tradeMinPercent(18, InhabitantRules.WEALTHY));
-        assertEquals(25, InhabitantRules.tradeMinPercent(24, InhabitantRules.ARMORSMITH));
-        assertEquals(25, InhabitantRules.tradeMinPercent(30, InhabitantRules.MASTER_ARMORSMITH));
-        assertEquals(35, InhabitantRules.tradeMinPercent(13, InhabitantRules.HAULER));
-        assertEquals(60, InhabitantRules.tradeMaxPercent(13, InhabitantRules.HAULER));
-        assertEquals(105, InhabitantRules.tradeMinPercent(20, InhabitantRules.HAULER));
-        assertEquals(130, InhabitantRules.tradeMaxPercent(20, InhabitantRules.HAULER));
+        assertEquals(38, InhabitantRules.MAX_HOUSE_SCORE);
+        assertEquals(50, InhabitantRules.tradeMaxPercent(12));
+        assertEquals(25, InhabitantRules.tradeMinPercent(12));
+        assertEquals(50, InhabitantRules.tradeMaxPercent(14));
+        assertEquals(25, InhabitantRules.tradeMinPercent(14));
+        assertEquals(71, InhabitantRules.tradeMaxPercent(18));
+        assertEquals(36, InhabitantRules.tradeMinPercent(18));
+        assertEquals(102, InhabitantRules.tradeMaxPercent(24));
+        assertEquals(51, InhabitantRules.tradeMinPercent(24));
+        assertEquals(133, InhabitantRules.tradeMaxPercent(30));
+        assertEquals(67, InhabitantRules.tradeMinPercent(30));
+        assertEquals(175, InhabitantRules.tradeMaxPercent(38));
+        assertEquals(88, InhabitantRules.tradeMinPercent(38));
+        assertEquals(175, InhabitantRules.tradeMaxPercent(40));
         assertEquals(1, InhabitantRules.scaledAmount(5, 25));
         assertEquals(3, InhabitantRules.scaledAmount(5, 50));
         assertEquals(1, InhabitantRules.scaledAmount(1, 25));
@@ -305,9 +310,9 @@ class InhabitantRulesTest {
         boolean sawSplitUses = false;
         for (int seed = 0; seed < 80; seed++) {
             List<InhabitantRules.TradeListing> rich =
-                    InhabitantRules.scaledListings(InhabitantRules.HAULER, 22, 1, false, new Random(seed));
-            assertTrue(rich.size() >= 6);
-            assertTrue(rich.size() <= 8);
+                    InhabitantRules.scaledListings(InhabitantRules.HAULER, 38, 1, false, new Random(seed));
+            assertTrue(rich.size() >= 4);
+            assertTrue(rich.size() <= 9);
             Set<String> ids = new HashSet<>();
             int firstUses = rich.getFirst().maxUses();
             for (InhabitantRules.TradeListing listing : rich) {
@@ -326,13 +331,15 @@ class InhabitantRulesTest {
         for (int seed = 0; seed < 40; seed++) {
             List<InhabitantRules.TradeListing> wealthy =
                     InhabitantRules.scaledListings(InhabitantRules.WEALTHY, 18, 0, false, new Random(seed));
-            assertTrue(wealthy.size() >= 2);
-            assertTrue(wealthy.size() <= 4);
+            assertTrue(wealthy.size() >= 3);
+            assertTrue(wealthy.size() <= 6);
         }
-        List<InhabitantRules.TradeListing> palaceWealthy =
-                InhabitantRules.scaledListings(InhabitantRules.WEALTHY, 28, 0, false, new Random(1));
-        assertTrue(palaceWealthy.size() >= 10);
-        assertTrue(palaceWealthy.size() <= 12);
+        for (int seed = 0; seed < 40; seed++) {
+            List<InhabitantRules.TradeListing> palaceWealthy =
+                    InhabitantRules.scaledListings(InhabitantRules.WEALTHY, 38, 0, false, new Random(seed));
+            assertTrue(palaceWealthy.size() >= 7);
+            assertTrue(palaceWealthy.size() <= 14);
+        }
     }
 
     @Test

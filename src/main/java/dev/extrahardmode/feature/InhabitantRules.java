@@ -31,17 +31,21 @@ public final class InhabitantRules {
     public static final int MAX_CHANCE_PERCENT = 40;
     public static final int LEAVE_GRACE_DAYS = 3;
     public static final int KILL_COOLDOWN_DAYS = 7;
-    /** Days between restocking inhabitant merchant uses. */
-    public static final int RESTOCK_DAYS = 3;
+    /** Days between restocking inhabitant merchant uses. Armor uses {@link #ARMOR_RESTOCK_DAYS}. */
+    public static final int RESTOCK_DAYS = 14;
     public static final int ARMOR_RESTOCK_DAYS = 30;
     public static final int ARMOR_TRADE_USES = 1;
     public static final int WEALTHY_OFFER_COUNT = 8;
     public static final int WEALTHY_TRADE_USES = 4;
-    /** Barely qualifying houses roll this many percent of the usual shop. */
-    public static final int TRADE_BARE_MIN_PERCENT = 25;
-    public static final int TRADE_BARE_MAX_PERCENT = 50;
-    /** Extra house points above that specialty's requirement raise both bounds. */
-    public static final int TRADE_EXTRA_PERCENT_PER_POINT = 10;
+    /**
+     * Shop roll top is {@link #TRADE_UPPER_AT_FLOOR}% at this score and
+     * {@link #TRADE_UPPER_AT_CAP}% at {@link #MAX_HOUSE_SCORE}. Lower scores use the floor.
+     */
+    public static final int TRADE_SCORE_FLOOR = 14;
+    public static final int TRADE_UPPER_AT_FLOOR = 50;
+    public static final int TRADE_UPPER_AT_CAP = 175;
+    /** Furnishings 30 + volume 5 + rooms 3. */
+    public static final int MAX_HOUSE_SCORE = 38;
     public static final int MAX_TRADE_TYPES = 24;
     public static final int MASTER_ARMOR_PRICE_FACTOR = 4;
     public static final int IRON_BOOTS_EMERALDS = 12;
@@ -372,14 +376,14 @@ public final class InhabitantRules {
                 "Residents: A council member can appear in any eligible home. New residents prefer a type that has not appeared yet.",
                 "Residents: The house must be able to host that type. Once every type has spawned, the usual furnishing biases apply.",
                 "Residents: Council members are three times as likely as the most common other type. One resident per home.",
-                "Residents: Most residents restock every 3 Minecraft days; armorsmiths restock every 30 days.");
+                "Residents: Most residents restock every 14 Minecraft days; armorsmiths restock every 30 days.");
     }
 
     public static List<String> homesShopLines() {
         return List.of(
-                "Shops: Shop stock follows the house score versus that resident's requirement.",
-                "Shops: A home that only just qualifies rolls 25-50% of the usual trade types and 25-50% of each listing's uses.",
-                "Shops: There is at least one of each. Every point above the requirement raises both ranges by 10%.",
+                "Shops: Shop size follows house points. The top of the roll is 50% at 14 points and 175% at 38, the highest score.",
+                "Shops: The bottom of that roll is half the top. A 14-point home rolls 25-50% of the usual trade types and of each listing's uses.",
+                "Shops: Houses under 14 points use that same 25-50% band. There is at least one use of each listing that is rolled.",
                 "Shops: Each listing rolls its uses separately. Extra types beyond the usual shop are random trades.");
     }
 
@@ -660,12 +664,20 @@ public final class InhabitantRules {
         return Math.max(0, score - minScoreForSpecialty(specialty == null || specialty.isEmpty() ? TRADER : specialty));
     }
 
-    public static int tradeMinPercent(int score, String specialty) {
-        return TRADE_BARE_MIN_PERCENT + TRADE_EXTRA_PERCENT_PER_POINT * extraTradePoints(score, specialty);
+    /**
+     * Top of the shop roll. 50% at {@link #TRADE_SCORE_FLOOR} points, 175% at
+     * {@link #MAX_HOUSE_SCORE}. Scores outside that span clamp.
+     */
+    public static int tradeMaxPercent(int score) {
+        int clamped = Math.clamp(score, TRADE_SCORE_FLOOR, MAX_HOUSE_SCORE);
+        int span = MAX_HOUSE_SCORE - TRADE_SCORE_FLOOR;
+        int rise = TRADE_UPPER_AT_CAP - TRADE_UPPER_AT_FLOOR;
+        return TRADE_UPPER_AT_FLOOR + (int) Math.round((clamped - TRADE_SCORE_FLOOR) * (rise / (double) span));
     }
 
-    public static int tradeMaxPercent(int score, String specialty) {
-        return TRADE_BARE_MAX_PERCENT + TRADE_EXTRA_PERCENT_PER_POINT * extraTradePoints(score, specialty);
+    /** Bottom of the shop roll: half the top, rounded. */
+    public static int tradeMinPercent(int score) {
+        return (int) Math.round(tradeMaxPercent(score) / 2.0);
     }
 
     /** Inclusive roll in {@code [minPercent, maxPercent]}. */
@@ -850,8 +862,8 @@ public final class InhabitantRules {
     }
 
     /**
-     * House-score shop: type count and per-listing uses are rolled in the
-     * 25–50% band, plus 10% per point above that specialty's requirement.
+     * House-score shop: type count and per-listing uses roll from half the top
+     * percent up to that top. The top is 50% at 14 points and 175% at 38.
      * Extra types beyond the usual shop are random leftover listings.
      */
     public static List<TradeListing> scaledListings(
@@ -876,8 +888,8 @@ public final class InhabitantRules {
         }
         extras.addAll(genericExtraListings());
         Collections.shuffle(extras, rng);
-        int minPercent = tradeMinPercent(score, type);
-        int maxPercent = tradeMaxPercent(score, type);
+        int minPercent = tradeMinPercent(score);
+        int maxPercent = tradeMaxPercent(score);
         int typePercent = rollTradePercent(minPercent, maxPercent, rng.nextInt());
         int want = Math.min(MAX_TRADE_TYPES, scaledAmount(Math.max(1, defaults.size()), typePercent));
         List<TradeListing> chosen = new ArrayList<>();

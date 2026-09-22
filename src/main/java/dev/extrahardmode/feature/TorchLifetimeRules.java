@@ -16,8 +16,10 @@ public final class TorchLifetimeRules {
     public static final int DIM_AFTER_DAYS = 2;
     /** Campfires pull one log from a chest at most this many blocks away. */
     public static final int CAMPFIRE_REFUEL_RANGE = 12;
-    /** Torches pull coal or charcoal from a chest at most this many blocks away. */
-    public static final int TORCH_REFUEL_RANGE = 16;
+    /** Right-clicking a torch with coal or charcoal adds this many Minecraft days. */
+    public static final int HAND_REFUEL_DAYS = 40;
+    /** Breaking a torch with less remaining time than this destroys it instead of dropping it. */
+    public static final int BREAK_DESTROY_UNDER_DAYS = 3;
     /** Copper torches last this many times as long as a regular torch. */
     public static final int COPPER_DURATION_FACTOR = 2;
     /** Minecraft hours in a day; 24000 ticks / 24. */
@@ -31,6 +33,11 @@ public final class TorchLifetimeRules {
 
     public static boolean isCopperTorchId(String blockId) {
         return "minecraft:copper_torch".equals(blockId) || "minecraft:copper_wall_torch".equals(blockId);
+    }
+
+    /** Days added by a coal or charcoal right-click. Copper is {@link #COPPER_DURATION_FACTOR} times that. */
+    public static int handRefuelDays(boolean copper) {
+        return burnDaysFor(HAND_REFUEL_DAYS, copper);
     }
 
     /** Copper lasts {@link #COPPER_DURATION_FACTOR} times {@code baseDays}. Permanent stays 0. */
@@ -136,7 +143,8 @@ public final class TorchLifetimeRules {
         if (placedAt < 0L || permanent(days)) {
             return -1;
         }
-        long elapsed = now <= placedAt ? 0L : now - placedAt;
+        // placedAt may be in the future after a hand refuel longer than time already burned.
+        long elapsed = now - placedAt;
         long remaining = lifetimeTicks(days) - elapsed;
         if (remaining <= 0L) {
             return 0;
@@ -168,5 +176,16 @@ public final class TorchLifetimeRules {
 
     public static int lightLookColor(int remainingTicks) {
         return remainingTicks < 0 ? LIGHT_LOOK_PERMANENT_COLOR : LIGHT_LOOK_COLOR;
+    }
+
+    /**
+     * {@code remainingTicks < 0} is permanent and still drops. Less than
+     * {@link #BREAK_DESTROY_UNDER_DAYS} whole days is destroyed.
+     */
+    public static boolean destroyOnBreak(int remainingTicks) {
+        if (remainingTicks < 0) {
+            return false;
+        }
+        return remainingTicks < (long) BREAK_DESTROY_UNDER_DAYS * TICKS_PER_DAY;
     }
 }

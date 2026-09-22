@@ -5,8 +5,11 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.feature.BossFamily;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.server.level.ServerLevel;
@@ -15,7 +18,10 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 
-/** Per-dimension living boss UUID and last-spawn time, plus overworld campaign defeat count. */
+/**
+ * Per-dimension living boss UUID and last-spawn time, plus overworld campaign defeat count.
+ * A family id in {@code appeared} has spawned once in this game and does not return.
+ */
 public final class BiomeBossData extends SavedData {
     public static final Codec<FamilyState> FAMILY_CODEC = RecordCodecBuilder.create(instance -> instance.group(
                     UUIDUtil.CODEC.optionalFieldOf("living").forGetter(FamilyState::living),
@@ -26,20 +32,29 @@ public final class BiomeBossData extends SavedData {
                     Codec.unboundedMap(Codec.STRING, FAMILY_CODEC)
                             .optionalFieldOf("families", Map.of())
                             .forGetter(BiomeBossData::families),
-                    Codec.INT.optionalFieldOf("defeated", 0).forGetter(BiomeBossData::defeated))
+                    Codec.INT.optionalFieldOf("defeated", 0).forGetter(BiomeBossData::defeated),
+                    Codec.STRING.listOf().optionalFieldOf("appeared", List.of()).forGetter(BiomeBossData::appearedIds))
             .apply(instance, BiomeBossData::new));
 
     public static final SavedDataType<BiomeBossData> TYPE = new SavedDataType<>(
             ExtraHardModeMod.id("biome_bosses"), BiomeBossData::new, CODEC, DataFixTypes.SAVED_DATA_MAP_INDEX);
 
     private final Map<String, FamilyState> families = new LinkedHashMap<>();
+    private final Set<String> appeared = new LinkedHashSet<>();
     private int defeated;
 
     public BiomeBossData() {}
 
-    public BiomeBossData(Map<String, FamilyState> families, int defeated) {
+    public BiomeBossData(Map<String, FamilyState> families, int defeated, List<String> appeared) {
         this.families.putAll(families);
         this.defeated = Math.max(0, defeated);
+        if (appeared != null) {
+            for (String id : appeared) {
+                if (id != null && !id.isEmpty()) {
+                    this.appeared.add(id);
+                }
+            }
+        }
     }
 
     public static BiomeBossData of(ServerLevel level) {
@@ -65,6 +80,21 @@ public final class BiomeBossData extends SavedData {
         }
         setDirty();
         return defeated;
+    }
+
+    public List<String> appearedIds() {
+        return List.copyOf(appeared);
+    }
+
+    public boolean hasAppeared(BossFamily family) {
+        return family != null && appeared.contains(family.id());
+    }
+
+    /** Records that this family has had its one spawn. Safe to call more than once. */
+    public void markAppeared(BossFamily family) {
+        if (family != null && appeared.add(family.id())) {
+            setDirty();
+        }
     }
 
     public FamilyState state(BossFamily family) {

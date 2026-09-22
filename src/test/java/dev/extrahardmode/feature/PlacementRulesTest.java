@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
-import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.Test;
 
@@ -65,12 +64,15 @@ class PlacementRulesTest {
     }
 
     @Test
-    void denyPillarOnlyTheBlockUnderFeet() {
-        BlockPos underFeet = new BlockPos(4, 10, 8);
-        assertTrue(PlacementRules.denyPillar(true, false, underFeet, underFeet));
-        assertFalse(PlacementRules.denyPillar(true, false, underFeet.above(), underFeet));
-        assertFalse(PlacementRules.denyPillar(true, false, underFeet.below(), underFeet));
-        assertFalse(PlacementRules.denyPillar(true, true, underFeet, underFeet));
-        assertFalse(PlacementRules.denyPillar(false, false, underFeet, underFeet));
+    void airbornePlacementIncludesJumpingAndTheEdgeClip() {
+        assertTrue(PlacementRules.airborneForPlacement(false, true, false, false, false));
+        assertTrue(PlacementRules.airborneForPlacement(true, false, false, false, false));
+        assertFalse(PlacementRules.airborneForPlacement(true, true, false, false, false));
+        assertFalse(PlacementRules.airborneForPlacement(false, false, true, false, false));
+        assertFalse(PlacementRules.airborneForPlacement(false, false, false, true, false));
+        assertFalse(PlacementRules.airborneForPlacement(false, false, false, false, true));
+        assertTrue(PlacementRules.denyAirPlacement(true, true));
+        assertFalse(PlacementRules.denyAirPlacement(true, false));
+        assertFalse(PlacementRules.denyAirPlacement(false, true));
     }
 }
