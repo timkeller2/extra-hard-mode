@@ -35,6 +35,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.trading.ItemCost;
@@ -44,7 +45,12 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BedPart;
 import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Scored player homes can attract one traveler. Default off.
@@ -683,6 +689,58 @@ public final class Inhabitants implements FeatureModule {
     public static boolean isInhabitant(Entity entity) {
         return entity != null
                 && Boolean.TRUE.equals(entity.getAttachedOrElse(EhmAttachments.EHM_INHABITANT, Boolean.FALSE));
+    }
+
+    /**
+     * Remaining ticks until the inhabitant under the crosshair restocks.
+     * {@code null} when the crosshair is not on an inhabitant. {@code 0} when it is, but restock is already due.
+     */
+    public static @Nullable Integer lookRestockTicks(ServerPlayer player) {
+        if (!(player.level() instanceof ServerLevel level) || !WorldGate.isModuleActive(level, ID)) {
+            return null;
+        }
+        Entity target = entityOnCrosshair(player);
+        if (!(target instanceof Villager villager) || !isInhabitant(villager)) {
+            return null;
+        }
+        InhabitantData data = InhabitantData.of(level);
+        InhabitantData.Home home = data.byLiving(villager.getUUID());
+        if (home == null) {
+            return 0;
+        }
+        return InhabitantRules.restockRemainingTicks(
+                level.getOverworldClockTime(),
+                home.lastRestockDay(),
+                data.lastDawnDay(),
+                InhabitantRules.restockDays(home.specialty()));
+    }
+
+    /** Closest pickable entity the crosshair ray hits before the first block, within entity reach. */
+    static @Nullable Entity entityOnCrosshair(ServerPlayer player) {
+        double entityRange = player.entityInteractionRange();
+        if (entityRange <= 0.0) {
+            return null;
+        }
+        HitResult blockHit = player.pick(player.blockInteractionRange(), 1.0F, false);
+        Vec3 eye = player.getEyePosition();
+        double maxDistSq = entityRange * entityRange;
+        if (blockHit.getType() != HitResult.Type.MISS) {
+            maxDistSq = Math.min(maxDistSq, blockHit.getLocation().distanceToSqr(eye));
+        }
+        if (maxDistSq <= 0.0) {
+            return null;
+        }
+        Vec3 view = player.getViewVector(1.0F);
+        Vec3 end = eye.add(view.scale(entityRange));
+        AABB box = player.getBoundingBox().expandTowards(view.scale(entityRange)).inflate(1.0);
+        EntityHitResult hit = ProjectileUtil.getEntityHitResult(
+                player,
+                eye,
+                end,
+                box,
+                entity -> entity.isPickable() && !entity.isSpectator(),
+                maxDistSq);
+        return hit == null ? null : hit.getEntity();
     }
 
     public static void onStartTrading(Villager villager, Player player) {

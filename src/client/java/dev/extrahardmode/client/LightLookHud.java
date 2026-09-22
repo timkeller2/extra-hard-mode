@@ -9,7 +9,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.resources.Identifier;
 
-/** Remaining torch or campfire burn time under the crosshair. */
+/** Remaining torch, campfire, or resident-restock time under the crosshair. */
 public final class LightLookHud {
     public static final Identifier ELEMENT_ID = ExtraHardModeMod.id("light_look");
     private static final int OFFSET_Y = 12;

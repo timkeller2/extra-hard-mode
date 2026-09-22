@@ -103,6 +103,11 @@ class TorchLifetimeRulesTest {
         assertTrue(TorchLifetimeRules.isCopperTorchId("minecraft:copper_wall_torch"));
         assertFalse(TorchLifetimeRules.isCopperTorchId("minecraft:torch"));
         assertFalse(TorchLifetimeRules.isCopperTorchId("minecraft:wall_torch"));
+        assertTrue(TorchLifetimeRules.isRedstoneTorchId("minecraft:redstone_torch"));
+        assertTrue(TorchLifetimeRules.isRedstoneTorchId("minecraft:redstone_wall_torch"));
+        assertFalse(TorchLifetimeRules.isRedstoneTorchId("minecraft:torch"));
+        assertFalse(TorchLifetimeRules.isRedstoneTorchId("minecraft:copper_torch"));
+        assertFalse(TorchLifetimeRules.isCopperTorchId("minecraft:redstone_torch"));
         assertEquals(7, TorchLifetimeRules.burnDaysFor(7, false));
         assertEquals(14, TorchLifetimeRules.burnDaysFor(7, true));
         assertEquals(0, TorchLifetimeRules.burnDaysFor(0, true));

@@ -110,6 +110,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("Copper torches last twice as long"));
         assertTrue(String.join(" ", lines).contains("remaining time"));
         assertTrue(String.join(" ", lines).contains("Permanent if it never burns out"));
+        assertTrue(String.join(" ", lines).contains("Redstone torches are permanent"));
         assertTrue(String.join(" ", lines).contains("dim after 2 days"));
         assertTrue(String.join(" ", lines).contains("pull a log"));
         assertTrue(String.join(" ", lines).contains("12 blocks"));
@@ -176,6 +177,7 @@ class EhmHelpTest {
         assertTrue(all.contains("unloaded chunks"));
         assertTrue(all.contains("Most residents restock every 14 Minecraft days"));
         assertTrue(all.contains("armorsmiths restock every 30"));
+        assertTrue(all.contains("waiting to restock"));
         assertTrue(all.contains("has not appeared yet"));
         assertTrue(all.contains("wealthy trader"));
         assertTrue(all.contains("master armorsmith"));

@@ -35,6 +35,11 @@ public final class TorchLifetimeRules {
         return "minecraft:copper_torch".equals(blockId) || "minecraft:copper_wall_torch".equals(blockId);
     }
 
+    /** Redstone torches never burn out. They are not given a duration. */
+    public static boolean isRedstoneTorchId(String blockId) {
+        return "minecraft:redstone_torch".equals(blockId) || "minecraft:redstone_wall_torch".equals(blockId);
+    }
+
     /** Days added by a coal or charcoal right-click. Copper is {@link #COPPER_DURATION_FACTOR} times that. */
     public static int handRefuelDays(boolean copper) {
         return burnDaysFor(HAND_REFUEL_DAYS, copper);

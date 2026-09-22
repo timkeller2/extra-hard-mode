@@ -235,6 +235,7 @@ public final class EhmHelp {
                         "Torches: Light is 14 − (days burning − 2). Copper torches last twice as long.",
                         "Torches: Right-click a torch with coal or charcoal to add 40 days (80 on a copper torch). One item is consumed. That does not make it permanent.",
                         "Torches: Look at a torch, copper torch, or campfire to see remaining time (Permanent if it never burns out).",
+                        "Torches: Redstone torches are permanent. They do not burn out, dim, or show a duration.",
                         "Torches: Breaking a torch with less than 3 days left destroys it. Permanent torches still drop.",
                         "Torches: Permanent torches stay full-bright.",
                         "Torches: Placed campfires also burn out after 7 days and disappear, unless they pull a log from a chest within 12 blocks.",

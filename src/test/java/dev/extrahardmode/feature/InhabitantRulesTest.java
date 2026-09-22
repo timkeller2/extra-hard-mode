@@ -231,6 +231,18 @@ class InhabitantRulesTest {
         assertEquals(30, InhabitantRules.restockDays(InhabitantRules.MASTER_ARMORSMITH));
         assertFalse(InhabitantRules.shouldRestock(0, 29, 30));
         assertTrue(InhabitantRules.shouldRestock(0, 30, 30));
+        long day = CropGrowthRules.TICKS_PER_DAY;
+        assertEquals(14 * day, InhabitantRules.restockRemainingTicks(5 * day, 5, 5, 14));
+        assertEquals(14 * day - 1000, InhabitantRules.restockRemainingTicks(5 * day + 1000, 5, 5, 14));
+        assertEquals(1, InhabitantRules.restockRemainingTicks(19 * day - 1, 5, 18, 14));
+        assertEquals(0, InhabitantRules.restockRemainingTicks(19 * day, 5, 19, 14));
+        assertEquals(0, InhabitantRules.restockRemainingTicks(20 * day, 5, 20, 14));
+        assertEquals(30 * day, InhabitantRules.restockRemainingTicks(0, 0, 0, 30));
+        assertEquals(0, InhabitantRules.restockRemainingTicks(30 * day, 0, 30, 30));
+        assertEquals(day, InhabitantRules.restockRemainingTicks(10 * day, -1, 10, 14));
+        assertEquals(day - 1000, InhabitantRules.restockRemainingTicks(10 * day + 1000, -1, 10, 14));
+        assertEquals(0, InhabitantRules.restockRemainingTicks(10 * day + 1000, -1, 9, 14));
+        assertEquals(day, InhabitantRules.restockRemainingTicks(5 * day, 5, 5, 0));
     }
 
     @Test

@@ -7,7 +7,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 /**
- * Look-at remaining torch or campfire burn time. Hidden when {@code visible} is false.
+ * Look-at remaining torch, campfire, or resident restock time. Hidden when {@code visible} is false.
  * {@code remainingTicks} below 0 means permanent.
  */
 public record ClientboundLightLookPayload(boolean visible, int remainingTicks) implements CustomPacketPayload {

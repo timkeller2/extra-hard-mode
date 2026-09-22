@@ -376,7 +376,8 @@ public final class InhabitantRules {
                 "Residents: A council member can appear in any eligible home. New residents prefer a type that has not appeared yet.",
                 "Residents: The house must be able to host that type. Once every type has spawned, the usual furnishing biases apply.",
                 "Residents: Council members are three times as likely as the most common other type. One resident per home.",
-                "Residents: Most residents restock every 14 Minecraft days; armorsmiths restock every 30 days.");
+                "Residents: Most residents restock every 14 Minecraft days; armorsmiths restock every 30 days.",
+                "Residents: Look at a resident who is waiting to restock to see how long is left, in days and hours like a torch.");
     }
 
     public static List<String> homesShopLines() {
@@ -939,6 +940,33 @@ public final class InhabitantRules {
 
     static TradeListing sellOf(String itemId, int count, int emeralds, int uses) {
         return new TradeListing(itemId, count, emeralds, uses, false);
+    }
+
+    /**
+     * Ticks of overworld time until the next dawn restock. {@code 0} means it is already due, so there is
+     * nothing to count down. A resident who has never restocked ({@code lastRestockDay < 0}) waits for the
+     * next dawn: tomorrow if today's dawn already ran, otherwise due now.
+     */
+    public static int restockRemainingTicks(long dayTime, long lastRestockDay, long lastDawnDay, int restockDays) {
+        long time = Math.max(0L, dayTime);
+        long day = CropGrowthRules.dayIndex(time);
+        long nextDay;
+        if (lastRestockDay < 0L) {
+            if (lastDawnDay != day) {
+                return 0;
+            }
+            nextDay = day + 1L;
+        } else {
+            nextDay = lastRestockDay + Math.max(1, restockDays);
+        }
+        long remaining = nextDay * CropGrowthRules.TICKS_PER_DAY - time;
+        if (remaining <= 0L) {
+            return 0;
+        }
+        if (remaining > Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        }
+        return (int) remaining;
     }
 
     /** True when trades have never restocked, or {@code days} have passed. */

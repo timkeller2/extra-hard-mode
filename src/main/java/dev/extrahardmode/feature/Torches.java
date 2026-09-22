@@ -200,14 +200,25 @@ public final class Torches implements FeatureModule {
     }
 
     static boolean isTorchLike(BlockItem blockItem) {
-        return isBurnableTorch(blockItem.getBlock());
+        Block block = blockItem.getBlock();
+        return block instanceof BaseTorchBlock || block.defaultBlockState().is(EhmTags.DEPTH_LIMITED_LIGHTS);
+    }
+
+    public static boolean isRedstoneTorch(Block block) {
+        return TorchLifetimeRules.isRedstoneTorchId(BuiltInRegistries.BLOCK.getKey(block).toString());
     }
 
     public static boolean isBurnableTorch(Block block) {
+        if (isRedstoneTorch(block)) {
+            return false;
+        }
         return block instanceof BaseTorchBlock || block.defaultBlockState().is(EhmTags.DEPTH_LIMITED_LIGHTS);
     }
 
     public static boolean isBurnableTorch(BlockState state) {
+        if (isRedstoneTorch(state.getBlock())) {
+            return false;
+        }
         return state.getBlock() instanceof BaseTorchBlock || state.is(EhmTags.DEPTH_LIMITED_LIGHTS);
     }
 
@@ -543,6 +554,12 @@ public final class Torches implements FeatureModule {
         }
         if (EhmApi.playerBypasses(player)) {
             sendLightLook(player, null);
+            return;
+        }
+        // A resident in front of a torch owns the crosshair. Inhabitants ticks later, so resolve it here.
+        Integer restock = Inhabitants.lookRestockTicks(player);
+        if (restock != null) {
+            sendLightLook(player, restock > 0 ? restock : null);
             return;
         }
         HitResult hit = player.pick(player.blockInteractionRange(), 1.0F, false);
