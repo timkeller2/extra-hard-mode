@@ -69,7 +69,7 @@ public abstract class HudMixin {
             method = "extractHeart",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blitSprite:(Lcom/mojang/renderpearl/api/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIII)V"))
+                    target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blitSprite(Lcom/mojang/renderpearl/api/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIII)V"))
     private void tougher$clipHalfHeart(
             GuiGraphicsExtractor graphics,
             RenderPipeline pipeline,
