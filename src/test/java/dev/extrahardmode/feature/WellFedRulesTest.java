@@ -40,6 +40,9 @@ class WellFedRulesTest {
         assertEquals(260, WellFedRules.regenTicks(300, 9));
         assertEquals(200, WellFedRules.regenTicks(180, 5));
         assertEquals(0.5F, WellFedRules.effectDurationScale(5), 0.001F);
+        assertFalse(WellFedRules.novelFoodMana(true, 1, true));
+        assertTrue(WellFedRules.novelFoodMana(true, 1, false));
+        assertFalse(WellFedRules.novelFoodMana(true, 0, false));
         assertEquals(0.5F, WellFedRules.effectDurationScale(8), 0.001F);
         assertEquals(0, WellFedRules.repeatPenalty(5, 1));
         assertEquals(1, WellFedRules.repeatPenalty(6, 1));

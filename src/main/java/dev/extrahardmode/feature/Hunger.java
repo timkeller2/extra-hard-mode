@@ -189,6 +189,7 @@ public final class Hunger implements FeatureModule {
         int historySize = Math.max(1, config.foodHistorySize());
         List<String> recent = serverPlayer.getAttachedOrElse(EhmAttachments.EHM_FOOD_HISTORY, List.of());
         boolean novel = FoodHistory.isNovelInLast(recent, foodId, historySize);
+        int wellFedBefore = Math.max(0, serverPlayer.getAttachedOrElse(EhmAttachments.EHM_WELL_FED, 0));
         List<String> updated = FoodHistory.record(recent, foodId, WellFedRules.HISTORY_CAP);
         serverPlayer.setAttached(EhmAttachments.EHM_FOOD_HISTORY, updated);
         int wellFed = WellFed.update(serverPlayer, updated);
@@ -208,7 +209,7 @@ public final class Hunger implements FeatureModule {
             warnRepeatFood(serverPlayer, level, stack, foodId, count);
         }
         WellFed.clampFood(serverPlayer, maxFood);
-        if (novel && wellFed > 0) {
+        if (WellFedRules.novelFoodMana(novel, wellFed, wellFed > wellFedBefore)) {
             Achievements.shiftMana(serverPlayer, 1);
         } else {
             Achievements.sendMana(serverPlayer);

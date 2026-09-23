@@ -257,7 +257,7 @@ public final class EhmHelp {
                         "Hunger: Well Fed allows that many repeated meals in a longer window before the level drops.",
                         "Hunger: The same-food penalty waits one extra repeat per Well Fed level.",
                         "Hunger: Through Well Fed 5: +1 health, 2% less saturation loss, +1 damage every two levels, faster regen, and Luck at 3.",
-                        "Hunger: Poison and hunger last 10% less per Well Fed level, up to half. A new food while Well Fed restores 1 mana.",
+                        "Hunger: Poison and hunger last 10% less per Well Fed level, up to half. A new food restores 1 mana while Well Fed, except the meal that raises the level.",
                         "Hunger: Every Well Fed level adds 1 hunger and 1 mana level, even past 5. Both leave when Well Fed drops."));
     }
 
