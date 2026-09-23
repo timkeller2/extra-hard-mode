@@ -11,6 +11,7 @@ import dev.extrahardmode.feature.Torches;
 import dev.extrahardmode.feature.monster.Horses;
 import dev.extrahardmode.module.MessageId;
 import dev.extrahardmode.network.ClientboundAbilityDurationsPayload;
+import dev.extrahardmode.network.ClientboundCompassSpawnPayload;
 import dev.extrahardmode.network.ClientboundCouncilBountyPayload;
 import dev.extrahardmode.network.ClientboundFlightPayload;
 import dev.extrahardmode.network.ClientboundManaPayload;
@@ -28,6 +29,7 @@ import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.client.gui.components.toasts.SystemToast;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -57,6 +59,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
     private static volatile ClientboundSoilLookPayload lastSoilLook;
     private static volatile ClientboundLightLookPayload lastLightLook;
     private static volatile ClientboundCouncilBountyPayload lastCouncilBounty;
+    private static volatile GlobalPos compassSpawn;
 
     public static ClientboundSyncPayload lastSync() {
         return lastSync;
@@ -88,6 +91,10 @@ public class ExtraHardModeClient implements ClientModInitializer {
 
     public static ClientboundCouncilBountyPayload lastCouncilBounty() {
         return lastCouncilBounty;
+    }
+
+    public static GlobalPos compassSpawn() {
+        return compassSpawn;
     }
 
     public static boolean denyOffhandLightSwap(Player player) {
@@ -309,6 +316,9 @@ public class ExtraHardModeClient implements ClientModInitializer {
                 ClientboundLightLookPayload.TYPE, (payload, context) -> lastLightLook = payload);
         ClientPlayNetworking.registerGlobalReceiver(
                 ClientboundCouncilBountyPayload.TYPE, (payload, context) -> lastCouncilBounty = payload);
+        ClientPlayNetworking.registerGlobalReceiver(
+                ClientboundCompassSpawnPayload.TYPE,
+                (payload, context) -> compassSpawn = payload.set() ? payload.pos() : null);
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             lastSync = null;
             lastMana = null;
@@ -318,6 +328,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
             lastSoilLook = null;
             lastLightLook = null;
             lastCouncilBounty = null;
+            compassSpawn = null;
             SeasonAtmosphere.clearClient();
         });
         ManaHud.register();

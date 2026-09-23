@@ -80,6 +80,6 @@ public abstract class ServerExplosionMixin
         if (!FeatureBus.guard((Level) this.level, Explosions.ID)) {
             return;
         }
-        Explosions.afterBlocks(this.level);
+        Explosions.afterBlocks(this.level, (Explosion) (Object) this);
     }
 }

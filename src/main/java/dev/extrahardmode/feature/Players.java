@@ -26,8 +26,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
@@ -56,6 +58,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseFireBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 
 /**
@@ -91,6 +95,7 @@ public final class Players implements FeatureModule {
             PENDING_BED_CLEARS.remove(player.getUUID());
         });
         bus.listen(UseBlockCallback.EVENT, ID, Players::onUseBlock);
+        bus.listen(PlayerBlockBreakEvents.BEFORE, ID, Players::onBreakBurning);
         ServerTickEvents.END_SERVER_TICK.register(Players::flushRespawns);
         ServerTickEvents.END_LEVEL_TICK.register(level -> {
             if (level.getGameTime() % 20 != 0) {
@@ -381,6 +386,28 @@ public final class Players implements FeatureModule {
                 stack.setCount(0);
             }
         }
+    }
+
+    /** Breaking fire with a tool, or breaking a block that has fire against it, ignites like punching fire. */
+    static boolean onBreakBurning(
+            Level level, Player player, BlockPos pos, BlockState state, BlockEntity blockEntity) {
+        if (!(player instanceof ServerPlayer serverPlayer) || serverPlayer.isSpectator()) {
+            return true;
+        }
+        boolean brokenIsFire = state.getBlock() instanceof BaseFireBlock;
+        boolean adjacentFire = false;
+        if (!brokenIsFire) {
+            for (Direction direction : Direction.values()) {
+                if (level.getBlockState(pos.relative(direction)).getBlock() instanceof BaseFireBlock) {
+                    adjacentFire = true;
+                    break;
+                }
+            }
+        }
+        if (FireBreakRules.igniteOnBreak(brokenIsFire, adjacentFire, player.getMainHandItem().isEmpty())) {
+            igniteFromFire(serverPlayer);
+        }
+        return true;
     }
 
     public static void igniteFromFire(ServerPlayer player) {

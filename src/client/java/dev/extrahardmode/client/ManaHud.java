@@ -1,6 +1,7 @@
 package dev.extrahardmode.client;
 
 import dev.extrahardmode.ExtraHardModeMod;
+import dev.extrahardmode.feature.HudCapacityRules;
 import dev.extrahardmode.feature.ManaHudRules;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudStatusBarHeightRegistry;
@@ -45,14 +46,22 @@ public final class ManaHud {
         if (crystals <= 0) {
             return;
         }
+        int points = ManaHudRules.displayedPoints(level, current);
         ManaHudRules.Layout layout = ManaHudRules.layout(crystals);
         int left = graphics.guiWidth() / 2 - 91;
         int top = graphics.guiHeight() - HudStatusBarHeightRegistry.getHeight(ELEMENT_ID);
         for (int index = 0; index < crystals; index++) {
             int x = left + ManaHudRules.offsetX(index, layout);
             int y = top + ManaHudRules.offsetY(index, layout);
+            boolean halfCapacity = HudCapacityRules.halfShadow(points, index);
+            if (halfCapacity) {
+                graphics.enableScissor(x, y, x + 5, y + ManaHudRules.CRYSTAL_SIZE);
+            }
             graphics.blitSprite(
                     RenderPipelines.GUI_TEXTURED, CONTAINER, x, y, ManaHudRules.CRYSTAL_SIZE, ManaHudRules.CRYSTAL_SIZE);
+            if (halfCapacity) {
+                graphics.disableScissor();
+            }
             Identifier fill =
                     switch (ManaHudRules.fill(index, current)) {
                         case FULL -> FULL;

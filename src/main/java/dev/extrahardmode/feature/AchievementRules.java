@@ -109,14 +109,23 @@ public final class AchievementRules {
         } else {
             next = level + (add - (level - now)) * OVERFLOW_REGEN_MULTIPLIER;
         }
-        return Math.min(MANA_HARD_CAP, next);
+        return Math.min(manaCap(manaLevel), next);
+    }
+
+    /** Stored mana stops at {@link #MANA_HARD_CAP}. Well Fed can raise the ceiling with its levels. */
+    public static double manaCap(int manaLevel) {
+        return Math.max(MANA_HARD_CAP, Math.max(0, manaLevel));
     }
 
     public static double clampMana(double current) {
+        return clampMana(current, MANA_HARD_CAP);
+    }
+
+    public static double clampMana(double current, double cap) {
         if (current <= 0.0) {
             return 0.0;
         }
-        return Math.min(MANA_HARD_CAP, current);
+        return Math.min(Math.max(0.0, cap), current);
     }
 
     public static boolean shouldBoostWithQuartz(int manaLevel, double current) {

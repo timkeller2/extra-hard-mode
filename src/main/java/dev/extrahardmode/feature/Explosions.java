@@ -14,11 +14,13 @@ import dev.extrahardmode.task.CreateExplosionTask;
 import dev.extrahardmode.world.PhysicsSkip;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
@@ -31,6 +33,8 @@ import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball;
 import net.minecraft.world.entity.vehicle.minecart.MinecartTNT;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.BaseFireBlock;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.phys.Vec3;
@@ -44,6 +48,9 @@ public final class Explosions implements FeatureModule {
     private static final ThreadLocal<Boolean> ALLOW_WORLD_DAMAGE = new ThreadLocal<>();
     private static final Map<Identifier, ArrayDeque<CreateExplosionTask>> DELAYED = new ConcurrentHashMap<>();
     private static final Map<Identifier, List<OreBreak>> PENDING_ORES = new ConcurrentHashMap<>();
+    /** Blocks each in-flight blast affected, before cobble and flying-block removals. Empty when not TNT. */
+    private static final ThreadLocal<Deque<List<BlockPos>>> AFFECTED =
+            ThreadLocal.withInitial(ArrayDeque::new);
 
     @Override
     public Identifier id() {
@@ -222,10 +229,20 @@ public final class Explosions implements FeatureModule {
     }
 
     public static void beforeBlocks(ServerLevel level, Explosion explosion, List<BlockPos> positions) {
-        if (explosion.getBlockInteraction() == Explosion.BlockInteraction.KEEP) {
+        boolean keep = explosion.getBlockInteraction() == Explosion.BlockInteraction.KEEP;
+        ExplosionType type = classify(explosion.getDirectSourceEntity());
+        if (!keep && type == ExplosionType.TNT) {
+            List<BlockPos> snapshot = new ArrayList<>(positions.size());
+            for (BlockPos pos : positions) {
+                snapshot.add(pos.immutable());
+            }
+            AFFECTED.get().addLast(snapshot);
+        } else {
+            AFFECTED.get().addLast(List.of());
+        }
+        if (keep) {
             return;
         }
-        ExplosionType type = classify(explosion.getDirectSourceEntity());
         ExplosionConfig config = ConfigManager.world(level).explosions();
         if (type == null && !config.otherModExplosions()) {
             return;
@@ -267,15 +284,65 @@ public final class Explosions implements FeatureModule {
         }
     }
 
-    public static void afterBlocks(ServerLevel level) {
+    public static void afterBlocks(ServerLevel level, Explosion explosion) {
+        Deque<List<BlockPos>> stack = AFFECTED.get();
+        List<BlockPos> affected = stack.isEmpty() ? List.of() : stack.removeLast();
         List<OreBreak> ores = pendingOres(level);
-        if (ores.isEmpty()) {
+        if (!ores.isEmpty()) {
+            for (OreBreak ore : ores) {
+                CaveIns.onOreBroken(level, ore.pos, ore.state);
+            }
+            ores.clear();
+        }
+        igniteTnt(level, explosion, affected);
+    }
+
+    /** Place fire on a rounded percent of the blocks this TNT blast affected. */
+    private static void igniteTnt(ServerLevel level, Explosion explosion, List<BlockPos> affected) {
+        if (affected.isEmpty() || explosion.getBlockInteraction() == Explosion.BlockInteraction.KEEP) {
             return;
         }
-        for (OreBreak ore : ores) {
-            CaveIns.onOreBroken(level, ore.pos, ore.state);
+        if (classify(explosion.getDirectSourceEntity()) != ExplosionType.TNT) {
+            return;
         }
-        ores.clear();
+        int percent = ConfigManager.world(level).explosions().tntFirePercent();
+        int want = ExplosionFireRules.igniteCount(affected.size(), percent);
+        if (want <= 0) {
+            return;
+        }
+        List<BlockPos> candidates = new ArrayList<>();
+        for (BlockPos pos : affected) {
+            if (fireSpot(level, pos) != null) {
+                candidates.add(pos);
+            }
+        }
+        if (candidates.isEmpty()) {
+            return;
+        }
+        for (int index : ExplosionFireRules.chooseIndices(candidates.size(), want, level.getRandom()::nextInt)) {
+            BlockPos spot = fireSpot(level, candidates.get(index));
+            if (spot == null) {
+                continue;
+            }
+            BlockState fire = BaseFireBlock.getState(level, spot);
+            if (BaseFireBlock.canBePlacedAt(level, spot, Direction.UP) || fire.canSurvive(level, spot)) {
+                level.setBlock(spot, fire, Block.UPDATE_ALL);
+            }
+        }
+    }
+
+    /** Air cell where fire can sit for an affected position, or null. */
+    private static BlockPos fireSpot(ServerLevel level, BlockPos affected) {
+        BlockState state = level.getBlockState(affected);
+        BlockPos spot = state.isAir() ? affected : affected.above();
+        if (!level.getBlockState(spot).isAir()) {
+            return null;
+        }
+        BlockState below = level.getBlockState(spot.below());
+        if (below.isAir() || below.getBlock() instanceof BaseFireBlock) {
+            return null;
+        }
+        return spot;
     }
 
     public static boolean discardFlyingIfFar(FallingBlockEntity entity) {

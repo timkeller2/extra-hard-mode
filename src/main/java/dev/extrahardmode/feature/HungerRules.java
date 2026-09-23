@@ -75,20 +75,27 @@ public final class HungerRules {
      * Saturation cannot exceed the current food level (vanilla clamp).
      */
     public static int foodAfterVarietyBonus(int foodLevel, boolean novel) {
-        if (!novel) {
-            return clampFood(foodLevel);
+        return foodAfterVarietyBonus(foodLevel, 20, novel);
+    }
+
+    public static int foodAfterVarietyBonus(int foodLevel, int maxFood, boolean novel) {
+        int max = Math.max(0, maxFood);
+        int level = Math.clamp(foodLevel, 0, max);
+        if (!novel || level >= max) {
+            return level;
         }
-        if (foodLevel >= 20) {
-            return 20;
-        }
-        return clampFood(foodLevel + 1);
+        return level + 1;
     }
 
     public static float saturationAfterVarietyBonus(int foodLevel, float saturation, boolean novel) {
-        if (!novel || foodLevel < 20) {
+        return saturationAfterVarietyBonus(foodLevel, saturation, 20, novel);
+    }
+
+    public static float saturationAfterVarietyBonus(int foodLevel, float saturation, int maxFood, boolean novel) {
+        if (!novel || foodLevel < maxFood) {
             return clampSaturation(saturation, foodLevel);
         }
-        return clampSaturation(saturation + 1.0F, 20);
+        return clampSaturation(saturation + 1.0F, maxFood);
     }
 
     /**
@@ -101,17 +108,28 @@ public final class HungerRules {
     }
 
     public static int foodAfterUniqueWindowBonus(int foodLevel, boolean uniqueWindow) {
-        if (!uniqueWindow) {
-            return clampFood(foodLevel);
+        return foodAfterUniqueWindowBonus(foodLevel, 20, uniqueWindow);
+    }
+
+    public static int foodAfterUniqueWindowBonus(int foodLevel, int maxFood, boolean uniqueWindow) {
+        int max = Math.max(0, maxFood);
+        int level = Math.clamp(foodLevel, 0, max);
+        if (!uniqueWindow || level >= max) {
+            return level;
         }
-        return clampFood(foodLevel + 1);
+        return level + 1;
     }
 
     public static float saturationAfterUniqueWindowBonus(int foodLevel, float saturation, boolean uniqueWindow) {
+        return saturationAfterUniqueWindowBonus(foodLevel, saturation, foodLevel, uniqueWindow);
+    }
+
+    public static float saturationAfterUniqueWindowBonus(
+            int foodLevel, float saturation, int maxFood, boolean uniqueWindow) {
         if (!uniqueWindow) {
             return clampSaturation(saturation, foodLevel);
         }
-        return clampSaturation(saturation + 1.0F, foodLevel);
+        return clampSaturation(saturation + 1.0F, Math.max(foodLevel, maxFood));
     }
 
     public static int clampFood(int foodLevel) {
@@ -133,7 +151,11 @@ public final class HungerRules {
     }
 
     public static int foodAfterRepeatPenalty(int foodLevel, int penalty) {
-        return clampFood(foodLevel - Math.max(0, penalty));
+        return foodAfterRepeatPenalty(foodLevel, penalty, 20);
+    }
+
+    public static int foodAfterRepeatPenalty(int foodLevel, int penalty, int maxFood) {
+        return Math.clamp(foodLevel - Math.max(0, penalty), 0, Math.max(0, maxFood));
     }
 
     public static float saturationAfterRepeatPenalty(int foodLevel, float saturation, int penalty) {

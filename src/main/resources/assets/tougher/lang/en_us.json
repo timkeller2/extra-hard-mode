@@ -248,5 +248,8 @@
   "tougher.message.food_variety": "You appreciate the food variety! +1 bonus",
   "tougher.message.food_unique_window": "You ate seven different foods! Extra +1 hunger and saturation, and 3 experience.",
   "tougher.message.food_tired": "You are getting tired of %s. Try changing it up.",
-  "tougher.message.food_sick": "You are getting sick of %s!"
+  "tougher.message.food_sick": "You are getting sick of %s!",
+  "tougher.message.well_fed": "Well Fed %s.",
+  "tougher.message.well_fed_drop": "Well Fed drops to %s.",
+  "tougher.message.well_fed_gone": "You are no longer well fed."
 }

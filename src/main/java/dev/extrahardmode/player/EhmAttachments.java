@@ -140,6 +140,11 @@ public final class EhmAttachments {
     public static final AttachmentType<Integer> EHM_BLAZE_SPLIT =
             AttachmentRegistry.create(ExtraHardModeMod.id("blaze_split"), builder -> builder.initializer(() -> 0));
 
+    /** Well Fed level earned from a long varied diet. Drops when the diet narrows. */
+    public static final AttachmentType<Integer> EHM_WELL_FED = AttachmentRegistry.create(
+            ExtraHardModeMod.id("well_fed"),
+            builder -> builder.persistent(Codec.INT).copyOnDeath().initializer(() -> 0));
+
     /** Persistent FIFO of recently eaten food item ids for the variety bonus. */
     public static final AttachmentType<List<String>> EHM_FOOD_HISTORY = AttachmentRegistry.create(
             ExtraHardModeMod.id("food_history"),

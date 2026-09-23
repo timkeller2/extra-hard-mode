@@ -223,7 +223,9 @@ public final class EhmHelp {
                         "Building: You cannot carry a torch, lantern, or glowstone in your off hand.",
                         "Building: Bucketed water evaporates; use ice if you need a water source.",
                         "Building: A boat that falls more than 3 blocks with you in it breaks and drops nothing.",
-                        "Building: Torches and campfires have their own topic. Type /tougher help torches."));
+                        "Building: Torches and campfires have their own topic. Type /tougher help torches.",
+                        "Building: Breaking a block that is on fire sets you on fire, the same as putting that fire out by hand.",
+                        "Building: Sneak with a compass to point it at your bed or respawn anchor. With none set, it still points at world spawn."));
     }
 
     private static Page torches() {
@@ -249,7 +251,13 @@ public final class EhmHelp {
                         "Hunger: Your hunger drops while you move or act, not while AFK.",
                         "Hunger: A food not in your last 7 eaten gives +1 hunger, or +1 saturation if you are already full.",
                         "Hunger: Seven different foods in the last 7 meals gives an extra +1 hunger and saturation and 3 experience.",
-                        "Hunger: The same food 5 times in the last 7 meals restores less; 7 of the last 7 restores even less."));
+                        "Hunger: The same food 5 times in the last 7 meals restores less; 7 of the last 7 restores even less.",
+                        "Hunger: After those seven, each longer run of different meals raises Well Fed by one. It can pass 5.",
+                        "Hunger: Well Fed allows that many repeated meals in a longer window before the level drops.",
+                        "Hunger: The same-food penalty waits one extra repeat per Well Fed level.",
+                        "Hunger: Through Well Fed 5: +1 health, 2% less saturation loss, +1 damage every two levels, faster regen, and Luck at 3.",
+                        "Hunger: Poison and hunger last 10% less per Well Fed level, up to half. A new food while Well Fed restores 1 mana.",
+                        "Hunger: Every Well Fed level adds 1 hunger and 1 mana level, even past 5. Both leave when Well Fed drops."));
     }
 
     private static Page crops() {
@@ -326,7 +334,9 @@ public final class EhmHelp {
                         "Combat: Those special shots always happen at 1000 blocks or farther.",
                         "Combat: Zombies vary ±20% in speed (faster hit softer and look smaller, slower hit harder and look larger).",
                         "Combat: Zombies can rise again. Shields absorb 100% of a blocked hit and take 3 times the durability.",
-                        "Combat: Creepers may drop live TNT. Strong biome bosses can appear far from spawn.",
+                        "Combat: Creepers may drop live TNT. TNT sets fire to 20% of the blocks it hits, rounded.",
+                        "Combat: explosions.tnt.firePercent changes that share. Set it to 0 to leave TNT blasts unlit.",
+                        "Combat: Strong biome bosses can appear far from spawn.",
                         "Combat: Each biome boss appears once. After it is defeated, it does not return in that game.",
                         "Combat: Bosses do not spawn within 80 blocks of a player or a chest.",
                         "Combat: Brood mothers chase when hit. Every few seconds they spit for half damage and a brief blind.",

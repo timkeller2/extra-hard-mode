@@ -79,6 +79,7 @@ public final class Hunger implements FeatureModule {
         for (ServerPlayer player : level.players()) {
             sampleActivity(player, tick);
             applyExtraExhaustion(player, tick);
+            WellFed.maintain(player);
         }
     }
 
@@ -166,7 +167,7 @@ public final class Hunger implements FeatureModule {
         if (!overridesRegen(serverPlayer)) {
             return HungerRules.VANILLA_SLOW_REGEN_TICKS;
         }
-        return Math.max(1, ConfigManager.world(level).slowRegenTicks());
+        return WellFedRules.regenTicks(ConfigManager.world(level).slowRegenTicks(), WellFed.level(serverPlayer));
     }
 
     public static void onFoodEaten(Player player, ItemStack stack) {
@@ -187,28 +188,36 @@ public final class Hunger implements FeatureModule {
         WorldConfig config = ConfigManager.world(level);
         int historySize = Math.max(1, config.foodHistorySize());
         List<String> recent = serverPlayer.getAttachedOrElse(EhmAttachments.EHM_FOOD_HISTORY, List.of());
-        boolean novel = FoodHistory.isNovel(recent, foodId);
-        List<String> updated = FoodHistory.record(recent, foodId, historySize);
+        boolean novel = FoodHistory.isNovelInLast(recent, foodId, historySize);
+        List<String> updated = FoodHistory.record(recent, foodId, WellFedRules.HISTORY_CAP);
         serverPlayer.setAttached(EhmAttachments.EHM_FOOD_HISTORY, updated);
+        int wellFed = WellFed.update(serverPlayer, updated);
+        int maxFood = WellFedRules.foodMax(wellFed);
         if (novel) {
-            applyVarietyBonus(serverPlayer.getFoodData());
+            applyVarietyBonus(serverPlayer.getFoodData(), maxFood);
             celebrateVariety(serverPlayer, level);
         }
         if (FoodHistory.lastAreAllDifferent(updated, HungerRules.DEFAULT_FOOD_HISTORY)) {
-            applyUniqueWindowBonus(serverPlayer.getFoodData());
+            applyUniqueWindowBonus(serverPlayer.getFoodData(), maxFood);
             celebrateUniqueWindow(serverPlayer, level);
         }
-        int count = FoodHistory.countInLast(updated, foodId, HungerRules.DEFAULT_FOOD_HISTORY);
-        int penalty = HungerRules.repeatFoodPenalty(count);
+        int count = FoodHistory.countInLast(updated, foodId, WellFedRules.penaltyWindow(wellFed));
+        int penalty = WellFedRules.repeatPenalty(count, wellFed);
         if (penalty > 0) {
-            applyRepeatPenalty(serverPlayer.getFoodData(), penalty);
+            applyRepeatPenalty(serverPlayer.getFoodData(), penalty, maxFood);
             warnRepeatFood(serverPlayer, level, stack, foodId, count);
+        }
+        WellFed.clampFood(serverPlayer, maxFood);
+        if (novel && wellFed > 0) {
+            Achievements.shiftMana(serverPlayer, 1);
+        } else {
+            Achievements.sendMana(serverPlayer);
         }
     }
 
-    static void applyUniqueWindowBonus(FoodData food) {
-        int level = HungerRules.foodAfterUniqueWindowBonus(food.getFoodLevel(), true);
-        float saturation = HungerRules.saturationAfterUniqueWindowBonus(level, food.getSaturationLevel(), true);
+    static void applyUniqueWindowBonus(FoodData food, int maxFood) {
+        int level = HungerRules.foodAfterUniqueWindowBonus(food.getFoodLevel(), maxFood, true);
+        float saturation = HungerRules.saturationAfterUniqueWindowBonus(level, food.getSaturationLevel(), maxFood, true);
         food.setFoodLevel(level);
         food.setSaturation(saturation);
     }
@@ -230,8 +239,8 @@ public final class Hunger implements FeatureModule {
                 1.6F);
     }
 
-    static void applyRepeatPenalty(FoodData food, int penalty) {
-        int level = HungerRules.foodAfterRepeatPenalty(food.getFoodLevel(), penalty);
+    static void applyRepeatPenalty(FoodData food, int penalty, int maxFood) {
+        int level = HungerRules.foodAfterRepeatPenalty(food.getFoodLevel(), penalty, maxFood);
         float saturation = HungerRules.saturationAfterRepeatPenalty(level, food.getSaturationLevel(), penalty);
         food.setFoodLevel(level);
         food.setSaturation(saturation);
@@ -297,13 +306,13 @@ public final class Hunger implements FeatureModule {
                 0.02);
     }
 
-    static void applyVarietyBonus(FoodData food) {
+    static void applyVarietyBonus(FoodData food, int maxFood) {
         int level = food.getFoodLevel();
         float saturation = food.getSaturationLevel();
-        if (level >= 20) {
-            food.setSaturation(HungerRules.saturationAfterVarietyBonus(level, saturation, true));
+        if (level >= maxFood) {
+            food.setSaturation(HungerRules.saturationAfterVarietyBonus(level, saturation, maxFood, true));
         } else {
-            food.setFoodLevel(HungerRules.foodAfterVarietyBonus(level, true));
+            food.setFoodLevel(HungerRules.foodAfterVarietyBonus(level, maxFood, true));
         }
     }
 

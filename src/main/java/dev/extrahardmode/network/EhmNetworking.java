@@ -34,6 +34,8 @@ public final class EhmNetworking {
                 .register(ClientboundLightLookPayload.TYPE, ClientboundLightLookPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay()
                 .register(ClientboundCouncilBountyPayload.TYPE, ClientboundCouncilBountyPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay()
+                .register(ClientboundCompassSpawnPayload.TYPE, ClientboundCompassSpawnPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(ServerboundConfigPayload.TYPE, ServerboundConfigPayload.STREAM_CODEC);
         ServerPlayNetworking.registerGlobalReceiver(ServerboundConfigPayload.TYPE, EhmNetworking::onConfig);
         ServerPlayConnectionEvents.JOIN.register(EhmNetworking::onJoin);
@@ -56,6 +58,15 @@ public final class EhmNetworking {
         ServerPlayNetworking.send(player, payload);
     }
 
+    public static void sendCompassSpawn(ServerPlayer player) {
+        ServerPlayer.RespawnConfig config = player.getRespawnConfig();
+        if (config == null || config.respawnData() == null || config.respawnData().globalPos() == null) {
+            ServerPlayNetworking.send(player, ClientboundCompassSpawnPayload.cleared());
+            return;
+        }
+        ServerPlayNetworking.send(player, new ClientboundCompassSpawnPayload(true, config.respawnData().globalPos()));
+    }
+
     public static void sendToast(ServerPlayer player, String messageId) {
         sendToast(player, messageId, "");
     }
@@ -76,6 +87,7 @@ public final class EhmNetworking {
             MinecraftServer server) {
         sendSync(handler.player);
         Achievements.sendMana(handler.player);
+        sendCompassSpawn(handler.player);
         ManaAbilities.onJoin(handler.player);
         CouncilMissions.sendHud(handler.player);
         WorldGate.onPlayerJoin(handler.player);

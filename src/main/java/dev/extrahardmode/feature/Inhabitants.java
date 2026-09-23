@@ -35,7 +35,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.trading.ItemCost;
@@ -47,7 +46,6 @@ import net.minecraft.world.level.block.state.properties.BedPart;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
@@ -700,13 +698,13 @@ public final class Inhabitants implements FeatureModule {
             return null;
         }
         Entity target = entityOnCrosshair(player);
-        if (!(target instanceof Villager villager) || !isInhabitant(villager)) {
+        if (!(target instanceof Villager villager)) {
             return null;
         }
         InhabitantData data = InhabitantData.of(level);
-        InhabitantData.Home home = data.byLiving(villager.getUUID());
+        InhabitantData.Home home = homeFor(data, villager);
         if (home == null) {
-            return 0;
+            return isInhabitant(villager) ? 0 : null;
         }
         return InhabitantRules.restockRemainingTicks(
                 level.getOverworldClockTime(),
@@ -715,32 +713,68 @@ public final class Inhabitants implements FeatureModule {
                 InhabitantRules.restockDays(home.specialty()));
     }
 
-    /** Closest pickable entity the crosshair ray hits before the first block, within entity reach. */
-    static @Nullable Entity entityOnCrosshair(ServerPlayer player) {
-        double entityRange = player.entityInteractionRange();
-        if (entityRange <= 0.0) {
+    /** Home for this villager, including residents saved before the living id or tag was reliable. */
+    static InhabitantData.@Nullable Home homeFor(InhabitantData data, Villager villager) {
+        InhabitantData.Home home = data.byLiving(villager.getUUID());
+        if (home != null) {
+            return home;
+        }
+        String homeId = villager.getAttachedOrElse(EhmAttachments.EHM_INHABITANT_HOME, "");
+        if (homeId.isEmpty()) {
             return null;
         }
-        HitResult blockHit = player.pick(player.blockInteractionRange(), 1.0F, false);
+        return data.get(homeId);
+    }
+
+    /**
+     * Closest pickable entity the crosshair hits before the first block, out to block reach.
+     * A resident's box is taller so looking at the name still counts.
+     */
+    static @Nullable Entity entityOnCrosshair(ServerPlayer player) {
+        double reach = Math.max(player.blockInteractionRange(), player.entityInteractionRange());
+        if (reach <= 0.0) {
+            return null;
+        }
         Vec3 eye = player.getEyePosition();
-        double maxDistSq = entityRange * entityRange;
+        Vec3 view = player.getViewVector(1.0F);
+        HitResult blockHit = player.pick(reach, 1.0F, false);
+        double maxDistSq = reach * reach;
+        Vec3 clipEnd = eye.add(view.scale(reach));
         if (blockHit.getType() != HitResult.Type.MISS) {
             maxDistSq = Math.min(maxDistSq, blockHit.getLocation().distanceToSqr(eye));
+            clipEnd = blockHit.getLocation();
         }
         if (maxDistSq <= 0.0) {
             return null;
         }
-        Vec3 view = player.getViewVector(1.0F);
-        Vec3 end = eye.add(view.scale(entityRange));
-        AABB box = player.getBoundingBox().expandTowards(view.scale(entityRange)).inflate(1.0);
-        EntityHitResult hit = ProjectileUtil.getEntityHitResult(
-                player,
-                eye,
-                end,
-                box,
-                entity -> entity.isPickable() && !entity.isSpectator(),
-                maxDistSq);
-        return hit == null ? null : hit.getEntity();
+        AABB search = player.getBoundingBox().expandTowards(view.scale(reach)).inflate(2.0);
+        Entity closest = null;
+        double closestDist = maxDistSq;
+        for (Entity entity : player.level().getEntities(player, search, candidate -> candidate.isPickable() && !candidate.isSpectator())) {
+            AABB box = lookBox(entity);
+            if (box.contains(eye)) {
+                return entity;
+            }
+            Optional<Vec3> clip = box.clip(eye, clipEnd);
+            if (clip.isEmpty()) {
+                continue;
+            }
+            double dist = eye.distanceToSqr(clip.get());
+            if (dist < closestDist) {
+                closestDist = dist;
+                closest = entity;
+            }
+        }
+        return closest;
+    }
+
+    /** Name sits above the body. A little extra height and width so aiming at it still hits. */
+    static AABB lookBox(Entity entity) {
+        AABB box = entity.getBoundingBox();
+        if (entity instanceof Villager) {
+            return box.inflate(0.3, 0.0, 0.3).expandTowards(0.0, 0.8, 0.0);
+        }
+        return box;
     }
 
     public static void onStartTrading(Villager villager, Player player) {

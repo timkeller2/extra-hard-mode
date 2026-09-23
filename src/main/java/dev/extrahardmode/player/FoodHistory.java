@@ -12,13 +12,15 @@ public final class FoodHistory {
     private FoodHistory() {}
 
     public static boolean isNovel(List<String> recent, String foodId) {
+        return isNovelInLast(recent, foodId, Integer.MAX_VALUE);
+    }
+
+    /** True when {@code foodId} is absent from the last {@code window} meals. */
+    public static boolean isNovelInLast(List<String> recent, String foodId, int window) {
         if (foodId == null || foodId.isEmpty()) {
             return false;
         }
-        if (recent == null || recent.isEmpty()) {
-            return true;
-        }
-        return !recent.contains(foodId);
+        return countInLast(recent, foodId, window) == 0;
     }
 
     public static List<String> record(List<String> recent, String foodId, int maxSize) {

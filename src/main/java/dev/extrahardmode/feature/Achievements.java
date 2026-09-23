@@ -68,7 +68,8 @@ public final class Achievements implements FeatureModule {
 
     public static void sendMana(ServerPlayer player) {
         ServerPlayNetworking.send(
-                player, new ClientboundManaPayload(manaLevel(player), (float) currentMana(player)));
+                player,
+                new ClientboundManaPayload(manaLevel(player), (float) currentMana(player), WellFed.level(player)));
     }
 
     public static void onPlaced(BlockPlaceContext context, Block block) {
@@ -162,8 +163,9 @@ public final class Achievements implements FeatureModule {
             return;
         }
         int level = manaLevel(player);
+        double cap = AchievementRules.manaCap(level);
         Double stored = player.getAttachedOrElse(EhmAttachments.EHM_MANA_CURRENT, 0.0);
-        double current = AchievementRules.clampMana(stored == null ? 0.0 : stored);
+        double current = AchievementRules.clampMana(stored == null ? 0.0 : stored, cap);
         boolean quartz =
                 AchievementRules.shouldBoostWithQuartz(level, current) && hasItem(player, Items.QUARTZ);
         double afterBase = AchievementRules.addMana(
@@ -175,7 +177,7 @@ public final class Achievements implements FeatureModule {
         var food = player.getFoodData();
         float saturation = food.getSaturationLevel();
         if (AchievementRules.shouldRestoreFromSaturation(level, afterBase, saturation)) {
-            double withSat = AchievementRules.clampMana(afterBase + AchievementRules.SATURATION_MANA_RESTORE);
+            double withSat = AchievementRules.clampMana(afterBase + AchievementRules.SATURATION_MANA_RESTORE, cap);
             if (withSat > afterBase) {
                 next = withSat;
                 food.setSaturation(AchievementRules.saturationAfterManaRestore(saturation));
@@ -293,9 +295,18 @@ public final class Achievements implements FeatureModule {
         if (levels <= 0) {
             return;
         }
-        player.setAttached(EhmAttachments.EHM_MANA_LEVEL, manaLevel(player) + levels);
+        player.setAttached(EhmAttachments.EHM_MANA_LEVEL, storedManaLevel(player) + levels);
         sendMana(player);
         announceMana(player);
+    }
+
+    /** Adds or removes current mana without changing the permanent mana level. */
+    public static void shiftMana(ServerPlayer player, int delta) {
+        int level = manaLevel(player);
+        double cap = AchievementRules.manaCap(level);
+        double next = AchievementRules.clampMana(currentMana(player) + delta, cap);
+        player.setAttached(EhmAttachments.EHM_MANA_CURRENT, next);
+        sendMana(player);
     }
 
     static void announceMana(ServerPlayer player) {
@@ -303,7 +314,7 @@ public final class Achievements implements FeatureModule {
                 "tougher.chat.mana_grow",
                 "%s grows in special abilities to level %s!",
                 player.getName(),
-                Component.literal(String.valueOf(manaLevel(player))));
+                Component.literal(String.valueOf(storedManaLevel(player))));
         player.level().getServer().getPlayerList().broadcastSystemMessage(message, false);
     }
 
@@ -493,9 +504,14 @@ public final class Achievements implements FeatureModule {
         player.setAttached(type, map);
     }
 
-    static int manaLevel(ServerPlayer player) {
+    static int storedManaLevel(ServerPlayer player) {
         Integer value = player.getAttachedOrElse(EhmAttachments.EHM_MANA_LEVEL, 0);
         return value == null ? 0 : Math.max(0, value);
+    }
+
+    /** Permanent mana plus Well Fed. Well Fed's share leaves when the diet does. */
+    public static int manaLevel(ServerPlayer player) {
+        return storedManaLevel(player) + WellFed.level(player);
     }
 
     static double currentMana(ServerPlayer player) {

@@ -2,6 +2,7 @@ package dev.extrahardmode.config;
 
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import dev.extrahardmode.api.ExplosionType;
+import dev.extrahardmode.feature.ExplosionFireRules;
 
 /** Per-dimension explosion nodes. Defaults match RootNode (TNT 5/3, ghast 2). */
 public final class ExplosionConfig {
@@ -16,6 +17,7 @@ public final class ExplosionConfig {
     private boolean tntCustom = true;
     private boolean tntMultiple = true;
     private int tntPerRecipe = 3;
+    private int tntFirePercent = ExplosionFireRules.DEFAULT_TNT_FIRE_PERCENT;
     private final TypeConfig tnt = TypeConfig.of(ExplosionType.TNT);
     private final TypeConfig creeper = TypeConfig.of(ExplosionType.CREEPER);
     private final TypeConfig chargedCreeper = TypeConfig.of(ExplosionType.CREEPER_CHARGED);
@@ -61,6 +63,11 @@ public final class ExplosionConfig {
 
     public int tntPerRecipe() {
         return tntPerRecipe;
+    }
+
+    /** Percent of blocks a TNT blast affects that catch fire. {@code 0} disables. */
+    public int tntFirePercent() {
+        return tntFirePercent;
     }
 
     public boolean custom(ExplosionType type) {
@@ -114,6 +121,11 @@ public final class ExplosionConfig {
         writeBool(file, "explosions.tnt.custom", "Replace vanilla TNT power/fire/world-damage.", true);
         writeBool(file, "explosions.tnt.multiple", "Three nearby delayed bursts for natural craters.", true);
         writeInt(file, "explosions.tnt.perRecipe", "Datapack minecraft:tnt result count. original: 1", 3);
+        writeInt(
+                file,
+                "explosions.tnt.firePercent",
+                "Percent of blocks a TNT blast hits that catch fire, rounded. 0 disables.",
+                ExplosionFireRules.DEFAULT_TNT_FIRE_PERCENT);
         writeType(file, "explosions.tnt", ExplosionType.TNT, false);
         writeType(file, "explosions.creeper", ExplosionType.CREEPER, false);
         writeType(file, "explosions.chargedCreeper", ExplosionType.CREEPER_CHARGED, false);
@@ -134,6 +146,8 @@ public final class ExplosionConfig {
         tntCustom = file.getOrElse("explosions.tnt.custom", true);
         tntMultiple = file.getOrElse("explosions.tnt.multiple", true);
         tntPerRecipe = readInt(file, "explosions.tnt.perRecipe", 3);
+        tntFirePercent = Math.clamp(
+                readInt(file, "explosions.tnt.firePercent", ExplosionFireRules.DEFAULT_TNT_FIRE_PERCENT), 0, 100);
         readType(file, "explosions.tnt", tnt, ExplosionType.TNT);
         readType(file, "explosions.creeper", creeper, ExplosionType.CREEPER);
         readType(file, "explosions.chargedCreeper", chargedCreeper, ExplosionType.CREEPER_CHARGED);
@@ -160,6 +174,7 @@ public final class ExplosionConfig {
         file.set("explosions.tnt.custom", tntCustom);
         file.set("explosions.tnt.multiple", tntMultiple);
         file.set("explosions.tnt.perRecipe", tntPerRecipe);
+        file.set("explosions.tnt.firePercent", tntFirePercent);
         writeTypeValues(file, "explosions.tnt", tnt);
         file.set("explosions.creeper.custom", creeper.custom);
         writeTypeValues(file, "explosions.creeper", creeper);

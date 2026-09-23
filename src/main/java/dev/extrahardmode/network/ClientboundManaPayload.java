@@ -6,7 +6,7 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
-public record ClientboundManaPayload(int manaLevel, float currentMana) implements CustomPacketPayload {
+public record ClientboundManaPayload(int manaLevel, float currentMana, int wellFed) implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<ClientboundManaPayload> TYPE =
             new CustomPacketPayload.Type<>(ExtraHardModeMod.id("mana"));
 
@@ -15,6 +15,8 @@ public record ClientboundManaPayload(int manaLevel, float currentMana) implement
             ClientboundManaPayload::manaLevel,
             ByteBufCodecs.FLOAT,
             ClientboundManaPayload::currentMana,
+            ByteBufCodecs.VAR_INT,
+            ClientboundManaPayload::wellFed,
             ClientboundManaPayload::new);
 
     @Override

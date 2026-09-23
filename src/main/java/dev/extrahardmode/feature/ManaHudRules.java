@@ -35,14 +35,26 @@ public final class ManaHudRules {
      * your level is visible, up to {@link AchievementRules#MANA_HARD_CAP}.
      */
     public static int crystalCount(int manaLevel, double currentMana) {
-        int pool = Math.max(0, manaLevel);
+        int level = Math.max(0, manaLevel);
         int fromCurrent = (int) Math.ceil(Math.max(0.0, currentMana));
-        pool = Math.max(pool, fromCurrent);
+        int pool = Math.max(level, fromCurrent);
         if (pool <= 0) {
             return 0;
         }
-        int capped = Math.min((int) AchievementRules.MANA_HARD_CAP, pool);
-        return (capped + 1) / 2;
+        int cap = Math.max((int) AchievementRules.MANA_HARD_CAP, level);
+        return (Math.min(cap, pool) + 1) / 2;
+    }
+
+    /** Points represented by the crystals, after the same cap as {@link #crystalCount}. */
+    public static int displayedPoints(int manaLevel, double currentMana) {
+        int crystals = crystalCount(manaLevel, currentMana);
+        if (crystals <= 0) {
+            return 0;
+        }
+        int level = Math.max(0, manaLevel);
+        int fromCurrent = (int) Math.ceil(Math.max(0.0, currentMana));
+        int cap = Math.max((int) AchievementRules.MANA_HARD_CAP, level);
+        return Math.min(cap, Math.max(level, fromCurrent));
     }
 
     public static Layout layout(int crystalCount) {

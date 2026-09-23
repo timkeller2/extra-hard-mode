@@ -943,22 +943,18 @@ public final class InhabitantRules {
     }
 
     /**
-     * Ticks of overworld time until the next dawn restock. {@code 0} means it is already due, so there is
-     * nothing to count down. A resident who has never restocked ({@code lastRestockDay < 0}) waits for the
-     * next dawn: tomorrow if today's dawn already ran, otherwise due now.
+     * Ticks of overworld time until the dawn that will restock this resident.
+     * {@code 0} means that dawn is already here and will run now.
+     * A resident saved before restock days existed ({@code lastRestockDay < 0}), or one whose period has
+     * already elapsed, waits for the next dawn that has not run yet. If today's dawn already ran, that is
+     * tomorrow.
      */
     public static int restockRemainingTicks(long dayTime, long lastRestockDay, long lastDawnDay, int restockDays) {
         long time = Math.max(0L, dayTime);
         long day = CropGrowthRules.dayIndex(time);
-        long nextDay;
-        if (lastRestockDay < 0L) {
-            if (lastDawnDay != day) {
-                return 0;
-            }
-            nextDay = day + 1L;
-        } else {
-            nextDay = lastRestockDay + Math.max(1, restockDays);
-        }
+        int period = Math.max(1, restockDays);
+        boolean due = lastRestockDay < 0L || day >= lastRestockDay + period;
+        long nextDay = due ? (lastDawnDay == day ? day + 1L : day) : lastRestockDay + period;
         long remaining = nextDay * CropGrowthRules.TICKS_PER_DAY - time;
         if (remaining <= 0L) {
             return 0;

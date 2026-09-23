@@ -220,10 +220,9 @@ public final class PlayerSettings {
         setIfMissing(file, "player.environment.drownMultiplier", 2.0);
         PotionEffectHolder.writeDefaultIfMissing(file, "player.environment.drownEffect", PotionEffectHolder.NONE);
 
-        comment(
-                file,
+        file.setComment(
                 "player.extinguishIgnites",
-                "Punching fire with an empty hand, or smothering it with a block, ignites the player. Water buckets still work.");
+                "Punching fire, smothering it with a block, or breaking a block that is on fire ignites the player. Water buckets still work.");
         setIfMissing(file, "player.extinguishIgnites", true);
         setIfMissing(file, "player.extinguishBurnTicks", 80);
 

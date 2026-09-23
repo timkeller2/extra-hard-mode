@@ -2,6 +2,8 @@ package dev.extrahardmode.mixin;
 
 import dev.extrahardmode.feature.Hunger;
 import dev.extrahardmode.feature.HungerRules;
+import dev.extrahardmode.feature.WellFedRules;
+import net.minecraft.util.Mth;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Difficulty;
@@ -29,6 +31,13 @@ public abstract class FoodDataMixin {
 
     @Shadow
     public abstract void addExhaustion(float exhaustion);
+
+    @Inject(method = "add(IF)V", at = @At("HEAD"), cancellable = true)
+    private void tougher$foodAboveTwenty(int nutrition, float saturation, CallbackInfo ci) {
+        this.foodLevel = Math.clamp(this.foodLevel + nutrition, 0, WellFedRules.FOOD_CAP);
+        this.saturationLevel = Mth.clamp(this.saturationLevel + saturation, 0.0F, this.foodLevel);
+        ci.cancel();
+    }
 
     @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
     private void ehm$slowRegen(ServerPlayer player, CallbackInfo ci) {

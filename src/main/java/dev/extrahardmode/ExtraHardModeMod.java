@@ -65,6 +65,9 @@ public class ExtraHardModeMod implements ModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger("Tougher");
     public static final FeatureRegistry FEATURES = new FeatureRegistry();
     public static final Identifier ARMOR_SLOWDOWN = id("armor_slowdown");
+    public static final Identifier WELL_FED_HEALTH = id("well_fed_health");
+    public static final Identifier WELL_FED_DAMAGE = id("well_fed_damage");
+    public static final Identifier WELL_FED_LUCK = id("well_fed_luck");
     public static final Identifier ABILITY_SLOW = id("ability_slow");
     public static final Identifier IRON_HEART = id("iron_heart");
 

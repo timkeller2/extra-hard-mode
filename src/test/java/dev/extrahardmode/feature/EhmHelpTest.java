@@ -24,6 +24,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("1/4"));
         assertTrue(String.join(" ", lines).contains("/ 200 per minute"));
         assertTrue(String.join(" ", lines).contains("saturation"));
+        assertTrue(String.join(" ", lines).contains("Well Fed"));
         assertTrue(String.join(" ", lines).contains("17"));
         assertTrue(String.join(" ", lines).contains("1 quartz per 2 mana"));
         assertTrue(String.join(" ", lines).contains("20 mana"));
@@ -118,6 +119,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("off hand"));
         assertTrue(String.join(" ", lines).contains("falls more than 3 blocks"));
         assertTrue(String.join(" ", lines).contains("drops nothing"));
+        assertTrue(String.join(" ", lines).contains("Breaking a block that is on fire"));
         assertTrue(String.join(" ", lines).contains("50 experience"));
         assertTrue(String.join(" ", lines).contains("diamond block"));
         assertTrue(String.join(" ", lines).contains("1 more each time"));
@@ -143,6 +145,8 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("80 blocks"));
         assertTrue(String.join(" ", lines).contains("brief blind"));
         assertTrue(String.join(" ", lines).contains("iron pickaxe speed"));
+        assertTrue(String.join(" ", lines).contains("explosions.tnt.firePercent"));
+        assertTrue(String.join(" ", lines).contains("20% of the blocks it hits"));
         assertTrue(String.join(" ", lines).contains("30% harder"));
         assertTrue(String.join(" ", lines).contains("credits"));
         assertTrue(String.join(" ", lines).contains("twice as long"));
