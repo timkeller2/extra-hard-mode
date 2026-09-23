@@ -80,8 +80,9 @@ public final class InhabitantRules {
     public static final String MASTER_ARMORSMITH = "master_armorsmith";
     public static final String WISE_TEACHER = "wise_teacher";
     public static final String COUNCIL = "council";
-    /** Emeralds a wise teacher charges to teach their one ability. */
-    public static final int WISE_ABILITY_EMERALDS = 48;
+    /** Emeralds a wise teacher charges in a 24-point home. Each point above that takes {@link #WISE_PRICE_PER_POINT} off, down to free. */
+    public static final int WISE_ABILITY_EMERALDS = 30;
+    public static final int WISE_PRICE_PER_POINT = 2;
 
     public static final List<String> SPECIALTIES = List.of(
             HAULER,
@@ -616,8 +617,15 @@ public final class InhabitantRules {
         return ids.get(Math.floorMod(roll, ids.size()));
     }
 
-    public static boolean shouldTeachAbility(boolean alreadyKnown, int emeralds, int cost) {
-        return !alreadyKnown && emeralds >= Math.max(1, cost);
+    /** Price for this house. {@code 0} means the lesson is free. */
+    public static int wiseAbilityPrice(int houseScore) {
+        int above = Math.max(0, houseScore - NOTABLE_SCORE);
+        return Math.max(0, WISE_ABILITY_EMERALDS - above * WISE_PRICE_PER_POINT);
+    }
+
+    /** True when this lesson has not already been bought and the player can pay. Already knowing it still qualifies. */
+    public static boolean shouldTeachAbility(boolean alreadyTaught, int emeralds, int cost) {
+        return !alreadyTaught && emeralds >= Math.max(0, cost);
     }
 
     /** Sneak-right-click, once per player per teacher. */

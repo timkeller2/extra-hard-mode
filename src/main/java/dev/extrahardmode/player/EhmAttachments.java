@@ -230,6 +230,11 @@ public final class EhmAttachments {
             builder -> builder.persistent(Codec.unboundedMap(Codec.STRING, Codec.INT))
                     .copyOnDeath()
                     .initializer(HashMap::new));
+    /** Abilities a wise teacher taught. Known, but they do not use a self-learned slot. */
+    public static final AttachmentType<List<String>> EHM_ABILITY_TAUGHT = AttachmentRegistry.create(
+            ExtraHardModeMod.id("ability_taught"),
+            builder -> builder.persistent(Codec.STRING.listOf()).copyOnDeath().initializer(ArrayList::new));
+
     public static final AttachmentType<List<String>> EHM_ABILITY_LEARNED = AttachmentRegistry.create(
             ExtraHardModeMod.id("ability_learned"),
             builder -> builder.persistent(Codec.STRING.listOf()).copyOnDeath().initializer(ArrayList::new));

@@ -45,7 +45,10 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("+2 on any ability"));
         assertTrue(String.join(" ", lines).contains("half your mana level"));
         assertTrue(String.join(" ", lines).contains("wise teacher"));
-        assertTrue(String.join(" ", lines).contains("48 emeralds"));
+        assertTrue(String.join(" ", lines).contains("30 emeralds"));
+        assertTrue(String.join(" ", lines).contains("down to free"));
+        assertTrue(String.join(" ", lines).contains("does not count toward abilities you learn yourself"));
+        assertTrue(String.join(" ", lines).contains("does not explode"));
         assertTrue(String.join(" ", lines).contains("lapis lazuli block"));
         assertTrue(String.join(" ", lines).contains("Redstone dust"));
         assertTrue(String.join(" ", lines).contains("Pumpkins and melons"));

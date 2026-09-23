@@ -91,6 +91,7 @@
     "StemBlockMixin",
     "SugarCaneBlockMixin",
     "TextDisplayAccess",
+    "UnsafeBedMixin",
     "SheepMixin",
     "SilverfishMergeMixin",
     "SpiderAttackGoalMixin",

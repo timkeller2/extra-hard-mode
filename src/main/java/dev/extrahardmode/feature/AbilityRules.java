@@ -495,6 +495,7 @@ public final class AbilityRules {
                 "tougher.ability.index.unlock",
                 "tougher.ability.index.unlock.2",
                 "tougher.ability.index.wise",
+                "tougher.ability.index.wise.cap",
                 "tougher.ability.index.wise.2",
                 "tougher.ability.index.topic");
     }
@@ -517,7 +518,8 @@ public final class AbilityRules {
                 "Redstone dust in your inventory: +2 to any ability (1 is consumed)",
                 "You can learn up to half your mana level in abilities, rounded up.",
                 "Unlearned abilities can be used and still gain skill, at −3 power (floored at 1), until you have a free slot to learn them.",
-                "A wise teacher can teach an ability for 48 emeralds with no mana-level limit.",
+                "A wise teacher teaches one ability. A 24-point home charges 30 emeralds; each point above that takes 2 off, down to free.",
+                "That lesson does not count toward abilities you learn on your own. Paying for one you already know frees that slot.",
                 "That teacher will raise your mana once for a diamond block and a lapis lazuli block.",
                 "Type /tougher ability help <name> for one ability.");
     }
@@ -632,12 +634,17 @@ public final class AbilityRules {
 
     /** Distinct learned mana abilities (slot-cap set, not merely used). */
     public static int learnedSkillCount(Collection<String> learned) {
+        return learnedSkillCount(learned, Set.of());
+    }
+
+    /** Learned abilities that still use a self-learned slot. Wise-teacher lessons are exempt. */
+    public static int learnedSkillCount(Collection<String> learned, Collection<String> exempt) {
         if (learned == null || learned.isEmpty()) {
             return 0;
         }
         int count = 0;
         for (String ability : ABILITY_IDS) {
-            if (learned.contains(ability)) {
+            if (learned.contains(ability) && (exempt == null || !exempt.contains(ability))) {
                 count++;
             }
         }
@@ -703,7 +710,11 @@ public final class AbilityRules {
      * be cast and still gain skill, at {@link #untrainedPower(double)}.
      */
     public static boolean canLearnAbility(int manaLevel, Collection<String> learned) {
-        return learnedSkillCount(learned) < abilitySlotCap(manaLevel);
+        return canLearnAbility(manaLevel, learned, Set.of());
+    }
+
+    public static boolean canLearnAbility(int manaLevel, Collection<String> learned, Collection<String> exempt) {
+        return learnedSkillCount(learned, exempt) < abilitySlotCap(manaLevel);
     }
 
     public static boolean isTrained(int manaLevel, Collection<String> learned, String ability) {

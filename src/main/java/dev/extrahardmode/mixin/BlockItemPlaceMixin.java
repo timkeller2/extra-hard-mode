@@ -6,10 +6,12 @@ import dev.extrahardmode.feature.Dragon;
 import dev.extrahardmode.feature.FeatureBus;
 import dev.extrahardmode.feature.HardenedStone;
 import dev.extrahardmode.feature.Torches;
+import dev.extrahardmode.feature.UnsafeBeds;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.AbstractBedBlock;
 import net.minecraft.world.level.block.Block;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -57,6 +59,9 @@ public abstract class BlockItemPlaceMixin {
             return;
         }
         Block block = ((BlockItem) (Object) this).getBlock();
+        if (UnsafeBeds.vanishes(UnsafeBeds.hostileDimension(context.getLevel()), block instanceof AbstractBedBlock)) {
+            UnsafeBeds.remove(context.getLevel(), context.getClickedPos());
+        }
         Achievements.onPlaced(context, block);
         AntiFarming.onCropPlanted(context, block);
         Torches.onPlaced(context, block);

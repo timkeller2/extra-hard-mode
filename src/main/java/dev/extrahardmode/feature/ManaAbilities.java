@@ -2095,21 +2095,30 @@ public final class ManaAbilities implements FeatureModule {
     }
 
     /**
-     * Learn an ability from a wise teacher. Ignores the mana-level slot cap.
-     * False when it is already known or not a real ability.
+     * Learn an ability from a wise teacher, or exempt one the player already knows.
+     * The lesson does not use a self-learned slot. False when it was already taught or is not a real ability.
      */
     public static boolean teachAbility(ServerPlayer player, String ability) {
         if (player == null || !AbilityRules.ABILITY_IDS.contains(ability)) {
             return false;
         }
         ensureLearnedMigrated(player);
-        if (AbilityRules.isLearned(learnedSet(player), ability)) {
+        if (taughtByWise(player, ability)) {
             return false;
         }
-        List<String> next = new ArrayList<>(learnedSet(player));
-        next.add(ability);
-        player.setAttached(EhmAttachments.EHM_ABILITY_LEARNED, next);
+        if (!AbilityRules.isLearned(learnedSet(player), ability)) {
+            List<String> next = new ArrayList<>(learnedSet(player));
+            next.add(ability);
+            player.setAttached(EhmAttachments.EHM_ABILITY_LEARNED, next);
+        }
+        List<String> taught = new ArrayList<>(player.getAttachedOrElse(EhmAttachments.EHM_ABILITY_TAUGHT, List.of()));
+        taught.add(ability);
+        player.setAttached(EhmAttachments.EHM_ABILITY_TAUGHT, taught);
         return true;
+    }
+
+    public static boolean taughtByWise(ServerPlayer player, String ability) {
+        return AbilityRules.isLearned(taughtSet(player), ability);
     }
 
     public static boolean knowsAbility(ServerPlayer player, String ability) {
@@ -2121,7 +2130,8 @@ public final class ManaAbilities implements FeatureModule {
         putInt(player, EhmAttachments.EHM_ABILITY_USES, ability, uses(player, ability) + 1);
         int manaLevel = Achievements.manaLevel(player);
         Set<String> learned = new HashSet<>(learnedSet(player));
-        if (!AbilityRules.isLearned(learned, ability) && AbilityRules.canLearnAbility(manaLevel, learned)) {
+        if (!AbilityRules.isLearned(learned, ability)
+                && AbilityRules.canLearnAbility(manaLevel, learned, taughtSet(player))) {
             List<String> next = new ArrayList<>(learned);
             next.add(ability);
             player.setAttached(EhmAttachments.EHM_ABILITY_LEARNED, next);
@@ -2141,6 +2151,14 @@ public final class ManaAbilities implements FeatureModule {
         }
         player.setAttached(EhmAttachments.EHM_ABILITY_LEARNED, learned);
         player.setAttached(EhmAttachments.EHM_ABILITY_LEARNED_MIGRATED, Boolean.TRUE);
+    }
+
+    static Set<String> taughtSet(ServerPlayer player) {
+        List<String> taught = player.getAttachedOrElse(EhmAttachments.EHM_ABILITY_TAUGHT, List.of());
+        if (taught == null || taught.isEmpty()) {
+            return Set.of();
+        }
+        return Set.copyOf(taught);
     }
 
     static Set<String> learnedSet(ServerPlayer player) {

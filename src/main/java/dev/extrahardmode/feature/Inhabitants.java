@@ -121,19 +121,21 @@ public final class Inhabitants implements FeatureModule {
         if (hand != InteractionHand.MAIN_HAND || !(player instanceof ServerPlayer serverPlayer)) {
             return InteractionResult.SUCCESS;
         }
-        teach(serverPlayer, villager, server);
+        teach(serverPlayer, villager, server, home);
         return InteractionResult.SUCCESS;
     }
 
-    static void teach(ServerPlayer player, Villager villager, ServerLevel level) {
+    static void teach(ServerPlayer player, Villager villager, ServerLevel level, InhabitantData.Home home) {
         String ability = ensureWiseAbility(villager, level);
         String teacherId = villager.getStringUUID();
         List<String> taughtMana = player.getAttachedOrElse(EhmAttachments.EHM_WISE_MANA, List.of());
         boolean alreadyMana = InhabitantRules.alreadyTookManaLesson(taughtMana, teacherId);
         boolean knows = ManaAbilities.knowsAbility(player, ability);
+        boolean taught = ManaAbilities.taughtByWise(player, ability);
         int emeralds = InventorySearch.count(player, Items.EMERALD);
         boolean hasDiamond = InventorySearch.count(player, Items.DIAMOND_BLOCK) >= 1;
         boolean hasLapis = InventorySearch.count(player, Items.LAPIS_BLOCK) >= 1;
+        int price = InhabitantRules.wiseAbilityPrice(home.score());
         if (InhabitantRules.shouldTeachMana(player.isShiftKeyDown(), hasDiamond, hasLapis, alreadyMana)) {
             InventorySearch.consume(player, Items.DIAMOND_BLOCK, 1);
             InventorySearch.consume(player, Items.LAPIS_BLOCK, 1);
@@ -147,32 +149,51 @@ public final class Inhabitants implements FeatureModule {
             level.playSound(null, villager.blockPosition(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.NEUTRAL, 1.0F, 1.0F);
             return;
         }
-        if (InhabitantRules.shouldTeachAbility(knows, emeralds, InhabitantRules.WISE_ABILITY_EMERALDS)) {
-            InventorySearch.consume(player, Items.EMERALD, InhabitantRules.WISE_ABILITY_EMERALDS);
+        if (InhabitantRules.shouldTeachAbility(taught, emeralds, price)) {
+            InventorySearch.consume(player, Items.EMERALD, price);
             ManaAbilities.teachAbility(player, ability);
             player.sendSystemMessage(Component.translatableWithFallback(
                     "tougher.wise.flavor." + ability, AbilityRules.teacherFlavor(ability)));
-            String how = AbilityRules.teacherInstruction(ability);
-            if (!how.isEmpty()) {
+            if (knows) {
                 player.sendSystemMessage(Component.translatableWithFallback(
-                        "tougher.wise.how." + ability, how));
+                        "tougher.wise.freed",
+                        "You already knew %s. It no longer counts toward the abilities you learn on your own.",
+                        Component.literal(AbilityRules.nameFallback(ability))));
+            } else {
+                String how = AbilityRules.teacherInstruction(ability);
+                if (!how.isEmpty()) {
+                    player.sendSystemMessage(Component.translatableWithFallback(
+                            "tougher.wise.how." + ability, how));
+                }
+                player.sendSystemMessage(Component.translatableWithFallback(
+                        "tougher.wise.learned",
+                        "You have learned %s. It does not count toward the abilities you learn on your own.",
+                        Component.literal(AbilityRules.nameFallback(ability))));
             }
-            player.sendSystemMessage(Component.translatableWithFallback(
-                    "tougher.wise.learned",
-                    "You have learned %s.",
-                    Component.literal(AbilityRules.nameFallback(ability))));
             level.playSound(null, villager.blockPosition(), SoundEvents.VILLAGER_YES, SoundSource.NEUTRAL, 1.0F, 1.0F);
             return;
         }
-        player.sendSystemMessage(Component.translatableWithFallback(
-                "tougher.wise.offer",
-                "I teach %s, for %s emeralds. Hold them and speak to me again. Sneak while you carry a diamond block and a lapis lazuli block, and I will raise your mana — once, for you.",
-                Component.literal(AbilityRules.nameFallback(ability)),
-                Component.literal(Integer.toString(InhabitantRules.WISE_ABILITY_EMERALDS))));
-        if (knows) {
+        if (price <= 0) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.wise.offer_free",
+                    "I teach %s for free. Speak to me again. Sneak while you carry a diamond block and a lapis lazuli block, and I will raise your mana — once, for you.",
+                    Component.literal(AbilityRules.nameFallback(ability))));
+        } else {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.wise.offer",
+                    "I teach %s, for %s emeralds. Hold them and speak to me again. Sneak while you carry a diamond block and a lapis lazuli block, and I will raise your mana — once, for you.",
+                    Component.literal(AbilityRules.nameFallback(ability)),
+                    Component.literal(Integer.toString(price))));
+        }
+        if (taught) {
             player.sendSystemMessage(Component.translatableWithFallback(
                     "tougher.wise.already",
-                    "You already know %s.",
+                    "I have already taught you %s. It does not count toward what you learn yourself.",
+                    Component.literal(AbilityRules.nameFallback(ability))));
+        } else if (knows) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.wise.already_known",
+                    "You already know %s. Paying still frees it from the abilities you learn on your own.",
                     Component.literal(AbilityRules.nameFallback(ability))));
         }
         if (alreadyMana) {

@@ -243,6 +243,9 @@ class AbilityRulesTest {
         assertEquals(0, AbilityRules.learnedSkillCount(Set.of()));
         assertEquals(1, AbilityRules.learnedSkillCount(Set.of(AbilityRules.HEAL)));
         assertEquals(2, AbilityRules.learnedSkillCount(Set.of(AbilityRules.HEAL, AbilityRules.FLIGHT)));
+        assertEquals(1, AbilityRules.learnedSkillCount(
+                Set.of(AbilityRules.HEAL, AbilityRules.FLIGHT), Set.of(AbilityRules.HEAL)));
+        assertTrue(AbilityRules.canLearnAbility(1, Set.of(AbilityRules.HEAL), Set.of(AbilityRules.HEAL)));
         assertFalse(AbilityRules.isTrained(0, Set.of(), AbilityRules.HEAL));
         assertTrue(AbilityRules.isTrained(1, Set.of(), AbilityRules.HEAL));
         assertTrue(AbilityRules.isTrained(1, Set.of(AbilityRules.HEAL), AbilityRules.HEAL));

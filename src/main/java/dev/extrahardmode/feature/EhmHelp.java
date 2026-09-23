@@ -225,7 +225,8 @@ public final class EhmHelp {
                         "Building: A boat that falls more than 3 blocks with you in it breaks and drops nothing.",
                         "Building: Torches and campfires have their own topic. Type /tougher help torches.",
                         "Building: Breaking a block that is on fire sets you on fire, the same as putting that fire out by hand.",
-                        "Building: Sneak with a compass to point it at your bed or respawn anchor. With none set, it still points at world spawn."));
+                        "Building: Sneak with a compass to point it at your bed or respawn anchor. With none set, it still points at world spawn.",
+                        "Building: A bed placed in the Nether or the End vanishes. It does not explode."));
     }
 
     private static Page torches() {
@@ -374,7 +375,9 @@ public final class EhmHelp {
                         "Abilities: Redstone dust in your inventory is consumed for +2 on any ability.",
                         "Abilities: You can learn up to half your mana level in abilities, rounded up.",
                         "Abilities: Unlearned abilities can be used and still gain skill, at −3 power (floored at 1), until you have a free slot to learn them.",
-                        "Abilities: A wise teacher in a 24-point home can teach one ability for 48 emeralds, ignoring that limit.",
+                        "Abilities: A wise teacher in a 24-point home teaches one ability for 30 emeralds, ignoring the ability limit.",
+                        "Abilities: Each house point above 24 lowers that price by 2 emeralds, down to free.",
+                        "Abilities: A wise teacher's lesson does not count toward abilities you learn yourself. Paying for one you already know frees that slot.",
                         "Abilities: Sneak while carrying a diamond block and a lapis lazuli block and that teacher raises your mana level once.",
                         "Abilities: Hold an item and press ? for details, or type /tougher ability help <name>.",
                         "Abilities: /tougher me lists your mana level and ability skill levels."));
