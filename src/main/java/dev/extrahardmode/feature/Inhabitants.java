@@ -265,6 +265,9 @@ public final class Inhabitants implements FeatureModule {
             if (entity == null || !entity.isAlive()) {
                 continue;
             }
+            if (entity instanceof Villager villager && isInhabitant(villager)) {
+                ResidentDefense.tick(level, villager, home.score());
+            }
             ResidenceScan.Result result = ResidenceScan.inspect(
                     level, home.bed(), occupiedBeds(level, home.id()), cfg.inhabitantMinLight(), cfg.inhabitantSpacing());
             boolean ok = result.gates().eligible();
@@ -710,11 +713,14 @@ public final class Inhabitants implements FeatureModule {
                 && Boolean.TRUE.equals(entity.getAttachedOrElse(EhmAttachments.EHM_INHABITANT, Boolean.FALSE));
     }
 
+    /** Restock time and heart icons for the resident under the crosshair. Null when it is not a resident. */
+    public record ResidentLook(int restockTicks, int hearts) {}
+
     /**
-     * Remaining ticks until the inhabitant under the crosshair restocks.
-     * {@code null} when the crosshair is not on an inhabitant. {@code 0} when it is, but restock is already due.
+     * {@code null} when the crosshair is not on a resident. Restock ticks are {@code 0} when already due.
+     * Hearts are shown even at full health: one per 10 health.
      */
-    public static @Nullable Integer lookRestockTicks(ServerPlayer player) {
+    public static @Nullable ResidentLook lookAtResident(ServerPlayer player) {
         if (!(player.level() instanceof ServerLevel level) || !WorldGate.isModuleActive(level, ID)) {
             return null;
         }
@@ -722,16 +728,22 @@ public final class Inhabitants implements FeatureModule {
         if (!(target instanceof Villager villager)) {
             return null;
         }
+        if (!isInhabitant(villager) && homeFor(InhabitantData.of(level), villager) == null) {
+            return null;
+        }
         InhabitantData data = InhabitantData.of(level);
         InhabitantData.Home home = homeFor(data, villager);
+        int hearts = ResidentCombatRules.heartIcons(villager.getHealth());
         if (home == null) {
-            return isInhabitant(villager) ? 0 : null;
+            return new ResidentLook(0, hearts);
         }
-        return InhabitantRules.restockRemainingTicks(
-                level.getOverworldClockTime(),
-                home.lastRestockDay(),
-                data.lastDawnDay(),
-                InhabitantRules.restockDays(home.specialty()));
+        return new ResidentLook(
+                InhabitantRules.restockRemainingTicks(
+                        level.getOverworldClockTime(),
+                        home.lastRestockDay(),
+                        data.lastDawnDay(),
+                        InhabitantRules.restockDays(home.specialty())),
+                hearts);
     }
 
     /** Home for this villager, including residents saved before the living id or tag was reliable. */

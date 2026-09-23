@@ -1,11 +1,14 @@
 package dev.extrahardmode.mixin;
 
+import dev.extrahardmode.feature.Inhabitants;
 import dev.extrahardmode.feature.Players;
+import dev.extrahardmode.feature.ResidentDefense;
 import dev.extrahardmode.world.WorldGate;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.npc.villager.Villager;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -23,6 +26,15 @@ public abstract class LivingEntityHurtMixin {
             return amount;
         }
         return Players.scaleIncomingDamage(player, source, amount);
+    }
+
+    @Inject(method = "hurtServer", at = @At("HEAD"))
+    private void tougher$rememberResidentHealth(
+            ServerLevel level, DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
+        if ((Object) this instanceof Villager villager && Inhabitants.isInhabitant(villager)) {
+            ResidentDefense.noteHit(
+                    villager, source.getEntity() instanceof LivingEntity attacker ? attacker : null);
+        }
     }
 
     @Inject(method = "applyItemBlocking", at = @At("RETURN"), cancellable = true)

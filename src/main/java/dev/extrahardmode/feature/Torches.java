@@ -549,28 +549,28 @@ public final class Torches implements FeatureModule {
 
     static void tickLightLook(ServerPlayer player) {
         if (!(player.level() instanceof ServerLevel level) || !WorldGate.isModuleActive(level, ID)) {
-            sendLightLook(player, null);
+            sendLightLook(player, null, 0);
             return;
         }
         if (EhmApi.playerBypasses(player)) {
-            sendLightLook(player, null);
+            sendLightLook(player, null, 0);
             return;
         }
         // A resident in front of a torch owns the crosshair. Inhabitants ticks later, so resolve it here.
-        Integer restock = Inhabitants.lookRestockTicks(player);
-        if (restock != null) {
-            sendLightLook(player, restock > 0 ? restock : null);
+        Inhabitants.ResidentLook resident = Inhabitants.lookAtResident(player);
+        if (resident != null) {
+            sendLightLook(player, resident.restockTicks() > 0 ? resident.restockTicks() : null, resident.hearts());
             return;
         }
         HitResult hit = player.pick(player.blockInteractionRange(), 1.0F, false);
         if (!(hit instanceof BlockHitResult blockHit) || blockHit.getType() == HitResult.Type.MISS) {
-            sendLightLook(player, null);
+            sendLightLook(player, null, 0);
             return;
         }
         BlockPos pos = blockHit.getBlockPos();
         BlockState state = level.getBlockState(pos);
         if (!isBurnableTorch(state) && !isCampfire(state)) {
-            sendLightLook(player, null);
+            sendLightLook(player, null, 0);
             return;
         }
         int burnDays = isCampfire(state)
@@ -579,11 +579,15 @@ public final class Torches implements FeatureModule {
         sendLightLook(
                 player,
                 TorchLifetimeRules.remainingTicks(
-                        TorchLifetimeData.of(level).placedAt(pos), level.getGameTime(), burnDays));
+                        TorchLifetimeData.of(level).placedAt(pos), level.getGameTime(), burnDays),
+                0);
     }
 
-    static void sendLightLook(ServerPlayer player, Integer remainingTicks) {
-        String key = remainingTicks == null ? "" : TorchLifetimeRules.remainingLabel(remainingTicks);
+    static void sendLightLook(ServerPlayer player, Integer remainingTicks, int hearts) {
+        boolean showTime = remainingTicks != null && remainingTicks >= 0;
+        int shownHearts = Math.max(0, hearts);
+        String duration = showTime ? TorchLifetimeRules.remainingLabel(remainingTicks) : "";
+        String key = !showTime && shownHearts <= 0 ? "" : duration + "|" + shownHearts;
         String last = player.getAttachedOrElse(EhmAttachments.EHM_LIGHT_LOOK, "");
         if (key.equals(last)) {
             return;
@@ -591,9 +595,9 @@ public final class Torches implements FeatureModule {
         player.setAttached(EhmAttachments.EHM_LIGHT_LOOK, key);
         EhmNetworking.sendLightLook(
                 player,
-                remainingTicks == null
+                key.isEmpty()
                         ? ClientboundLightLookPayload.HIDDEN
-                        : new ClientboundLightLookPayload(true, remainingTicks));
+                        : new ClientboundLightLookPayload(true, showTime ? remainingTicks : -1, shownHearts));
     }
 
     public enum DenyReason {

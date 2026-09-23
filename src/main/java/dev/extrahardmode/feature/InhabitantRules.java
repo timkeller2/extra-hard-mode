@@ -378,7 +378,11 @@ public final class InhabitantRules {
                 "Residents: The house must be able to host that type. Once every type has spawned, the usual furnishing biases apply.",
                 "Residents: Council members are three times as likely as the most common other type. One resident per home.",
                 "Residents: Most residents restock every 14 Minecraft days; armorsmiths restock every 30 days.",
-                "Residents: Look at a resident who is waiting to restock to see how long is left, in days and hours like a torch.");
+                "Residents: Look at a resident who is waiting to restock to see how long is left, in days and hours like a torch.",
+                "Residents: They have 40 health plus their house points, and regain 1 health each minute.",
+                "Residents: Looking at one shows hearts, one per 10 health, beside the restock time.",
+                "Residents: They shoot mobs that come within 12 blocks and are after them. The bow hits 3 harder than a normal arrow.",
+                "Residents: A close attack makes them switch to an iron sword. A zombie cannot turn them unless they are already below 5 health.");
     }
 
     public static List<String> homesShopLines() {

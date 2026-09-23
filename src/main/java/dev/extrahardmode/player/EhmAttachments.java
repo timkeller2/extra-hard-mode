@@ -140,6 +140,21 @@ public final class EhmAttachments {
     public static final AttachmentType<Integer> EHM_BLAZE_SPLIT =
             AttachmentRegistry.create(ExtraHardModeMod.id("blaze_split"), builder -> builder.initializer(() -> 0));
 
+    /** Health at the start of the latest hit, so zombie conversion can see if they were already below 5. */
+    public static final AttachmentType<Float> EHM_RESIDENT_HEALTH_BEFORE = AttachmentRegistry.create(
+            ExtraHardModeMod.id("resident_health_before"),
+            builder -> builder.initializer(() -> 0.0F));
+    public static final AttachmentType<Long> EHM_RESIDENT_REGEN = AttachmentRegistry.create(
+            ExtraHardModeMod.id("resident_regen"), builder -> builder.initializer(() -> -1L));
+    public static final AttachmentType<Long> EHM_RESIDENT_SHOOT = AttachmentRegistry.create(
+            ExtraHardModeMod.id("resident_shoot"), builder -> builder.initializer(() -> -1L));
+    public static final AttachmentType<Long> EHM_RESIDENT_SWING = AttachmentRegistry.create(
+            ExtraHardModeMod.id("resident_swing"), builder -> builder.initializer(() -> -1L));
+    public static final AttachmentType<Long> EHM_RESIDENT_MELEE = AttachmentRegistry.create(
+            ExtraHardModeMod.id("resident_melee"), builder -> builder.initializer(() -> -1L));
+    public static final AttachmentType<java.util.UUID> EHM_RESIDENT_ATTACKER = AttachmentRegistry.create(
+            ExtraHardModeMod.id("resident_attacker"));
+
     /** Well Fed level earned from a long varied diet. Drops when the diet narrows. */
     public static final AttachmentType<Integer> EHM_WELL_FED = AttachmentRegistry.create(
             ExtraHardModeMod.id("well_fed"),

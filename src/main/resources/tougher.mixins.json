@@ -101,7 +101,8 @@
     "VillagerTradesMixin",
     "WaterDispenseMixin",
     "WaterFluidMixin",
-    "ZombifiedPiglinMixin"
+    "ZombifiedPiglinMixin",
+    "ZombieVillagerConvertMixin"
   ],
   "client": [
     "MultiPlayerGameModeMixin",

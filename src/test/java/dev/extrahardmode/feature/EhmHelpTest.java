@@ -185,6 +185,8 @@ class EhmHelpTest {
         assertTrue(all.contains("Most residents restock every 14 Minecraft days"));
         assertTrue(all.contains("armorsmiths restock every 30"));
         assertTrue(all.contains("waiting to restock"));
+        assertTrue(all.contains("40 health"));
+        assertTrue(all.contains("below 5 health"));
         assertTrue(all.contains("has not appeared yet"));
         assertTrue(all.contains("wealthy trader"));
         assertTrue(all.contains("master armorsmith"));
