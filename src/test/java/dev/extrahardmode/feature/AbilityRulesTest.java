@@ -311,6 +311,34 @@ class AbilityRulesTest {
         assertEquals(2, AbilityRules.supplyBonus(AbilityRules.SMITE_EVIL, "minecraft:golden_sword", 1, true, false));
         assertEquals(2, AbilityRules.supplyBonus(AbilityRules.MAGIC_ARROW, "minecraft:arrow", 2, false, false));
         assertEquals(0, AbilityRules.supplyBonus(null, "minecraft:coal", 4, true, true));
+        assertFalse(AbilityRules.isHeldGoldenItem("minecraft:gold_ingot"));
+        assertFalse(AbilityRules.isHeldGoldenItem("minecraft:gold_block"));
+        assertFalse(AbilityRules.isHeldGoldenItem("minecraft:gold_nugget"));
+        assertTrue(AbilityRules.isHeldGoldenItem("minecraft:golden_hoe"));
+        assertTrue(AbilityRules.isHeldGoldenItem("minecraft:golden_sword"));
+        assertTrue(AbilityRules.isGoldArmor("minecraft:golden_chestplate"));
+        assertFalse(AbilityRules.isGoldArmor("minecraft:golden_hoe"));
+        assertEquals(0, AbilityRules.goldAbilityBonus(0, false));
+        assertEquals(1, AbilityRules.goldAbilityBonus(0, true));
+        assertEquals(4, AbilityRules.goldAbilityBonus(4, false));
+        assertEquals(5, AbilityRules.goldAbilityBonus(4, true));
+        Map<String, String> worn = AbilityRules.updateGoldWear(
+                Map.of(), Map.of("head", "minecraft:golden_helmet", "main", "minecraft:golden_hoe"), 0L);
+        assertEquals(0, AbilityRules.readyGoldBonus(worn, 599L));
+        assertEquals(2, AbilityRules.readyGoldBonus(worn, 600L));
+        Map<String, String> removed = AbilityRules.updateGoldWear(worn, Map.of("head", "minecraft:golden_helmet"), 700L);
+        assertEquals(1, AbilityRules.readyGoldBonus(removed, 700L));
+        Map<String, String> swapped = AbilityRules.updateGoldWear(
+                worn, Map.of("head", "minecraft:golden_helmet", "main", "minecraft:golden_sword"), 700L);
+        assertEquals(1, AbilityRules.readyGoldBonus(swapped, 700L));
+        assertEquals(2, AbilityRules.readyGoldBonus(swapped, 1300L));
+        assertEquals(List.of(), AbilityRules.goldBonusMessages(2, 2));
+        assertEquals(List.of(), AbilityRules.goldBonusMessages(3, 1));
+        assertEquals(List.of("Ability level +1 (+1)"), AbilityRules.goldBonusMessages(0, 1));
+        assertEquals(
+                List.of("Ability level +1 (+2)", "Ability level +1 (+3)"),
+                AbilityRules.goldBonusMessages(1, 3));
+        assertEquals(10, AbilityRules.GOLD_SHIMMER_TICKS);
     }
 
     @Test

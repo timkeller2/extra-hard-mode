@@ -240,6 +240,20 @@ public final class EhmAttachments {
     public static final AttachmentType<Double> EHM_QUARTZ_MANA_CREDIT = AttachmentRegistry.create(
             ExtraHardModeMod.id("quartz_mana_credit"),
             builder -> builder.persistent(Codec.DOUBLE).copyOnDeath().initializer(() -> 0.0));
+    /** Gold ability bonus already announced, so the shimmer only plays when it increases. */
+    public static final AttachmentType<Integer> EHM_GOLD_BONUS_SHOWN = AttachmentRegistry.create(
+            ExtraHardModeMod.id("gold_bonus_shown"),
+            builder -> builder.persistent(Codec.INT).initializer(() -> 0));
+    public static final AttachmentType<Long> EHM_GOLD_SHIMMER_UNTIL = AttachmentRegistry.create(
+            ExtraHardModeMod.id("gold_shimmer_until"),
+            builder -> builder.initializer(() -> -1L));
+
+    /** Slot to {@code itemId|gameTime} for gold armor and held golden items. */
+    public static final AttachmentType<Map<String, String>> EHM_GOLD_WEAR = AttachmentRegistry.create(
+            ExtraHardModeMod.id("gold_wear"),
+            builder -> builder.persistent(Codec.unboundedMap(Codec.STRING, Codec.STRING))
+                    .initializer(HashMap::new));
+
     public static final AttachmentType<Map<String, Integer>> EHM_ABILITY_USES = AttachmentRegistry.create(
             ExtraHardModeMod.id("ability_uses"),
             builder -> builder.persistent(Codec.unboundedMap(Codec.STRING, Codec.INT))

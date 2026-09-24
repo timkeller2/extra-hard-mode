@@ -9,6 +9,7 @@ import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.tag.EhmTags;
 import dev.extrahardmode.world.WorldGate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -108,6 +109,8 @@ public final class ManaAbilities implements FeatureModule {
             tickIronHeart(player);
             tickIronHeartSparkle(player);
             tickSenseSparkle(player);
+            tickGoldWear(player);
+            tickGoldShimmer(player);
             maybeSendAbilityDurations(player);
         }
         tickSlow(level);
@@ -1291,14 +1294,8 @@ public final class ManaAbilities implements FeatureModule {
     }
 
     public static String meLineValue(ServerPlayer player, AbilityRules.AbilitySkill skill) {
-        int manaLevel = Achievements.manaLevel(player);
         int bonus = supplyBonus(player, skill.id());
-        double effective = AbilityRules.power(
-                skill.id(),
-                manaLevel,
-                skill.uses(),
-                bonus,
-                AbilityRules.isTrained(manaLevel, learnedSet(player), skill.id()));
+        double effective = abilityPower(player, skill.id(), bonus);
         return AbilityRules.powerLabel(skill.skill()) + " (" + AbilityRules.powerLabel(effective) + ")";
     }
 
@@ -2086,12 +2083,92 @@ public final class ManaAbilities implements FeatureModule {
 
     static double abilityPower(ServerPlayer player, String ability, int itemBonus) {
         int manaLevel = Achievements.manaLevel(player);
+        tickGoldWear(player);
         return AbilityRules.power(
                 ability,
                 manaLevel,
                 uses(player, ability),
-                itemBonus,
+                Math.max(0, itemBonus) + goldAbilityBonus(player),
                 AbilityRules.isTrained(manaLevel, learnedSet(player), ability));
+    }
+
+    static int goldAbilityBonus(ServerPlayer player) {
+        if (!(player.level() instanceof ServerLevel level)) {
+            return 0;
+        }
+        return AbilityRules.readyGoldBonus(
+                player.getAttachedOrElse(EhmAttachments.EHM_GOLD_WEAR, Map.of()), level.getGameTime());
+    }
+
+    static void tickGoldWear(ServerPlayer player) {
+        if (!(player.level() instanceof ServerLevel level) || !WorldGate.isModuleActive(level, ID)) {
+            return;
+        }
+        Map<String, String> now = new HashMap<>();
+        putGoldSlot(now, "head", player.getItemBySlot(EquipmentSlot.HEAD), true);
+        putGoldSlot(now, "chest", player.getItemBySlot(EquipmentSlot.CHEST), true);
+        putGoldSlot(now, "legs", player.getItemBySlot(EquipmentSlot.LEGS), true);
+        putGoldSlot(now, "feet", player.getItemBySlot(EquipmentSlot.FEET), true);
+        putGoldSlot(now, "main", player.getMainHandItem(), false);
+        putGoldSlot(now, "off", player.getOffhandItem(), false);
+        Map<String, String> previous = player.getAttachedOrElse(EhmAttachments.EHM_GOLD_WEAR, Map.of());
+        long gameTime = level.getGameTime();
+        Map<String, String> next = AbilityRules.updateGoldWear(previous, now, gameTime);
+        if (!next.equals(previous)) {
+            player.setAttached(EhmAttachments.EHM_GOLD_WEAR, next);
+        }
+        int ready = AbilityRules.readyGoldBonus(next, gameTime);
+        int shown = Math.max(0, player.getAttachedOrElse(EhmAttachments.EHM_GOLD_BONUS_SHOWN, 0));
+        if (ready == shown) {
+            return;
+        }
+        player.setAttached(EhmAttachments.EHM_GOLD_BONUS_SHOWN, ready);
+        List<String> messages = AbilityRules.goldBonusMessages(shown, ready);
+        if (messages.isEmpty()) {
+            return;
+        }
+        player.setAttached(EhmAttachments.EHM_GOLD_SHIMMER_UNTIL, gameTime + AbilityRules.GOLD_SHIMMER_TICKS);
+        spawnGoldShimmer(player, level);
+        for (String message : messages) {
+            player.sendSystemMessage(Component.translatableWithFallback("tougher.message.gold_ability", message));
+        }
+    }
+
+    static void tickGoldShimmer(ServerPlayer player) {
+        Long until = player.getAttachedOrElse(EhmAttachments.EHM_GOLD_SHIMMER_UNTIL, -1L);
+        if (until == null || until < 0L || !(player.level() instanceof ServerLevel level)) {
+            return;
+        }
+        if (!player.isAlive() || until <= level.getGameTime()) {
+            player.setAttached(EhmAttachments.EHM_GOLD_SHIMMER_UNTIL, -1L);
+            return;
+        }
+        spawnGoldShimmer(player, level);
+    }
+
+    static void spawnGoldShimmer(ServerPlayer player, ServerLevel level) {
+        double x = player.getX();
+        double y = player.getY() + player.getBbHeight() * 0.6;
+        double z = player.getZ();
+        level.sendParticles(ParticleTypes.END_ROD, x, y, z, 4, 0.3, 0.45, 0.3, 0.01);
+        level.sendParticles(ParticleTypes.WAX_ON, x, y, z, 6, 0.35, 0.5, 0.35, 0.0);
+        level.sendParticles(
+                ColorParticleOption.create(ParticleTypes.ENTITY_EFFECT, 1.0F, 0.84F, 0.25F),
+                x,
+                y,
+                z,
+                4,
+                0.3,
+                0.45,
+                0.3,
+                0.0);
+    }
+
+    private static void putGoldSlot(Map<String, String> slots, String slot, ItemStack stack, boolean armor) {
+        String id = heldItemId(stack);
+        if (armor ? AbilityRules.isGoldArmor(id) : AbilityRules.isHeldGoldenItem(id)) {
+            slots.put(slot, id);
+        }
     }
 
     /**

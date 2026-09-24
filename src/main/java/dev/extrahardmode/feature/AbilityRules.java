@@ -209,6 +209,133 @@ public final class AbilityRules {
         return materialBonus(itemId);
     }
 
+    /** Thirty seconds. A gold bonus only counts after the item has been worn or held this long. */
+    public static final int GOLD_BONUS_TICKS = 600;
+    /** Half a second of golden shimmer when a gold bonus starts. */
+    public static final int GOLD_SHIMMER_TICKS = 10;
+
+    /** Gold ingots, nuggets, blocks, and ore. These are gold itself, not a golden item. */
+    public static boolean isGoldItself(String itemId) {
+        String path = itemPath(itemId);
+        return path.equals("gold_ingot")
+                || path.equals("gold_nugget")
+                || path.equals("gold_block")
+                || path.equals("raw_gold")
+                || path.equals("gold_ore")
+                || path.equals("deepslate_gold_ore")
+                || path.equals("nether_gold_ore");
+    }
+
+    /** A crafted golden item, such as a golden hoe. Not gold itself. */
+    public static boolean isHeldGoldenItem(String itemId) {
+        String path = itemPath(itemId);
+        return path.startsWith("golden_");
+    }
+
+    public static boolean isGoldArmor(String itemId) {
+        String path = itemPath(itemId);
+        return path.equals("golden_helmet")
+                || path.equals("golden_chestplate")
+                || path.equals("golden_leggings")
+                || path.equals("golden_boots");
+    }
+
+    public static int goldAbilityBonus(int readyArmorPieces, boolean readyHeldItem) {
+        return Math.max(0, readyArmorPieces) + (readyHeldItem ? 1 : 0);
+    }
+
+    /** One line per newly active point: {@code Ability level +1 (+total)}. */
+    public static List<String> goldBonusMessages(int previousShown, int readyNow) {
+        List<String> messages = new ArrayList<>();
+        int from = Math.max(0, previousShown);
+        int to = Math.max(0, readyNow);
+        for (int total = from + 1; total <= to; total++) {
+            messages.add("Ability level +1 (+" + total + ")");
+        }
+        return messages;
+    }
+
+    public static boolean goldWornLongEnough(long equippedAt, long now) {
+        return equippedAt >= 0 && now >= equippedAt && now - equippedAt >= GOLD_BONUS_TICKS;
+    }
+
+    /**
+     * Keep wear timers for slots that still hold the same qualifying item.
+     * A changed or removed item drops out immediately. {@code nowIds} maps slot to the current item id.
+     */
+    public static Map<String, String> updateGoldWear(Map<String, String> previous, Map<String, String> nowIds, long now) {
+        Map<String, String> next = new HashMap<>();
+        if (nowIds == null) {
+            return next;
+        }
+        Map<String, String> prior = previous == null ? Map.of() : previous;
+        for (Map.Entry<String, String> entry : nowIds.entrySet()) {
+            String itemId = entry.getValue();
+            if (itemId == null || itemId.isEmpty()) {
+                continue;
+            }
+            long since = goldWearSince(prior.get(entry.getKey()), itemId);
+            if (since < 0) {
+                since = now;
+            }
+            next.put(entry.getKey(), itemId + "|" + since);
+        }
+        return next;
+    }
+
+    /** Armor pieces and one hand bonus that have been worn or held long enough. */
+    public static int readyGoldBonus(Map<String, String> state, long now) {
+        if (state == null || state.isEmpty()) {
+            return 0;
+        }
+        int armor = 0;
+        boolean hand = false;
+        for (Map.Entry<String, String> entry : state.entrySet()) {
+            String itemId = goldWearItem(entry.getValue());
+            long since = goldWearSince(entry.getValue(), itemId);
+            if (!goldWornLongEnough(since, now)) {
+                continue;
+            }
+            if ("main".equals(entry.getKey()) || "off".equals(entry.getKey())) {
+                hand = true;
+            } else {
+                armor++;
+            }
+        }
+        return goldAbilityBonus(armor, hand);
+    }
+
+    static long goldWearSince(String record, String itemId) {
+        if (record == null || itemId == null || itemId.isEmpty()) {
+            return -1L;
+        }
+        int split = record.lastIndexOf('|');
+        if (split <= 0 || !record.substring(0, split).equals(itemId)) {
+            return -1L;
+        }
+        try {
+            return Long.parseLong(record.substring(split + 1));
+        } catch (NumberFormatException ignored) {
+            return -1L;
+        }
+    }
+
+    static String goldWearItem(String record) {
+        if (record == null) {
+            return "";
+        }
+        int split = record.lastIndexOf('|');
+        return split <= 0 ? "" : record.substring(0, split);
+    }
+
+    private static String itemPath(String itemId) {
+        if (itemId == null || itemId.isEmpty()) {
+            return "";
+        }
+        int slash = itemId.indexOf(':');
+        return slash >= 0 ? itemId.substring(slash + 1) : itemId;
+    }
+
     public static int pickaxeBonus(String itemId) {
         return materialBonus(itemId);
     }
@@ -457,6 +584,8 @@ public final class AbilityRules {
                 "Base power: skill, the square root of times you have used that ability.",
                 "Extra catalyst, redstone, and tools add to that. Extra catalyst and redstone dust are +2 each.",
                 "Fire bolt and Magic arrow also add your mana level.",
+                "Each gold armor piece worn for 30 seconds adds 1 power. The bonus ends as soon as that piece comes off.",
+                "A golden item held for 30 seconds, such as a golden hoe, adds 1 more. Gold ingots, nuggets, and blocks do not.",
                 "Using an ability you have not learned still gains skill, at −3 power (floored at 1), until you have a free slot to learn them.");
     }
 
@@ -465,7 +594,9 @@ public final class AbilityRules {
                 POWER_HELP_KEY,
                 "tougher.ability.power.help.2",
                 "tougher.ability.power.help.3",
-                "tougher.ability.power.help.4");
+                "tougher.ability.power.help.4",
+                "tougher.ability.power.help.5",
+                "tougher.ability.power.help.6");
     }
 
     public static String powerHelpFallback() {
