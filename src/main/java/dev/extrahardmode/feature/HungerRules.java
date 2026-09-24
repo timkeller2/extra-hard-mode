@@ -170,6 +170,11 @@ public final class HungerRules {
         return Math.min(saturation, max);
     }
 
+    /** True while hunger is below the Well Fed cap, not the vanilla 20. */
+    public static boolean canEatMore(int foodLevel, int maxFood) {
+        return foodLevel < Math.max(0, maxFood);
+    }
+
     /** Slow food regen while hunger is high, up to the player's current max health. */
     public static boolean canRegenHealth(int foodLevel, float health, float maxHealth) {
         return foodLevel >= 18 && HealthRules.canHeal(health, maxHealth);

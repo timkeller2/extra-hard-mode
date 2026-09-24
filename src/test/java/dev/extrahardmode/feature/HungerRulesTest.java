@@ -108,6 +108,9 @@ class HungerRulesTest {
     @Test
     void foodRegenContinuesPastVanillaMaxHealth() {
         assertTrue(HungerRules.canRegenHealth(18, 19.0F, 20.0F));
+        assertTrue(HungerRules.canEatMore(20, 25));
+        assertFalse(HungerRules.canEatMore(25, 25));
+        assertFalse(HungerRules.canEatMore(20, 20));
         assertFalse(HungerRules.canRegenHealth(18, 20.0F, 20.0F));
         assertTrue(HungerRules.canRegenHealth(20, 20.0F, 34.0F));
         assertFalse(HungerRules.canRegenHealth(17, 20.0F, 34.0F));

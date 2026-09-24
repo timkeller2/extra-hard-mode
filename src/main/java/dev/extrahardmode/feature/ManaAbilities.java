@@ -27,7 +27,11 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.advancements.triggers.CriteriaTriggers;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ColorParticleOption;
+import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
@@ -353,6 +357,7 @@ public final class ManaAbilities implements FeatureModule {
         consumeManaAndHeld(player, Items.FEATHER);
         recordAbilityUse(player, AbilityRules.FLIGHT);
         startFlight(player, power);
+        castEffect(player, SoundEvents.PHANTOM_FLAP, ParticleTypes.CLOUD, ParticleTypes.END_ROD);
         tellAbilityUse(player, "tougher.ability.flight", "Flight", power);
         player.sendSystemMessage(Component.translatableWithFallback(
                 "tougher.message.flight_start", "Jump to rise, sneak to descend. Land to stop flying."));
@@ -655,6 +660,7 @@ public final class ManaAbilities implements FeatureModule {
             return true;
         }
         hurlFireBolt(player, power, target);
+        castEffect(player, SoundEvents.BLAZE_SHOOT, ParticleTypes.FLAME, ParticleTypes.LAVA);
         spend(player, Items.CHARCOAL, AbilityRules.FIRE_BOLT);
         tellAbilityUse(player, "tougher.ability.fire_bolt", "Fire bolt", power);
         return true;
@@ -679,6 +685,7 @@ public final class ManaAbilities implements FeatureModule {
             return true;
         }
         hurlMagicArrow(player, power, target);
+        castEffect(player, SoundEvents.ARROW_SHOOT, ParticleTypes.CRIT, ParticleTypes.ENCHANTED_HIT);
         spend(player, Items.ARROW, AbilityRules.MAGIC_ARROW);
         tellAbilityUse(player, "tougher.ability.magic_arrow", "Magic arrow", power);
         return true;
@@ -787,6 +794,7 @@ public final class ManaAbilities implements FeatureModule {
 
     static boolean finishGrow(ServerPlayer player, double power) {
         spend(player, null, AbilityRules.GROW);
+        castEffect(player, SoundEvents.BONE_MEAL_USE, ParticleTypes.HAPPY_VILLAGER, ParticleTypes.COMPOSTER);
         ItemStack hoe = player.getMainHandItem();
         if (hoe.is(ItemTags.HOES) && hoe.isDamageableItem()) {
             hurtGrowHoe(player, hoe);
@@ -850,6 +858,7 @@ public final class ManaAbilities implements FeatureModule {
         player.setAttached(EhmAttachments.EHM_POWER_MINE_ITEM, heldItemId(held));
         sendPowerMine(player);
         sendAbilityDurations(player);
+        castEffect(player, SoundEvents.AMETHYST_BLOCK_CHIME, ParticleTypes.CRIT, ParticleTypes.ELECTRIC_SPARK);
         tellAbilityUse(player, "tougher.ability.power_mine", "Power mining", power);
         return true;
     }
@@ -907,6 +916,7 @@ public final class ManaAbilities implements FeatureModule {
         AbilityRules.OreDeposit best = DetectOre.findBest(player, range, power);
         consumeDetectOreQuartz(player);
         spend(player, null, AbilityRules.DETECT_ORE);
+        castEffect(player, SoundEvents.AMETHYST_BLOCK_RESONATE, ParticleTypes.ENCHANT, ParticleTypes.END_ROD);
         tellAbilityUse(player, "tougher.ability.detect_ore", "Detect ore", power);
         if (best == null) {
             player.sendSystemMessage(Component.translatableWithFallback(
@@ -946,6 +956,7 @@ public final class ManaAbilities implements FeatureModule {
             }
         }
         spend(player, Items.STRING, AbilityRules.SLOW);
+        castEffect(player, SoundEvents.BREWING_STAND_BREW, ParticleTypes.SNOWFLAKE, ParticleTypes.WHITE_ASH);
         tellAbilityUse(player, "tougher.ability.slow", "Slow", power);
         return true;
     }
@@ -1063,6 +1074,7 @@ public final class ManaAbilities implements FeatureModule {
         double power = abilityPower(player, AbilityRules.LIGHT, bonus);
         spend(player, held.getItem(), AbilityRules.LIGHT);
         startPlayerLight(player, power);
+        castEffect(player, SoundEvents.CONDUIT_ACTIVATE, ParticleTypes.END_ROD, ParticleTypes.GLOW);
         tellAbilityUse(player, "tougher.ability.light", "Let there be light", power);
         return true;
     }
@@ -1103,6 +1115,7 @@ public final class ManaAbilities implements FeatureModule {
             Achievements.sendMana(player);
             recordAbilityUse(player, AbilityRules.LIGHT);
             startPlayerLight(player, power);
+            castEffect(player, SoundEvents.CONDUIT_ACTIVATE, ParticleTypes.END_ROD, ParticleTypes.GLOW);
             tellAbilityUse(player, "tougher.ability.light", "Let there be light", power);
             return;
         }
@@ -1431,6 +1444,7 @@ public final class ManaAbilities implements FeatureModule {
             applyFlightAbilities(player, speed);
             sendFlight(player);
             sendAbilityDurations(player);
+            castEffect(player, SoundEvents.PHANTOM_FLAP, ParticleTypes.CLOUD, ParticleTypes.END_ROD);
             tellAbilityUse(player, "tougher.ability.flight", "Flight", power);
             return;
         }
@@ -1600,6 +1614,20 @@ public final class ManaAbilities implements FeatureModule {
                 .unwrapKey()
                 .map(key -> key.identifier().toString())
                 .orElse("");
+    }
+
+    static void castEffect(ServerPlayer player, SoundEvent sound, ParticleOptions primary, ParticleOptions secondary) {
+        if (!(player.level() instanceof ServerLevel level)) {
+            return;
+        }
+        level.playSound(null, player.blockPosition(), sound, SoundSource.PLAYERS, 0.8F, 1.0F);
+        double x = player.getX();
+        double y = player.getY() + player.getBbHeight() * 0.6;
+        double z = player.getZ();
+        level.sendParticles(primary, x, y, z, 8, 0.35, 0.45, 0.35, 0.02);
+        if (secondary != null) {
+            level.sendParticles(secondary, x, y, z, 6, 0.3, 0.4, 0.3, 0.0);
+        }
     }
 
     static void tellAbilityUse(ServerPlayer player, String nameKey, String fallback, double power) {

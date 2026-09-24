@@ -1,6 +1,7 @@
 package dev.extrahardmode.client;
 
 import dev.extrahardmode.config.ConfigManager;
+import dev.extrahardmode.feature.ClientFoodCap;
 import dev.extrahardmode.feature.DebugScreenRules;
 import dev.extrahardmode.feature.PlacementRules;
 import dev.extrahardmode.tag.EhmTags;
@@ -8,6 +9,7 @@ import dev.extrahardmode.feature.SeasonAtmosphere;
 import dev.extrahardmode.feature.Dragon;
 import dev.extrahardmode.feature.DragonRules;
 import dev.extrahardmode.feature.Torches;
+import dev.extrahardmode.feature.WellFedRules;
 import dev.extrahardmode.feature.monster.Horses;
 import dev.extrahardmode.module.MessageId;
 import dev.extrahardmode.network.ClientboundAbilityDurationsPayload;
@@ -296,6 +298,11 @@ public class ExtraHardModeClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        ClientFoodCap.lookup = player -> {
+            ClientboundManaPayload mana = lastMana();
+            int wellFed = mana == null ? 0 : Math.max(0, mana.wellFed());
+            return WellFedRules.foodMax(wellFed);
+        };
         ClientPlayNetworking.registerGlobalReceiver(ClientboundSyncPayload.TYPE, (payload, context) -> {
             lastSync = payload;
             ClientboundSyncPayload.DisplayExtras.SeasonBits season = payload.extras().season();

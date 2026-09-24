@@ -160,6 +160,14 @@ public final class Hunger implements FeatureModule {
         return ConfigManager.world(serverLevel).disableFastSaturationRegen();
     }
 
+    /** How much hunger this player can hold before eating is refused. */
+    public static int edibleUntil(Player player) {
+        if (player instanceof ServerPlayer serverPlayer) {
+            return WellFedRules.foodMax(WellFed.level(serverPlayer));
+        }
+        return ClientFoodCap.lookup.cap(player);
+    }
+
     public static int slowRegenTicks(Player player) {
         if (!(player instanceof ServerPlayer serverPlayer) || !(serverPlayer.level() instanceof ServerLevel level)) {
             return HungerRules.VANILLA_SLOW_REGEN_TICKS;
