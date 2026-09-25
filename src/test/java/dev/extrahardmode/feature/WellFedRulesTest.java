@@ -27,7 +27,7 @@ class WellFedRulesTest {
     @Test
     void benefitsStopAtFiveWhileHungerAndGraceContinue() {
         assertEquals(5, WellFedRules.healthBonus(5));
-        assertEquals(5, WellFedRules.healthBonus(9));
+        assertEquals(9, WellFedRules.healthBonus(9));
         assertEquals(2, WellFedRules.meleeBonus(5));
         assertEquals(2, WellFedRules.meleeBonus(9));
         assertEquals(0.90F, WellFedRules.saturationMultiplier(5), 0.001F);

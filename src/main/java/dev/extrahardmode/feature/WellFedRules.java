@@ -7,7 +7,7 @@ import java.util.Set;
 
 /**
  * Well Fed from meals past the first seven different foods. Minecraft-free.
- * Levels above {@link #BENEFIT_CAP} still raise hunger, mana, and the grace windows.
+ * Levels above {@link #BENEFIT_CAP} still raise health, hunger, mana, and the grace windows.
  */
 public final class WellFedRules {
     public static final int BASE_MEALS = HungerRules.DEFAULT_FOOD_HISTORY;
@@ -89,9 +89,9 @@ public final class WellFedRules {
         return ids.size();
     }
 
-    /** +1 health point per level, stopping at {@link #BENEFIT_CAP}. */
+    /** +1 health point per Well Fed level, with no cap. */
     public static int healthBonus(int wellFed) {
-        return benefitLevel(wellFed);
+        return Math.max(0, wellFed);
     }
 
     public static int foodMax(int wellFed) {
