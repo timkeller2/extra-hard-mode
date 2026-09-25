@@ -219,7 +219,8 @@ public final class EhmHelp {
         return Page.of(
                 "tougher.help.building.",
                 List.of(
-                        "Building: You cannot place blocks while in the air, even from the edge of a block.",
+                        "Building: You cannot place blocks while in the air, even from the edge of a block, or with no support.",
+                        "Building: Master Builder suspends those two limits while it runs. Right-click stone bricks in the air to cast it.",
                         "Building: You cannot carry a torch, lantern, or glowstone in your off hand.",
                         "Building: Bucketed water evaporates; use ice if you need a water source.",
                         "Building: A boat that falls more than 3 blocks with you in it breaks and drops nothing.",
@@ -258,8 +259,8 @@ public final class EhmHelp {
                         "Hunger: The same-food penalty waits one extra repeat per Well Fed level.",
                         "Hunger: Through Well Fed 5: 2% less saturation loss, +1 damage every two levels, faster regen, and Luck at 3.",
                         "Hunger: Poison and hunger last 10% less per Well Fed level, up to half.",
-                        "Hunger: A new food restores 1 mana while Well Fed only when your mana is below your mana level, not on the meal that raises Well Fed.",
-                        "Hunger: Every Well Fed level adds 1 health, 1 hunger, and 1 mana level, even past 5. They leave when Well Fed drops."));
+                        "Hunger: Every Well Fed level adds 1 health, 1 hunger, and 1 mana level, even past 5. Health and hunger arrive filled. The mana level does not.",
+                        "Hunger: Those bonuses leave when Well Fed drops. Eating does not restore mana."));
     }
 
     private static Page crops() {
@@ -335,7 +336,7 @@ public final class EhmHelp {
                         "Combat: Skeleton and bogged special shots only happen based on how far they spawned from world spawn: 1% per 10 blocks.",
                         "Combat: Those special shots always happen at 1000 blocks or farther.",
                         "Combat: Zombies vary ±20% in speed (faster hit softer and look smaller, slower hit harder and look larger).",
-                        "Combat: Zombies can rise again. Shields absorb 100% of a blocked hit and take 3 times the durability.",
+                        "Combat: Zombies can rise again. Shields absorb 100% of a blocked hit and last one-third as long.",
                         "Combat: Creepers may drop live TNT. TNT sets fire to 20% of the blocks it hits, rounded.",
                         "Combat: explosions.tnt.firePercent changes that share. Set it to 0 to leave TNT blasts unlit.",
                         "Combat: Strong biome bosses can appear far from spawn.",
@@ -361,9 +362,11 @@ public final class EhmHelp {
                 "tougher.help.mana.",
                 List.of(
                         "Mana: Cyan crystals. You regen (mana level + current mana) / 200 per minute.",
-                        "Mana: Quartz in your inventory speeds regen until you reach your mana level, consuming 1 quartz per 2 mana (one crystal).",
+                        "Mana: Nether quartz in your inventory triples regen until you reach your mana level, consuming 1 quartz per 2 mana (one crystal).",
+                        "Mana: A quartz block in your main inventory makes regen 7 times the base rate until you reach your mana level, consuming 1 block per 2 mana.",
+                        "Mana: Nether quartz and a quartz block together make regen 10 times the base rate. Each is consumed for its own share, 1 per 2 mana.",
                         "Mana: If your mana is below your mana level and below (saturation − 17), you also restore 1 mana per minute for 1 saturation.",
-                        "Mana: That saturation restore does not count toward quartz.",
+                        "Mana: That saturation restore does not count toward quartz or a quartz block.",
                         "Mana: Past your level you regen at 1/4 speed, up to 20 mana (10 crystals). Achievements can raise your mana level."));
     }
 
@@ -373,6 +376,9 @@ public final class EhmHelp {
                 List.of(
                         "Abilities: Hold the catalyst and right-click. Let it grow on a plant; coal for Let there be light.",
                         "Abilities: Use charcoal for Fire bolt, an arrow for Magic arrow, an iron ingot for Iron Heart, or a golden sword for Smite Evil.",
+                        "Abilities: Stone bricks right-clicked in the air cast Master Builder. It renews like Iron Heart until you run out of mana.",
+                        "Abilities: Diamonds right-clicked cast Diamond Skin. It costs 2 mana, divides health damage by its level, and renews while you have mana.",
+                        "Abilities: Diamond Skin's level is at least 2. Each point of health damage it prevents shortens it by 3 seconds.",
                         "Abilities: Redstone dust in your inventory is consumed for +2 on any ability.",
                         "Abilities: You can learn up to half your mana level in abilities, rounded up.",
                         "Abilities: Unlearned abilities can be used and still gain skill, at −3 power (floored at 1), until you have a free slot to learn them.",

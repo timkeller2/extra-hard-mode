@@ -1,6 +1,7 @@
 package dev.extrahardmode.client;
 
 import dev.extrahardmode.config.ConfigManager;
+import dev.extrahardmode.feature.AbilityRules;
 import dev.extrahardmode.feature.ClientFoodCap;
 import dev.extrahardmode.feature.DebugScreenRules;
 import dev.extrahardmode.feature.PlacementRules;
@@ -81,6 +82,20 @@ public class ExtraHardModeClient implements ClientModInitializer {
 
     public static ClientboundAbilityDurationsPayload lastDurations() {
         return lastDurations;
+    }
+
+    /** True while the server says Master Builder is still running. */
+    public static boolean masterBuilderActive() {
+        ClientboundAbilityDurationsPayload payload = lastDurations;
+        if (payload == null) {
+            return false;
+        }
+        for (ClientboundAbilityDurationsPayload.Entry effect : payload.effects()) {
+            if (AbilityRules.MASTER_BUILDER.equals(effect.ability()) && effect.remainingTicks() > 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static ClientboundSoilLookPayload lastSoilLook() {

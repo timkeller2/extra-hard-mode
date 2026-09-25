@@ -166,12 +166,17 @@ public final class Achievements implements FeatureModule {
         double cap = AchievementRules.manaCap(level);
         Double stored = player.getAttachedOrElse(EhmAttachments.EHM_MANA_CURRENT, 0.0);
         double current = AchievementRules.clampMana(stored == null ? 0.0 : stored, cap);
-        boolean quartz =
-                AchievementRules.shouldBoostWithQuartz(level, current) && hasItem(player, Items.QUARTZ);
+        boolean belowLevel = AchievementRules.shouldBoostWithQuartz(level, current);
+        boolean quartz = belowLevel && hasItem(player, Items.QUARTZ);
+        boolean quartzBlock = belowLevel && InventorySearch.hasOneMain(player, Items.QUARTZ_BLOCK);
         double afterBase = AchievementRules.addMana(
-                current, level, AchievementRules.regenPerMinute(level, current, quartz));
+                current, level, AchievementRules.regenPerMinute(level, current, quartz, quartzBlock));
+        double gained = afterBase - current;
         if (quartz) {
-            settleQuartzCredit(player, afterBase - current);
+            settleQuartzCredit(player, gained * AchievementRules.quartzConsumptionShare(true, quartzBlock));
+        }
+        if (quartzBlock) {
+            settleQuartzBlockCredit(player, gained * AchievementRules.quartzBlockConsumptionShare(quartz, true));
         }
         double next = afterBase;
         var food = player.getFoodData();
@@ -199,6 +204,18 @@ public final class Achievements implements FeatureModule {
         }
         player.setAttached(
                 EhmAttachments.EHM_QUARTZ_MANA_CREDIT, AchievementRules.remainingQuartzCredit(credit, taken));
+    }
+
+    static void settleQuartzBlockCredit(ServerPlayer player, double gained) {
+        Double stored = player.getAttachedOrElse(EhmAttachments.EHM_QUARTZ_BLOCK_MANA_CREDIT, 0.0);
+        double credit = AchievementRules.addQuartzCredit(stored == null ? 0.0 : stored, gained);
+        int want = AchievementRules.quartzItemsForCredit(credit);
+        int taken = 0;
+        while (taken < want && InventorySearch.consumeOneMain(player, Items.QUARTZ_BLOCK)) {
+            taken++;
+        }
+        player.setAttached(
+                EhmAttachments.EHM_QUARTZ_BLOCK_MANA_CREDIT, AchievementRules.remainingQuartzCredit(credit, taken));
     }
 
     static void grantNewTiers(

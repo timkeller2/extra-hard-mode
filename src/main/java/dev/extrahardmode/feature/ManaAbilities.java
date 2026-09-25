@@ -49,6 +49,8 @@ import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
 import net.minecraft.world.entity.projectile.arrow.Arrow;
 import net.minecraft.world.entity.projectile.hurtingprojectile.SmallFireball;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Abilities;
 import net.minecraft.tags.EntityTypeTags;
@@ -69,7 +71,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
 
-/** Mana abilities: heal, iron heart, fire bolt, magic arrow, flight, let it grow, let there be light, power mining, detect ore, slow, sense evil, smite evil. */
+/** Mana abilities: heal, iron heart, fire bolt, magic arrow, flight, let it grow, let there be light, power mining, detect ore, slow, sense evil, smite evil, master builder, diamond skin. */
 public final class ManaAbilities implements FeatureModule {
     public static final Identifier ID = ExtraHardModeMod.id("mana_abilities");
     private static final float MINING_REACH = 5.0F;
@@ -112,6 +114,9 @@ public final class ManaAbilities implements FeatureModule {
             tickHealSparkle(player);
             tickIronHeart(player);
             tickIronHeartSparkle(player);
+            tickMasterBuilder(player);
+            tickDiamondSkin(player);
+            tickDiamondSkinSparkle(player);
             tickSenseSparkle(player);
             tickGoldWear(player);
             tickGoldShimmer(player);
@@ -162,6 +167,12 @@ public final class ManaAbilities implements FeatureModule {
                 return InteractionResult.FAIL;
             }
             if (isLightCoal(serverPlayer.getMainHandItem()) && tryLetThereBeLight(serverPlayer)) {
+                return InteractionResult.FAIL;
+            }
+            if (serverPlayer.getMainHandItem().is(Items.STONE_BRICKS) && tryMasterBuilder(serverPlayer)) {
+                return InteractionResult.FAIL;
+            }
+            if (serverPlayer.getMainHandItem().is(Items.DIAMOND) && tryDiamondSkin(serverPlayer)) {
                 return InteractionResult.FAIL;
             }
         }
@@ -274,6 +285,14 @@ public final class ManaAbilities implements FeatureModule {
                 && WorldGate.isModuleActive(serverLevel, ID)
                 && isLightCoal(serverPlayer.getMainHandItem())
                 && tryLetThereBeLight(serverPlayer)) {
+            return InteractionResult.FAIL;
+        }
+        if (hand == InteractionHand.MAIN_HAND
+                && player instanceof ServerPlayer serverPlayer
+                && level instanceof ServerLevel serverLevel
+                && WorldGate.isModuleActive(serverLevel, ID)
+                && serverPlayer.getMainHandItem().is(Items.DIAMOND)
+                && tryDiamondSkin(serverPlayer)) {
             return InteractionResult.FAIL;
         }
         skipGrowAfterUse(player, level, hand);
@@ -601,6 +620,330 @@ public final class ManaAbilities implements FeatureModule {
         startIronHeartSparkle(target);
         tellAbilityUse(caster, "tougher.ability.iron_heart", "Iron Heart", power);
         return true;
+    }
+
+    public static boolean masterBuilderActive(ServerPlayer player) {
+        return remainingMasterBuilder(player) > 0;
+    }
+
+    static int remainingMasterBuilder(ServerPlayer player) {
+        Integer value = player.getAttachedOrElse(EhmAttachments.EHM_MASTER_BUILDER_REMAINING, 0);
+        return value == null ? 0 : Math.max(0, value);
+    }
+
+    /**
+     * Air use of stone bricks. A click that can place the block never reaches this.
+     * A second air click cancels. Renewal spends mana but not another brick.
+     */
+    static boolean tryMasterBuilder(ServerPlayer player) {
+        if (!player.getMainHandItem().is(Items.STONE_BRICKS) || Achievements.skipPlayer(player)) {
+            return false;
+        }
+        if (alreadyHandled(player, (ServerLevel) player.level())) {
+            return true;
+        }
+        if (masterBuilderActive(player)) {
+            cancelMasterBuilder(player);
+            markHandled(player);
+            return true;
+        }
+        int bonus = withRedstoneBonus(player, AbilityRules.catalystBonus(player.getMainHandItem().getCount()));
+        double power = abilityPower(player, AbilityRules.MASTER_BUILDER, bonus);
+        int duration = AbilityRules.masterBuilderDurationTicks(power);
+        if (duration <= 0) {
+            return false;
+        }
+        if (blockedByCooldownOrMana(
+                player, AbilityRules.MASTER_BUILDER, "tougher.ability.master_builder", "Master Builder")) {
+            return true;
+        }
+        spend(player, Items.STONE_BRICKS, AbilityRules.MASTER_BUILDER);
+        startMasterBuilder(player, duration);
+        castMasterBuilder(player);
+        tellAbilityUse(player, "tougher.ability.master_builder", "Master Builder", power);
+        return true;
+    }
+
+    static void startMasterBuilder(ServerPlayer player, int duration) {
+        player.setAttached(EhmAttachments.EHM_MASTER_BUILDER_REMAINING, duration);
+        player.setAttached(EhmAttachments.EHM_MASTER_BUILDER_BAR_MAX, duration);
+        sendAbilityDurations(player);
+    }
+
+    static void cancelMasterBuilder(ServerPlayer player) {
+        if (!masterBuilderActive(player)) {
+            return;
+        }
+        clearMasterBuilder(player, false);
+        sendAbilityDurations(player);
+        player.sendSystemMessage(Component.translatableWithFallback(
+                "tougher.message.master_builder_cancel", "You cancel Master Builder."));
+    }
+
+    static void clearMasterBuilder(ServerPlayer player, boolean message) {
+        boolean had = masterBuilderActive(player);
+        player.setAttached(EhmAttachments.EHM_MASTER_BUILDER_REMAINING, 0);
+        player.setAttached(EhmAttachments.EHM_MASTER_BUILDER_BAR_MAX, 0);
+        if (message && had) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.master_builder_end", "Master Builder ends."));
+        }
+    }
+
+    static void tickMasterBuilder(ServerPlayer player) {
+        int remaining = remainingMasterBuilder(player);
+        if (remaining <= 0) {
+            return;
+        }
+        if (Achievements.skipPlayer(player) || !WorldGate.isModuleActive(player.level(), ID)) {
+            clearMasterBuilder(player, false);
+            sendAbilityDurations(player);
+            return;
+        }
+        remaining--;
+        if (remaining > 0) {
+            player.setAttached(EhmAttachments.EHM_MASTER_BUILDER_REMAINING, remaining);
+            return;
+        }
+        if (tryRenewMasterBuilder(player)) {
+            return;
+        }
+        clearMasterBuilder(player, true);
+        sendAbilityDurations(player);
+    }
+
+    static boolean tryRenewMasterBuilder(ServerPlayer player) {
+        if (player == null || !player.isAlive() || Achievements.skipPlayer(player)) {
+            return false;
+        }
+        if (!AbilityRules.hasManaToUse(AbilityRules.MASTER_BUILDER, Achievements.currentMana(player))) {
+            return false;
+        }
+        player.setAttached(
+                EhmAttachments.EHM_MANA_CURRENT,
+                Math.max(0.0, Achievements.currentMana(player) - AbilityRules.manaCost(AbilityRules.MASTER_BUILDER)));
+        Achievements.sendMana(player);
+        recordAbilityUse(player, AbilityRules.MASTER_BUILDER);
+        double power = abilityPower(player, AbilityRules.MASTER_BUILDER, 0);
+        int duration = AbilityRules.masterBuilderDurationTicks(power);
+        if (duration <= 0) {
+            return false;
+        }
+        startMasterBuilder(player, duration);
+        castMasterBuilder(player);
+        tellAbilityUse(player, "tougher.ability.master_builder", "Master Builder", power);
+        return true;
+    }
+
+    static void castMasterBuilder(ServerPlayer player) {
+        castEffect(player, SoundEvents.AMETHYST_BLOCK_CHIME, ParticleTypes.HAPPY_VILLAGER, ParticleTypes.END_ROD);
+    }
+
+    public static boolean diamondSkinActive(ServerPlayer player) {
+        return remainingDiamondSkin(player) > 0;
+    }
+
+    static int remainingDiamondSkin(ServerPlayer player) {
+        Integer value = player.getAttachedOrElse(EhmAttachments.EHM_DIAMOND_SKIN_REMAINING, 0);
+        return value == null ? 0 : Math.max(0, value);
+    }
+
+    static double diamondSkinPower(ServerPlayer player) {
+        Float value = player.getAttachedOrElse(EhmAttachments.EHM_DIAMOND_SKIN_POWER, 0.0F);
+        return AbilityRules.diamondSkinLevel(value == null ? 0.0 : value);
+    }
+
+    /** Right-click with diamonds. A second click cancels. Renewal spends mana but not another diamond. */
+    static boolean tryDiamondSkin(ServerPlayer player) {
+        if (!player.getMainHandItem().is(Items.DIAMOND) || Achievements.skipPlayer(player)) {
+            return false;
+        }
+        if (alreadyHandled(player, (ServerLevel) player.level())) {
+            return true;
+        }
+        if (diamondSkinActive(player)) {
+            cancelDiamondSkin(player);
+            markHandled(player);
+            return true;
+        }
+        int bonus = withRedstoneBonus(player, AbilityRules.catalystBonus(player.getMainHandItem().getCount()));
+        double power = AbilityRules.diamondSkinLevel(abilityPower(player, AbilityRules.DIAMOND_SKIN, bonus));
+        int duration = AbilityRules.diamondSkinDurationTicks(power);
+        if (duration <= 0) {
+            return false;
+        }
+        if (blockedByCooldownOrMana(
+                player, AbilityRules.DIAMOND_SKIN, "tougher.ability.diamond_skin", "Diamond Skin")) {
+            return true;
+        }
+        spend(player, Items.DIAMOND, AbilityRules.DIAMOND_SKIN);
+        startDiamondSkin(player, power, duration);
+        castDiamondSkin(player);
+        tellAbilityUse(player, "tougher.ability.diamond_skin", "Diamond Skin", power);
+        return true;
+    }
+
+    static void startDiamondSkin(ServerPlayer player, double power, int duration) {
+        player.setAttached(EhmAttachments.EHM_DIAMOND_SKIN_REMAINING, duration);
+        player.setAttached(EhmAttachments.EHM_DIAMOND_SKIN_BAR_MAX, duration);
+        player.setAttached(EhmAttachments.EHM_DIAMOND_SKIN_POWER, (float) Math.max(0.0, power));
+        sendAbilityDurations(player);
+    }
+
+    static void cancelDiamondSkin(ServerPlayer player) {
+        if (!diamondSkinActive(player)) {
+            return;
+        }
+        clearDiamondSkin(player, false);
+        sendAbilityDurations(player);
+        player.sendSystemMessage(Component.translatableWithFallback(
+                "tougher.message.diamond_skin_cancel", "You cancel Diamond Skin."));
+    }
+
+    static void clearDiamondSkin(ServerPlayer player, boolean message) {
+        boolean had = diamondSkinActive(player);
+        player.setAttached(EhmAttachments.EHM_DIAMOND_SKIN_REMAINING, 0);
+        player.setAttached(EhmAttachments.EHM_DIAMOND_SKIN_BAR_MAX, 0);
+        player.setAttached(EhmAttachments.EHM_DIAMOND_SKIN_POWER, 0.0F);
+        if (message && had) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.diamond_skin_end", "Diamond Skin ends."));
+        }
+    }
+
+    static void tickDiamondSkin(ServerPlayer player) {
+        int remaining = remainingDiamondSkin(player);
+        if (remaining <= 0) {
+            return;
+        }
+        if (Achievements.skipPlayer(player) || !WorldGate.isModuleActive(player.level(), ID)) {
+            clearDiamondSkin(player, false);
+            sendAbilityDurations(player);
+            return;
+        }
+        remaining--;
+        if (remaining > 0) {
+            player.setAttached(EhmAttachments.EHM_DIAMOND_SKIN_REMAINING, remaining);
+            return;
+        }
+        if (tryRenewDiamondSkin(player)) {
+            return;
+        }
+        clearDiamondSkin(player, true);
+        sendAbilityDurations(player);
+    }
+
+    static boolean tryRenewDiamondSkin(ServerPlayer player) {
+        if (player == null || !player.isAlive() || Achievements.skipPlayer(player)) {
+            return false;
+        }
+        if (!AbilityRules.hasManaToUse(AbilityRules.DIAMOND_SKIN, Achievements.currentMana(player))) {
+            return false;
+        }
+        player.setAttached(
+                EhmAttachments.EHM_MANA_CURRENT,
+                Math.max(0.0, Achievements.currentMana(player) - AbilityRules.manaCost(AbilityRules.DIAMOND_SKIN)));
+        Achievements.sendMana(player);
+        recordAbilityUse(player, AbilityRules.DIAMOND_SKIN);
+        double power = AbilityRules.diamondSkinLevel(abilityPower(player, AbilityRules.DIAMOND_SKIN, 0));
+        int duration = AbilityRules.diamondSkinDurationTicks(power);
+        if (duration <= 0) {
+            return false;
+        }
+        startDiamondSkin(player, power, duration);
+        castDiamondSkin(player);
+        tellAbilityUse(player, "tougher.ability.diamond_skin", "Diamond Skin", power);
+        return true;
+    }
+
+    static void castDiamondSkin(ServerPlayer player) {
+        castEffect(player, SoundEvents.AMETHYST_BLOCK_CHIME, ParticleTypes.END_ROD, null);
+        spawnDiamondSkinSparkle(player, (ServerLevel) player.level());
+    }
+
+    /**
+     * Damage that is about to be subtracted from health, after armor and absorption.
+     * Divided by the ability level stored when Diamond Skin was cast. Poison, drowning,
+     * and suffocation are left alone.
+     */
+    public static float scaleDiamondSkin(
+            ServerPlayer player, DamageSource source, float healthDamage, boolean sparkle) {
+        if (player == null || source == null || healthDamage <= 0.0F || !diamondSkinActive(player)) {
+            return healthDamage;
+        }
+        if (Achievements.skipPlayer(player) || !WorldGate.isModuleActive(player.level(), ID)) {
+            return healthDamage;
+        }
+        boolean bypass = DiamondSkinRules.isPoisonVictim(player)
+                || source.is(DamageTypes.DROWN)
+                || source.is(DamageTypes.IN_WALL);
+        float scaled = DiamondSkinRules.scaleHealthDamage(healthDamage, diamondSkinPower(player), bypass);
+        if (sparkle && DiamondSkinRules.reduced(healthDamage, scaled)) {
+            startDiamondSkinSparkle(player);
+            absorbDiamondSkinDuration(player, healthDamage - scaled);
+        }
+        return scaled;
+    }
+
+    /** Each point of health damage prevented removes 3 seconds. Running out tries to renew. */
+    static void absorbDiamondSkinDuration(ServerPlayer player, float absorbed) {
+        int loss = DiamondSkinRules.durationLossTicks(absorbed);
+        if (loss <= 0 || !diamondSkinActive(player)) {
+            return;
+        }
+        int remaining = DiamondSkinRules.remainingAfterAbsorption(remainingDiamondSkin(player), absorbed);
+        if (remaining > 0) {
+            player.setAttached(EhmAttachments.EHM_DIAMOND_SKIN_REMAINING, remaining);
+            sendAbilityDurations(player);
+            return;
+        }
+        if (tryRenewDiamondSkin(player)) {
+            return;
+        }
+        clearDiamondSkin(player, true);
+        sendAbilityDurations(player);
+    }
+
+    static void startDiamondSkinSparkle(ServerPlayer player) {
+        if (!(player.level() instanceof ServerLevel level)) {
+            return;
+        }
+        long until = level.getGameTime() + AbilityRules.DIAMOND_SKIN_SPARKLE_TICKS;
+        Long current = player.getAttachedOrElse(EhmAttachments.EHM_DIAMOND_SKIN_SPARKLE_UNTIL, -1L);
+        if (current == null || current < until) {
+            player.setAttached(EhmAttachments.EHM_DIAMOND_SKIN_SPARKLE_UNTIL, until);
+        }
+        spawnDiamondSkinSparkle(player, level);
+    }
+
+    static void tickDiamondSkinSparkle(ServerPlayer player) {
+        Long until = player.getAttachedOrElse(EhmAttachments.EHM_DIAMOND_SKIN_SPARKLE_UNTIL, -1L);
+        if (until == null || until < 0L) {
+            return;
+        }
+        ServerLevel level = (ServerLevel) player.level();
+        if (!player.isAlive() || until <= level.getGameTime()) {
+            player.setAttached(EhmAttachments.EHM_DIAMOND_SKIN_SPARKLE_UNTIL, -1L);
+            return;
+        }
+        spawnDiamondSkinSparkle(player, level);
+    }
+
+    static void spawnDiamondSkinSparkle(ServerPlayer target, ServerLevel level) {
+        double x = target.getX();
+        double y = target.getY() + target.getBbHeight() * 0.6;
+        double z = target.getZ();
+        level.sendParticles(ParticleTypes.END_ROD, x, y, z, 2, 0.28, 0.4, 0.28, 0.01);
+        level.sendParticles(
+                ColorParticleOption.create(ParticleTypes.ENTITY_EFFECT, 0.15F, 0.95F, 1.0F),
+                x,
+                y,
+                z,
+                4,
+                0.3,
+                0.4,
+                0.3,
+                0.0);
     }
 
     static void startIronHeartSparkle(ServerPlayer target) {
@@ -1399,6 +1742,9 @@ public final class ManaAbilities implements FeatureModule {
             stopPlayerLight(player);
             player.setAttached(EhmAttachments.EHM_IRON_HEART_LOCK, 0);
             clearIronHeartBuff(player, false);
+            clearMasterBuilder(player, false);
+            clearDiamondSkin(player, false);
+            sendAbilityDurations(player);
         }
         if (SLOWED.containsKey(entity.getUUID())) {
             clearSlow(entity);
@@ -1527,6 +1873,20 @@ public final class ManaAbilities implements FeatureModule {
                     abilityName(ability)));
             return;
         }
+        if (held.is(Items.STONE_BRICKS) && masterBuilderActive(player)) {
+            player.sendOverlayMessage(Component.translatableWithFallback(
+                    "tougher.message.ability_hint_iron_heart_off",
+                    "Right click to cancel %s...",
+                    abilityName(ability)));
+            return;
+        }
+        if (held.is(Items.DIAMOND) && diamondSkinActive(player)) {
+            player.sendOverlayMessage(Component.translatableWithFallback(
+                    "tougher.message.ability_hint_iron_heart_off",
+                    "Right click to cancel %s...",
+                    abilityName(ability)));
+            return;
+        }
         if (!AbilityRules.hasManaToUse(ability, Achievements.currentMana(player))) {
             return;
         }
@@ -1542,7 +1902,11 @@ public final class ManaAbilities implements FeatureModule {
             hoeBonus += AbilityRules.detectOreItemBonus(hasItem(player, Items.QUARTZ), false);
         } else if (held.is(Items.STRING)) {
             hoeBonus += AbilityRules.catalystBonus(held.getCount());
-        } else if (held.is(Items.ARROW) || held.is(Items.CHARCOAL) || held.is(Items.IRON_INGOT)) {
+        } else if (held.is(Items.ARROW)
+                || held.is(Items.CHARCOAL)
+                || held.is(Items.IRON_INGOT)
+                || held.is(Items.STONE_BRICKS)
+                || held.is(Items.DIAMOND)) {
             hoeBonus += AbilityRules.catalystBonus(held.getCount());
         } else if (isLightCoal(held)) {
             hoeBonus += AbilityRules.catalystBonus(held.getCount());
@@ -1579,6 +1943,8 @@ public final class ManaAbilities implements FeatureModule {
                 || held.is(Items.CHARCOAL)
                 || held.is(Items.STRING)
                 || held.is(Items.GOLDEN_SWORD)
+                || held.is(Items.STONE_BRICKS)
+                || held.is(Items.DIAMOND)
                 || isLightCoal(held)) {
             if (hoeBonus > 0) {
                 player.sendOverlayMessage(Component.translatableWithFallback(
@@ -1681,11 +2047,15 @@ public final class ManaAbilities implements FeatureModule {
         int mine = remainingPowerMine(player);
         int light = remainingPlayerLight(player);
         int heart = remainingIronHeartBuff(player);
+        int builder = remainingMasterBuilder(player);
+        int skin = remainingDiamondSkin(player);
         int warn = AbilityDurationRules.WARN_TICKS;
         return inDurationWindow(flight, warn)
                 || inDurationWindow(mine, warn)
                 || inDurationWindow(light, warn)
-                || inDurationWindow(heart, warn);
+                || inDurationWindow(heart, warn)
+                || inDurationWindow(builder, warn)
+                || inDurationWindow(skin, warn);
     }
 
     static boolean inDurationWindow(int remaining, int warn) {
@@ -1726,6 +2096,22 @@ public final class ManaAbilities implements FeatureModule {
                     player.getAttachedOrElse(EhmAttachments.EHM_IRON_HEART_BAR_MAX, 0),
                     auto);
         }
+        addDuration(
+                effects,
+                AbilityRules.MASTER_BUILDER,
+                remainingMasterBuilder(player),
+                player.getAttachedOrElse(EhmAttachments.EHM_MASTER_BUILDER_BAR_MAX, 0),
+                AbilityRules.autoRenews(AbilityRules.MASTER_BUILDER)
+                        && AbilityRules.hasManaToUse(
+                                AbilityRules.MASTER_BUILDER, Achievements.currentMana(player)));
+        addDuration(
+                effects,
+                AbilityRules.DIAMOND_SKIN,
+                remainingDiamondSkin(player),
+                player.getAttachedOrElse(EhmAttachments.EHM_DIAMOND_SKIN_BAR_MAX, 0),
+                AbilityRules.autoRenews(AbilityRules.DIAMOND_SKIN)
+                        && AbilityRules.hasManaToUse(
+                                AbilityRules.DIAMOND_SKIN, Achievements.currentMana(player)));
         ServerPlayNetworking.send(
                 player,
                 effects.isEmpty()
@@ -1824,6 +2210,12 @@ public final class ManaAbilities implements FeatureModule {
         }
         if (held.is(Items.GOLDEN_SWORD)) {
             return AbilityRules.SMITE_EVIL;
+        }
+        if (held.is(Items.STONE_BRICKS)) {
+            return AbilityRules.MASTER_BUILDER;
+        }
+        if (held.is(Items.DIAMOND)) {
+            return AbilityRules.DIAMOND_SKIN;
         }
         return null;
     }

@@ -76,6 +76,8 @@
     "NetherWartBlockMixin",
     "NeutralMobMixin",
     "PistonStructureMixin",
+    "PoisonMobEffectMixin",
+    "PlayerActuallyHurtMixin",
     "PlayerDestroySpeedMixin",
     "PlayerHarvestMixin",
     "PlayerHealthMixin",

@@ -240,6 +240,10 @@ public final class EhmAttachments {
     public static final AttachmentType<Double> EHM_QUARTZ_MANA_CREDIT = AttachmentRegistry.create(
             ExtraHardModeMod.id("quartz_mana_credit"),
             builder -> builder.persistent(Codec.DOUBLE).copyOnDeath().initializer(() -> 0.0));
+    /** Quartz-block-boosted mana regained toward the next quartz block consumed. */
+    public static final AttachmentType<Double> EHM_QUARTZ_BLOCK_MANA_CREDIT = AttachmentRegistry.create(
+            ExtraHardModeMod.id("quartz_block_mana_credit"),
+            builder -> builder.persistent(Codec.DOUBLE).copyOnDeath().initializer(() -> 0.0));
     /** Gold ability bonus already announced, so the shimmer only plays when it increases. */
     public static final AttachmentType<Integer> EHM_GOLD_BONUS_SHOWN = AttachmentRegistry.create(
             ExtraHardModeMod.id("gold_bonus_shown"),
@@ -328,6 +332,23 @@ public final class EhmAttachments {
             ExtraHardModeMod.id("iron_heart_target"), builder -> builder.persistent(UUIDUtil.CODEC));
     public static final AttachmentType<Long> EHM_IRON_HEART_SPARKLE_UNTIL = AttachmentRegistry.create(
             ExtraHardModeMod.id("iron_heart_sparkle_until"), builder -> builder.initializer(() -> -1L));
+    public static final AttachmentType<Integer> EHM_MASTER_BUILDER_REMAINING = AttachmentRegistry.create(
+            ExtraHardModeMod.id("master_builder_remaining"),
+            builder -> builder.persistent(Codec.INT).initializer(() -> 0));
+    public static final AttachmentType<Integer> EHM_MASTER_BUILDER_BAR_MAX = AttachmentRegistry.create(
+            ExtraHardModeMod.id("master_builder_bar_max"),
+            builder -> builder.persistent(Codec.INT).initializer(() -> 0));
+    public static final AttachmentType<Integer> EHM_DIAMOND_SKIN_REMAINING = AttachmentRegistry.create(
+            ExtraHardModeMod.id("diamond_skin_remaining"),
+            builder -> builder.persistent(Codec.INT).initializer(() -> 0));
+    public static final AttachmentType<Integer> EHM_DIAMOND_SKIN_BAR_MAX = AttachmentRegistry.create(
+            ExtraHardModeMod.id("diamond_skin_bar_max"),
+            builder -> builder.persistent(Codec.INT).initializer(() -> 0));
+    public static final AttachmentType<Float> EHM_DIAMOND_SKIN_POWER = AttachmentRegistry.create(
+            ExtraHardModeMod.id("diamond_skin_power"),
+            builder -> builder.persistent(Codec.FLOAT).initializer(() -> 0.0F));
+    public static final AttachmentType<Long> EHM_DIAMOND_SKIN_SPARKLE_UNTIL = AttachmentRegistry.create(
+            ExtraHardModeMod.id("diamond_skin_sparkle_until"), builder -> builder.initializer(() -> -1L));
     public static final AttachmentType<Long> EHM_SENSE_SPARKLE_UNTIL = AttachmentRegistry.create(
             ExtraHardModeMod.id("sense_sparkle_until"), builder -> builder.initializer(() -> -1L));
     public static final AttachmentType<Integer> EHM_LIGHT_REMAINING = AttachmentRegistry.create(

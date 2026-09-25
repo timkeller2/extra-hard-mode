@@ -22,6 +22,8 @@ public final class AchievementRules {
     public static final double SATURATION_MANA_RESTORE = 1.0;
     public static final float SATURATION_MANA_COST = 1.0F;
     public static final double QUARTZ_REGEN_MULTIPLIER = 3.0;
+    /** A quartz block in the main inventory. Added to the nether-quartz multiplier, not multiplied by it. */
+    public static final double QUARTZ_BLOCK_REGEN_MULTIPLIER = 7.0;
     /** One nether quartz is consumed per this much quartz-boosted mana (one crystal). */
     public static final double QUARTZ_MANA_PER_ITEM = 2.0;
     /** Regen multiplier once current mana is at or above mana level. */
@@ -81,13 +83,56 @@ public final class AchievementRules {
         return count;
     }
 
+    /**
+     * Nether quartz is 3×, a quartz block is 7×, and both together are 10×.
+     * Neither present stays at 1×. The bonuses add; they do not multiply each other.
+     */
+    public static double regenMultiplier(boolean netherQuartz, boolean quartzBlock) {
+        double multiplier = 0.0;
+        if (netherQuartz) {
+            multiplier += QUARTZ_REGEN_MULTIPLIER;
+        }
+        if (quartzBlock) {
+            multiplier += QUARTZ_BLOCK_REGEN_MULTIPLIER;
+        }
+        return multiplier > 0.0 ? multiplier : 1.0;
+    }
+
+    /**
+     * Share of a boosted regen tick that spends nether quartz.
+     * With a quartz block as well, only the 3× portion spends quartz. 0 when quartz is not boosting.
+     */
+    public static double quartzConsumptionShare(boolean netherQuartz, boolean quartzBlock) {
+        if (!netherQuartz) {
+            return 0.0;
+        }
+        return QUARTZ_REGEN_MULTIPLIER / regenMultiplier(true, quartzBlock);
+    }
+
+    /**
+     * Share of a boosted regen tick that spends a quartz block.
+     * With nether quartz as well, only the 7× portion spends blocks. 0 when the block is not boosting.
+     */
+    public static double quartzBlockConsumptionShare(boolean netherQuartz, boolean quartzBlock) {
+        if (!quartzBlock) {
+            return 0.0;
+        }
+        return QUARTZ_BLOCK_REGEN_MULTIPLIER / regenMultiplier(netherQuartz, true);
+    }
+
     /** {@code (manaLevel + currentMana) / 200} mana per Minecraft minute. */
     public static double regenPerMinute(int manaLevel, double currentMana, boolean quartz) {
+        return regenPerMinute(manaLevel, currentMana, quartz, false);
+    }
+
+    /** {@code (manaLevel + currentMana) / 200}, then {@link #regenMultiplier}. */
+    public static double regenPerMinute(
+            int manaLevel, double currentMana, boolean netherQuartz, boolean quartzBlock) {
         if (manaLevel <= 0) {
             return 0.0;
         }
         double base = (manaLevel + Math.max(0.0, currentMana)) / REGEN_DIVISOR;
-        return quartz ? base * QUARTZ_REGEN_MULTIPLIER : base;
+        return base * regenMultiplier(netherQuartz, quartzBlock);
     }
 
     /**

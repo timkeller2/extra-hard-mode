@@ -42,7 +42,7 @@ public final class WellFed {
         applyModifiers(player, level(player));
     }
 
-    /** Call after the meal is recorded. Fills new capacity and removes lost capacity. */
+    /** Call after the meal is recorded. Fills new health and hunger. Mana level is not filled. */
     public static int update(ServerPlayer player, List<String> history) {
         int previous = Math.max(0, player.getAttachedOrElse(EhmAttachments.EHM_WELL_FED, 0));
         int next = WellFedRules.nextLevel(history, previous);
@@ -68,10 +68,6 @@ public final class WellFed {
         int health = WellFedRules.healthBonus(next) - WellFedRules.healthBonus(previous);
         if (health > 0) {
             player.heal(health);
-        }
-        int mana = next - previous;
-        if (mana != 0) {
-            Achievements.shiftMana(player, mana);
         }
     }
 

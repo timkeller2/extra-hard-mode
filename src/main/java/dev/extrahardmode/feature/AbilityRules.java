@@ -26,7 +26,10 @@ public final class AbilityRules {
     public static final String SLOW = "slow";
     public static final String SENSE_EVIL = "sense_evil";
     public static final String SMITE_EVIL = "smite_evil";
+    public static final String MASTER_BUILDER = "master_builder";
+    public static final String DIAMOND_SKIN = "diamond_skin";
     public static final int MANA_COST = 1;
+    public static final int DIAMOND_SKIN_MANA_COST = 2;
     public static final int DETECT_ORE_MANA_COST = 1;
     public static final double HEAL_BASE_RANGE = 2.0;
     /** Blue sparkle on the heal recipient. */
@@ -83,6 +86,16 @@ public final class AbilityRules {
     public static final String COAL_ID = "minecraft:coal";
     public static final String SPIDER_EYE_ID = "minecraft:spider_eye";
     public static final String GOLDEN_SWORD_ID = "minecraft:golden_sword";
+    public static final String STONE_BRICKS_ID = "minecraft:stone_bricks";
+    /** Master Builder lasts this many seconds per point of effective ability level. */
+    public static final int MASTER_BUILDER_SECONDS_PER_POWER = 30;
+    public static final String DIAMOND_ID = "minecraft:diamond";
+    /** Diamond Skin lasts this many seconds per point of effective ability level. */
+    public static final int DIAMOND_SKIN_SECONDS_PER_POWER = 30;
+    /** A cast with no skill and no item bonus still counts as this level. */
+    public static final double DIAMOND_SKIN_MIN_LEVEL = 2.0;
+    /** Cyan sparkle when Diamond Skin reduces a hit. 0.25 seconds. */
+    public static final int DIAMOND_SKIN_SPARKLE_TICKS = 5;
     /** Distance at which Sense Evil reports a rough range: 250 × ability level. */
     public static final double SENSE_EVIL_RANGE_PER_POWER = 250.0;
     public static final int SENSE_EVIL_SPARKLE_TICKS = 120;
@@ -120,7 +133,9 @@ public final class AbilityRules {
                     DETECT_ORE,
                     SLOW,
                     SENSE_EVIL,
-                    SMITE_EVIL);
+                    SMITE_EVIL,
+                    MASTER_BUILDER,
+                    DIAMOND_SKIN);
 
     private AbilityRules() {}
 
@@ -161,6 +176,12 @@ public final class AbilityRules {
         }
         if (GOLDEN_SWORD_ID.equals(itemId)) {
             return SMITE_EVIL;
+        }
+        if (STONE_BRICKS_ID.equals(itemId)) {
+            return MASTER_BUILDER;
+        }
+        if (DIAMOND_ID.equals(itemId)) {
+            return DIAMOND_SKIN;
         }
         return null;
     }
@@ -376,6 +397,8 @@ public final class AbilityRules {
             case SLOW -> "Slow";
             case SENSE_EVIL -> "Sense Evil";
             case SMITE_EVIL -> "Smite Evil";
+            case MASTER_BUILDER -> "Master Builder";
+            case DIAMOND_SKIN -> "Diamond Skin";
             default -> "this ability";
         };
     }
@@ -398,6 +421,8 @@ public final class AbilityRules {
             case SLOW -> "Haste is a habit. String can interrupt it.";
             case SENSE_EVIL -> "Large hungers leave a smell on the wind.";
             case SMITE_EVIL -> "A golden sword is a polite way to end a monster.";
+            case MASTER_BUILDER -> "Stone will hold for a while, even where the ground does not agree.";
+            case DIAMOND_SKIN -> "A diamond can be asked to stand between you and the blow.";
             default -> "There is a lesson here, if you can pay for it.";
         };
     }
@@ -425,6 +450,10 @@ public final class AbilityRules {
             case SENSE_EVIL -> "Hold a spider eye and right-click. You turn toward a living biome boss, if one is out.";
             case SMITE_EVIL ->
                 "Hold a golden sword and right-click. It strikes a creature along your aim. Undead take extra damage.";
+            case MASTER_BUILDER ->
+                "Hold stone bricks and right-click in the air. Right-click in the air again to cancel. It costs 1 mana.";
+            case DIAMOND_SKIN ->
+                "Hold diamonds and right-click. Right-click again to cancel. It costs 2 mana.";
             default -> "";
         };
     }
@@ -454,7 +483,9 @@ public final class AbilityRules {
                 "detect ore",
                 "slow",
                 "sense evil",
-                "smite evil");
+                "smite evil",
+                "master builder",
+                "diamond skin");
     }
 
     public static String abilityByTopic(String topic) {
@@ -478,6 +509,8 @@ public final class AbilityRules {
             case "slow" -> SLOW;
             case "sense evil", "senseevil" -> SENSE_EVIL;
             case "smite", "smite evil", "smiteevil" -> SMITE_EVIL;
+            case "master builder", "masterbuilder" -> MASTER_BUILDER;
+            case "diamond skin", "diamondskin" -> DIAMOND_SKIN;
             default -> null;
         };
     }
@@ -551,6 +584,18 @@ public final class AbilityRules {
                     "Smite Evil: Strikes a creature along your aim up to your ability level in blocks with a normal melee attack from that sword.",
                     "Smite Evil: The strike includes enchantments, durability, and attack cooldown. Undead take extra damage equal to your ability level.",
                     "Smite Evil: A small flash of light appears on the creature hit.");
+            case MASTER_BUILDER -> List.of(
+                    "Master Builder: Right-click in the air while holding stone bricks. Costs 1 mana. Lasts 30 seconds times your ability level.",
+                    "Master Builder: While it lasts, you can place solid blocks in the air and without support. Torch rules still apply.",
+                    "Master Builder: Right-click in the air again with stone bricks to cancel. If it ends and you still have mana, it spends another and continues.",
+                    "Master Builder: Continuing gains skill as if you cast it again. An extra stone brick is consumed for +2 if you hold more than one. The last brick is kept.");
+            case DIAMOND_SKIN -> List.of(
+                    "Diamond Skin: Right-click while holding diamonds. Costs 2 mana. Effective level is at least 2. Lasts 30 seconds times that level.",
+                    "Diamond Skin: Damage that would reach your health is divided by your ability level. Armor still takes the hit first.",
+                    "Diamond Skin: Each point of that damage it prevents shortens Diamond Skin by 3 seconds. Poison, drowning, and suffocation are not reduced.",
+                    "Diamond Skin: A cyan sparkle shows for a quarter second when a hit is reduced.",
+                    "Diamond Skin: Right-click again with a diamond to cancel. If it ends and you still have 2 mana, it spends that and continues.",
+                    "Diamond Skin: Continuing gains skill as if you cast it again. An extra diamond is consumed for +2 if you hold more than one. The last diamond is kept.");
             default -> null;
         };
     }
@@ -622,6 +667,8 @@ public final class AbilityRules {
                 "tougher.ability.index.slow",
                 "tougher.ability.index.sense_evil",
                 "tougher.ability.index.smite_evil",
+                "tougher.ability.index.master_builder",
+                "tougher.ability.index.diamond_skin",
                 "tougher.ability.index.redstone",
                 "tougher.ability.index.unlock",
                 "tougher.ability.index.unlock.2",
@@ -646,6 +693,8 @@ public final class AbilityRules {
                 "String: Slow",
                 "Spider eye: Sense Evil",
                 "Golden sword: Smite Evil",
+                "Stone bricks: Master Builder",
+                "Diamond: Diamond Skin",
                 "Redstone dust in your inventory: +2 to any ability (1 is consumed)",
                 "You can learn up to half your mana level in abilities, rounded up.",
                 "Unlearned abilities can be used and still gain skill, at −3 power (floored at 1), until you have a free slot to learn them.",
@@ -723,6 +772,9 @@ public final class AbilityRules {
     public static int manaCost(String ability) {
         if (DETECT_ORE.equals(ability)) {
             return DETECT_ORE_MANA_COST;
+        }
+        if (DIAMOND_SKIN.equals(ability)) {
+            return DIAMOND_SKIN_MANA_COST;
         }
         return MANA_COST;
     }
@@ -920,7 +972,11 @@ public final class AbilityRules {
     }
 
     public static boolean autoRenews(String ability) {
-        return FLIGHT.equals(ability) || LIGHT.equals(ability) || IRON_HEART.equals(ability);
+        return FLIGHT.equals(ability)
+                || LIGHT.equals(ability)
+                || IRON_HEART.equals(ability)
+                || MASTER_BUILDER.equals(ability)
+                || DIAMOND_SKIN.equals(ability);
     }
 
     public static double healRange(double power) {
@@ -940,6 +996,21 @@ public final class AbilityRules {
     /** Duration in ticks: ability level minutes. */
     public static int ironHeartDurationTicks(double power) {
         return Math.max(0, (int) Math.round(Math.max(0.0, power) * IRON_HEART_SECONDS_PER_POWER * 20.0));
+    }
+
+    /** Duration in ticks: 30 seconds per point of effective ability level. */
+    public static int masterBuilderDurationTicks(double power) {
+        return Math.max(0, (int) Math.round(Math.max(0.0, power) * MASTER_BUILDER_SECONDS_PER_POWER * 20.0));
+    }
+
+    /** Diamond Skin never casts below {@link #DIAMOND_SKIN_MIN_LEVEL}. */
+    public static double diamondSkinLevel(double power) {
+        return Math.max(DIAMOND_SKIN_MIN_LEVEL, power);
+    }
+
+    /** Duration in ticks: 30 seconds per point of effective ability level. */
+    public static int diamondSkinDurationTicks(double power) {
+        return Math.max(0, (int) Math.round(Math.max(0.0, power) * DIAMOND_SKIN_SECONDS_PER_POWER * 20.0));
     }
 
     public static double fireRange(double power) {

@@ -46,7 +46,9 @@ public class MultiPlayerGameModeMixin {
             if (!(stack.getItem() instanceof BlockItem blockItem)) {
                 return;
             }
-            if (sync.limitedBuilding() && LimitedBuilding.shouldDeny(player.level(), player, context, blockItem)) {
+            if (sync.limitedBuilding()
+                    && !ExtraHardModeClient.masterBuilderActive()
+                    && LimitedBuilding.shouldDeny(player.level(), player, context, blockItem)) {
                 cir.setReturnValue(InteractionResult.FAIL);
             }
         } catch (Throwable t) {

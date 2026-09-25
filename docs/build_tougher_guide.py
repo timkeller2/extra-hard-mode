@@ -123,7 +123,8 @@ def build():
         Paragraph("Building", s["h"]),
         bullets(
             [
-                "You cannot place a solid block while in the air, including while standing on the very edge of a block.",
+                "You cannot place a solid block while in the air, including while standing on the very edge of a block, or with no support.",
+                "Master Builder suspends those two limits while it runs. Right-click stone bricks in the air to cast it. Torch rules stay.",
                 "Torches, lanterns, and glowstone cannot be carried in the off hand.",
                 "Bucketed water evaporates. Use ice if you need a water source.",
                 "A boat that falls more than 3 blocks with you in it breaks and drops nothing.",
@@ -160,7 +161,7 @@ def build():
             "Eight different meals in a row is Well Fed 1. Twelve is Well Fed 5. It can go higher. "
             "At Well Fed 3 the game looks at your last 13 meals and allows 3 repeats before the level drops. "
             "That grace grows with every level. The same-food penalty also waits one extra repeat per level. "
-            "Losing a level removes exactly that level's benefits. Health, hunger, and mana clamp down. That is not an extra hit.",
+            "Losing a level removes exactly that level's benefits. Health and hunger clamp down. The mana level leaves, but mana you already hold is kept. That is not an extra hit.",
             s["body"],
         ),
         Paragraph("These stop at Well Fed 5:", s["body"]),
@@ -180,14 +181,13 @@ def build():
             [
                 "+1 health point per level, arriving filled. Odd totals show a half heart outline.",
                 "+1 hunger per level, arriving filled. You can keep eating until that higher bar is full. Eating is no longer blocked at 20.",
-                "+1 mana level per level, arriving filled (half a crystal). The meal that raises the level does not also grant the extra new-food mana.",
+                "+1 mana level per level. It does not arrive filled, and eating does not restore mana.",
             ],
             s["bullet"],
         ),
         ]),
         Paragraph(
-            "While you are already Well Fed, a food that is new in your last 7 meals restores 1 mana, "
-            "but only if your current mana is below your mana level. Creative mode and spectators do not get Well Fed.",
+            "Creative mode and spectators do not get Well Fed.",
             s["body"],
         ),
         Paragraph("Crops, trees, and hives", s["h"]),
@@ -238,7 +238,7 @@ def build():
             [
                 "Mobs hit harder. Skeletons ignore arrows. Zombies vary about 20% in speed: faster ones hit softer and look smaller.",
                 "Skeleton and bogged special shots are 1% per 10 blocks from world spawn, and certain at 1,000 blocks or farther.",
-                "Zombies can rise again. Shields absorb the whole blocked hit and last 3 times as long.",
+                "Zombies can rise again. Shields absorb the whole blocked hit and last one-third as long.",
                 "Creepers may drop live TNT. TNT sets fire to 20% of the blocks it hits, rounded. Set explosions.tnt.firePercent to 0 to turn that off.",
                 "Breaking a burning block sets you on fire, as above.",
             ],
@@ -267,7 +267,9 @@ def build():
         Paragraph(
             "Mana is shown as cyan crystals. Two mana points fill one crystal. "
             "You regenerate (mana level + current mana) / 200 per minute. "
-            "Quartz in your inventory speeds that until you reach your mana level, using 1 quartz per 2 mana. "
+            "Nether quartz in your inventory makes that 3 times faster until you reach your mana level, using 1 quartz per 2 mana. "
+            "A quartz block in your main inventory makes it 7 times the base rate until you reach your mana level, using 1 block per 2 mana. "
+            "Both together are 10 times, and each is consumed only for its own share. "
             "If your mana is below your mana level and below saturation minus 17, you also restore 1 mana per minute for 1 saturation. That does not spend quartz. "
             "Past your level, regeneration is one-quarter speed. The old ceiling of 20 mana rises when Well Fed pushes your level past 20. "
             "Achievements and wise teachers can raise the permanent mana level. Well Fed adds levels on top, and those extra levels leave when Well Fed drops.",
@@ -288,7 +290,10 @@ def build():
             [
                 "Paper: Healing. Iron ingot: Iron Heart. Feather: Flight. Charcoal: Fire bolt. Arrow: Magic arrow.",
                 "Any hoe: Let it grow, on a plant. Coal: Let there be light. Any pickaxe: Power mining. Compass: Detect ore.",
-                "String: Slow. Spider eye: Sense Evil. Golden sword: Smite Evil.",
+                "String: Slow. Spider eye: Sense Evil. Golden sword: Smite Evil. Stone bricks in the air: Master Builder. Diamond: Diamond Skin.",
+                "Master Builder lasts 30 seconds times ability level, renews while you have mana, and cancels on another air click. An extra brick in hand is consumed for +2.",
+                "Diamond Skin costs 2 mana and lasts 30 seconds times ability level. Its effective level is at least 2, so a bare cast still halves health damage. It renews while you have 2 mana, and cancels on another right-click. An extra diamond in hand is consumed for +2.",
+                "While Diamond Skin lasts, damage that would reach your health is divided by the ability level. Armor still applies first. Each point prevented shortens the effect by 3 seconds. Poison, drowning, and suffocation are not reduced. A quarter-second cyan sparkle plays when a hit is reduced.",
                 "You can learn up to half your mana level in abilities, rounded up, by using them. Unlearned use still gains skill, at -3 power, floored at 1, until a slot is free.",
                 "A wise teacher in a 24-point home teaches one ability for 30 emeralds. Each house point above 24 takes 2 emeralds off, down to free. The lesson ignores the learning cap and does not use a self-learned slot. Paying for an ability you already know frees that slot.",
                 "Sneak with a diamond block and a lapis lazuli block and that teacher raises your permanent mana by 1, once per teacher.",

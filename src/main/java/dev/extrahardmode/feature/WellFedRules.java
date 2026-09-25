@@ -24,15 +24,6 @@ public final class WellFedRules {
         return Math.clamp(wellFed, 0, BENEFIT_CAP);
     }
 
-    /**
-     * A new food restores one mana while Well Fed, but only while current mana is below mana level,
-     * and not on the meal that raised Well Fed. That meal already fills the new level.
-     */
-    public static boolean novelFoodMana(
-            boolean novel, int wellFed, boolean levelRose, double currentMana, int manaLevel) {
-        return novel && wellFed > 0 && !levelRose && currentMana < manaLevel;
-    }
-
     /** Meals that must all be different to reach this Well Fed level. */
     public static int gainWindow(int level) {
         return BASE_MEALS + Math.max(0, level);

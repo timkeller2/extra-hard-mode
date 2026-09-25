@@ -142,7 +142,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("1000 blocks or farther"));
         assertTrue(String.join(" ", lines).contains("look smaller"));
         assertTrue(String.join(" ", lines).contains("Shields absorb 100%"));
-        assertTrue(String.join(" ", lines).contains("3 times the durability"));
+        assertTrue(String.join(" ", lines).contains("one-third as long"));
         assertTrue(String.join(" ", lines).contains("appears once"));
         assertTrue(String.join(" ", lines).contains("does not return"));
         assertTrue(String.join(" ", lines).contains("80 blocks"));
@@ -233,6 +233,8 @@ class EhmHelpTest {
         assertTrue(EhmHelp.resolve("sense evil").lines().stream().anyMatch(line -> line.startsWith("Sense Evil:")));
         assertTrue(EhmHelp.resolve("smite evil").lines().stream().anyMatch(line -> line.startsWith("Smite Evil:")));
         assertTrue(EhmHelp.resolve("light").lines().stream().anyMatch(line -> line.startsWith("Let there be light:")));
+        assertTrue(EhmHelp.resolve("master builder").lines().stream().anyMatch(line -> line.startsWith("Master Builder:")));
+        assertTrue(EhmHelp.resolve("diamond skin").lines().stream().anyMatch(line -> line.startsWith("Diamond Skin:")));
         assertTrue(EhmHelp.resolve("ability fire bolt").lines().stream().anyMatch(line -> line.startsWith("Fire bolt:")));
     }
 

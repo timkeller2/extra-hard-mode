@@ -60,6 +60,9 @@ class AbilityRulesTest {
         assertEquals(null, AbilityRules.abilityForItem(null));
         assertEquals(null, AbilityRules.abilityForItem(""));
         assertEquals(null, AbilityRules.abilityForItem("minecraft:air"));
+        assertEquals(AbilityRules.MASTER_BUILDER, AbilityRules.abilityForItem("minecraft:stone_bricks"));
+        assertEquals(AbilityRules.DIAMOND_SKIN, AbilityRules.abilityForItem("minecraft:diamond"));
+        assertEquals(null, AbilityRules.abilityForItem("minecraft:diamond_block"));
         assertEquals(null, AbilityRules.abilityForItem("minecraft:stick"));
         assertEquals(null, AbilityRules.abilityForItem("minecraft:spectral_arrow"));
         assertEquals(null, AbilityRules.abilityForItem("minecraft:tipped_arrow"));
@@ -141,6 +144,8 @@ class AbilityRulesTest {
         assertTrue(AbilityRules.autoRenews(AbilityRules.FLIGHT));
         assertTrue(AbilityRules.autoRenews(AbilityRules.LIGHT));
         assertTrue(AbilityRules.autoRenews(AbilityRules.IRON_HEART));
+        assertTrue(AbilityRules.autoRenews(AbilityRules.MASTER_BUILDER));
+        assertTrue(AbilityRules.autoRenews(AbilityRules.DIAMOND_SKIN));
         assertFalse(AbilityRules.autoRenews(AbilityRules.POWER_MINE));
         assertFalse(AbilityRules.autoRenews(AbilityRules.HEAL));
         assertTrue(AbilityRules.helpFallback(AbilityRules.POWER_MINE).contains("pickaxe"));
@@ -212,6 +217,7 @@ class AbilityRulesTest {
         assertTrue(AbilityRules.indexHelpFallback().contains("String: Slow"));
         assertTrue(AbilityRules.indexHelpFallback().contains("Spider eye: Sense Evil"));
         assertTrue(AbilityRules.indexHelpFallback().contains("Golden sword: Smite Evil"));
+        assertTrue(AbilityRules.indexHelpFallback().contains("Stone bricks: Master Builder"));
         assertTrue(AbilityRules.indexHelpFallback().contains("Redstone dust in your inventory"));
         assertTrue(AbilityRules.indexHelpFallback().contains("half your mana level"));
         assertEquals("Healing", AbilityRules.nameFallback(AbilityRules.HEAL));
@@ -225,6 +231,8 @@ class AbilityRulesTest {
         assertEquals("Slow", AbilityRules.nameFallback(AbilityRules.SLOW));
         assertEquals("Sense Evil", AbilityRules.nameFallback(AbilityRules.SENSE_EVIL));
         assertEquals("Smite Evil", AbilityRules.nameFallback(AbilityRules.SMITE_EVIL));
+        assertEquals("Master Builder", AbilityRules.nameFallback(AbilityRules.MASTER_BUILDER));
+        assertEquals("Diamond Skin", AbilityRules.nameFallback(AbilityRules.DIAMOND_SKIN));
         assertEquals("Let there be light", AbilityRules.nameFallback(AbilityRules.LIGHT));
         assertEquals("tougher.ability.detect_ore", AbilityRules.nameKey(AbilityRules.DETECT_ORE));
         assertTrue(AbilityRules.lockedFallback(AbilityRules.HEAL).contains("Healing"));
@@ -310,6 +318,11 @@ class AbilityRulesTest {
         assertEquals(0, AbilityRules.supplyBonus(AbilityRules.SMITE_EVIL, "minecraft:golden_sword", 1, false, false));
         assertEquals(2, AbilityRules.supplyBonus(AbilityRules.SMITE_EVIL, "minecraft:golden_sword", 1, true, false));
         assertEquals(2, AbilityRules.supplyBonus(AbilityRules.MAGIC_ARROW, "minecraft:arrow", 2, false, false));
+        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.MASTER_BUILDER, "minecraft:stone_bricks", 2, false, false));
+        assertEquals(0, AbilityRules.supplyBonus(AbilityRules.MASTER_BUILDER, "minecraft:stone_bricks", 1, false, false));
+        assertEquals(4, AbilityRules.supplyBonus(AbilityRules.MASTER_BUILDER, "minecraft:stone_bricks", 3, true, false));
+        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.DIAMOND_SKIN, "minecraft:diamond", 2, false, false));
+        assertEquals(0, AbilityRules.supplyBonus(AbilityRules.DIAMOND_SKIN, "minecraft:diamond", 1, false, false));
         assertEquals(0, AbilityRules.supplyBonus(null, "minecraft:coal", 4, true, true));
         assertFalse(AbilityRules.isHeldGoldenItem("minecraft:gold_ingot"));
         assertFalse(AbilityRules.isHeldGoldenItem("minecraft:gold_block"));
@@ -349,6 +362,9 @@ class AbilityRulesTest {
         assertTrue(AbilityRules.hasManaToUse(3.0));
         assertEquals(1, AbilityRules.manaCost(AbilityRules.HEAL));
         assertEquals(1, AbilityRules.manaCost(AbilityRules.DETECT_ORE));
+        assertEquals(2, AbilityRules.manaCost(AbilityRules.DIAMOND_SKIN));
+        assertFalse(AbilityRules.hasManaToUse(AbilityRules.DIAMOND_SKIN, 1.0));
+        assertTrue(AbilityRules.hasManaToUse(AbilityRules.DIAMOND_SKIN, 2.0));
         assertTrue(AbilityRules.hasManaToUse(AbilityRules.DETECT_ORE, 1.0));
         assertTrue(AbilityRules.hasManaToUse(AbilityRules.DETECT_ORE, 2.0));
         assertTrue(AbilityRules.hasManaToUse(AbilityRules.HEAL, 1.0));
@@ -462,6 +478,36 @@ class AbilityRulesTest {
         assertEquals(2400, AbilityRules.ironHeartDurationTicks(2));
         assertEquals(0, AbilityRules.ironHeartDurationTicks(0));
         assertEquals(60, AbilityRules.IRON_HEART_SECONDS_PER_POWER);
+        assertEquals(600, AbilityRules.masterBuilderDurationTicks(1));
+        assertEquals(1200, AbilityRules.masterBuilderDurationTicks(2));
+        assertEquals(1500, AbilityRules.masterBuilderDurationTicks(2.5));
+        assertEquals(0, AbilityRules.masterBuilderDurationTicks(0));
+        assertEquals(30, AbilityRules.MASTER_BUILDER_SECONDS_PER_POWER);
+        assertEquals(2.0, AbilityRules.diamondSkinLevel(0.0), 1e-9);
+        assertEquals(2.0, AbilityRules.diamondSkinLevel(1.5), 1e-9);
+        assertEquals(2.5, AbilityRules.diamondSkinLevel(2.5), 1e-9);
+        assertEquals(1200, AbilityRules.diamondSkinDurationTicks(AbilityRules.diamondSkinLevel(0.0)));
+        assertEquals(600, AbilityRules.diamondSkinDurationTicks(1));
+        assertEquals(1200, AbilityRules.diamondSkinDurationTicks(2));
+        assertEquals(0, AbilityRules.diamondSkinDurationTicks(0));
+        assertEquals(2, AbilityRules.DIAMOND_SKIN_MANA_COST);
+        assertEquals(5, AbilityRules.DIAMOND_SKIN_SPARKLE_TICKS);
+        assertEquals(AbilityRules.DIAMOND_SKIN, AbilityRules.abilityByTopic("diamond skin"));
+        String skinHelp = AbilityRules.helpFallback(AbilityRules.DIAMOND_SKIN);
+        assertTrue(skinHelp.contains("2 mana"));
+        assertTrue(skinHelp.contains("divided by"));
+        assertTrue(skinHelp.contains("Poison"));
+        assertTrue(skinHelp.contains("drowning"));
+        assertTrue(skinHelp.contains("suffocation"));
+        assertTrue(skinHelp.contains("quarter second"));
+        assertTrue(skinHelp.contains("at least 2"));
+        assertTrue(skinHelp.contains("3 seconds"));
+        assertEquals(AbilityRules.MASTER_BUILDER, AbilityRules.abilityByTopic("master builder"));
+        String builderHelp = AbilityRules.helpFallback(AbilityRules.MASTER_BUILDER);
+        assertTrue(builderHelp.contains("stone bricks"));
+        assertTrue(builderHelp.contains("30 seconds"));
+        assertTrue(builderHelp.contains("without support"));
+        assertTrue(builderHelp.contains("in the air again"));
     }
 
     @Test

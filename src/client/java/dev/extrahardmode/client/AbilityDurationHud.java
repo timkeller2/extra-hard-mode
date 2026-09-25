@@ -11,7 +11,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
-/** Bottom-left duration icons with a short bar under each for flight, light, Iron Heart, and power mining. */
+/** Bottom-left duration icons with a short bar under each for flight, light, Iron Heart, power mining, and Master Builder. */
 public final class AbilityDurationHud {
     public static final net.minecraft.resources.Identifier ELEMENT_ID = ExtraHardModeMod.id("ability_durations");
 
@@ -92,6 +92,12 @@ public final class AbilityDurationHud {
         if (AbilityRules.IRON_HEART.equals(ability)) {
             return 0x22262C;
         }
+        if (AbilityRules.MASTER_BUILDER.equals(ability)) {
+            return 0x2A2824;
+        }
+        if (AbilityRules.DIAMOND_SKIN.equals(ability)) {
+            return 0x12343A;
+        }
         return 0x2A2418;
     }
 
@@ -105,6 +111,12 @@ public final class AbilityDurationHud {
         if (AbilityRules.IRON_HEART.equals(ability)) {
             return 0xC5CDD6;
         }
+        if (AbilityRules.MASTER_BUILDER.equals(ability)) {
+            return 0xC4B8A0;
+        }
+        if (AbilityRules.DIAMOND_SKIN.equals(ability)) {
+            return 0x5CFFF0;
+        }
         return 0xE8D56A;
     }
 
@@ -117,6 +129,12 @@ public final class AbilityDurationHud {
         }
         if (AbilityRules.IRON_HEART.equals(ability)) {
             return new ItemStack(Items.IRON_INGOT);
+        }
+        if (AbilityRules.MASTER_BUILDER.equals(ability)) {
+            return new ItemStack(Items.STONE_BRICKS);
+        }
+        if (AbilityRules.DIAMOND_SKIN.equals(ability)) {
+            return new ItemStack(Items.DIAMOND);
         }
         return new ItemStack(Items.FEATHER);
     }
