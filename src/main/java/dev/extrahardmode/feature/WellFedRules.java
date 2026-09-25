@@ -25,11 +25,12 @@ public final class WellFedRules {
     }
 
     /**
-     * A new food restores one mana while Well Fed, but not on the meal that raised the level.
-     * That meal already fills the new mana level.
+     * A new food restores one mana while Well Fed, but only while current mana is below mana level,
+     * and not on the meal that raised Well Fed. That meal already fills the new level.
      */
-    public static boolean novelFoodMana(boolean novel, int wellFed, boolean levelRose) {
-        return novel && wellFed > 0 && !levelRose;
+    public static boolean novelFoodMana(
+            boolean novel, int wellFed, boolean levelRose, double currentMana, int manaLevel) {
+        return novel && wellFed > 0 && !levelRose && currentMana < manaLevel;
     }
 
     /** Meals that must all be different to reach this Well Fed level. */

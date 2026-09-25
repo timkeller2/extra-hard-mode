@@ -217,7 +217,13 @@ public final class Hunger implements FeatureModule {
             warnRepeatFood(serverPlayer, level, stack, foodId, count);
         }
         WellFed.clampFood(serverPlayer, maxFood);
-        if (WellFedRules.novelFoodMana(novel, wellFed, wellFed > wellFedBefore)) {
+        Double storedMana = serverPlayer.getAttachedOrElse(EhmAttachments.EHM_MANA_CURRENT, 0.0);
+        if (WellFedRules.novelFoodMana(
+                novel,
+                wellFed,
+                wellFed > wellFedBefore,
+                storedMana == null ? 0.0 : storedMana,
+                Achievements.manaLevel(serverPlayer))) {
             Achievements.shiftMana(serverPlayer, 1);
         } else {
             Achievements.sendMana(serverPlayer);
