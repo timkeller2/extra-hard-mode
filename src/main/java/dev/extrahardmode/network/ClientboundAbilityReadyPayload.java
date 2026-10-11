@@ -12,13 +12,15 @@ public record ClientboundAbilityReadyPayload(List<Entry> abilities) implements C
     public static final CustomPacketPayload.Type<ClientboundAbilityReadyPayload> TYPE =
             new CustomPacketPayload.Type<>(ExtraHardModeMod.id("ability_ready"));
 
-    /** {@code size} is the icon edge in GUI pixels. */
-    public record Entry(String ability, int size) {
+    /** {@code size} is the icon edge in GUI pixels. {@code level} is the effective level as an integer. */
+    public record Entry(String ability, int size, int level) {
         static final StreamCodec<ByteBuf, Entry> STREAM_CODEC = StreamCodec.composite(
                 ByteBufCodecs.STRING_UTF8,
                 Entry::ability,
                 ByteBufCodecs.VAR_INT,
                 Entry::size,
+                ByteBufCodecs.VAR_INT,
+                Entry::level,
                 Entry::new);
     }
 

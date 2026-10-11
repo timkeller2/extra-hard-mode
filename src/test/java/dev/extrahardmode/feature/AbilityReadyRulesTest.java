@@ -10,23 +10,34 @@ import org.junit.jupiter.api.Test;
 
 class AbilityReadyRulesTest {
     @Test
-    void iconPixelsIsTenPercentOfNormalAboveLevelTwo() {
+    void iconPixelsIsFivePercentOfNormalAboveLevelTwo() {
         assertEquals(0, AbilityReadyRules.iconPixels(2.0));
         assertEquals(0, AbilityReadyRules.iconPixels(1.0));
-        assertEquals(3, AbilityReadyRules.iconPixels(2.01));
-        assertEquals(5, AbilityReadyRules.iconPixels(3.0));
-        assertEquals(16, AbilityReadyRules.iconPixels(10.0));
-        assertEquals(24, AbilityReadyRules.iconPixels(15.0));
+        assertEquals(2, AbilityReadyRules.iconPixels(2.01));
+        assertEquals(2, AbilityReadyRules.iconPixels(3.0));
+        assertEquals(8, AbilityReadyRules.iconPixels(10.0));
+        assertEquals(12, AbilityReadyRules.iconPixels(15.0));
     }
 
     @Test
-    void placeStacksAListInTheBottomRight() {
-        List<AbilityReadyRules.Placement> placed = AbilityReadyRules.place(200, 100, List.of(16, 8));
+    void levelNumberRoundsTheEffectiveLevel() {
+        assertEquals(0, AbilityReadyRules.levelNumber(2.0));
+        assertEquals(2, AbilityReadyRules.levelNumber(2.01));
+        assertEquals(2, AbilityReadyRules.levelNumber(2.4));
+        assertEquals(3, AbilityReadyRules.levelNumber(2.5));
+        assertEquals(10, AbilityReadyRules.levelNumber(10.4));
+        assertEquals(11, AbilityReadyRules.levelNumber(10.5));
+    }
+
+    @Test
+    void placeStacksIconsAndLevelsInTheBottomRight() {
+        List<AbilityReadyRules.Placement> placed =
+                AbilityReadyRules.place(200, 100, List.of(8, 4), List.of(6, 12), 9);
         assertEquals(2, placed.size());
-        assertEquals(new AbilityReadyRules.Placement(200 - 8 - 16, 100 - 8 - 16 - 2 - 8, 16), placed.get(0));
-        assertEquals(new AbilityReadyRules.Placement(200 - 8 - 8, 100 - 8 - 8, 8), placed.get(1));
-        assertTrue(AbilityReadyRules.place(200, 100, List.of()).isEmpty());
-        assertTrue(AbilityReadyRules.place(200, 100, List.of(0)).isEmpty());
+        assertEquals(new AbilityReadyRules.Placement(184, 72, 8, 176, 72), placed.get(0));
+        assertEquals(new AbilityReadyRules.Placement(188, 85, 4, 174, 83), placed.get(1));
+        assertTrue(AbilityReadyRules.place(200, 100, List.of(), List.of(), 9).isEmpty());
+        assertTrue(AbilityReadyRules.place(200, 100, List.of(0), List.of(6), 9).isEmpty());
     }
 
     @Test

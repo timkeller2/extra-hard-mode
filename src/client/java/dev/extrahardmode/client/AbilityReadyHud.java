@@ -14,7 +14,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.joml.Matrix3x2fStack;
 
-/** Bottom-right list of abilities that can be cast above level 2, scaled by that level. */
+/** Bottom-right list of abilities that can be cast above level 2, with each level beside its icon. */
 public final class AbilityReadyHud {
     public static final net.minecraft.resources.Identifier ELEMENT_ID = ExtraHardModeMod.id("ability_ready");
 
@@ -30,22 +30,32 @@ public final class AbilityReadyHud {
             return;
         }
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.player == null || minecraft.player.isSpectator()) {
+        if (minecraft.player == null || minecraft.player.isSpectator() || minecraft.font == null) {
             return;
         }
         List<Integer> sizes = new ArrayList<>();
+        List<Integer> labelWidths = new ArrayList<>();
         List<ClientboundAbilityReadyPayload.Entry> shown = new ArrayList<>();
         for (ClientboundAbilityReadyPayload.Entry entry : payload.abilities()) {
-            if (entry.size() <= 0) {
+            if (entry.size() <= 0 || entry.level() <= 0) {
                 continue;
             }
             shown.add(entry);
             sizes.add(entry.size());
+            labelWidths.add(minecraft.font.width(Integer.toString(entry.level())));
         }
-        List<AbilityReadyRules.Placement> placements =
-                AbilityReadyRules.place(graphics.guiWidth(), graphics.guiHeight(), sizes);
+        List<AbilityReadyRules.Placement> placements = AbilityReadyRules.place(
+                graphics.guiWidth(), graphics.guiHeight(), sizes, labelWidths, minecraft.font.lineHeight);
         for (int i = 0; i < placements.size(); i++) {
-            drawIcon(graphics, shown.get(i).ability(), placements.get(i));
+            AbilityReadyRules.Placement placement = placements.get(i);
+            drawIcon(graphics, shown.get(i).ability(), placement);
+            graphics.text(
+                    minecraft.font,
+                    Integer.toString(shown.get(i).level()),
+                    placement.labelX(),
+                    placement.labelY(),
+                    0xFFFFFFFF,
+                    true);
         }
     }
 

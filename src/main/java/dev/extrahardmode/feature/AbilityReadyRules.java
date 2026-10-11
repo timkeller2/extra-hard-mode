@@ -14,6 +14,8 @@ public final class AbilityReadyRules {
     public static final int ICON_SIZE = 16;
     public static final int GAP = 2;
     public static final int MARGIN = 8;
+    /** Space between the level number and its icon. */
+    public static final int LABEL_GAP = 2;
     /** Icons appear only when the cast's effective level is above this. */
     public static final double MIN_LEVEL = 2.0;
     public static final String REDSTONE_ID = "minecraft:redstone";
@@ -27,26 +29,39 @@ public final class AbilityReadyRules {
     /** An ability the player can cast now, with its effective level. */
     public record StrongCast(String ability, double level) {}
 
-    public record Placement(int x, int y, int size) {}
+    /** Icon box plus the level number drawn just to its left. */
+    public record Placement(int x, int y, int size, int labelX, int labelY) {}
 
-    /** {@code (level * 10)%} of {@link #ICON_SIZE}, or 0 when the level is not above {@link #MIN_LEVEL}. */
+    /** {@code (level * 5)%} of {@link #ICON_SIZE}, or 0 when the level is not above {@link #MIN_LEVEL}. */
     public static int iconPixels(double level) {
         if (!(level > MIN_LEVEL)) {
             return 0;
         }
-        int size = (int) Math.round(ICON_SIZE * level * 0.10);
+        int size = (int) Math.round(ICON_SIZE * level * 0.05);
         return Math.max(1, size);
+    }
+
+    /** Nearest integer of the effective level, or 0 when the level is not above {@link #MIN_LEVEL}. */
+    public static int levelNumber(double level) {
+        if (!(level > MIN_LEVEL)) {
+            return 0;
+        }
+        long rounded = Math.round(level);
+        return rounded > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) rounded;
     }
 
     /**
      * Vertical list in the bottom-right corner. Catalog order runs top to bottom.
-     * Each icon's right edge sits on the margin, and its bottom sits on the next icon.
+     * Each icon's right edge sits on the margin. Its level number sits just to the left.
+     * A row is as tall as the icon or the number, whichever is taller.
      */
-    public static List<Placement> place(int guiWidth, int guiHeight, List<Integer> sizes) {
+    public static List<Placement> place(
+            int guiWidth, int guiHeight, List<Integer> sizes, List<Integer> labelWidths, int textHeight) {
         List<Placement> placed = new ArrayList<>();
         if (sizes == null || sizes.isEmpty()) {
             return placed;
         }
+        int font = Math.max(0, textHeight);
         int count = 0;
         int height = 0;
         for (int size : sizes) {
@@ -56,7 +71,7 @@ public final class AbilityReadyRules {
             if (count > 0) {
                 height += GAP;
             }
-            height += size;
+            height += Math.max(size, font);
             count++;
         }
         if (count == 0) {
@@ -64,12 +79,25 @@ public final class AbilityReadyRules {
         }
         int y = guiHeight - MARGIN - height;
         int right = guiWidth - MARGIN;
-        for (int size : sizes) {
+        for (int i = 0; i < sizes.size(); i++) {
+            int size = sizes.get(i);
             if (size <= 0) {
                 continue;
             }
-            placed.add(new Placement(right - size, y, size));
-            y += size + GAP;
+            int labelWidth = 0;
+            if (labelWidths != null && i < labelWidths.size()) {
+                labelWidth = Math.max(0, labelWidths.get(i));
+            }
+            int row = Math.max(size, font);
+            int iconX = right - size;
+            int iconY = y + (row - size) / 2;
+            placed.add(new Placement(
+                    iconX,
+                    iconY,
+                    size,
+                    iconX - LABEL_GAP - labelWidth,
+                    y + Math.max(0, (row - font) / 2)));
+            y += row + GAP;
         }
         return placed;
     }

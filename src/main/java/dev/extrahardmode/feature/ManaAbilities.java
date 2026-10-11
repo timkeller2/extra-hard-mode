@@ -2203,8 +2203,9 @@ public final class ManaAbilities implements FeatureModule {
         List<ClientboundAbilityReadyPayload.Entry> entries = new ArrayList<>();
         for (AbilityReadyRules.StrongCast cast : casts) {
             int size = AbilityReadyRules.iconPixels(cast.level());
-            if (size > 0) {
-                entries.add(new ClientboundAbilityReadyPayload.Entry(cast.ability(), size));
+            int level = AbilityReadyRules.levelNumber(cast.level());
+            if (size > 0 && level > 0) {
+                entries.add(new ClientboundAbilityReadyPayload.Entry(cast.ability(), size, level));
             }
         }
         ServerPlayNetworking.send(
@@ -2215,7 +2216,12 @@ public final class ManaAbilities implements FeatureModule {
     static String strongCastKey(List<AbilityReadyRules.StrongCast> casts) {
         StringBuilder key = new StringBuilder();
         for (AbilityReadyRules.StrongCast cast : casts) {
-            key.append(cast.ability()).append(':').append(AbilityReadyRules.iconPixels(cast.level())).append(';');
+            key.append(cast.ability())
+                    .append(':')
+                    .append(AbilityReadyRules.iconPixels(cast.level()))
+                    .append(':')
+                    .append(AbilityReadyRules.levelNumber(cast.level()))
+                    .append(';');
         }
         return key.toString();
     }

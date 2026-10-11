@@ -389,7 +389,7 @@ public final class EhmHelp {
                         "Abilities: Sneak while carrying a diamond block and a lapis lazuli block and that teacher raises your mana level once.",
                         "Abilities: Hold an item and press ? for details, or type /tougher ability help <name>.",
                         "Abilities: /tougher me lists your mana level and ability skill levels.",
-                        "Abilities: Bottom-right icons list abilities you can cast above level 2. Each icon is 10 percent of normal size times that level."));
+                        "Abilities: Bottom-right icons list abilities you can cast above level 2. Each icon is 5 percent of normal size times that level, with that level beside it."));
     }
 
     private static Page achievements() {
