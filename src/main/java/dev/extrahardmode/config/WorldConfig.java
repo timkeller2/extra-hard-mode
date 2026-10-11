@@ -22,7 +22,7 @@ import net.minecraft.world.level.storage.LevelResource;
 
 /** Per-dimension TOML, stored under the overworld save and keyed by {@code dimension().identifier()}. */
 public final class WorldConfig {
-    public static final int CONFIG_VERSION = 6;
+    public static final int CONFIG_VERSION = 7;
 
     private final Identifier dimensionId;
     private final Map<Identifier, Boolean> modules = new LinkedHashMap<>();
@@ -99,9 +99,8 @@ public final class WorldConfig {
     private boolean overcrowdEnable = true;
     private int overcrowdThreshold = 8;
     private boolean overgrazingEnable = true;
-    private int overgrazingIntervalTicks = OvergrazingRules.DEFAULT_INTERVAL_TICKS;
-    private int overgrazingLargeMarks = OvergrazingRules.DEFAULT_LARGE_MARKS;
-    private int overgrazingSmallMarks = OvergrazingRules.DEFAULT_SMALL_MARKS;
+    private int overgrazingLargeBlocks = OvergrazingRules.DEFAULT_LARGE_BLOCKS;
+    private int overgrazingSmallBlocks = OvergrazingRules.DEFAULT_SMALL_BLOCKS;
     private int overgrazingLookChance = OvergrazingRules.LOOK_CHANCE_PERCENT;
     private int overgrazingChestRange = OvergrazingRules.DEFAULT_CHEST_RANGE;
     private int cropMatureDurationPercent = 300;
@@ -460,16 +459,12 @@ public final class WorldConfig {
         return overgrazingEnable;
     }
 
-    public int overgrazingIntervalTicks() {
-        return overgrazingIntervalTicks;
+    public int overgrazingLargeBlocks() {
+        return overgrazingLargeBlocks;
     }
 
-    public int overgrazingLargeMarks() {
-        return overgrazingLargeMarks;
-    }
-
-    public int overgrazingSmallMarks() {
-        return overgrazingSmallMarks;
+    public int overgrazingSmallBlocks() {
+        return overgrazingSmallBlocks;
     }
 
     public int overgrazingLookChance() {
@@ -1313,10 +1308,13 @@ public final class WorldConfig {
                 file.set("farming.overcrowd.enable", overcrowdEnable);
                 file.set("farming.overcrowd.threshold", overcrowdThreshold);
                 file.set("farming.overgrazing.enable", overgrazingEnable);
-                file.set("farming.overgrazing.intervalTicks", overgrazingIntervalTicks);
-                file.set("farming.overgrazing.largeMarks", overgrazingLargeMarks);
-                file.set("farming.overgrazing.smallMarks", overgrazingSmallMarks);
+                file.remove("farming.overgrazing.intervalTicks");
+                file.set("farming.overgrazing.largeMarks", overgrazingLargeBlocks);
+                file.set("farming.overgrazing.smallMarks", overgrazingSmallBlocks);
                 file.set("farming.overgrazing.lookChance", overgrazingLookChance);
+                file.setComment(
+                        "farming.overgrazing.lookChance",
+                        "Percent chance an animal that cannot find a grass block looks in chests. It eats short grass before breeding food, then may starve. Default 33.");
                 file.set("farming.overgrazing.chestRange", overgrazingChestRange);
                 file.set("farming.cropMatureDurationPercent", cropMatureDurationPercent);
                 file.set("farming.animalBreedCooldownMultiplier", animalBreedCooldownMultiplier);
@@ -1497,12 +1495,10 @@ public final class WorldConfig {
         overcrowdEnable = file.getOrElse("farming.overcrowd.enable", true);
         overcrowdThreshold = file.getOrElse("farming.overcrowd.threshold", 8);
         overgrazingEnable = file.getOrElse("farming.overgrazing.enable", true);
-        overgrazingIntervalTicks = OvergrazingRules.clampInterval(
-                getInt(file, "farming.overgrazing.intervalTicks", OvergrazingRules.DEFAULT_INTERVAL_TICKS));
-        overgrazingLargeMarks = OvergrazingRules.clampMarks(
-                getInt(file, "farming.overgrazing.largeMarks", OvergrazingRules.DEFAULT_LARGE_MARKS));
-        overgrazingSmallMarks = OvergrazingRules.clampMarks(
-                getInt(file, "farming.overgrazing.smallMarks", OvergrazingRules.DEFAULT_SMALL_MARKS));
+        overgrazingLargeBlocks = OvergrazingRules.clampBlocks(
+                getInt(file, "farming.overgrazing.largeMarks", OvergrazingRules.DEFAULT_LARGE_BLOCKS));
+        overgrazingSmallBlocks = OvergrazingRules.clampBlocks(
+                getInt(file, "farming.overgrazing.smallMarks", OvergrazingRules.DEFAULT_SMALL_BLOCKS));
         overgrazingLookChance =
                 clampPercent(getInt(file, "farming.overgrazing.lookChance", OvergrazingRules.LOOK_CHANCE_PERCENT));
         overgrazingChestRange = OvergrazingRules.clampRange(
@@ -1644,27 +1640,22 @@ public final class WorldConfig {
         writeDefaultIfMissing(
                 file,
                 "farming.overgrazing.enable",
-                "Livestock graze by claiming nearby grass once per interval. If they cannot claim enough unmarked pathable grass, they may raid chests or starve.",
+                "Livestock eat a grass block they can walk to, turning it into dirt. If they cannot find one, they may raid chests or starve.",
                 true);
         writeDefaultIfMissing(
                 file,
-                "farming.overgrazing.intervalTicks",
-                "Ticks between overgrazing checks per animal. 24000 is one Minecraft day. Each animal caches its next check time.",
-                OvergrazingRules.DEFAULT_INTERVAL_TICKS);
-        writeDefaultIfMissing(
-                file,
                 "farming.overgrazing.largeMarks",
-                "Grass blocks a large animal (cow, pig, sheep, and similar) must claim each check. Default 9.",
-                OvergrazingRules.DEFAULT_LARGE_MARKS);
+                "Grass blocks that support one large animal (cow, pig, sheep, and similar). Raising this makes it eat sooner. Default 9.",
+                OvergrazingRules.DEFAULT_LARGE_BLOCKS);
         writeDefaultIfMissing(
                 file,
                 "farming.overgrazing.smallMarks",
-                "Grass blocks a small animal (chicken or rabbit) must claim each check. Default 4.",
-                OvergrazingRules.DEFAULT_SMALL_MARKS);
+                "Grass blocks that support one small animal (chicken or rabbit). Raising this makes it eat sooner. Default 4.",
+                OvergrazingRules.DEFAULT_SMALL_BLOCKS);
         writeDefaultIfMissing(
                 file,
                 "farming.overgrazing.lookChance",
-                "Percent chance an animal that cannot claim enough grass looks in chests (then may starve). Default 33.",
+                "Percent chance an animal that cannot find a grass block looks in chests. It eats short grass before breeding food, then may starve. Default 33.",
                 OvergrazingRules.LOOK_CHANCE_PERCENT);
         writeDefaultIfMissing(
                 file,
@@ -1846,6 +1837,8 @@ public final class WorldConfig {
      * Schema 4: nether wart farming default true (blocked) → false (growable at 1/20).
      * Schema 5: hunger drain 0.175/s → 0.1333/s (full bar, no saturation, 10 minutes).
      * Schema 6: food regen 600 ticks (30s) → 300 ticks (15s per 1 HP).
+     * Schema 7: overgrazing no longer uses a daily check interval. Bite timing
+     * comes from largeMarks and smallMarks.
      */
     private static void migrate(CommentedFileConfig file) {
         int version = getInt(file, "configVersion", 1);
@@ -1867,6 +1860,22 @@ public final class WorldConfig {
         }
         if (version < 6 && getInt(file, "hunger.slowRegenTicks", 600) == 600) {
             file.set("hunger.slowRegenTicks", HungerRules.DEFAULT_SLOW_REGEN_TICKS);
+        }
+        if (version < 7) {
+            file.remove("farming.overgrazing.intervalTicks");
+            file.removeComment("farming.overgrazing.intervalTicks");
+            file.setComment(
+                    "farming.overgrazing.enable",
+                    "Livestock eat a grass block they can walk to, turning it into dirt. If they cannot find one, they may raid chests or starve.");
+            file.setComment(
+                    "farming.overgrazing.largeMarks",
+                    "Grass blocks that support one large animal (cow, pig, sheep, and similar). Raising this makes it eat sooner. Default 9.");
+            file.setComment(
+                    "farming.overgrazing.smallMarks",
+                    "Grass blocks that support one small animal (chicken or rabbit). Raising this makes it eat sooner. Default 4.");
+            file.setComment(
+                    "farming.overgrazing.lookChance",
+                    "Percent chance an animal that cannot find a grass block looks in chests. It eats short grass before breeding food, then may starve. Default 33.");
         }
         file.set("configVersion", CONFIG_VERSION);
     }

@@ -8,19 +8,31 @@ import org.junit.jupiter.api.Test;
 
 class OvergrazingRulesTest {
     @Test
-    void marksDependOnAnimalSize() {
-        assertEquals(9, OvergrazingRules.marksNeeded(false, 9, 4));
-        assertEquals(4, OvergrazingRules.marksNeeded(true, 9, 4));
-        assertEquals(1, OvergrazingRules.clampMarks(0));
-        assertEquals(32, OvergrazingRules.clampMarks(99));
-        assertEquals(1, OvergrazingRules.marksNeeded(true, 9, 0));
+    void supportBlocksDependOnAnimalSize() {
+        assertEquals(9, OvergrazingRules.blocksToSupport(false, 9, 4));
+        assertEquals(4, OvergrazingRules.blocksToSupport(true, 9, 4));
+        assertEquals(1, OvergrazingRules.clampBlocks(0));
+        assertEquals(32, OvergrazingRules.clampBlocks(99));
+        assertEquals(1, OvergrazingRules.blocksToSupport(true, 9, 0));
     }
 
     @Test
-    void grassIsUnmarkedOnANewDay() {
-        assertTrue(OvergrazingRules.unmarkedToday(-1, 0));
-        assertFalse(OvergrazingRules.unmarkedToday(3, 3));
-        assertTrue(OvergrazingRules.unmarkedToday(2, 3));
+    void biteIntervalMatchesAPastureOfThatSize() {
+        assertEquals(5000, OvergrazingRules.eatIntervalTicks(false, 9, 4));
+        assertEquals(14000, OvergrazingRules.eatIntervalTicks(true, 9, 4));
+        assertEquals(2500, OvergrazingRules.eatIntervalTicks(false, 18, 4));
+        assertEquals(7000, OvergrazingRules.eatIntervalTicks(true, 9, 8));
+        assertEquals(45000, OvergrazingRules.eatIntervalTicks(false, 1, 4));
+        assertEquals(1406, OvergrazingRules.eatIntervalTicks(false, 99, 4));
+    }
+
+    @Test
+    void chestEatsShearedGrassBeforeBreedingFood() {
+        assertEquals(2, OvergrazingRules.preferredChestIndex(new boolean[] {false, false, true}, new boolean[] {true, true, false}));
+        assertEquals(0, OvergrazingRules.preferredChestIndex(new boolean[] {true, false}, new boolean[] {true, true}));
+        assertEquals(1, OvergrazingRules.preferredChestIndex(new boolean[] {false, false}, new boolean[] {false, true}));
+        assertEquals(-1, OvergrazingRules.preferredChestIndex(new boolean[] {}, new boolean[] {}));
+        assertEquals(-1, OvergrazingRules.preferredChestIndex(new boolean[] {false}, new boolean[] {false, true}));
     }
 
     @Test
@@ -40,20 +52,23 @@ class OvergrazingRulesTest {
     @Test
     void intervalAndRangeClamp() {
         assertEquals(20, OvergrazingRules.clampInterval(0));
-        assertEquals(24000, OvergrazingRules.clampInterval(24000));
+        assertEquals(5000, OvergrazingRules.clampInterval(5000));
         assertEquals(1, OvergrazingRules.clampRange(0));
         assertEquals(8, OvergrazingRules.clampRange(8));
         assertEquals(64, OvergrazingRules.clampRange(99));
     }
 
     @Test
-    void dailyScheduleIsStaggeredThenSteady() {
-        assertEquals(11L, OvergrazingRules.firstCheckAt(10L, 24000, 0));
+    void biteScheduleIsStaggeredThenSteady() {
+        assertEquals(11L, OvergrazingRules.firstCheckAt(10L, 5000, 0));
         assertEquals(14L, OvergrazingRules.firstCheckAt(10L, 4, 3));
         assertFalse(OvergrazingRules.isDue(99L, 0L));
         assertFalse(OvergrazingRules.isDue(5L, 10L));
         assertTrue(OvergrazingRules.isDue(10L, 10L));
-        assertEquals(24010L, OvergrazingRules.reschedule(10L, 24000));
+        assertEquals(5010L, OvergrazingRules.reschedule(10L, 5000));
+        assertTrue(OvergrazingRules.scheduledSoon(10L, 20L, 5000));
+        assertFalse(OvergrazingRules.scheduledSoon(10L, 5011L, 5000));
+        assertFalse(OvergrazingRules.scheduledSoon(10L, 10L, 5000));
         assertEquals(100, OvergrazingRules.FOOD_FLOAT_TICKS);
     }
 }

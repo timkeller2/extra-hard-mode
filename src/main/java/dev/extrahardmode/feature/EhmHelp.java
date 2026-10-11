@@ -279,10 +279,11 @@ public final class EhmHelp {
                 "tougher.help.animals.",
                 List.of(
                         "Animals: Animals wait 6 times as long to breed again. Chickens lay eggs 6 times as slowly.",
-                        "Animals: Once a day livestock overgraze by claiming nearby grass they can walk to within 6 blocks.",
-                        "Animals: A large animal claims 9 patches. A chicken or rabbit claims 4. A patch is only claimed once that day.",
-                        "Animals: If they cannot claim enough grass they mark none, then have a 33% chance to eat breeding food from a chest.",
-                        "Animals: That chest must be reachable within 20 blocks. Otherwise they starve without dropping meat if none is left.",
+                        "Animals: Livestock overgraze by eating grass they can walk to within 6 blocks and turning that block into dirt.",
+                        "Animals: About 9 grass blocks keep a cow, pig, sheep, or other large animal fed. About 4 keep a chicken or rabbit fed.",
+                        "Animals: Sheep do this as well, and they still eat grass on their own to regrow their wool.",
+                        "Animals: If no grass block is in reach, they have a 33% chance to eat from a chest or barrel within 20 blocks.",
+                        "Animals: They eat short grass, the item shears collect, before their breeding food. If neither is left, a second 33% chance starves them and they drop no meat.",
                         "Animals: Villagers take 8 times as long to restock their trades."));
     }
 

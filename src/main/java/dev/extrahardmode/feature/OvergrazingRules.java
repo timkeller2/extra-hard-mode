@@ -2,14 +2,25 @@ package dev.extrahardmode.feature;
 
 /**
  * Overgrazing thresholds and rolls. Minecraft-free so JUnit can cover the math.
+ *
+ * <p>Bite timing matches vanilla grass spread. A grass block tries to spread on
+ * a lit random tick (default speed 3, and only while surface light stays at
+ * least 9, which is about 13,700 ticks of each day). One flat pasture of
+ * {@link #DEFAULT_LARGE_BLOCKS} blocks keeps up with a large animal at
+ * {@link #DEFAULT_LARGE_INTERVAL_TICKS}. {@link #DEFAULT_SMALL_BLOCKS} blocks
+ * keep up with a chicken or rabbit at {@link #DEFAULT_SMALL_INTERVAL_TICKS}.
+ * Raising the block count makes that animal eat sooner, so it needs more grass.
  */
 public final class OvergrazingRules {
-    public static final int DEFAULT_INTERVAL_TICKS = 24000;
     public static final int DEFAULT_CHEST_RANGE = 20;
     public static final int DEFAULT_GRASS_RANGE = 6;
-    public static final int DEFAULT_LARGE_MARKS = 9;
-    public static final int DEFAULT_SMALL_MARKS = 4;
-    public static final int MAX_MARKS = 32;
+    public static final int DEFAULT_LARGE_BLOCKS = 9;
+    public static final int DEFAULT_SMALL_BLOCKS = 4;
+    /** Ticks between bites when a large animal is supported by {@link #DEFAULT_LARGE_BLOCKS} blocks. */
+    public static final int DEFAULT_LARGE_INTERVAL_TICKS = 5000;
+    /** Ticks between bites when a small animal is supported by {@link #DEFAULT_SMALL_BLOCKS} blocks. */
+    public static final int DEFAULT_SMALL_INTERVAL_TICKS = 14000;
+    public static final int MAX_BLOCKS = 32;
     public static final int LOOK_CHANCE_PERCENT = 33;
     public static final int STARVE_CHANCE_PERCENT = 33;
     public static final int FOOD_FLOAT_TICKS = 100;
@@ -31,19 +42,51 @@ public final class OvergrazingRules {
         return Math.min(MAX_RANGE, range);
     }
 
-    public static int clampMarks(int marks) {
-        if (marks <= 0) {
+    public static int clampBlocks(int blocks) {
+        if (blocks <= 0) {
             return 1;
         }
-        return Math.min(MAX_MARKS, marks);
+        return Math.min(MAX_BLOCKS, blocks);
     }
 
-    public static int marksNeeded(boolean small, int largeMarks, int smallMarks) {
-        return clampMarks(small ? smallMarks : largeMarks);
+    public static int blocksToSupport(boolean small, int largeBlocks, int smallBlocks) {
+        return clampBlocks(small ? smallBlocks : largeBlocks);
     }
 
-    public static boolean unmarkedToday(int markedDay, int currentDay) {
-        return markedDay != currentDay;
+    /**
+     * Ticks between bites. Fewer supporting blocks means a slower animal, so one
+     * pasture block can keep up.
+     */
+    public static int eatIntervalTicks(boolean small, int largeBlocks, int smallBlocks) {
+        int blocks = blocksToSupport(small, largeBlocks, smallBlocks);
+        long perDefault = small
+                ? (long) DEFAULT_SMALL_INTERVAL_TICKS * DEFAULT_SMALL_BLOCKS
+                : (long) DEFAULT_LARGE_INTERVAL_TICKS * DEFAULT_LARGE_BLOCKS;
+        long scaled = perDefault / blocks;
+        if (scaled > Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        }
+        return clampInterval((int) scaled);
+    }
+
+    /**
+     * Which gathered chest stack to eat. Sheared short grass wins over breeding
+     * food, even when the breeding food is in an earlier slot. Returns -1 when
+     * nothing qualifies. The shorter array limits the scan.
+     */
+    public static int preferredChestIndex(boolean[] storedGrass, boolean[] breedingFood) {
+        int size = Math.min(storedGrass.length, breedingFood.length);
+        for (int i = 0; i < size; i++) {
+            if (storedGrass[i]) {
+                return i;
+            }
+        }
+        for (int i = 0; i < size; i++) {
+            if (breedingFood[i]) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     /** {@code roll} is 0–99. */
@@ -79,6 +122,11 @@ public final class OvergrazingRules {
 
     public static boolean isDue(long now, long scheduled) {
         return scheduled > 0L && now >= scheduled;
+    }
+
+    /** True when {@code scheduled} is still inside this animal's bite interval. */
+    public static boolean scheduledSoon(long now, long scheduled, int interval) {
+        return scheduled > now && scheduled <= now + (long) clampInterval(interval);
     }
 
     public static long reschedule(long now, int interval) {
