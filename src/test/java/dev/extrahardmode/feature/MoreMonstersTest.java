@@ -4,13 +4,24 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import dev.extrahardmode.config.WorldConfig;
 import dev.extrahardmode.player.DamageTracker;
 import it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet;
 import java.util.HashMap;
 import java.util.Map;
+import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.Test;
 
 class MoreMonstersTest {
+    @Test
+    void netherPackMultiplierDefaultsToOne() {
+        assertEquals(1, new WorldConfig(Identifier.parse("minecraft:the_nether")).moreMonstersMultiplier());
+        assertEquals(1, WorldConfig.defaultMoreMonstersMultiplier(Identifier.parse("minecraft:the_nether")));
+        assertEquals(3, new WorldConfig(Identifier.parse("minecraft:overworld")).moreMonstersMultiplier());
+        assertEquals(3, new WorldConfig(Identifier.parse("minecraft:the_end")).moreMonstersMultiplier());
+        assertEquals(3, WorldConfig.defaultMoreMonstersMultiplier(null));
+    }
+
     @Test
     void packMultiplierDoublesCount() {
         assertEquals(2, MoreMonsters.scalePackCount(1, 2));

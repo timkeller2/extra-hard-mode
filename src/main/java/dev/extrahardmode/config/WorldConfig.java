@@ -175,6 +175,7 @@ public final class WorldConfig {
 
     public WorldConfig(Identifier dimensionId) {
         this.dimensionId = dimensionId;
+        this.moreMonstersMultiplier = defaultMoreMonstersMultiplier(dimensionId);
         for (Map.Entry<String, String> entry : SoftenMap.parseAll(SoftenMap.DEFAULT_ENTRIES).entrySet()) {
             softenMap.put(Identifier.parse(entry.getKey()), Identifier.parse(entry.getValue()));
         }
@@ -561,6 +562,16 @@ public final class WorldConfig {
 
     public int moreMonstersMultiplier() {
         return moreMonstersMultiplier;
+    }
+
+    /** Nether packs stay vanilla size. Every other dimension defaults to three times vanilla. */
+    public static int defaultMoreMonstersMultiplier(Identifier dimensionId) {
+        if (dimensionId != null
+                && "minecraft".equals(dimensionId.getNamespace())
+                && "the_nether".equals(dimensionId.getPath())) {
+            return 1;
+        }
+        return 3;
     }
 
     public boolean spawnInLightEnable() {
@@ -1101,7 +1112,7 @@ public final class WorldConfig {
                 }
                 if (!file.contains("monsters.more.multiplier")) {
                     file.setComment("monsters.more.multiplier", "Pack size only; does not raise the vanilla monster cap.");
-                    file.set("monsters.more.multiplier", 3);
+                    file.set("monsters.more.multiplier", defaultMoreMonstersMultiplier(id));
                 }
                 writeDefaultIfMissing(
                         file,
@@ -1548,7 +1559,7 @@ public final class WorldConfig {
         inhibitGrinders = file.getOrElse("monsters.inhibitGrinders", true);
         moreMonstersEnable = file.getOrElse("monsters.more.enable", true);
         moreMonstersMaxY = getInt(file, "monsters.more.maxY", 48);
-        moreMonstersMultiplier = getInt(file, "monsters.more.multiplier", 3);
+        moreMonstersMultiplier = getInt(file, "monsters.more.multiplier", defaultMoreMonstersMultiplier(dimensionId));
         spawnInLightEnable = file.getOrElse("monsters.spawnInLight.enable", true);
         spawnInLightMaxY = getInt(file, "monsters.spawnInLight.maxY", 48);
         spawnInLightMaxLight = getInt(file, "monsters.spawnInLight.maxLight", 11);
