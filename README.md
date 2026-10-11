@@ -19,6 +19,8 @@ Put the Tougher jar and Fabric API in `mods/`. The published jar does not bundle
 
 Each push to `main` publishes a rolling GitHub Release: [latest Tougher jar](https://github.com/timkeller2/extra-hard-mode/releases/latest). `tougher.jar` is a stable filename for start scripts.
 
+On Windows, double-click [`docs/Update Tougher.bat`](docs/Update%20Tougher.bat). It downloads that release into `%APPDATA%\.minecraft\mods` and replaces older `tougher` and `extrahardmode` jars. Close Minecraft first, then restart it. To update one instance, run `powershell -NoProfile -ExecutionPolicy Bypass -File docs\Update-Tougher.ps1 -ModsDir "C:\path\to\mods"`.
+
 Optional client extras: **Cloth Config** and **Mod Menu** are suggested, not required. Dedicated servers load `main` + mixins and skip client extras. If no 26.3 Cloth Config artifact resolves, there is no in-game config screen — edit TOML instead. Do not invent Cloth or Sodium version pins. The mod does not depend on Sodium, Lithium, Iris, GraviTree, WorldGuard, or any other gameplay/render mod.
 
 Build from source (JDK 25):
