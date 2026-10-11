@@ -29,6 +29,8 @@ public final class EhmNetworking {
         PayloadTypeRegistry.clientboundPlay()
                 .register(ClientboundAbilityDurationsPayload.TYPE, ClientboundAbilityDurationsPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay()
+                .register(ClientboundAbilityReadyPayload.TYPE, ClientboundAbilityReadyPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay()
                 .register(ClientboundSoilLookPayload.TYPE, ClientboundSoilLookPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay()
                 .register(ClientboundLightLookPayload.TYPE, ClientboundLightLookPayload.STREAM_CODEC);
@@ -39,7 +41,10 @@ public final class EhmNetworking {
         PayloadTypeRegistry.serverboundPlay().register(ServerboundConfigPayload.TYPE, ServerboundConfigPayload.STREAM_CODEC);
         ServerPlayNetworking.registerGlobalReceiver(ServerboundConfigPayload.TYPE, EhmNetworking::onConfig);
         ServerPlayConnectionEvents.JOIN.register(EhmNetworking::onJoin);
-        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> ManaAbilities.clearPlayerLight(handler.player));
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+            ManaAbilities.clearPlayerLight(handler.player);
+            ManaAbilities.clearStrongCastHud(handler.player);
+        });
         ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.register((player, origin, destination) -> {
             sendSync(player);
             ManaAbilities.onJoin(player);

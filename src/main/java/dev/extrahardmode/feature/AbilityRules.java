@@ -38,7 +38,7 @@ public final class AbilityRules {
     public static final int IRON_HEART_SPARKLE_TICKS = 60;
     public static final int IRON_HEART_SECONDS_PER_POWER = 60;
     /** Honey bottle in the main inventory (not a bundle) adds this to Healing power. */
-    public static final int HONEY_HEAL_BONUS = 6;
+    public static final int HONEY_HEAL_BONUS = 4;
     public static final String HONEY_BOTTLE_ID = "minecraft:honey_bottle";
     /** Hotbar + main inventory slots; excludes armor, offhand, and bundle contents. */
     public static final int MAIN_INVENTORY_SLOTS = 36;
@@ -104,6 +104,8 @@ public final class AbilityRules {
     public static final int POWER_MINE_SECONDS_PER_POWER = 12;
     public static final int DETECT_ORE_BASE_RANGE = 2;
     public static final int DETECT_ORE_RANGE_PER_POWER = 1;
+    /** First search this many blocks above and below the player before looking farther up or down. */
+    public static final int DETECT_ORE_LEVEL_BAND = 2;
     public static final double SLOW_BASE = 0.20;
     public static final double SLOW_PER_POWER = 0.05;
     public static final double SLOW_MAX = 0.80;
@@ -230,7 +232,7 @@ public final class AbilityRules {
         return materialBonus(itemId);
     }
 
-    /** Thirty seconds. A gold bonus only counts after the item has been worn or held this long. */
+    /** Thirty seconds. A held golden item counts after this long. The first gold armor piece does too. */
     public static final int GOLD_BONUS_TICKS = 600;
     /** Half a second of golden shimmer when a gold bonus starts. */
     public static final int GOLD_SHIMMER_TICKS = 10;
@@ -277,7 +279,32 @@ public final class AbilityRules {
     }
 
     public static boolean goldWornLongEnough(long equippedAt, long now) {
-        return equippedAt >= 0 && now >= equippedAt && now - equippedAt >= GOLD_BONUS_TICKS;
+        return goldWornLongEnough(equippedAt, now, GOLD_BONUS_TICKS);
+    }
+
+    /**
+     * Extra wait before the next gold-armor point, in ticks. The first piece is
+     * 30 seconds, then 60, 120, and 240. Four pieces put on together take 450 seconds.
+     */
+    public static int goldArmorStepTicks(int pieceNumber) {
+        if (pieceNumber <= 0) {
+            return 0;
+        }
+        int n = Math.min(pieceNumber, 4);
+        return GOLD_BONUS_TICKS << (n - 1);
+    }
+
+    /** Wear time, in ticks, before that many gold armor pieces all count. */
+    public static int goldArmorDelayTicks(int pieceCount) {
+        int total = 0;
+        for (int piece = 1; piece <= pieceCount; piece++) {
+            total += goldArmorStepTicks(piece);
+        }
+        return total;
+    }
+
+    static boolean goldWornLongEnough(long equippedAt, long now, int ticks) {
+        return equippedAt >= 0 && now >= equippedAt && now - equippedAt >= ticks;
     }
 
     /**
@@ -304,24 +331,45 @@ public final class AbilityRules {
         return next;
     }
 
-    /** Armor pieces and one hand bonus that have been worn or held long enough. */
+    /**
+     * Armor pieces and one hand bonus that have been worn or held long enough.
+     * Armor points arrive one at a time: 30 seconds, then 60, 120, and 240 more.
+     * The next wait starts once the previous point is in and that many pieces are on.
+     */
     public static int readyGoldBonus(Map<String, String> state, long now) {
         if (state == null || state.isEmpty()) {
             return 0;
         }
-        int armor = 0;
+        List<Long> armorSince = new ArrayList<>();
         boolean hand = false;
         for (Map.Entry<String, String> entry : state.entrySet()) {
             String itemId = goldWearItem(entry.getValue());
             long since = goldWearSince(entry.getValue(), itemId);
-            if (!goldWornLongEnough(since, now)) {
+            if ("main".equals(entry.getKey()) || "off".equals(entry.getKey())) {
+                if (goldWornLongEnough(since, now)) {
+                    hand = true;
+                }
                 continue;
             }
-            if ("main".equals(entry.getKey()) || "off".equals(entry.getKey())) {
-                hand = true;
-            } else {
-                armor++;
+            if (since >= 0) {
+                armorSince.add(since);
             }
+        }
+        armorSince.sort(Long::compareTo);
+        int armor = 0;
+        long levelReachedAt = Long.MIN_VALUE;
+        for (int i = 0; i < armorSince.size(); i++) {
+            long since = armorSince.get(i);
+            if (since > now) {
+                break;
+            }
+            long start = Math.max(levelReachedAt, since);
+            long completes = start + goldArmorStepTicks(i + 1);
+            if (now < completes) {
+                break;
+            }
+            armor++;
+            levelReachedAt = completes;
         }
         return goldAbilityBonus(armor, hand);
     }
@@ -445,7 +493,7 @@ public final class AbilityRules {
             case LIGHT -> "Hold coal and right-click to shine. Right-click again with coal to snuff it.";
             case POWER_MINE -> "Hold any pickaxe and right-click. Hardened stone stops eating extra durability for a while.";
             case DETECT_ORE ->
-                "Hold a compass and right-click. You turn toward the best ore you are skilled enough to sense.";
+                "Hold a compass and right-click. You turn toward the best ore you are skilled enough to sense, preferring ore within 2 blocks of your height.";
             case SLOW -> "Hold string and right-click. Nearby enemies slow down.";
             case SENSE_EVIL -> "Hold a spider eye and right-click. You turn toward a living biome boss, if one is out.";
             case SMITE_EVIL ->
@@ -527,7 +575,7 @@ public final class AbilityRules {
             case HEAL -> List.of(
                     "Healing: Right-click an injured teammate within 2 + ability level blocks while holding paper.",
                     "Healing: If no teammate is targeted and you are injured, you heal yourself instead.",
-                    "Healing: Costs 1 mana. A honey bottle in your main inventory (not a bundle) is consumed for +6, with or without mana.",
+                    "Healing: Costs 1 mana. A honey bottle in your main inventory (not a bundle) is consumed for +4, with or without mana.",
                     "Healing: If you have no mana, a honey bottle still lets you heal, even with no mana levels.",
                     "Healing: The recipient sparkles blue for 6 seconds. An extra paper is consumed for +2 if you have more than one. The last paper is kept.");
             case IRON_HEART -> List.of(
@@ -567,7 +615,7 @@ public final class AbilityRules {
                     "Power mining: Pickaxe bonus: wood/stone 0, copper +1, iron +2, diamond +3, gold +4, netherite +5.");
             case DETECT_ORE -> List.of(
                     "Detect ore: Right-click while holding a compass. Costs 1 mana. Optionally consumes 1 nether quartz from your inventory for +2.",
-                    "Detect ore: Quartz stacks with redstone dust. Turns you to face the best ore you can detect within 2 + ability level blocks, even through walls.",
+                    "Detect ore: Quartz stacks with redstone dust. Ores within 2 blocks of your height come first, then farther up or down, out to 2 + ability level, through walls.",
                     "Detect ore: It tells you the ore and approximate distance. You only sense ores at or below your ability level.",
                     "Detect ore: coal 1, quartz 2, copper 3, iron 4, redstone 5, lapis 6, gold 7, emerald 8, diamond 9, ancient debris 10.");
             case SLOW -> List.of(
@@ -629,7 +677,7 @@ public final class AbilityRules {
                 "Base power: skill, the square root of times you have used that ability.",
                 "Extra catalyst, redstone, and tools add to that. Extra catalyst and redstone dust are +2 each.",
                 "Fire bolt and Magic arrow also add your mana level.",
-                "Each gold armor piece worn for 30 seconds adds 1 power. The bonus ends as soon as that piece comes off.",
+                "Gold armor adds 1 power after 30 seconds, then 60, 120, and 240 seconds more. Four pieces put on together reach +4 in 450 seconds. A piece that comes off loses its bonus.",
                 "A golden item held for 30 seconds, such as a golden hoe, adds 1 more. Gold ingots, nuggets, and blocks do not.",
                 "Using an ability you have not learned still gains skill, at −3 power (floored at 1), until you have a free slot to learn them.");
     }
@@ -1138,6 +1186,11 @@ public final class AbilityRules {
         return DETECT_ORE_BASE_RANGE + DETECT_ORE_RANGE_PER_POWER * detectOreSkill(power);
     }
 
+    /** True when {@code oreY} is within {@link #DETECT_ORE_LEVEL_BAND} of the player's block height. */
+    public static boolean inDetectOreLevelBand(int oreY, int playerY) {
+        return Math.abs(oreY - playerY) <= DETECT_ORE_LEVEL_BAND;
+    }
+
     public static double slowRange(double power) {
         return Math.max(0.0, power);
     }
@@ -1422,6 +1475,27 @@ public final class AbilityRules {
             deposits.add(new OreDeposit(family, value, size, lookX, lookY, lookZ, bestDist));
         }
         return deposits;
+    }
+
+    /**
+     * Best deposit in the scan. Ore within {@link #DETECT_ORE_LEVEL_BAND} blocks of
+     * the player's height wins over anything farther up or down. Inside that band,
+     * and when the band is empty, {@link #bestDeposit} still picks by value, then size.
+     */
+    public static OreDeposit bestDepositAtPlayerLevel(List<OreSample> samples, int px, int py, int pz) {
+        List<OreSample> nearLevel = new ArrayList<>();
+        if (samples != null) {
+            for (OreSample sample : samples) {
+                if (sample != null && inDetectOreLevelBand(sample.y(), py)) {
+                    nearLevel.add(sample);
+                }
+            }
+        }
+        OreDeposit atLevel = bestDeposit(clusterDeposits(nearLevel, px, py, pz));
+        if (atLevel != null) {
+            return atLevel;
+        }
+        return bestDeposit(clusterDeposits(samples, px, py, pz));
     }
 
     public static OreDeposit bestDeposit(List<OreDeposit> deposits) {

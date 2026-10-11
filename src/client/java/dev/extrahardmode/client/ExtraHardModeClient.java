@@ -14,6 +14,7 @@ import dev.extrahardmode.feature.WellFedRules;
 import dev.extrahardmode.feature.monster.Horses;
 import dev.extrahardmode.module.MessageId;
 import dev.extrahardmode.network.ClientboundAbilityDurationsPayload;
+import dev.extrahardmode.network.ClientboundAbilityReadyPayload;
 import dev.extrahardmode.network.ClientboundCompassSpawnPayload;
 import dev.extrahardmode.network.ClientboundCouncilBountyPayload;
 import dev.extrahardmode.network.ClientboundFlightPayload;
@@ -59,6 +60,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
     private static volatile ClientboundFlightPayload lastFlight;
     private static volatile ClientboundPowerMinePayload lastPowerMine;
     private static volatile ClientboundAbilityDurationsPayload lastDurations;
+    private static volatile ClientboundAbilityReadyPayload lastAbilityReady;
     private static volatile ClientboundSoilLookPayload lastSoilLook;
     private static volatile ClientboundLightLookPayload lastLightLook;
     private static volatile ClientboundCouncilBountyPayload lastCouncilBounty;
@@ -82,6 +84,10 @@ public class ExtraHardModeClient implements ClientModInitializer {
 
     public static ClientboundAbilityDurationsPayload lastDurations() {
         return lastDurations;
+    }
+
+    public static ClientboundAbilityReadyPayload lastAbilityReady() {
+        return lastAbilityReady;
     }
 
     /** True while the server says Master Builder is still running. */
@@ -333,6 +339,8 @@ public class ExtraHardModeClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(
                 ClientboundAbilityDurationsPayload.TYPE, (payload, context) -> lastDurations = payload);
         ClientPlayNetworking.registerGlobalReceiver(
+                ClientboundAbilityReadyPayload.TYPE, (payload, context) -> lastAbilityReady = payload);
+        ClientPlayNetworking.registerGlobalReceiver(
                 ClientboundSoilLookPayload.TYPE, (payload, context) -> lastSoilLook = payload);
         ClientPlayNetworking.registerGlobalReceiver(
                 ClientboundLightLookPayload.TYPE, (payload, context) -> lastLightLook = payload);
@@ -347,6 +355,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
             lastFlight = null;
             lastPowerMine = null;
             lastDurations = null;
+            lastAbilityReady = null;
             lastSoilLook = null;
             lastLightLook = null;
             lastCouncilBounty = null;
@@ -355,6 +364,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
         });
         ManaHud.register();
         AbilityDurationHud.register();
+        AbilityReadyHud.register();
         CouncilBountyHud.register();
         SoilLookHud.register();
         LightLookHud.register();

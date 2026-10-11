@@ -38,8 +38,8 @@ public final class DetectOre {
                 samples.add(new AbilityRules.OreSample(id, pos.getX(), pos.getY(), pos.getZ()));
             }
         }
-        return AbilityRules.bestDeposit(
-                AbilityRules.clusterDeposits(samples, origin.getX(), origin.getY(), origin.getZ()));
+        return AbilityRules.bestDepositAtPlayerLevel(
+                samples, origin.getX(), origin.getY(), origin.getZ());
     }
 
     public static void lookAt(ServerPlayer player, AbilityRules.OreDeposit deposit) {

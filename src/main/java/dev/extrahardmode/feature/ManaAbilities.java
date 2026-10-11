@@ -3,6 +3,7 @@ package dev.extrahardmode.feature;
 import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.module.TutorialCounts;
 import dev.extrahardmode.network.ClientboundAbilityDurationsPayload;
+import dev.extrahardmode.network.ClientboundAbilityReadyPayload;
 import dev.extrahardmode.network.ClientboundFlightPayload;
 import dev.extrahardmode.network.ClientboundPowerMinePayload;
 import dev.extrahardmode.player.EhmAttachments;
@@ -26,6 +27,7 @@ import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.advancements.triggers.CriteriaTriggers;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ColorParticleOption;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -57,7 +59,9 @@ import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.BundleContents;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
@@ -121,6 +125,7 @@ public final class ManaAbilities implements FeatureModule {
             tickGoldWear(player);
             tickGoldShimmer(player);
             maybeSendAbilityDurations(player);
+            syncStrongCastHud(player, false);
         }
         tickSlow(level);
     }
@@ -2160,6 +2165,85 @@ public final class ManaAbilities implements FeatureModule {
             }
         }
         sendAbilityDurations(player);
+        syncStrongCastHud(player, true);
+    }
+
+    private static final Map<UUID, String> STRONG_CAST_SENT = new ConcurrentHashMap<>();
+
+    public static void clearStrongCastHud(ServerPlayer player) {
+        if (player != null) {
+            STRONG_CAST_SENT.remove(player.getUUID());
+        }
+    }
+
+    static void syncStrongCastHud(ServerPlayer player, boolean force) {
+        List<AbilityReadyRules.StrongCast> casts = List.of();
+        if (!Achievements.skipPlayer(player) && WorldGate.isModuleActive(player.level(), ID)) {
+            long now = 0L;
+            if (player.level().getServer() != null) {
+                now = player.level().getServer().overworld().getGameTime();
+            }
+            Map<String, Long> lastUse = player.getAttachedOrElse(EhmAttachments.EHM_ABILITY_LAST_USE, Map.of());
+            casts = AbilityReadyRules.strongCasts(
+                    Achievements.manaLevel(player),
+                    Achievements.currentMana(player),
+                    usesMap(player),
+                    learnedSet(player),
+                    goldAbilityBonus(player),
+                    supplyStacks(player),
+                    InventorySearch.hasOneMain(player, Items.HONEY_BOTTLE),
+                    now,
+                    lastUse == null ? Map.of() : lastUse);
+        }
+        String key = strongCastKey(casts);
+        if (!force && key.equals(STRONG_CAST_SENT.get(player.getUUID()))) {
+            return;
+        }
+        STRONG_CAST_SENT.put(player.getUUID(), key);
+        List<ClientboundAbilityReadyPayload.Entry> entries = new ArrayList<>();
+        for (AbilityReadyRules.StrongCast cast : casts) {
+            int size = AbilityReadyRules.iconPixels(cast.level());
+            if (size > 0) {
+                entries.add(new ClientboundAbilityReadyPayload.Entry(cast.ability(), size));
+            }
+        }
+        ServerPlayNetworking.send(
+                player,
+                entries.isEmpty() ? ClientboundAbilityReadyPayload.EMPTY : new ClientboundAbilityReadyPayload(entries));
+    }
+
+    static String strongCastKey(List<AbilityReadyRules.StrongCast> casts) {
+        StringBuilder key = new StringBuilder();
+        for (AbilityReadyRules.StrongCast cast : casts) {
+            key.append(cast.ability()).append(':').append(AbilityReadyRules.iconPixels(cast.level())).append(';');
+        }
+        return key.toString();
+    }
+
+    static List<AbilityReadyRules.SupplyStack> supplyStacks(ServerPlayer player) {
+        List<AbilityReadyRules.SupplyStack> stacks = new ArrayList<>();
+        var inventory = player.getInventory();
+        for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
+            collectSupply(inventory.getItem(slot), stacks);
+        }
+        return stacks;
+    }
+
+    static void collectSupply(ItemStack stack, List<AbilityReadyRules.SupplyStack> out) {
+        if (stack == null || stack.isEmpty()) {
+            return;
+        }
+        String id = heldItemId(stack);
+        if (!id.isEmpty()) {
+            out.add(new AbilityReadyRules.SupplyStack(id, stack.getCount()));
+        }
+        BundleContents contents = stack.get(DataComponents.BUNDLE_CONTENTS);
+        if (contents == null || contents.isEmpty()) {
+            return;
+        }
+        for (ItemStackTemplate template : contents.items()) {
+            collectSupply(template.create(), out);
+        }
     }
 
     static boolean isFlying(ServerPlayer player) {

@@ -388,7 +388,8 @@ public final class EhmHelp {
                         "Abilities: A wise teacher's lesson does not count toward abilities you learn yourself. Paying for one you already know frees that slot.",
                         "Abilities: Sneak while carrying a diamond block and a lapis lazuli block and that teacher raises your mana level once.",
                         "Abilities: Hold an item and press ? for details, or type /tougher ability help <name>.",
-                        "Abilities: /tougher me lists your mana level and ability skill levels."));
+                        "Abilities: /tougher me lists your mana level and ability skill levels.",
+                        "Abilities: Bottom-right icons list abilities you can cast above level 2. Each icon is 10 percent of normal size times that level."));
     }
 
     private static Page achievements() {

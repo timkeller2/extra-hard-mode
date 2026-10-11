@@ -22,6 +22,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -202,6 +204,9 @@ public final class Achievements implements FeatureModule {
         while (taken < want && consumeQuartz(player)) {
             taken++;
         }
+        if (taken > 0) {
+            playQuartzSpent(player, 1.5F);
+        }
         player.setAttached(
                 EhmAttachments.EHM_QUARTZ_MANA_CREDIT, AchievementRules.remainingQuartzCredit(credit, taken));
     }
@@ -214,8 +219,25 @@ public final class Achievements implements FeatureModule {
         while (taken < want && InventorySearch.consumeOneMain(player, Items.QUARTZ_BLOCK)) {
             taken++;
         }
+        if (taken > 0) {
+            playQuartzSpent(player, 0.85F);
+        }
         player.setAttached(
                 EhmAttachments.EHM_QUARTZ_BLOCK_MANA_CREDIT, AchievementRules.remainingQuartzCredit(credit, taken));
+    }
+
+    /** A short crystal chime when nether quartz or a quartz block is spent on mana. */
+    static void playQuartzSpent(ServerPlayer player, float pitch) {
+        if (!(player.level() instanceof ServerLevel level)) {
+            return;
+        }
+        level.playSound(
+                null,
+                player.blockPosition(),
+                SoundEvents.AMETHYST_BLOCK_CHIME,
+                SoundSource.PLAYERS,
+                0.4F,
+                pitch);
     }
 
     static void grantNewTiers(

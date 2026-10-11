@@ -281,7 +281,8 @@ def build():
             "Hold the catalyst and right-click. Power starts as the square root of how many times you have used that ability. "
             "Extra catalyst and a piece of redstone dust each add 2, and the redstone is consumed. "
             "Fire bolt and Magic arrow also add your mana level. "
-            "Each gold armor piece worn for 30 seconds adds 1. A golden item in either hand, such as a golden hoe, adds 1 more after 30 seconds. "
+            "Gold armor adds 1 after 30 seconds, then 60, 120, and 240 seconds more. Four pieces put on together reach +4 in 450 seconds. "
+            "A golden item in either hand, such as a golden hoe, adds 1 more after 30 seconds. "
             "Gold ingots, nuggets, blocks, and ore do not. The bonus ends the moment that item comes off, and a half-second golden shimmer plus "
             "\"Ability level +1 (+total)\" plays when a piece starts counting. "
             "A golden hoe still keeps its usual Let it grow material bonus on top of that.",
@@ -296,22 +297,25 @@ def build():
                 "Diamond Skin costs 2 mana and lasts 30 seconds times ability level. Its effective level is at least 2, so a bare cast still halves health damage. It renews while you have 2 mana, and cancels on another right-click. An extra diamond in hand is consumed for +2.",
                 "While Diamond Skin lasts, damage that would reach your health is divided by the ability level. Armor still applies first. Each point prevented shortens the effect by 3 seconds. Poison, drowning, and suffocation are not reduced. A quarter-second cyan sparkle plays when a hit is reduced.",
                 "You can learn up to half your mana level in abilities, rounded up, by using them. Unlearned use still gains skill, at -3 power, floored at 1, until a slot is free.",
+                "Bottom-right icons list abilities you can cast above level 2. Each icon is 10 percent of normal size times that level.",
                 "A wise teacher in a 24-point home teaches one ability for 30 emeralds. Each house point above 24 takes 2 emeralds off, down to free. The lesson ignores the learning cap and does not use a self-learned slot. Paying for an ability you already know frees that slot.",
                 "Sneak with a diamond block and a lapis lazuli block and that teacher raises your permanent mana by 1, once per teacher.",
             ],
             s["bullet"],
         ),
-        Paragraph("Achievements", s["h"]),
-        bullets(
-            [
-                "Place many of one block, or defeat many of one monster that drops loot. Each claim gives 50 experience and a diamond. Everyone can earn every achievement.",
-                "The first player on the server to claim one gets 25 extra experience by default.",
-                "You have your experience level as a percent chance to gain a mana level.",
-                "A diamond block plus lapis lazuli blocks buys an extra mana level and a 6-second blue shimmer. The lapis cost starts at 1 block and rises by 1 each time.",
-                "The first visit to a biome is 50 experience, and 100 more if you are first on the server. The first habitable home in a biome is house points times 3. The first trip 300 blocks from spawn is 100 experience.",
-            ],
-            s["bullet"],
-        ),
+        KeepTogether([
+            Paragraph("Achievements", s["h"]),
+            bullets(
+                [
+                    "Place many of one block, or defeat many of one monster that drops loot. Each claim gives 50 experience and a diamond. Everyone can earn every achievement.",
+                    "The first player on the server to claim one gets 25 extra experience by default.",
+                    "You have your experience level as a percent chance to gain a mana level.",
+                    "A diamond block plus lapis lazuli blocks buys an extra mana level and a 6-second blue shimmer. The lapis cost starts at 1 block and rises by 1 each time.",
+                    "The first visit to a biome is 50 experience, and 100 more if you are first on the server. The first habitable home in a biome is house points times 3. The first trip 300 blocks from spawn is 100 experience.",
+                ],
+                s["bullet"],
+            ),
+        ]),
         Paragraph("Homes and residents", s["h"]),
         Paragraph(
             "Right-click a bed with a clock to score a room. An enclosed, lit room of 24 to 300 air blocks, with a bed and a door or fence gate facing outside, "

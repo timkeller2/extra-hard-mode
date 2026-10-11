@@ -100,10 +100,10 @@ class AbilityRulesTest {
         assertTrue(healHelp.contains("sparkles blue"));
         assertTrue(healHelp.contains("2 + ability level"));
         assertTrue(healHelp.contains("honey bottle"));
-        assertTrue(healHelp.contains("+6"));
+        assertTrue(healHelp.contains("+4"));
         assertTrue(healHelp.contains("no mana levels"));
         assertEquals(120, AbilityRules.HEAL_SPARKLE_TICKS);
-        assertEquals(6, AbilityRules.HONEY_HEAL_BONUS);
+        assertEquals(4, AbilityRules.HONEY_HEAL_BONUS);
         assertTrue(AbilityRules.honeyWaivesHealMana(true));
         assertFalse(AbilityRules.honeyWaivesHealMana(false));
         assertTrue(AbilityRules.hasManaToHeal(0.0, true));
@@ -345,6 +345,44 @@ class AbilityRulesTest {
                 worn, Map.of("head", "minecraft:golden_helmet", "main", "minecraft:golden_sword"), 700L);
         assertEquals(1, AbilityRules.readyGoldBonus(swapped, 700L));
         assertEquals(2, AbilityRules.readyGoldBonus(swapped, 1300L));
+        assertEquals(600, AbilityRules.goldArmorStepTicks(1));
+        assertEquals(1200, AbilityRules.goldArmorStepTicks(2));
+        assertEquals(2400, AbilityRules.goldArmorStepTicks(3));
+        assertEquals(4800, AbilityRules.goldArmorStepTicks(4));
+        assertEquals(9000, AbilityRules.goldArmorDelayTicks(4));
+        Map<String, String> fullSet = AbilityRules.updateGoldWear(
+                Map.of(),
+                Map.of(
+                        "head", "minecraft:golden_helmet",
+                        "chest", "minecraft:golden_chestplate",
+                        "legs", "minecraft:golden_leggings",
+                        "feet", "minecraft:golden_boots"),
+                0L);
+        assertEquals(0, AbilityRules.readyGoldBonus(fullSet, 599L));
+        assertEquals(1, AbilityRules.readyGoldBonus(fullSet, 600L));
+        assertEquals(1, AbilityRules.readyGoldBonus(fullSet, 1799L));
+        assertEquals(2, AbilityRules.readyGoldBonus(fullSet, 1800L));
+        assertEquals(2, AbilityRules.readyGoldBonus(fullSet, 4199L));
+        assertEquals(3, AbilityRules.readyGoldBonus(fullSet, 4200L));
+        assertEquals(3, AbilityRules.readyGoldBonus(fullSet, 8999L));
+        assertEquals(4, AbilityRules.readyGoldBonus(fullSet, 9000L));
+        Map<String, String> three = AbilityRules.updateGoldWear(
+                Map.of(),
+                Map.of(
+                        "head", "minecraft:golden_helmet",
+                        "chest", "minecraft:golden_chestplate",
+                        "legs", "minecraft:golden_leggings"),
+                0L);
+        Map<String, String> fourthLater = AbilityRules.updateGoldWear(
+                three, Map.of(
+                        "head", "minecraft:golden_helmet",
+                        "chest", "minecraft:golden_chestplate",
+                        "legs", "minecraft:golden_leggings",
+                        "feet", "minecraft:golden_boots"),
+                10_000L);
+        assertEquals(3, AbilityRules.readyGoldBonus(fourthLater, 10_000L));
+        assertEquals(3, AbilityRules.readyGoldBonus(fourthLater, 14_799L));
+        assertEquals(4, AbilityRules.readyGoldBonus(fourthLater, 14_800L));
         assertEquals(List.of(), AbilityRules.goldBonusMessages(2, 2));
         assertEquals(List.of(), AbilityRules.goldBonusMessages(3, 1));
         assertEquals(List.of("Ability level +1 (+1)"), AbilityRules.goldBonusMessages(0, 1));
@@ -752,6 +790,37 @@ class AbilityRulesTest {
         assertEquals(2, golds.size());
         AbilityRules.OreDeposit nearer = AbilityRules.bestDeposit(golds);
         assertEquals(2, nearer.lookX());
+        assertTrue(AbilityRules.inDetectOreLevelBand(2, 0));
+        assertTrue(AbilityRules.inDetectOreLevelBand(-2, 0));
+        assertFalse(AbilityRules.inDetectOreLevelBand(3, 0));
+        assertEquals(2, AbilityRules.DETECT_ORE_LEVEL_BAND);
+        List<AbilityRules.OreSample> coalAtFeet = List.of(
+                new AbilityRules.OreSample("minecraft:coal_ore", 2, 0, 0),
+                new AbilityRules.OreSample("minecraft:diamond_ore", 1, 6, 0));
+        AbilityRules.OreDeposit atLevel = AbilityRules.bestDepositAtPlayerLevel(coalAtFeet, 0, 0, 0);
+        assertEquals("coal", atLevel.family());
+        assertEquals(0, atLevel.lookY());
+        List<AbilityRules.OreSample> diamondInBand = List.of(
+                new AbilityRules.OreSample("minecraft:coal_ore", 4, 0, 0),
+                new AbilityRules.OreSample("minecraft:diamond_ore", 3, 2, 0));
+        assertEquals("diamond", AbilityRules.bestDepositAtPlayerLevel(diamondInBand, 0, 0, 0).family());
+        List<AbilityRules.OreSample> onlyAbove = List.of(
+                new AbilityRules.OreSample("minecraft:diamond_ore", 1, 6, 0));
+        AbilityRules.OreDeposit above = AbilityRules.bestDepositAtPlayerLevel(onlyAbove, 0, 0, 0);
+        assertEquals("diamond", above.family());
+        assertEquals(6, above.lookY());
+        List<AbilityRules.OreSample> veinAndCeiling = List.of(
+                new AbilityRules.OreSample("minecraft:iron_ore", 1, 0, 0),
+                new AbilityRules.OreSample("minecraft:iron_ore", 1, 1, 0),
+                new AbilityRules.OreSample("minecraft:iron_ore", 1, 2, 0),
+                new AbilityRules.OreSample("minecraft:diamond_ore", 1, 5, 0));
+        AbilityRules.OreDeposit ironLevel = AbilityRules.bestDepositAtPlayerLevel(veinAndCeiling, 0, 0, 0);
+        assertEquals("iron", ironLevel.family());
+        assertEquals(3, ironLevel.size());
+        List<AbilityRules.OreSample> shifted = List.of(
+                new AbilityRules.OreSample("minecraft:coal_ore", 0, 64, 0),
+                new AbilityRules.OreSample("minecraft:diamond_ore", 0, 70, 0));
+        assertEquals("coal", AbilityRules.bestDepositAtPlayerLevel(shifted, 0, 64, 0).family());
         assertEquals(8, AbilityRules.depositDistanceBlocks(new AbilityRules.OreDeposit("diamond", 90, 1, 8, 0, 0, 64)));
         assertEquals(0, AbilityRules.depositDistanceBlocks(null));
         assertEquals(
