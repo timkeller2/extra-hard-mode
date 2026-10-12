@@ -29,7 +29,7 @@ public final class AbilityReadyRules {
     /** An ability the player can cast now, with its effective level. */
     public record StrongCast(String ability, double level) {}
 
-    /** Icon box plus the level number drawn just to its left. */
+    /** Icon box plus the level number drawn just to its right, at the icon's scale. */
     public record Placement(int x, int y, int size, int labelX, int labelY) {}
 
     /** {@code (level * 5)%} of {@link #ICON_SIZE}, or 0 when the level is not above {@link #MIN_LEVEL}. */
@@ -39,6 +39,18 @@ public final class AbilityReadyRules {
         }
         int size = (int) Math.round(ICON_SIZE * level * 0.05);
         return Math.max(1, size);
+    }
+
+    /**
+     * {@code unscaled} GUI pixels after the icon scale {@code iconSize / ICON_SIZE}.
+     * At least 1 when both inputs are positive, so a low level still reserves a pixel.
+     */
+    public static int scaledPixels(int unscaled, int iconSize) {
+        if (unscaled <= 0 || iconSize <= 0) {
+            return 0;
+        }
+        int scaled = (int) Math.round(unscaled * (iconSize / (double) ICON_SIZE));
+        return Math.max(1, scaled);
     }
 
     /** Nearest integer of the effective level, or 0 when the level is not above {@link #MIN_LEVEL}. */
@@ -52,8 +64,9 @@ public final class AbilityReadyRules {
 
     /**
      * Vertical list in the bottom-right corner. Catalog order runs top to bottom.
-     * Each icon's right edge sits on the margin. Its level number sits just to the left.
-     * A row is as tall as the icon or the number, whichever is taller.
+     * The level number sits just to the right of its icon, scaled like that icon,
+     * and the number's right edge sits on the margin. A row is as tall as the
+     * icon or the scaled number, whichever is taller.
      */
     public static List<Placement> place(
             int guiWidth, int guiHeight, List<Integer> sizes, List<Integer> labelWidths, int textHeight) {
@@ -71,7 +84,7 @@ public final class AbilityReadyRules {
             if (count > 0) {
                 height += GAP;
             }
-            height += Math.max(size, font);
+            height += Math.max(size, scaledPixels(font, size));
             count++;
         }
         if (count == 0) {
@@ -88,15 +101,18 @@ public final class AbilityReadyRules {
             if (labelWidths != null && i < labelWidths.size()) {
                 labelWidth = Math.max(0, labelWidths.get(i));
             }
-            int row = Math.max(size, font);
-            int iconX = right - size;
+            int scaledWidth = scaledPixels(labelWidth, size);
+            int scaledHeight = scaledPixels(font, size);
+            int gap = scaledWidth > 0 ? LABEL_GAP : 0;
+            int row = Math.max(size, scaledHeight);
+            int iconX = right - size - gap - scaledWidth;
             int iconY = y + (row - size) / 2;
             placed.add(new Placement(
                     iconX,
                     iconY,
                     size,
-                    iconX - LABEL_GAP - labelWidth,
-                    y + Math.max(0, (row - font) / 2)));
+                    iconX + size + gap,
+                    y + Math.max(0, (row - scaledHeight) / 2)));
             y += row + GAP;
         }
         return placed;

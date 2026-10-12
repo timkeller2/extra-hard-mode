@@ -5,6 +5,7 @@ import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.mixin.LivingEntityLootAccess;
 import dev.extrahardmode.module.EntityHelper;
 import dev.extrahardmode.module.TutorialCounts;
+import dev.extrahardmode.network.ClientboundAchievementFloatPayload;
 import dev.extrahardmode.network.ClientboundManaPayload;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.world.AchievementClaimData;
@@ -16,6 +17,7 @@ import java.util.function.Consumer;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -96,6 +98,16 @@ public final class Achievements implements FeatureModule {
                 AchievementRules.BUILDER_THRESHOLDS,
                 true,
                 block.getName());
+        net.minecraft.core.BlockPos placed = context.getClickedPos();
+        floatRemaining(
+                player,
+                count,
+                key,
+                EhmAttachments.EHM_BLOCK_AWARDED,
+                AchievementRules.BUILDER_THRESHOLDS,
+                placed.getX() + 0.5,
+                placed.getY() + 0.95,
+                placed.getZ() + 0.5);
     }
 
     static void onBreak(
@@ -151,6 +163,32 @@ public final class Achievements implements FeatureModule {
                 AchievementRules.SLAYER_THRESHOLDS,
                 false,
                 entity.getType().getDescription());
+        floatRemaining(
+                player,
+                count,
+                key,
+                EhmAttachments.EHM_KILL_AWARDED,
+                AchievementRules.SLAYER_THRESHOLDS,
+                entity.getX(),
+                entity.getY() + entity.getBbHeight() + 0.15,
+                entity.getZ());
+    }
+
+    static void floatRemaining(
+            ServerPlayer player,
+            int count,
+            String key,
+            AttachmentType<Map<String, Integer>> awardedType,
+            int[] thresholds,
+            double x,
+            double y,
+            double z) {
+        int next = AchievementRules.nextTarget(count, thresholds, countOf(player, awardedType, key));
+        int remaining = AchievementFloatRules.remaining(next, count);
+        if (remaining <= 0) {
+            return;
+        }
+        ServerPlayNetworking.send(player, new ClientboundAchievementFloatPayload(x, y, z, remaining));
     }
 
     static boolean lootableKill(LivingEntity entity, ServerLevel level) {
@@ -431,22 +469,6 @@ public final class Achievements implements FeatureModule {
                 "Closest achievements: %s",
                 joinProgress(closest, last)));
         return closest.size() + (last == null ? 0 : 1);
-    }
-
-    public static void sendWatchReport(ServerPlayer player, Consumer<Component> send) {
-        List<AchievementRules.Progress> closest = AchievementRules.closestWatch(
-                player.getAttachedOrElse(EhmAttachments.EHM_BLOCK_PLACE_COUNTS, Map.of()),
-                player.getAttachedOrElse(EhmAttachments.EHM_KILL_COUNTS, Map.of()),
-                player.getAttachedOrElse(EhmAttachments.EHM_BLOCK_AWARDED, Map.of()),
-                player.getAttachedOrElse(EhmAttachments.EHM_KILL_AWARDED, Map.of()));
-        AchievementRules.Progress last = lastPlacedOf(player);
-        if (closest.isEmpty() && last == null) {
-            return;
-        }
-        send.accept(Component.translatableWithFallback(
-                "tougher.command.achieve.paragraph",
-                "Closest achievements: %s",
-                joinProgress(closest, last)));
     }
 
     static AchievementRules.Progress lastPlacedOf(ServerPlayer player) {

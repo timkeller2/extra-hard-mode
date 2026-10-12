@@ -36,16 +36,11 @@ public abstract class BucketItemMixin {
                                     "Lnet/minecraft/world/level/material/FluidState;createLegacyBlock()Lnet/minecraft/world/level/block/state/BlockState;"))
     private BlockState ehm$flowingLegacy(
             FluidState state, LivingEntity entity, Level level, BlockPos pos, BlockHitResult hit) {
-        if (!(level instanceof ServerLevel server
-                ? WorldGate.isModuleActive(server, Water.ID) && Water.enabled(server)
-                : level.isClientSide())) {
-            return state.createLegacyBlock();
-        }
         Fluid content = getContent();
-        if (content != Fluids.WATER && !content.isSame(Fluids.WATER)) {
+        if (!Water.restricts(level, content) || Water.allowsContainedSource(level, pos, content)) {
             return state.createLegacyBlock();
         }
-        return Water.flowingLevel1();
+        return Water.flowingBlock(content);
     }
 
     @Inject(method = "emptyContents", at = @At("RETURN"))
@@ -55,14 +50,11 @@ public abstract class BucketItemMixin {
             BlockPos pos,
             BlockHitResult hit,
             CallbackInfoReturnable<Boolean> cir) {
-        if (!(level instanceof ServerLevel server) || !WorldGate.isModuleActive(server, Water.ID)) {
-            return;
-        }
-        if (!Boolean.TRUE.equals(cir.getReturnValue()) || !Water.enabled(server)) {
+        if (!(level instanceof ServerLevel server) || !Boolean.TRUE.equals(cir.getReturnValue())) {
             return;
         }
         Fluid content = getContent();
-        if (content != Fluids.WATER && !content.isSame(Fluids.WATER)) {
+        if (!Water.restricts(server, content) || Water.allowsContainedSource(server, pos, content)) {
             return;
         }
         Water.mark(server, pos);
@@ -80,7 +72,8 @@ public abstract class BucketItemMixin {
         if (!(accessor instanceof ServerLevel server) || !WorldGate.isModuleActive(server, Water.ID)) {
             return pickup.pickupBlock(entity, accessor, pos, state);
         }
-        if (Water.enabled(server) && Water.isMarked(server, pos)) {
+        if (Water.isMarked(server, pos)
+                && (Water.restricts(server, Fluids.WATER) || Water.restricts(server, Fluids.LAVA))) {
             return ItemStack.EMPTY;
         }
         return pickup.pickupBlock(entity, accessor, pos, state);

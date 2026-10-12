@@ -72,7 +72,7 @@ public enum MessageId {
             "bucket_fill",
             Kind.TOAST,
             false,
-            "You can pick up water, but once you place it, it evaporates. Get some ice if you want to farm!"),
+            "You can pick up water or lava, but it is not a source unless the spot cannot flow and does not touch a source."),
     ANTIFARM_UNWATERED("antifarm_unwatered", Kind.TOAST, false, "Your crops need sufficient water, otherwise they'll dry out!"),
     ANTIFARM_NATURAL_LIGHT("antifarm_natural_light", Kind.TOAST, false, "Your crops require natural light to grow!"),
     ANTIFARM_DESERT("antifarm_desert", Kind.TOAST, false, "Deserts are really dry and nothing grows here!"),

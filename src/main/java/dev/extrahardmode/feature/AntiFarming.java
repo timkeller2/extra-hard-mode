@@ -160,8 +160,6 @@ public final class AntiFarming implements FeatureModule {
                     "tougher.message.crop_season_bees",
                     "Bees are staying in their hives."));
         }
-        ManaAbilities.sendMeReport(player, player::sendSystemMessage);
-        Achievements.sendWatchReport(player, player::sendSystemMessage);
         return true;
     }
 

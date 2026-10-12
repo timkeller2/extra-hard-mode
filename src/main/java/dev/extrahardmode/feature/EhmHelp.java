@@ -222,7 +222,7 @@ public final class EhmHelp {
                         "Building: You cannot place blocks while in the air, even from the edge of a block, or with no support.",
                         "Building: Master Builder suspends those two limits while it runs. Right-click stone bricks in the air to cast it.",
                         "Building: You cannot carry a torch, lantern, or glowstone in your off hand.",
-                        "Building: Bucketed water evaporates; use ice if you need a water source.",
+                        "Building: Bucketed water and lava are not sources, except in a sealed 1x1x1 hole or receptacle that does not touch a source.",
                         "Building: A boat that falls more than 3 blocks with you in it breaks and drops nothing.",
                         "Building: Torches and campfires have their own topic. Type /tougher help torches.",
                         "Building: Breaking a block that is on fire sets you on fire, the same as putting that fire out by hand.",
@@ -316,8 +316,7 @@ public final class EhmHelp {
                         "Soil: Planting the same crop again on a plot subtracts 5 from the shown modifier.",
                         "Soil: Harvesting sugar cane updates the soil under the cane the same way.",
                         "Soil: Let it grow adds 3 to the soil under each plant it grows. Bone meal on a plant adds 5 to that plot's shown soil modifier.",
-                        "Soil: Right-click a clock to see the current loss rate and your mana abilities.",
-                        "Soil: The clock also lists the closest slayer achievement, your five closest builder achievements, and the last block you placed."));
+                        "Soil: Right-click a clock to see the current loss rate."));
     }
 
     private static Page processing() {
@@ -389,7 +388,7 @@ public final class EhmHelp {
                         "Abilities: Sneak while carrying a diamond block and a lapis lazuli block and that teacher raises your mana level once.",
                         "Abilities: Hold an item and press ? for details, or type /tougher ability help <name>.",
                         "Abilities: /tougher me lists your mana level and ability skill levels.",
-                        "Abilities: Bottom-right icons list abilities you can cast above level 2. Each icon is 5 percent of normal size times that level, with that level beside it."));
+                        "Abilities: Bottom-right icons list abilities you can cast above level 2. Each icon is 5 percent of normal size times that level, and that level sits on its right at the same scale."));
     }
 
     private static Page achievements() {
@@ -406,7 +405,8 @@ public final class EhmHelp {
                         "Achievements: /tougher achieve lists the 5 closest builder tracks and at most 3 slayer tracks, plus the last block you placed.",
                         "Achievements: The first time you visit a biome you gain 50 experience, and 100 more if you are the first player to visit it.",
                         "Achievements: The first time you build a habitable home in a biome you gain (house points × 3) experience.",
-                        "Achievements: The first time you travel 300 blocks from spawn you gain 100 experience."));
+                        "Achievements: The first time you travel 300 blocks from spawn you gain 100 experience.",
+                        "Achievements: A small brown number shows how many placements or kills remain. It drifts down and left for 3 seconds, and stays hidden when that track is finished."));
     }
 
     private static Page homes() {

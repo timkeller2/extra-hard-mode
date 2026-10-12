@@ -965,9 +965,9 @@ Crops not in that switch (melon/pumpkin stems, torchflower, pitcher) return fals
 | Iron golem drop nerf | true | Clear drops (anti iron farm). Still allow poppies? **Clear all** (original `event.getDrops().clear()`). |
 | Animal overcrowding | true, threshold **10** in 3×3×3 | On animal spawn, scan 3×3×3 entities. If count ≥ 10, villager-angry particles, damage 1.0 every 10s until under threshold. Exempt: named (nametag), tamed, horses, cats, wolves, parrots. (Original: “Pets with nametags, horses, ocelots, and wolves are exempt.”) |
 
-#### Water sources (Buckets don’t move water sources)
+#### Water and lava sources (Buckets don’t move sources)
 
-`true`. The infinite-water exploit is: bucket a source, place it, the old source remains.
+`farming.bucketsDontMoveSources` and `farming.bucketsDontMoveLavaSources`, both `true`. Separate toggles. The exploit is: bucket a source, place it, the old source remains.
 
 **26.2:** waterlogging, cauldrons, copper bulbs (not water), kelp/seagrass in marked water.
 
@@ -975,12 +975,13 @@ Design:
 
 In Java, **source = `LEVEL` 0**. Values 1–7 are flowing (7 is a trickle). Do **not** place level 7.
 
-1. Mixin `BucketItem.emptyContents`: place `Fluids.FLOWING_WATER` with **`LEVEL=1`** (non-source, still a full-looking flow that decays). Do not place a source and evaporate it later — that races vanilla conversion and flickers clients.
-2. Stamp the pos in a 40-tick `Object2LongOpenHashMap`. Mixin `WaterFluid.canConvertToSource` (or 26.2 equivalent) returns **false** only for marked pos. Natural rivers and ice-melt stay vanilla.
-3. Marked pos: fill-bucket cancelled (cannot scoop it back immediately). Kelp/seagrass place cancelled (original).
-4. Dispensers: same for water and fish buckets.
-5. Waterlogged blocks: emptying a bucket **does** waterlog; filling **does** un-waterlog. **Never evaporate/un-waterlog a slab** (upstream bugfix).
-6. Cauldrons: vanilla. Leave them.
+1. Mixin `BucketItem.emptyContents`: place flowing water or lava with **`LEVEL=1`**. Do not place a source and evaporate it later — that races vanilla conversion and flickers clients.
+2. A real source is allowed when the spot cannot flow: down and the four sides are sealed, or the block is a receptacle (`LiquidBlockContainer`, such as a waterloggable block). A source in any of the six neighbors denies that exception. Up is not a flow direction. Cauldrons are not containers; their own interaction still fills with a source.
+3. Stamp a denied placement for 40 ticks. `FlowingFluid.getNewLiquid` stays non-source only on that marked pos. Natural rivers and ice-melt stay vanilla.
+4. Marked pos: fill-bucket cancelled (cannot scoop it back immediately). Kelp/seagrass place cancelled on marked water.
+5. Dispensers: same for water, fish, and lava buckets. Skip the mark when the spot allows a source.
+6. Waterlogged blocks: emptying a water bucket **does** waterlog; filling **does** un-waterlog. **Never evaporate/un-waterlog a slab**.
+7. Cauldrons: vanilla. Leave them.
 
 **Do not** disable `canConvertToSource` globally.
 
@@ -1271,7 +1272,7 @@ Official Mojang names (26.2 unobfuscated). **Verify method names in PR 1** again
 | `PistonStructureMixin` | `PistonStructureResolver` | Cancel if any pushed block is `#hardened` or `#cave_in_ores`. |
 | `FallingBlockEntityDamageMixin` | `FallingBlockEntity.causeFallDamage` | **Gated** to `EHM_OURS` or state in `#extra_falling` ∪ cobble/cobbled_deepslate from cave-ins. Anvil/dripstone/sulfur spike vanilla. |
 | `FallingBlockEntityLandMixin` | land after fall | Torch-break (if on), grass→dirt, cascade enqueue. |
-| `BucketItemMixin` | `BucketItem.emptyContents` | Place flowing water **LEVEL=1**, mark pos, do not evaporate. |
+| `BucketItemMixin` | `BucketItem.emptyContents` | Place flowing water or lava **LEVEL=1**, unless the spot is a sealed hole or receptacle. Mark denied placements. |
 | `WaterFluidMixin` | `FlowingFluid.canConvertToSource` / `WaterFluid` | False only for marked pos (40-tick TTL). |
 | `WaterDispenseMixin` | water-bucket `DispenseItemBehavior` | Same as bucket. |
 | `BaseFireBlockMixin` | attack / use-without-item on fire | Extinguish ignites player. |

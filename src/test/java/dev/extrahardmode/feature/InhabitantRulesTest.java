@@ -4,8 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -273,6 +275,84 @@ class InhabitantRulesTest {
         long unique = first.stream().map(InhabitantRules.WealthyListing::itemId).distinct().count();
         assertEquals(8, unique);
         assertTrue(InhabitantRules.WEALTHY_POOL.size() >= 8);
+    }
+
+    @Test
+    void farmNeighborMaySellSeedsAndVegetables() {
+        assertEquals(3, InhabitantRules.defaultTradeTypeCount(InhabitantRules.FARM));
+        assertTrue(InhabitantRules.FARM_PLANT_SELLS.size() >= 8);
+        int cheapest = Integer.MAX_VALUE;
+        int dearest = 0;
+        Set<String> ids = new HashSet<>();
+        for (InhabitantRules.TradeListing listing : InhabitantRules.FARM_PLANT_SELLS) {
+            assertFalse(listing.buy());
+            assertEquals(1, listing.count());
+            assertTrue(listing.emeralds() >= InhabitantRules.FARM_PLANT_MIN_EMERALDS);
+            assertTrue(listing.emeralds() <= InhabitantRules.FARM_PLANT_MAX_EMERALDS);
+            assertTrue(ids.add(listing.itemId()));
+            cheapest = Math.min(cheapest, listing.emeralds());
+            dearest = Math.max(dearest, listing.emeralds());
+        }
+        assertEquals(InhabitantRules.FARM_PLANT_MIN_EMERALDS, cheapest);
+        assertEquals(InhabitantRules.FARM_PLANT_MAX_EMERALDS, dearest);
+        for (String id : List.of(
+                "minecraft:wheat_seeds",
+                "minecraft:beetroot_seeds",
+                "minecraft:pumpkin_seeds",
+                "minecraft:melon_seeds",
+                "minecraft:torchflower_seeds",
+                "minecraft:pitcher_pod",
+                "minecraft:carrot",
+                "minecraft:potato",
+                "minecraft:nether_wart",
+                "minecraft:cocoa_beans",
+                "minecraft:sweet_berries",
+                "minecraft:glow_berries",
+                "minecraft:sugar_cane")) {
+            assertTrue(ids.contains(id), id);
+        }
+        Map<String, Integer> prices = new HashMap<>();
+        for (InhabitantRules.TradeListing listing : InhabitantRules.FARM_PLANT_SELLS) {
+            prices.put(listing.itemId(), listing.emeralds());
+        }
+        Set<String> seen = new HashSet<>();
+        boolean sawPlantOnSmallFarm = false;
+        for (int seed = 0; seed < 200; seed++) {
+            List<InhabitantRules.TradeListing> offers =
+                    InhabitantRules.scaledListings(InhabitantRules.FARM, 12, 0, false, new Random(seed));
+            assertFalse(offers.isEmpty());
+            assertTrue(offers.size() <= 2);
+            Set<String> offerIds = new HashSet<>();
+            for (InhabitantRules.TradeListing listing : offers) {
+                assertTrue(offerIds.add(listing.itemId()));
+                if (prices.containsKey(listing.itemId())) {
+                    assertFalse(listing.buy());
+                    assertEquals(1, listing.count());
+                    assertEquals(prices.get(listing.itemId()).intValue(), listing.emeralds());
+                    seen.add(listing.itemId());
+                    sawPlantOnSmallFarm = true;
+                }
+            }
+        }
+        assertTrue(sawPlantOnSmallFarm);
+        assertEquals(ids, seen);
+        boolean sawThirdPlant = false;
+        for (int seed = 0; seed < 80; seed++) {
+            List<InhabitantRules.TradeListing> rich =
+                    InhabitantRules.scaledListings(InhabitantRules.FARM, 38, 0, false, new Random(seed));
+            assertTrue(rich.size() >= 3);
+            int plants = 0;
+            for (InhabitantRules.TradeListing listing : rich) {
+                if (prices.containsKey(listing.itemId())) {
+                    plants++;
+                    assertEquals(prices.get(listing.itemId()).intValue(), listing.emeralds());
+                }
+            }
+            if (plants >= 3) {
+                sawThirdPlant = true;
+            }
+        }
+        assertTrue(sawThirdPlant);
     }
 
     @Test

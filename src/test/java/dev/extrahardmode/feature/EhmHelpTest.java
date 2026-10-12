@@ -31,9 +31,9 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("/tougher ability help"));
         assertTrue(String.join(" ", lines).contains("/tougher me"));
         assertFalse(String.join(" ", lines).contains("diversification"));
-        assertTrue(String.join(" ", lines).contains("closest slayer"));
-        assertTrue(String.join(" ", lines).contains("five closest builder"));
+        assertTrue(String.join(" ", lines).contains("/tougher achieve"));
         assertTrue(String.join(" ", lines).contains("last block you placed"));
+        assertFalse(String.join(" ", lines).contains("The clock also lists"));
         assertTrue(String.join(" ", lines).contains("Stone and deepslate"));
         assertFalse(String.join(" ", lines).contains("tuff"));
         assertTrue(String.join(" ", lines).contains("Let it grow"));
@@ -92,6 +92,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("starts at 0"));
         assertTrue(String.join(" ", lines).contains("1d10"));
         assertTrue(String.join(" ", lines).contains("water source"));
+        assertTrue(String.join(" ", lines).contains("Bucketed water and lava are not sources"));
         assertTrue(String.join(" ", lines).contains("diamond +10"));
         assertTrue(String.join(" ", lines).contains("gold +20"));
         assertTrue(String.join(" ", lines).contains("netherite +30"));
@@ -135,8 +136,13 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("first player to visit it"));
         assertTrue(String.join(" ", lines).contains("habitable home in a biome"));
         assertTrue(String.join(" ", lines).contains("house points × 3"));
+        assertTrue(String.join(" ", lines).contains("on its right at the same scale"));
+        assertTrue(String.join(" ", lines).contains("plantable vegetable"));
+        assertTrue(String.join(" ", lines).contains("6 to 16 emeralds"));
         assertTrue(String.join(" ", lines).contains("300 blocks from spawn"));
         assertTrue(String.join(" ", lines).contains("Everyone can earn every achievement"));
+        assertTrue(String.join(" ", lines).contains("small brown number"));
+        assertFalse(String.join(" ", lines).contains("your mana abilities"));
         assertTrue(String.join(" ", lines).contains("25 extra experience"));
         assertTrue(String.join(" ", lines).contains("3 experience"));
         assertTrue(String.join(" ", lines).contains("faster hit softer"));

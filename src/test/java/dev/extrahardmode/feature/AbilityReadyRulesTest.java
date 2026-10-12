@@ -17,6 +17,10 @@ class AbilityReadyRulesTest {
         assertEquals(2, AbilityReadyRules.iconPixels(3.0));
         assertEquals(8, AbilityReadyRules.iconPixels(10.0));
         assertEquals(12, AbilityReadyRules.iconPixels(15.0));
+        assertEquals(0, AbilityReadyRules.scaledPixels(0, 8));
+        assertEquals(0, AbilityReadyRules.scaledPixels(6, 0));
+        assertEquals(3, AbilityReadyRules.scaledPixels(6, 8));
+        assertEquals(1, AbilityReadyRules.scaledPixels(6, 2));
     }
 
     @Test
@@ -34,8 +38,10 @@ class AbilityReadyRulesTest {
         List<AbilityReadyRules.Placement> placed =
                 AbilityReadyRules.place(200, 100, List.of(8, 4), List.of(6, 12), 9);
         assertEquals(2, placed.size());
-        assertEquals(new AbilityReadyRules.Placement(184, 72, 8, 176, 72), placed.get(0));
-        assertEquals(new AbilityReadyRules.Placement(188, 85, 4, 174, 83), placed.get(1));
+        assertEquals(new AbilityReadyRules.Placement(179, 78, 8, 189, 79), placed.get(0));
+        assertEquals(new AbilityReadyRules.Placement(183, 88, 4, 189, 89), placed.get(1));
+        assertTrue(placed.get(0).labelX() > placed.get(0).x() + placed.get(0).size());
+        assertTrue(placed.get(1).labelX() > placed.get(1).x() + placed.get(1).size());
         assertTrue(AbilityReadyRules.place(200, 100, List.of(), List.of(), 9).isEmpty());
         assertTrue(AbilityReadyRules.place(200, 100, List.of(0), List.of(6), 9).isEmpty());
     }

@@ -14,6 +14,7 @@ import dev.extrahardmode.feature.WellFedRules;
 import dev.extrahardmode.feature.monster.Horses;
 import dev.extrahardmode.module.MessageId;
 import dev.extrahardmode.network.ClientboundAbilityDurationsPayload;
+import dev.extrahardmode.network.ClientboundAchievementFloatPayload;
 import dev.extrahardmode.network.ClientboundAbilityReadyPayload;
 import dev.extrahardmode.network.ClientboundCompassSpawnPayload;
 import dev.extrahardmode.network.ClientboundCouncilBountyPayload;
@@ -349,6 +350,12 @@ public class ExtraHardModeClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(
                 ClientboundCompassSpawnPayload.TYPE,
                 (payload, context) -> compassSpawn = payload.set() ? payload.pos() : null);
+        ClientPlayNetworking.registerGlobalReceiver(ClientboundAchievementFloatPayload.TYPE, (payload, context) -> {
+            Minecraft client = Minecraft.getInstance();
+            if (client != null) {
+                client.execute(() -> AchievementFloater.spawn(payload));
+            }
+        });
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             lastSync = null;
             lastMana = null;
@@ -360,6 +367,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
             lastLightLook = null;
             lastCouncilBounty = null;
             compassSpawn = null;
+            AchievementFloater.clear();
             SeasonAtmosphere.clearClient();
         });
         ManaHud.register();
@@ -369,6 +377,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
         SoilLookHud.register();
         LightLookHud.register();
         AbilityHelp.register();
+        AchievementFloater.register();
         UseEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {
             if (!level.isClientSide() || lastSync == null) {
                 return InteractionResult.PASS;

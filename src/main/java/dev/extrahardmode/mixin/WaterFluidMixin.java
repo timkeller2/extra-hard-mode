@@ -7,6 +7,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.level.material.LavaFluid;
 import net.minecraft.world.level.material.WaterFluid;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -21,15 +23,23 @@ public abstract class WaterFluidMixin {
         if (!WorldGate.isModuleActive(level, Water.ID)) {
             return;
         }
-        if (!((Object) this instanceof WaterFluid)) {
+        boolean water = (Object) this instanceof WaterFluid;
+        boolean lava = (Object) this instanceof LavaFluid;
+        if (!water && !lava) {
             return;
         }
-        if (!Water.enabled(level) || !Water.isMarked(level, pos)) {
+        if (water && !Water.restricts(level, Fluids.WATER)) {
+            return;
+        }
+        if (lava && !Water.restricts(level, Fluids.LAVA)) {
+            return;
+        }
+        if (!Water.isMarked(level, pos)) {
             return;
         }
         FluidState result = cir.getReturnValue();
         if (result != null && result.isSource()) {
-            cir.setReturnValue(Water.flowingFluid());
+            cir.setReturnValue(Water.flowingFluid(water ? Fluids.WATER : Fluids.LAVA));
         }
     }
 }

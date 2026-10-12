@@ -94,6 +94,7 @@ public final class WorldConfig {
     private boolean sheepWhiteWool = false;
     private boolean squidOceanOnly = true;
     private boolean bucketsDontMoveSources = true;
+    private boolean bucketsDontMoveLavaSources = true;
     private boolean animalXpNerf = true;
     private boolean ironGolemNerf = true;
     private boolean overcrowdEnable = true;
@@ -438,6 +439,10 @@ public final class WorldConfig {
 
     public boolean bucketsDontMoveSources() {
         return bucketsDontMoveSources;
+    }
+
+    public boolean bucketsDontMoveLavaSources() {
+        return bucketsDontMoveLavaSources;
     }
 
     public boolean animalXpNerf() {
@@ -1314,6 +1319,7 @@ public final class WorldConfig {
                 file.set("farming.sheepWhiteWool", sheepWhiteWool);
                 file.set("farming.squidOceanOnly", squidOceanOnly);
                 file.set("farming.bucketsDontMoveSources", bucketsDontMoveSources);
+                file.set("farming.bucketsDontMoveLavaSources", bucketsDontMoveLavaSources);
                 file.set("farming.animalXpNerf", animalXpNerf);
                 file.set("farming.ironGolemNerf", ironGolemNerf);
                 file.set("farming.overcrowd.enable", overcrowdEnable);
@@ -1501,6 +1507,7 @@ public final class WorldConfig {
         sheepWhiteWool = file.getOrElse("farming.sheepWhiteWool", false);
         squidOceanOnly = file.getOrElse("farming.squidOceanOnly", true);
         bucketsDontMoveSources = file.getOrElse("farming.bucketsDontMoveSources", true);
+        bucketsDontMoveLavaSources = file.getOrElse("farming.bucketsDontMoveLavaSources", true);
         animalXpNerf = file.getOrElse("farming.animalXpNerf", true);
         ironGolemNerf = file.getOrElse("farming.ironGolemNerf", true);
         overcrowdEnable = file.getOrElse("farming.overcrowd.enable", true);
@@ -1637,7 +1644,12 @@ public final class WorldConfig {
         writeDefaultIfMissing(
                 file,
                 "farming.bucketsDontMoveSources",
-                "Buckets place flowing water LEVEL=1 (not a source). Does not disable canConvertToSource globally.",
+                "Buckets place flowing water LEVEL=1 (not a source), unless the spot is a sealed 1x1 hole or a receptacle that does not touch a source. Does not disable canConvertToSource globally.",
+                true);
+        writeDefaultIfMissing(
+                file,
+                "farming.bucketsDontMoveLavaSources",
+                "Buckets place flowing lava LEVEL=1 (not a source), unless the spot is a sealed 1x1 hole or a receptacle that does not touch a source.",
                 true);
         writeDefaultIfMissing(file, "farming.animalXpNerf", "Animals drop no experience.", true);
         writeDefaultIfMissing(file, "farming.ironGolemNerf", "Iron golems drop nothing (anti iron farm).", true);

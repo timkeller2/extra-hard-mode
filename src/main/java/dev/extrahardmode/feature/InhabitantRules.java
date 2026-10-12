@@ -47,6 +47,12 @@ public final class InhabitantRules {
     /** Furnishings 30 + volume 5 + rooms 3. */
     public static final int MAX_HOUSE_SCORE = 38;
     public static final int MAX_TRADE_TYPES = 24;
+    /** Usual farm shop sells this many plant listings, drawn from {@link #FARM_PLANT_SELLS}. */
+    public static final int FARM_USUAL_SELLS = 2;
+    public static final int FARM_PLANT_USES = 4;
+    /** One seed or plantable vegetable. The pool uses both ends. */
+    public static final int FARM_PLANT_MIN_EMERALDS = 6;
+    public static final int FARM_PLANT_MAX_EMERALDS = 16;
     public static final int MASTER_ARMOR_PRICE_FACTOR = 4;
     public static final int IRON_BOOTS_EMERALDS = 12;
     public static final int IRON_HELMET_EMERALDS = 15;
@@ -141,6 +147,25 @@ public final class InhabitantRules {
             new WealthyListing("minecraft:coal", 16, 1),
             new WealthyListing("minecraft:lantern", 8, 1),
             new WealthyListing("minecraft:phantom_membrane", 2, 4));
+
+    /**
+     * Seeds and plantable vegetables a farm neighbor may sell. One item, and the
+     * emerald cost is hefty next to buying a stack of cobble.
+     */
+    public static final List<TradeListing> FARM_PLANT_SELLS = List.of(
+            sellOf("minecraft:wheat_seeds", 1, 6, FARM_PLANT_USES),
+            sellOf("minecraft:beetroot_seeds", 1, 6, FARM_PLANT_USES),
+            sellOf("minecraft:carrot", 1, 8, FARM_PLANT_USES),
+            sellOf("minecraft:potato", 1, 8, FARM_PLANT_USES),
+            sellOf("minecraft:sweet_berries", 1, 8, FARM_PLANT_USES),
+            sellOf("minecraft:sugar_cane", 1, 8, FARM_PLANT_USES),
+            sellOf("minecraft:cocoa_beans", 1, 8, FARM_PLANT_USES),
+            sellOf("minecraft:glow_berries", 1, 12, FARM_PLANT_USES),
+            sellOf("minecraft:pumpkin_seeds", 1, 12, FARM_PLANT_USES),
+            sellOf("minecraft:melon_seeds", 1, 12, FARM_PLANT_USES),
+            sellOf("minecraft:nether_wart", 1, 12, FARM_PLANT_USES),
+            sellOf("minecraft:torchflower_seeds", 1, FARM_PLANT_MAX_EMERALDS, FARM_PLANT_USES),
+            sellOf("minecraft:pitcher_pod", 1, FARM_PLANT_MAX_EMERALDS, FARM_PLANT_USES));
 
     private static final String[] NAMES = {
         "Alder", "Bram", "Cora", "Dune", "Ellis", "Fern", "Goss", "Hela", "Ivo", "Jules",
@@ -390,7 +415,8 @@ public final class InhabitantRules {
                 "Shops: Shop size follows house points. The top of the roll is 50% at 14 points and 175% at 38, the highest score.",
                 "Shops: The bottom of that roll is half the top. A 14-point home rolls 25-50% of the usual trade types and of each listing's uses.",
                 "Shops: Houses under 14 points use that same 25-50% band. There is at least one use of each listing that is rolled.",
-                "Shops: Each listing rolls its uses separately. Extra types beyond the usual shop are random trades.");
+                "Shops: Each listing rolls its uses separately. Extra types beyond the usual shop are random trades.",
+                "Shops: A farm neighbor may sell one seed or plantable vegetable for 6 to 16 emeralds.");
     }
 
     public static List<String> homesBountyLines() {
@@ -735,10 +761,7 @@ public final class InhabitantRules {
                     buyOf("minecraft:cooked_chicken", 8, 4),
                     buyOf("minecraft:baked_potato", 8, 4),
                     sellOf("minecraft:rabbit_stew", 1, 4, 4));
-            case FARM -> List.of(
-                    buyOf("minecraft:wheat", farmWheatBuy(blight), 6),
-                    sellOf("minecraft:wheat_seeds", 4, 1, 6),
-                    sellOf("minecraft:oak_sapling", 1, 2, 4));
+            case FARM -> farmUsualListings(blight);
             case BOUNTY -> List.of(
                     buyOf("minecraft:spider_eye", 8, 6),
                     buyOf("minecraft:gunpowder", 8, 6),
@@ -790,19 +813,7 @@ public final class InhabitantRules {
                     sellOf("minecraft:beetroot_soup", 1, 3, 4),
                     sellOf("minecraft:pumpkin_pie", 1, 3, 4),
                     sellOf("minecraft:honey_bottle", 1, 4, 4));
-            case FARM -> List.of(
-                    sellOf("minecraft:beetroot_seeds", 4, 1, 6),
-                    sellOf("minecraft:pumpkin_seeds", 4, 1, 6),
-                    sellOf("minecraft:melon_seeds", 4, 1, 6),
-                    sellOf("minecraft:carrot", 8, 1, 6),
-                    sellOf("minecraft:potato", 8, 1, 6),
-                    sellOf("minecraft:birch_sapling", 1, 2, 4),
-                    sellOf("minecraft:spruce_sapling", 1, 2, 4),
-                    sellOf("minecraft:bone_meal", 4, 1, 6),
-                    buyOf("minecraft:beetroot", farmWheatBuy(blight), 6),
-                    buyOf("minecraft:apple", 8, 6),
-                    buyOf("minecraft:sweet_berries", 16, 6),
-                    buyOf("minecraft:sugar_cane", 16, 6));
+            case FARM -> farmExtraListings(blight);
             case BOUNTY -> List.of(
                     buyOf("minecraft:rotten_flesh", 16, 6),
                     buyOf("minecraft:string", 16, 6),
@@ -894,6 +905,16 @@ public final class InhabitantRules {
             int n = Math.min(WEALTHY_OFFER_COUNT, pool.size());
             defaults = new ArrayList<>(pool.subList(0, n));
             extras = new ArrayList<>(pool.subList(n, pool.size()));
+        } else if (FARM.equals(type)) {
+            List<TradeListing> plants = new ArrayList<>(FARM_PLANT_SELLS);
+            Collections.shuffle(plants, rng);
+            int usualSells = Math.min(FARM_USUAL_SELLS, plants.size());
+            defaults = new ArrayList<>();
+            defaults.add(buyOf("minecraft:wheat", farmWheatBuy(blight), 6));
+            defaults.addAll(plants.subList(0, usualSells));
+            Collections.shuffle(defaults, rng);
+            extras = new ArrayList<>(plants.subList(usualSells, plants.size()));
+            extras.addAll(farmSideListings(blight));
         } else {
             defaults = new ArrayList<>(defaultListings(type, storage, blight));
             extras = new ArrayList<>(extraListings(type, storage, blight));
@@ -926,6 +947,35 @@ public final class InhabitantRules {
             scaled.add(listing.withUses(scaledAmount(listing.maxUses(), usePercent)));
         }
         return scaled;
+    }
+
+    /** Wheat buy plus the first plant sells. The live shop draws those sells at random. */
+    static List<TradeListing> farmUsualListings(boolean blight) {
+        List<TradeListing> listings = new ArrayList<>();
+        listings.add(buyOf("minecraft:wheat", farmWheatBuy(blight), 6));
+        int sells = Math.min(FARM_USUAL_SELLS, FARM_PLANT_SELLS.size());
+        listings.addAll(FARM_PLANT_SELLS.subList(0, sells));
+        return List.copyOf(listings);
+    }
+
+    /** Plant sells past the usual pair, then saplings, bone meal, and crop buys. */
+    static List<TradeListing> farmExtraListings(boolean blight) {
+        List<TradeListing> listings = new ArrayList<>();
+        if (FARM_PLANT_SELLS.size() > FARM_USUAL_SELLS) {
+            listings.addAll(FARM_PLANT_SELLS.subList(FARM_USUAL_SELLS, FARM_PLANT_SELLS.size()));
+        }
+        listings.addAll(farmSideListings(blight));
+        return List.copyOf(listings);
+    }
+
+    static List<TradeListing> farmSideListings(boolean blight) {
+        return List.of(
+                sellOf("minecraft:oak_sapling", 1, 2, 4),
+                sellOf("minecraft:birch_sapling", 1, 2, 4),
+                sellOf("minecraft:spruce_sapling", 1, 2, 4),
+                sellOf("minecraft:bone_meal", 4, 1, 6),
+                buyOf("minecraft:beetroot", farmWheatBuy(blight), 6),
+                buyOf("minecraft:apple", 8, 6));
     }
 
     static List<TradeListing> armorListings(boolean master) {

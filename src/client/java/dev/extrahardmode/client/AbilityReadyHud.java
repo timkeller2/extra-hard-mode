@@ -14,7 +14,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.joml.Matrix3x2fStack;
 
-/** Bottom-right list of abilities that can be cast above level 2, with each level beside its icon. */
+/** Bottom-right list of abilities that can be cast above level 2, with each level to the right of its icon. */
 public final class AbilityReadyHud {
     public static final net.minecraft.resources.Identifier ELEMENT_ID = ExtraHardModeMod.id("ability_ready");
 
@@ -49,13 +49,24 @@ public final class AbilityReadyHud {
         for (int i = 0; i < placements.size(); i++) {
             AbilityReadyRules.Placement placement = placements.get(i);
             drawIcon(graphics, shown.get(i).ability(), placement);
-            graphics.text(
-                    minecraft.font,
-                    Integer.toString(shown.get(i).level()),
-                    placement.labelX(),
-                    placement.labelY(),
-                    0xFFFFFFFF,
-                    true);
+            drawLevel(graphics, minecraft.font, Integer.toString(shown.get(i).level()), placement);
+        }
+    }
+
+    static void drawLevel(
+            GuiGraphicsExtractor graphics,
+            net.minecraft.client.gui.Font font,
+            String text,
+            AbilityReadyRules.Placement placement) {
+        float scale = placement.size() / (float) AbilityReadyRules.ICON_SIZE;
+        Matrix3x2fStack pose = graphics.pose();
+        pose.pushMatrix();
+        try {
+            pose.translate(placement.labelX(), placement.labelY());
+            pose.scale(scale, scale);
+            graphics.text(font, text, 0, 0, 0xFFFFFFFF, true);
+        } finally {
+            pose.popMatrix();
         }
     }
 
