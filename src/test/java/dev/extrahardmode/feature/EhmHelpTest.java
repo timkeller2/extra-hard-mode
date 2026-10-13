@@ -25,8 +25,10 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("/ 200 per minute"));
         assertTrue(String.join(" ", lines).contains("saturation"));
         assertTrue(String.join(" ", lines).contains("Well Fed"));
-        assertTrue(String.join(" ", lines).contains("17"));
-        assertTrue(String.join(" ", lines).contains("1 quartz per 2 mana"));
+        assertTrue(String.join(" ", lines).contains("Below 18"));
+        assertTrue(String.join(" ", lines).contains("does not consume saturation"));
+        assertTrue(String.join(" ", lines).contains("1 quartz per mana"));
+        assertTrue(String.join(" ", lines).contains("It does spend nether quartz"));
         assertTrue(String.join(" ", lines).contains("20 mana"));
         assertTrue(String.join(" ", lines).contains("/tougher ability help"));
         assertTrue(String.join(" ", lines).contains("/tougher me"));
@@ -137,6 +139,10 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("habitable home in a biome"));
         assertTrue(String.join(" ", lines).contains("house points × 3"));
         assertTrue(String.join(" ", lines).contains("on its right at the same scale"));
+        assertTrue(String.join(" ", lines).contains("highest first"));
+        assertTrue(String.join(" ", lines).contains("Hold a book"));
+        assertTrue(String.join(" ", lines).contains("yellow seconds"));
+        assertTrue(String.join(" ", lines).contains("golden when you have learned"));
         assertTrue(String.join(" ", lines).contains("plantable vegetable"));
         assertTrue(String.join(" ", lines).contains("6 to 16 emeralds"));
         assertTrue(String.join(" ", lines).contains("300 blocks from spawn"));

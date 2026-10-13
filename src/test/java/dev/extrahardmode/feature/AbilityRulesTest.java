@@ -483,11 +483,19 @@ class AbilityRulesTest {
 
     @Test
     void lastCatalystIsKeptAndGivesNoBonus() {
-        assertFalse(AbilityRules.consumesCatalyst(1));
-        assertTrue(AbilityRules.consumesCatalyst(2));
+        assertEquals(0, AbilityRules.catalystConsumeCount(0));
+        assertEquals(1, AbilityRules.catalystConsumeCount(1));
+        assertEquals(2, AbilityRules.catalystConsumeCount(2));
+        assertEquals(2, AbilityRules.catalystConsumeCount(5));
+        assertEquals(0, AbilityRules.catalystBonus(0));
         assertEquals(0, AbilityRules.catalystBonus(1));
         assertEquals(2, AbilityRules.catalystBonus(2));
-        assertEquals(0, AbilityRules.catalystBonus(0));
+        assertEquals(0, AbilityRules.renewConsumeCount(0));
+        assertEquals(1, AbilityRules.renewConsumeCount(1));
+        assertEquals(1, AbilityRules.renewConsumeCount(4));
+        assertEquals(0, AbilityRules.renewCatalystBonus(0));
+        assertEquals(2, AbilityRules.renewCatalystBonus(1));
+        assertEquals(2, AbilityRules.renewCatalystBonus(4));
     }
 
     @Test
@@ -648,17 +656,35 @@ class AbilityRulesTest {
         assertEquals(0, AbilityRules.detectOreSkill(0));
         assertEquals(1, AbilityRules.detectOreSkill(0.6));
         assertEquals(0, AbilityRules.detectOreSkill(0.4));
-        assertEquals(2, AbilityRules.detectOreRange(0));
-        assertEquals(3, AbilityRules.detectOreRange(1));
-        assertEquals(4, AbilityRules.detectOreRange(2));
-        assertEquals(3, AbilityRules.detectOreRange(0.6));
-        assertEquals(2, AbilityRules.detectOreRange(0.4));
+        assertEquals(4, AbilityRules.DETECT_ORE_BASE_RANGE);
+        assertEquals(4, AbilityRules.detectOreRange(0, 0));
+        assertEquals(5, AbilityRules.detectOreRange(1, 0));
+        assertEquals(4, AbilityRules.detectOreRange(1, 1));
+        assertEquals(8, AbilityRules.detectOreRange(5, 1));
+        assertEquals(0, AbilityRules.detectOreRange(5, 9));
+        assertEquals(4, AbilityRules.detectOreRange(9, 9));
+        assertEquals(12, AbilityRules.detectOreRange(9, 1));
+        assertEquals(0, AbilityRules.detectOreScanRange(0));
+        assertEquals(0, AbilityRules.detectOreScanRange(0.4));
+        assertEquals(4, AbilityRules.detectOreScanRange(0.6));
+        assertEquals(8, AbilityRules.detectOreScanRange(5));
+        assertTrue(AbilityRules.withinDetectOreReach(0, 0, 0, 4, 0, 0, 4));
+        assertFalse(AbilityRules.withinDetectOreReach(0, 0, 0, 5, 0, 0, 4));
         assertEquals(0, AbilityRules.redstoneDustBonus(false));
         assertEquals(2, AbilityRules.redstoneDustBonus(true));
-        assertEquals(0, AbilityRules.detectOreItemBonus(false, false));
-        assertEquals(2, AbilityRules.detectOreItemBonus(true, false));
-        assertEquals(2, AbilityRules.detectOreItemBonus(false, true));
-        assertEquals(4, AbilityRules.detectOreItemBonus(true, true));
+        assertEquals(0, AbilityRules.detectOreQuartzConsumeCount(0));
+        assertEquals(1, AbilityRules.detectOreQuartzConsumeCount(1));
+        assertEquals(2, AbilityRules.detectOreQuartzConsumeCount(2));
+        assertEquals(2, AbilityRules.detectOreQuartzConsumeCount(6));
+        assertEquals(0, AbilityRules.detectOreQuartzBonus(0));
+        assertEquals(0, AbilityRules.detectOreQuartzBonus(1));
+        assertEquals(2, AbilityRules.detectOreQuartzBonus(2));
+        assertEquals(0, AbilityRules.detectOreItemBonus(0, false));
+        assertEquals(0, AbilityRules.detectOreItemBonus(1, false));
+        assertEquals(2, AbilityRules.detectOreItemBonus(2, false));
+        assertEquals(2, AbilityRules.detectOreItemBonus(0, true));
+        assertEquals(2, AbilityRules.detectOreItemBonus(1, true));
+        assertEquals(4, AbilityRules.detectOreItemBonus(2, true));
         assertEquals(0.0, AbilityRules.lookYaw(0, 1), 1e-4);
         assertEquals(90.0, AbilityRules.lookYaw(-1, 0), 1e-4);
         assertEquals(-90.0, AbilityRules.lookYaw(1, 0), 1e-4);

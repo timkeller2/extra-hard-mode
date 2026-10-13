@@ -14,7 +14,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.joml.Matrix3x2fStack;
 
-/** Bottom-right list of abilities that can be cast above level 2, with each level to the right of its icon. */
+/** Bottom-right ability icons, highest level first, with each level to the right of its icon. */
 public final class AbilityReadyHud {
     public static final net.minecraft.resources.Identifier ELEMENT_ID = ExtraHardModeMod.id("ability_ready");
 
@@ -48,8 +48,17 @@ public final class AbilityReadyHud {
                 graphics.guiWidth(), graphics.guiHeight(), sizes, labelWidths, minecraft.font.lineHeight);
         for (int i = 0; i < placements.size(); i++) {
             AbilityReadyRules.Placement placement = placements.get(i);
-            drawIcon(graphics, shown.get(i).ability(), placement);
-            drawLevel(graphics, minecraft.font, Integer.toString(shown.get(i).level()), placement);
+            ClientboundAbilityReadyPayload.Entry entry = shown.get(i);
+            drawIcon(graphics, entry.ability(), placement);
+            if (entry.level() > 0) {
+                int color = entry.learned()
+                        ? AbilityReadyRules.LEARNED_LEVEL_COLOR
+                        : AbilityReadyRules.UNLEARNED_LEVEL_COLOR;
+                drawLevel(graphics, minecraft.font, Integer.toString(entry.level()), placement, color);
+            }
+            if (entry.cooldownSeconds() > 0) {
+                drawCooldown(graphics, minecraft.font, Integer.toString(entry.cooldownSeconds()), placement);
+            }
         }
     }
 
@@ -57,17 +66,29 @@ public final class AbilityReadyHud {
             GuiGraphicsExtractor graphics,
             net.minecraft.client.gui.Font font,
             String text,
-            AbilityReadyRules.Placement placement) {
+            AbilityReadyRules.Placement placement,
+            int color) {
         float scale = placement.size() / (float) AbilityReadyRules.ICON_SIZE;
         Matrix3x2fStack pose = graphics.pose();
         pose.pushMatrix();
         try {
             pose.translate(placement.labelX(), placement.labelY());
             pose.scale(scale, scale);
-            graphics.text(font, text, 0, 0, 0xFFFFFFFF, true);
+            graphics.text(font, text, 0, 0, color, true);
         } finally {
             pose.popMatrix();
         }
+    }
+
+    /** Yellow seconds centered on the icon, in GUI pixels so they stay readable. */
+    static void drawCooldown(
+            GuiGraphicsExtractor graphics,
+            net.minecraft.client.gui.Font font,
+            String text,
+            AbilityReadyRules.Placement placement) {
+        int x = placement.x() + (placement.size() - font.width(text)) / 2;
+        int y = placement.y() + (placement.size() - font.lineHeight) / 2;
+        graphics.text(font, text, x, y, AbilityReadyRules.COOLDOWN_COLOR, true);
     }
 
     static void drawIcon(GuiGraphicsExtractor graphics, String ability, AbilityReadyRules.Placement placement) {

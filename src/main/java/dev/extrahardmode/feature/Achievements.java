@@ -209,24 +209,16 @@ public final class Achievements implements FeatureModule {
         boolean belowLevel = AchievementRules.shouldBoostWithQuartz(level, current);
         boolean quartz = belowLevel && hasItem(player, Items.QUARTZ);
         boolean quartzBlock = belowLevel && InventorySearch.hasOneMain(player, Items.QUARTZ_BLOCK);
-        double afterBase = AchievementRules.addMana(
-                current, level, AchievementRules.regenPerMinute(level, current, quartz, quartzBlock));
-        double gained = afterBase - current;
+        double rate = AchievementRules.regenPerMinute(level, current, quartz, quartzBlock);
+        double saturation = player.getFoodData().getSaturationLevel();
+        double next = AchievementRules.addMana(
+                current, level, AchievementRules.withSaturationRegen(rate, saturation));
+        double gained = next - current;
         if (quartz) {
             settleQuartzCredit(player, gained * AchievementRules.quartzConsumptionShare(true, quartzBlock));
         }
         if (quartzBlock) {
             settleQuartzBlockCredit(player, gained * AchievementRules.quartzBlockConsumptionShare(quartz, true));
-        }
-        double next = afterBase;
-        var food = player.getFoodData();
-        float saturation = food.getSaturationLevel();
-        if (AchievementRules.shouldRestoreFromSaturation(level, afterBase, saturation)) {
-            double withSat = AchievementRules.clampMana(afterBase + AchievementRules.SATURATION_MANA_RESTORE, cap);
-            if (withSat > afterBase) {
-                next = withSat;
-                food.setSaturation(AchievementRules.saturationAfterManaRestore(saturation));
-            }
         }
         if (stored == null || next != stored) {
             player.setAttached(EhmAttachments.EHM_MANA_CURRENT, next);

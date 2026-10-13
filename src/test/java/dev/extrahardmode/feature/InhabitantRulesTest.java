@@ -14,6 +14,16 @@ import org.junit.jupiter.api.Test;
 
 class InhabitantRulesTest {
     @Test
+    void missingResidentIsClearedOnlyWhenTheHomeAreaCanSeeThem() {
+        assertFalse(InhabitantRules.residentMissing(true, true, true));
+        assertFalse(InhabitantRules.residentMissing(true, true, false));
+        assertTrue(InhabitantRules.residentMissing(true, false, true));
+        assertTrue(InhabitantRules.residentMissing(true, false, false));
+        assertFalse(InhabitantRules.residentMissing(false, false, false));
+        assertTrue(InhabitantRules.residentMissing(false, false, true));
+    }
+
+    @Test
     void volumeAndEnclosure() {
         assertFalse(InhabitantRules.volumeOk(23));
         assertTrue(InhabitantRules.volumeOk(24));

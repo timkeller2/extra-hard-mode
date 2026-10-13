@@ -7,13 +7,16 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
-/** Bottom-right icons for mana abilities the player can cast above level 2. */
+/** Bottom-right mana ability icons, highest level first. */
 public record ClientboundAbilityReadyPayload(List<Entry> abilities) implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<ClientboundAbilityReadyPayload> TYPE =
             new CustomPacketPayload.Type<>(ExtraHardModeMod.id("ability_ready"));
 
-    /** {@code size} is the icon edge in GUI pixels. {@code level} is the effective level as an integer. */
-    public record Entry(String ability, int size, int level) {
+    /**
+     * {@code size} is the icon edge in GUI pixels. {@code level} is the effective level as an integer.
+     * {@code cooldownSeconds} is 0 when the ability is ready. {@code learned} colors that level gold.
+     */
+    public record Entry(String ability, int size, int level, boolean learned, int cooldownSeconds) {
         static final StreamCodec<ByteBuf, Entry> STREAM_CODEC = StreamCodec.composite(
                 ByteBufCodecs.STRING_UTF8,
                 Entry::ability,
@@ -21,6 +24,10 @@ public record ClientboundAbilityReadyPayload(List<Entry> abilities) implements C
                 Entry::size,
                 ByteBufCodecs.VAR_INT,
                 Entry::level,
+                ByteBufCodecs.BOOL,
+                Entry::learned,
+                ByteBufCodecs.VAR_INT,
+                Entry::cooldownSeconds,
                 Entry::new);
     }
 

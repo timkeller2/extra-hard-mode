@@ -362,11 +362,11 @@ public final class EhmHelp {
                 "tougher.help.mana.",
                 List.of(
                         "Mana: Cyan crystals. You regen (mana level + current mana) / 200 per minute.",
-                        "Mana: Nether quartz in your inventory triples regen until you reach your mana level, consuming 1 quartz per 2 mana (one crystal).",
-                        "Mana: A quartz block in your main inventory makes regen 7 times the base rate until you reach your mana level, consuming 1 block per 2 mana.",
-                        "Mana: Nether quartz and a quartz block together make regen 10 times the base rate. Each is consumed for its own share, 1 per 2 mana.",
-                        "Mana: If your mana is below your mana level and below (saturation − 17), you also restore 1 mana per minute for 1 saturation.",
-                        "Mana: That saturation restore does not count toward quartz or a quartz block.",
+                        "Mana: Nether quartz in your inventory triples regen until you reach your mana level, consuming 1 quartz per mana (one crystal).",
+                        "Mana: A quartz block in your main inventory makes regen 7 times the base rate until you reach your mana level, consuming 1 block per mana.",
+                        "Mana: Nether quartz and a quartz block together make regen 10 times the base rate. Each is consumed for its own share, 1 per mana.",
+                        "Mana: Saturation of 18 or more doubles your mana regen. Below 18 that bonus stops.",
+                        "Mana: That doubled regen does not consume saturation. It does spend nether quartz and quartz blocks.",
                         "Mana: Past your level you regen at 1/4 speed, up to 20 mana (10 crystals). Achievements can raise your mana level."));
     }
 
@@ -379,7 +379,9 @@ public final class EhmHelp {
                         "Abilities: Stone bricks right-clicked in the air cast Master Builder. It renews like Iron Heart until you run out of mana.",
                         "Abilities: Diamonds right-clicked cast Diamond Skin. It costs 2 mana, divides health damage by its level, and renews while you have mana.",
                         "Abilities: Diamond Skin's level is at least 2. Each point of health damage it prevents shortens it by 3 seconds.",
-                        "Abilities: Redstone dust in your inventory is consumed for +2 on any ability.",
+                        "Abilities: A cast consumes one catalyst. Two in hand consume both and add +2. Swords, hoes, and pickaxes are not consumed.",
+                        "Abilities: A renew spends no catalyst unless you are holding it. Holding it spends one and adds +2.",
+                        "Abilities: Redstone dust in your inventory is consumed for +2 on any ability. Dust inside a bundle is ignored.",
                         "Abilities: You can learn up to half your mana level in abilities, rounded up.",
                         "Abilities: Unlearned abilities can be used and still gain skill, at −3 power (floored at 1), until you have a free slot to learn them.",
                         "Abilities: A wise teacher in a 24-point home teaches one ability for 30 emeralds, ignoring the ability limit.",
@@ -388,7 +390,9 @@ public final class EhmHelp {
                         "Abilities: Sneak while carrying a diamond block and a lapis lazuli block and that teacher raises your mana level once.",
                         "Abilities: Hold an item and press ? for details, or type /tougher ability help <name>.",
                         "Abilities: /tougher me lists your mana level and ability skill levels.",
-                        "Abilities: Bottom-right icons list abilities you can cast above level 2. Each icon is 5 percent of normal size times that level, and that level sits on its right at the same scale."));
+                        "Abilities: Bottom-right icons list abilities above level 2, highest first. Each icon is 5% of normal size times that level, and that level sits on its right at the same scale.",
+                        "Abilities: Hold a book to see every one of those icons. Otherwise only an active ability, one on cooldown, or the ability for the item in your hand is shown.",
+                        "Abilities: A cooldown puts yellow seconds on the icon. The level number is golden when you have learned that ability."));
     }
 
     private static Page achievements() {

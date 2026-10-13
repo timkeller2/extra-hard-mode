@@ -88,6 +88,7 @@ public final class Inhabitants implements FeatureModule {
         tickHomes(level);
         if (level.getGameTime() % 20L == 0L) {
             keepNearHome(level);
+            discardOrphanResidents(level);
             visitNearbyHomes(level);
         }
     }
@@ -235,6 +236,9 @@ public final class Inhabitants implements FeatureModule {
                 Component.literal(InhabitantRules.inspectFallback(result.gates()))));
         InhabitantData.Home home = data.get(ResidenceScan.homeId(result.bed()));
         if (home != null && home.living().isPresent()) {
+            home = releaseIfResidentMissing(level, data, home, day);
+        }
+        if (home != null && home.living().isPresent()) {
             player.sendSystemMessage(Component.translatableWithFallback(
                     "tougher.message.inhabitant_lives_here",
                     "%s the %s lives here.",
@@ -258,6 +262,10 @@ public final class Inhabitants implements FeatureModule {
     static void maintainOccupied(ServerLevel level, InhabitantData data, long day) {
         WorldConfig cfg = ConfigManager.world(level);
         for (InhabitantData.Home home : List.copyOf(data.homes())) {
+            if (home.living().isEmpty()) {
+                continue;
+            }
+            home = releaseIfResidentMissing(level, data, home, day);
             if (home.living().isEmpty()) {
                 continue;
             }
@@ -608,6 +616,51 @@ public final class Inhabitants implements FeatureModule {
                         result.gates().score());
                 data.put(home.withLastRestock(day));
             }
+        }
+    }
+
+    /** Drop a home's resident record when that villager is dead or no longer loaded near the bed. */
+    static InhabitantData.Home releaseIfResidentMissing(
+            ServerLevel level, InhabitantData data, InhabitantData.Home home, long day) {
+        if (home.living().isEmpty()) {
+            return home;
+        }
+        Entity entity = level.getEntityInAnyDimension(home.living().get());
+        boolean found = entity != null;
+        boolean alive = found && entity.isAlive();
+        if (!InhabitantRules.residentMissing(found, alive, homeAreaLoaded(level, home.bed()))) {
+            return home;
+        }
+        InhabitantData.Home released = home.withLiving(Optional.empty()).withLeave(-1L, false).withLastRoll(day);
+        data.put(released);
+        return released;
+    }
+
+    /** Chunks covering the snap-home radius around the bed. */
+    static boolean homeAreaLoaded(ServerLevel level, BlockPos bed) {
+        int radius = InhabitantRules.SNAP_HOME_RANGE;
+        int minCx = (bed.getX() - radius) >> 4;
+        int maxCx = (bed.getX() + radius) >> 4;
+        int minCz = (bed.getZ() - radius) >> 4;
+        int maxCz = (bed.getZ() + radius) >> 4;
+        for (int cx = minCx; cx <= maxCx; cx++) {
+            for (int cz = minCz; cz <= maxCz; cz++) {
+                if (!level.hasChunk(cx, cz)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /** A resident whose home no longer lists them is removed, so a missing record cannot come back as a second villager. */
+    static void discardOrphanResidents(ServerLevel level) {
+        InhabitantData data = InhabitantData.of(level);
+        for (Villager villager : level.getEntities(EntityTypes.VILLAGER, Inhabitants::isInhabitant)) {
+            if (!villager.isAlive() || data.byLiving(villager.getUUID()) != null) {
+                continue;
+            }
+            villager.discard();
         }
     }
 

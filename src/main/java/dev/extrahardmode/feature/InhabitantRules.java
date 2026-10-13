@@ -60,6 +60,18 @@ public final class InhabitantRules {
     public static final int IRON_CHESTPLATE_EMERALDS = 24;
     public static final int WANDER_RANGE = 16;
     public static final int SNAP_HOME_RANGE = 32;
+
+    /**
+     * The stored resident is gone. A loaded body that is not alive counts immediately.
+     * An unloaded body counts only when the area around the bed is loaded, so a
+     * resident in an unloaded chunk is not erased just because nobody is nearby.
+     */
+    public static boolean residentMissing(boolean found, boolean alive, boolean homeAreaLoaded) {
+        if (found) {
+            return !alive;
+        }
+        return homeAreaLoaded;
+    }
     /** Player visit scan around a bed, in blocks. */
     public static final int VISIT_RADIUS = 48;
     /** One arrival roll per this many overworld days. */
@@ -407,7 +419,8 @@ public final class InhabitantRules {
                 "Residents: They have 40 health plus their house points, and regain 1 health each minute.",
                 "Residents: Looking at one shows hearts, one per 10 health, beside the restock time.",
                 "Residents: They shoot mobs that come within 12 blocks and are after them. The bow hits 3 harder than a normal arrow.",
-                "Residents: A close attack makes them switch to an iron sword. A zombie cannot turn them unless they are already below 5 health.");
+                "Residents: A close attack makes them switch to an iron sword. A zombie cannot turn them unless they are already below 5 health.",
+                "Residents: A home stops listing someone who has died or is no longer around the bed.");
     }
 
     public static List<String> homesShopLines() {

@@ -43,6 +43,41 @@ public final class InventorySearch {
         return consume(player, stack -> stack.is(item), 1);
     }
 
+    /** Any inventory slot, but not items stored inside a bundle. */
+    public static boolean hasIgnoringBundles(Player player, Item item) {
+        if (player == null || item == null) {
+            return false;
+        }
+        Inventory inventory = player.getInventory();
+        for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
+            ItemStack stack = inventory.getItem(slot);
+            if (stack != null && !stack.isEmpty() && stack.is(item)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Shrinks one matching slot stack. Does not open bundles. */
+    public static boolean consumeOneIgnoringBundles(Player player, Item item) {
+        if (player == null || item == null) {
+            return false;
+        }
+        Inventory inventory = player.getInventory();
+        for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
+            ItemStack stack = inventory.getItem(slot);
+            if (stack == null || stack.isEmpty() || !stack.is(item)) {
+                continue;
+            }
+            stack.shrink(1);
+            if (stack.isEmpty()) {
+                inventory.setItem(slot, ItemStack.EMPTY);
+            }
+            return true;
+        }
+        return false;
+    }
+
     /** Hotbar and backpack only. Does not search bundles, armor, or offhand. */
     public static boolean hasOneMain(Player player, Item item) {
         if (player == null || item == null) {

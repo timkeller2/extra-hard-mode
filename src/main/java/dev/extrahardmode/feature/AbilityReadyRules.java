@@ -2,6 +2,7 @@ package dev.extrahardmode.feature;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,7 +19,19 @@ public final class AbilityReadyRules {
     public static final int LABEL_GAP = 2;
     /** Icons appear only when the cast's effective level is above this. */
     public static final double MIN_LEVEL = 2.0;
+    /** Edge of an icon shown for cooldown, an active effect, or the held item when the level is not above {@link #MIN_LEVEL}. */
+    public static final int FORCED_ICON_PIXELS = 8;
+    /** Learned ability levels. Unlearned levels stay white. */
+    public static final int LEARNED_LEVEL_COLOR = 0xFFFFAA00;
+    public static final int UNLEARNED_LEVEL_COLOR = 0xFFFFFFFF;
+    /** Seconds remaining, drawn on the icon. */
+    public static final int COOLDOWN_COLOR = 0xFFFFFF00;
     public static final String REDSTONE_ID = "minecraft:redstone";
+
+    /** Redstone dust stored in a bundle does not add the ability bonus and is not spent for it. */
+    public static boolean countsForAbilitySupply(String itemId, boolean insideBundle) {
+        return itemId != null && !itemId.isEmpty() && !(insideBundle && REDSTONE_ID.equals(itemId));
+    }
     public static final String QUARTZ_ID = "minecraft:quartz";
 
     private AbilityReadyRules() {}
@@ -28,6 +41,12 @@ public final class AbilityReadyRules {
 
     /** An ability the player can cast now, with its effective level. */
     public record StrongCast(String ability, double level) {}
+
+    /**
+     * One bottom-right icon. {@code cooldownSeconds} is 0 when the ability is ready.
+     * {@code learned} is true only when the player has actually learned it.
+     */
+    public record HudIcon(String ability, double level, boolean learned, int cooldownSeconds) {}
 
     /** Icon box plus the level number drawn just to its right, at the icon's scale. */
     public record Placement(int x, int y, int size, int labelX, int labelY) {}
@@ -60,6 +79,62 @@ public final class AbilityReadyRules {
         }
         long rounded = Math.round(level);
         return rounded > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) rounded;
+    }
+
+    /** Level printed beside an icon, including a low level that is shown for another reason. */
+    public static int hudLevelNumber(double level) {
+        int numbered = levelNumber(level);
+        if (numbered > 0) {
+            return numbered;
+        }
+        if (level <= 0.0) {
+            return 0;
+        }
+        long rounded = Math.round(level);
+        if (rounded <= 0) {
+            return 0;
+        }
+        return rounded > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) rounded;
+    }
+
+    /** Whole seconds left on a cooldown, at least 1 while any ticks remain. */
+    public static int cooldownSeconds(int remainingTicks) {
+        if (remainingTicks <= 0) {
+            return 0;
+        }
+        return Math.max(1, (int) Math.ceil(remainingTicks / 20.0));
+    }
+
+    /** A book, written book, book and quill, enchanted book, or knowledge book. */
+    public static boolean isBook(String itemId) {
+        if (itemId == null || itemId.isEmpty()) {
+            return false;
+        }
+        int colon = itemId.indexOf(':');
+        String path = colon >= 0 ? itemId.substring(colon + 1) : itemId;
+        return path.endsWith("book");
+    }
+
+    /**
+     * Holding a book lists every ability above {@link #MIN_LEVEL}. Otherwise an
+     * icon is shown only while that ability is active, on cooldown, or triggered
+     * by the item in the main hand.
+     */
+    public static boolean includeIcon(
+            double level, boolean holdingBook, boolean active, boolean onCooldown, boolean held) {
+        if (active || onCooldown || held) {
+            return true;
+        }
+        return holdingBook && level > MIN_LEVEL;
+    }
+
+    /** Icon edge. A forced low-level icon uses {@link #FORCED_ICON_PIXELS}. */
+    public static int hudIconPixels(double level, boolean forced) {
+        int size = iconPixels(level);
+        if (size > 0) {
+            return size;
+        }
+        return forced ? FORCED_ICON_PIXELS : 0;
     }
 
     /**
@@ -136,7 +211,7 @@ public final class AbilityReadyRules {
             Map<String, Long> lastUse) {
         Map<String, Integer> bestCount = new HashMap<>();
         boolean redstone = false;
-        boolean quartz = false;
+        int quartzCount = 0;
         int bestHoe = -1;
         int bestPick = -1;
         if (stacks != null) {
@@ -150,7 +225,7 @@ public final class AbilityReadyRules {
                     redstone = true;
                 }
                 if (QUARTZ_ID.equals(id)) {
-                    quartz = true;
+                    quartzCount += stack.count();
                 }
                 if (AbilityRules.isGrowHoe(id)) {
                     bestHoe = Math.max(bestHoe, AbilityRules.materialBonus(id));
@@ -168,6 +243,9 @@ public final class AbilityReadyRules {
             if (!hasCatalyst(ability, bestCount, bestHoe, bestPick)) {
                 continue;
             }
+            if (AbilityRules.DETECT_ORE.equals(ability) && quartzCount < 1) {
+                continue;
+            }
             boolean enoughMana = AbilityRules.HEAL.equals(ability)
                     ? AbilityRules.hasManaToHeal(currentMana, honey)
                     : AbilityRules.hasManaToUse(ability, currentMana);
@@ -180,7 +258,7 @@ public final class AbilityReadyRules {
             if (remaining > 0) {
                 continue;
             }
-            int itemBonus = itemBonus(ability, bestCount, redstone, quartz, honey, bestHoe, bestPick);
+            int itemBonus = itemBonus(ability, bestCount, redstone, quartzCount, honey, bestHoe, bestPick);
             double level = AbilityRules.power(
                     ability,
                     manaLevel,
@@ -195,6 +273,89 @@ public final class AbilityReadyRules {
             }
         }
         return ready;
+    }
+
+    /**
+     * Bottom-right icons, highest effective level first. A book in hand shows every
+     * ability above {@link #MIN_LEVEL}. Otherwise only an active effect, a cooldown,
+     * or the ability triggered by {@code heldAbility}. Saturation of the list does
+     * not require mana or a catalyst.
+     */
+    public static List<HudIcon> hudIcons(
+            int manaLevel,
+            Map<String, Integer> uses,
+            Collection<String> learned,
+            int goldBonus,
+            List<SupplyStack> stacks,
+            boolean honey,
+            long now,
+            Map<String, Long> lastUse,
+            boolean holdingBook,
+            String heldAbility,
+            Collection<String> active) {
+        Map<String, Integer> bestCount = new HashMap<>();
+        boolean redstone = false;
+        int quartzCount = 0;
+        int bestHoe = -1;
+        int bestPick = -1;
+        if (stacks != null) {
+            for (SupplyStack stack : stacks) {
+                if (stack == null || stack.itemId() == null || stack.itemId().isEmpty() || stack.count() <= 0) {
+                    continue;
+                }
+                String id = stack.itemId();
+                bestCount.merge(id, stack.count(), Math::max);
+                if (REDSTONE_ID.equals(id)) {
+                    redstone = true;
+                }
+                if (QUARTZ_ID.equals(id)) {
+                    quartzCount += stack.count();
+                }
+                if (AbilityRules.isGrowHoe(id)) {
+                    bestHoe = Math.max(bestHoe, AbilityRules.materialBonus(id));
+                }
+                if (AbilityRules.isPowerPickaxe(id)) {
+                    bestPick = Math.max(bestPick, AbilityRules.materialBonus(id));
+                }
+            }
+        }
+        Map<String, Integer> useCounts = uses == null ? Map.of() : uses;
+        Map<String, Long> usedAt = lastUse == null ? Map.of() : lastUse;
+        int gold = Math.max(0, goldBonus);
+        List<HudIcon> icons = new ArrayList<>();
+        for (String ability : AbilityRules.ABILITY_IDS) {
+            int useCount = useCounts.getOrDefault(ability, 0);
+            int cooldown = AbilityRules.cooldownTicks(ability, manaLevel, useCount);
+            int remaining = AbilityRules.remainingCooldownTicks(now, usedAt.getOrDefault(ability, -1L), cooldown);
+            int seconds = cooldownSeconds(remaining);
+            boolean running = active != null && active.contains(ability);
+            boolean held = ability.equals(heldAbility);
+            int itemBonus = itemBonus(ability, bestCount, redstone, quartzCount, honey, bestHoe, bestPick);
+            double level = AbilityRules.power(
+                    ability,
+                    manaLevel,
+                    useCount,
+                    itemBonus + gold,
+                    AbilityRules.isTrained(manaLevel, learned, ability));
+            if (AbilityRules.DIAMOND_SKIN.equals(ability)) {
+                level = AbilityRules.diamondSkinLevel(level);
+            }
+            if (!includeIcon(level, holdingBook, running, seconds > 0, held)) {
+                continue;
+            }
+            boolean forced = running || seconds > 0 || held;
+            if (hudIconPixels(level, forced) <= 0) {
+                continue;
+            }
+            icons.add(new HudIcon(ability, level, AbilityRules.isLearned(learned, ability), seconds));
+        }
+        icons.sort(Comparator.comparingDouble(HudIcon::level)
+                .reversed()
+                .thenComparingInt(icon -> {
+                    int index = AbilityRules.ABILITY_IDS.indexOf(icon.ability());
+                    return index < 0 ? Integer.MAX_VALUE : index;
+                }));
+        return icons;
     }
 
     static boolean hasCatalyst(String ability, Map<String, Integer> bestCount, int bestHoe, int bestPick) {
@@ -212,12 +373,12 @@ public final class AbilityReadyRules {
             String ability,
             Map<String, Integer> bestCount,
             boolean redstone,
-            boolean quartz,
+            int quartzCount,
             boolean honey,
             int bestHoe,
             int bestPick) {
         int bonus = AbilityRules.DETECT_ORE.equals(ability)
-                ? AbilityRules.detectOreItemBonus(quartz, redstone)
+                ? AbilityRules.detectOreItemBonus(quartzCount, redstone)
                 : AbilityRules.redstoneDustBonus(redstone);
         if (AbilityRules.HEAL.equals(ability) && honey) {
             bonus += AbilityRules.HONEY_HEAL_BONUS;

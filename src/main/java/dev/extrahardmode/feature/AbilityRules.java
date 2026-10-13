@@ -102,7 +102,8 @@ public final class AbilityRules {
     public static final int GROW_RANGE = 2;
     public static final int GROW_HOE_DAMAGE = 3;
     public static final int POWER_MINE_SECONDS_PER_POWER = 12;
-    public static final int DETECT_ORE_BASE_RANGE = 2;
+    /** Reach before the ore's difficulty is subtracted. */
+    public static final int DETECT_ORE_BASE_RANGE = 4;
     public static final int DETECT_ORE_RANGE_PER_POWER = 1;
     /** First search this many blocks above and below the player before looking farther up or down. */
     public static final int DETECT_ORE_LEVEL_BAND = 2;
@@ -577,26 +578,28 @@ public final class AbilityRules {
                     "Healing: If no teammate is targeted and you are injured, you heal yourself instead.",
                     "Healing: Costs 1 mana. A honey bottle in your main inventory (not a bundle) is consumed for +4, with or without mana.",
                     "Healing: If you have no mana, a honey bottle still lets you heal, even with no mana levels.",
-                    "Healing: The recipient sparkles blue for 6 seconds. An extra paper is consumed for +2 if you have more than one. The last paper is kept.");
+                    "Healing: The recipient sparkles blue for 6 seconds. One paper is consumed. Two in hand consume both and add +2.");
             case IRON_HEART -> List.of(
                     "Iron Heart: Right-click while holding an iron ingot. Costs 1 mana. Raises maximum health by ability level for ability level minutes.",
                     "Iron Heart: If another player is targeted within 2 + ability level blocks, they receive the buff instead.",
                     "Iron Heart: Right-click again with an iron ingot to cancel your own; you cannot cancel another player's Iron Heart.",
-                    "Iron Heart: The recipient sparkles silver for 3 seconds. An extra iron ingot is consumed for +2 if you have more than one.",
-                    "Iron Heart: The last ingot is kept. If it ends and you still have mana, another mana is spent and it continues, and you gain skill as if you cast it again.");
+                    "Iron Heart: The recipient sparkles silver for 3 seconds. One ingot is consumed. Two in hand consume both and add +2.",
+                    "Iron Heart: If it ends and you still have mana, another mana is spent and it continues, and you gain skill as if you cast it again.",
+                    "Iron Heart: A renew spends an ingot only when you are holding one, and that one adds +2.");
             case FIRE_BOLT -> List.of(
                     "Fire bolt: Right-click while holding charcoal. Costs 1 mana. The bolt seeks the nearest creature along your aim.",
                     "Fire bolt: Range scales with ability level. Ability level includes your mana level. Cooldown is 10 seconds minus (mana level + skill).",
-                    "Fire bolt: An extra charcoal is consumed for +2 if you have more than one. The last charcoal is kept.");
+                    "Fire bolt: One charcoal is consumed. Two in hand consume both and add +2.");
             case MAGIC_ARROW -> List.of(
                     "Magic arrow: Right-click while holding an arrow. Costs 1 mana. The arrow seeks the nearest creature along your aim.",
                     "Magic arrow: It deals arrow damage; it does not ignite. Range scales with ability level. Ability level includes your mana level.",
-                    "Magic arrow: Cooldown is 10 seconds minus (mana level + skill). An extra arrow is consumed for +2 if you have more than one. The last arrow is kept.");
+                    "Magic arrow: Cooldown is 10 seconds minus (mana level + skill). One arrow is consumed. Two in hand consume both and add +2.");
             case FLIGHT -> List.of(
                     "Flight: Right-click while holding a feather. Costs 1 mana. Jump to rise, sneak to descend, land to stop.",
                     "Flight: Speed scales with ability level and reaches 70% of walking speed at 10.",
-                    "Flight: An extra feather is consumed for +2 if you have more than one. The last feather is kept.",
-                    "Flight: If it ends and you still have mana, another mana is spent and it continues, and you gain skill as if you cast it again.");
+                    "Flight: One feather is consumed. Two in hand consume both and add +2.",
+                    "Flight: If it ends and you still have mana, another mana is spent and it continues, and you gain skill as if you cast it again.",
+                    "Flight: A renew spends a feather only when you are holding one, and that one adds +2.");
             case GROW -> List.of(
                     "Let it grow: Right-click a plant while holding any hoe to grow it by your ability level in stages.",
                     "Let it grow: Leftover stages go to the nearest plant within 2 blocks. Right-click also still grows random plants around you.",
@@ -608,25 +611,26 @@ public final class AbilityRules {
                     "Let there be light: Right-click while holding coal. Costs 1 mana. You shine for 30 seconds plus 30 seconds per ability level.",
                     "Let there be light: Brightness is 9 plus whole minutes remaining, up to torch-bright (14). Right-click again with coal to snuff it.",
                     "Let there be light: If the glow ends and you still have mana, another mana is spent and it continues, and you gain skill as if you cast it again.",
-                    "Let there be light: An extra coal is consumed for +2 if you have more than one. The last coal is kept.");
+                    "Let there be light: One coal is consumed. Two in hand consume both and add +2.",
+                    "Let there be light: A renew spends coal only when you are holding it, and that one adds +2.");
             case POWER_MINE -> List.of(
                     "Power mining: Right-click while holding any pickaxe. Costs 1 mana.",
                     "Power mining: For (ability level × 12) seconds, Tougher extra pickaxe wear on hardened stone is suspended. Ends when the timer expires.",
                     "Power mining: Pickaxe bonus: wood/stone 0, copper +1, iron +2, diamond +3, gold +4, netherite +5.");
             case DETECT_ORE -> List.of(
-                    "Detect ore: Right-click while holding a compass. Costs 1 mana. Optionally consumes 1 nether quartz from your inventory for +2.",
-                    "Detect ore: Quartz stacks with redstone dust. Ores within 2 blocks of your height come first, then farther up or down, out to 2 + ability level, through walls.",
+                    "Detect ore: Right-click while holding a compass. The compass is kept. Costs 1 mana and 1 nether quartz. A second quartz is consumed for +2.",
+                    "Detect ore: Redstone dust still adds +2. Ores within 2 blocks of your height come first, then farther up or down, out to 4 + ability level minus the ore difficulty, through walls.",
                     "Detect ore: It tells you the ore and approximate distance. You only sense ores at or below your ability level.",
                     "Detect ore: coal 1, quartz 2, copper 3, iron 4, redstone 5, lapis 6, gold 7, emerald 8, diamond 9, ancient debris 10.");
             case SLOW -> List.of(
                     "Slow: Right-click while holding string. Costs 1 mana. Slows enemy mobs within ability level blocks.",
                     "Slow: The slow is 20% + 5% per ability level (max 80%) for (ability level × 6) seconds.",
-                    "Slow: Mobs with more than 100 health are affected half as much. An extra string is consumed for +2 if you have more than one. The last string is kept.");
+                    "Slow: Mobs with more than 100 health are affected half as much. One string is consumed. Two in hand consume both and add +2.");
             case SENSE_EVIL -> List.of(
                     "Sense Evil: Right-click while holding a spider eye. Costs 1 mana.",
                     "Sense Evil: If a biome boss is spawned, you turn toward the nearest one and sparkle with a creepy aura for 6 seconds.",
                     "Sense Evil: If it is within 250 × ability level blocks, you also learn the rough distance.",
-                    "Sense Evil: If none are spawned, you sparkle as with Healing. An extra spider eye is consumed for +2 if you have more than one. The last spider eye is kept.");
+                    "Sense Evil: If none are spawned, you sparkle as with Healing. One spider eye is consumed. Two in hand consume both and add +2.");
             case SMITE_EVIL -> List.of(
                     "Smite Evil: Right-click while holding a golden sword. Costs 1 mana.",
                     "Smite Evil: Strikes a creature along your aim up to your ability level in blocks with a normal melee attack from that sword.",
@@ -636,14 +640,16 @@ public final class AbilityRules {
                     "Master Builder: Right-click in the air while holding stone bricks. Costs 1 mana. Lasts 30 seconds times your ability level.",
                     "Master Builder: While it lasts, you can place solid blocks in the air and without support. Torch rules still apply.",
                     "Master Builder: Right-click in the air again with stone bricks to cancel. If it ends and you still have mana, it spends another and continues.",
-                    "Master Builder: Continuing gains skill as if you cast it again. An extra stone brick is consumed for +2 if you hold more than one. The last brick is kept.");
+                    "Master Builder: One brick is consumed. Two in hand consume both and add +2. Continuing gains skill as if you cast it again.",
+                    "Master Builder: A renew spends a brick only when you are holding one, and that one adds +2.");
             case DIAMOND_SKIN -> List.of(
                     "Diamond Skin: Right-click while holding diamonds. Costs 2 mana. Effective level is at least 2. Lasts 30 seconds times that level.",
                     "Diamond Skin: Damage that would reach your health is divided by your ability level. Armor still takes the hit first.",
                     "Diamond Skin: Each point of that damage it prevents shortens Diamond Skin by 3 seconds. Poison, drowning, and suffocation are not reduced.",
                     "Diamond Skin: A cyan sparkle shows for a quarter second when a hit is reduced.",
                     "Diamond Skin: Right-click again with a diamond to cancel. If it ends and you still have 2 mana, it spends that and continues.",
-                    "Diamond Skin: Continuing gains skill as if you cast it again. An extra diamond is consumed for +2 if you hold more than one. The last diamond is kept.");
+                    "Diamond Skin: One diamond is consumed. Two in hand consume both and add +2. Continuing gains skill as if you cast it again.",
+                    "Diamond Skin: A renew spends a diamond only when you are holding one, and that one adds +2.");
             default -> null;
         };
     }
@@ -675,7 +681,8 @@ public final class AbilityRules {
     public static List<String> powerHelpLines() {
         return List.of(
                 "Base power: skill, the square root of times you have used that ability.",
-                "Extra catalyst, redstone, and tools add to that. Extra catalyst and redstone dust are +2 each.",
+                "A cast consumes one catalyst. Two in hand consume both for +2. One consumed catalyst adds nothing. Swords, hoes, and pickaxes are kept.",
+                "A renew spends no catalyst unless you are holding it. Holding it spends one and adds +2. Loose redstone dust is still +2, not dust in a bundle.",
                 "Fire bolt and Magic arrow also add your mana level.",
                 "Gold armor adds 1 power after 30 seconds, then 60, 120, and 240 seconds more. Four pieces put on together reach +4 in 450 seconds. A piece that comes off loses its bonus.",
                 "A golden item held for 30 seconds, such as a golden hoe, adds 1 more. Gold ingots, nuggets, and blocks do not.",
@@ -689,7 +696,8 @@ public final class AbilityRules {
                 "tougher.ability.power.help.3",
                 "tougher.ability.power.help.4",
                 "tougher.ability.power.help.5",
-                "tougher.ability.power.help.6");
+                "tougher.ability.power.help.6",
+                "tougher.ability.power.help.7");
     }
 
     public static String powerHelpFallback() {
@@ -743,7 +751,7 @@ public final class AbilityRules {
                 "Golden sword: Smite Evil",
                 "Stone bricks: Master Builder",
                 "Diamond: Diamond Skin",
-                "Redstone dust in your inventory: +2 to any ability (1 is consumed)",
+                "Redstone dust in your inventory, not inside a bundle: +2 to any ability (1 is consumed)",
                 "You can learn up to half your mana level in abilities, rounded up.",
                 "Unlearned abilities can be used and still gain skill, at −3 power (floored at 1), until you have a free slot to learn them.",
                 "A wise teacher teaches one ability. A 24-point home charges 30 emeralds; each point above that takes 2 off, down to free.",
@@ -853,14 +861,29 @@ public final class AbilityRules {
         return Math.sqrt(Math.max(0, uses));
     }
 
-    /** True when a catalyst stack can spend one item and still leave a trigger item. */
-    public static boolean consumesCatalyst(int stackCount) {
-        return stackCount > 1;
+    /**
+     * Fresh cast of a consumable catalyst. One held item is spent. Two or more
+     * spend two. Tools and weapons are not passed through here.
+     */
+    public static int catalystConsumeCount(int stackCount) {
+        if (stackCount <= 0) {
+            return 0;
+        }
+        return stackCount == 1 ? 1 : 2;
     }
 
-    /** +{@link #CATALYST_BONUS} only when a catalyst item is actually consumed. */
+    /** +{@link #CATALYST_BONUS} only when a fresh cast spends two catalysts. */
     public static int catalystBonus(int stackCount) {
-        return consumesCatalyst(stackCount) ? CATALYST_BONUS : 0;
+        return stackCount >= 2 ? CATALYST_BONUS : 0;
+    }
+
+    /** Auto-renew spends one held catalyst, and that one grants {@link #CATALYST_BONUS}. */
+    public static int renewConsumeCount(int stackCount) {
+        return stackCount >= 1 ? 1 : 0;
+    }
+
+    public static int renewCatalystBonus(int stackCount) {
+        return stackCount >= 1 ? CATALYST_BONUS : 0;
     }
 
     /** Distinct learned mana abilities (slot-cap set, not merely used). */
@@ -912,7 +935,7 @@ public final class AbilityRules {
             return 0;
         }
         int bonus = DETECT_ORE.equals(ability)
-                ? detectOreItemBonus(quartz, redstone)
+                ? detectOreItemBonus(quartz ? 2 : 0, redstone)
                 : redstoneDustBonus(redstone);
         if (!ability.equals(abilityForItem(heldItemId))) {
             return bonus;
@@ -1182,8 +1205,28 @@ public final class AbilityRules {
         return Math.max(0, (int) Math.round(Math.max(0.0, power)));
     }
 
-    public static int detectOreRange(double power) {
-        return DETECT_ORE_BASE_RANGE + DETECT_ORE_RANGE_PER_POWER * detectOreSkill(power);
+    /**
+     * Cube reach for one ore: {@link #DETECT_ORE_BASE_RANGE} plus rounded ability
+     * level, minus that ore's difficulty. Never negative.
+     */
+    public static int detectOreRange(double power, int difficulty) {
+        int range = DETECT_ORE_BASE_RANGE
+                + DETECT_ORE_RANGE_PER_POWER * detectOreSkill(power)
+                - Math.max(0, difficulty);
+        return Math.max(0, range);
+    }
+
+    /** Farthest cube in a scan: coal, the easiest ore, when the player can sense it. */
+    public static int detectOreScanRange(double power) {
+        if (detectOreSkill(power) < 1) {
+            return 0;
+        }
+        return detectOreRange(power, 1);
+    }
+
+    /** True when a block is inside the detect-ore cube of {@code range}. */
+    public static boolean withinDetectOreReach(int px, int py, int pz, int x, int y, int z, int range) {
+        return Math.abs(x - px) <= range && Math.abs(y - py) <= range && Math.abs(z - pz) <= range;
     }
 
     /** True when {@code oreY} is within {@link #DETECT_ORE_LEVEL_BAND} of the player's block height. */
@@ -1226,14 +1269,26 @@ public final class AbilityRules {
         return amount;
     }
 
-    /** +{@link #REDSTONE_BONUS} when redstone dust is consumed from inventory. */
+    /** +{@link #REDSTONE_BONUS} when loose redstone dust is consumed. Dust inside a bundle does not count. */
     public static int redstoneDustBonus(boolean hasRedstoneDust) {
         return hasRedstoneDust ? REDSTONE_BONUS : 0;
     }
 
-    /** Detect ore quartz bonus, stacked with the shared redstone-dust booster. */
-    public static int detectOreItemBonus(boolean quartz, boolean redstoneDust) {
-        return (quartz ? QUARTZ_BONUS : 0) + redstoneDustBonus(redstoneDust);
+    /** First nether quartz pays for the cast. A second one, if you have it, is the +2. */
+    public static int detectOreQuartzConsumeCount(int quartzCount) {
+        if (quartzCount <= 0) {
+            return 0;
+        }
+        return quartzCount == 1 ? 1 : 2;
+    }
+
+    public static int detectOreQuartzBonus(int quartzCount) {
+        return quartzCount >= 2 ? QUARTZ_BONUS : 0;
+    }
+
+    /** {@code quartzCount} is nether quartz on hand. Only the second one adds {@link #QUARTZ_BONUS}. */
+    public static int detectOreItemBonus(int quartzCount, boolean redstoneDust) {
+        return detectOreQuartzBonus(quartzCount) + redstoneDustBonus(redstoneDust);
     }
 
     public static double senseEvilRange(double power) {

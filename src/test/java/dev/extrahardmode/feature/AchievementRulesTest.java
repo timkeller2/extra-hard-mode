@@ -73,21 +73,22 @@ class AchievementRulesTest {
         assertTrue(AchievementRules.shouldBoostWithQuartz(2, 1.0));
         assertFalse(AchievementRules.shouldBoostWithQuartz(2, 2.0));
         assertFalse(AchievementRules.shouldBoostWithQuartz(0, 0.0));
-        assertEquals(2.0, AchievementRules.QUARTZ_MANA_PER_ITEM, 1e-9);
+        assertEquals(1.0, AchievementRules.QUARTZ_MANA_PER_ITEM, 1e-9);
         assertEquals(0.15, AchievementRules.addQuartzCredit(0.10, 0.05), 1e-9);
-        assertEquals(0, AchievementRules.quartzItemsForCredit(1.99));
-        assertEquals(1, AchievementRules.quartzItemsForCredit(2.0));
-        assertEquals(2, AchievementRules.quartzItemsForCredit(4.5));
-        assertEquals(0.5, AchievementRules.remainingQuartzCredit(4.5, 2), 1e-9);
-        assertEquals(2.5, AchievementRules.remainingQuartzCredit(4.5, 1), 1e-9);
-        assertTrue(AchievementRules.shouldRestoreFromSaturation(5, 1.0, 20.0));
-        assertTrue(AchievementRules.shouldRestoreFromSaturation(5, 2.9, 20.0));
-        assertFalse(AchievementRules.shouldRestoreFromSaturation(5, 3.0, 20.0));
-        assertFalse(AchievementRules.shouldRestoreFromSaturation(5, 1.0, 17.0));
-        assertFalse(AchievementRules.shouldRestoreFromSaturation(5, 5.0, 20.0));
-        assertFalse(AchievementRules.shouldRestoreFromSaturation(0, 0.0, 20.0));
-        assertEquals(19.0F, AchievementRules.saturationAfterManaRestore(20.0F), 1e-4F);
-        assertEquals(0.0F, AchievementRules.saturationAfterManaRestore(0.5F), 1e-4F);
+        assertEquals(0, AchievementRules.quartzItemsForCredit(0.99));
+        assertEquals(1, AchievementRules.quartzItemsForCredit(1.0));
+        assertEquals(4, AchievementRules.quartzItemsForCredit(4.5));
+        assertEquals(0.5, AchievementRules.remainingQuartzCredit(4.5, 4), 1e-9);
+        assertEquals(3.5, AchievementRules.remainingQuartzCredit(4.5, 1), 1e-9);
+        assertTrue(AchievementRules.saturationDoublesRegen(18.0));
+        assertTrue(AchievementRules.saturationDoublesRegen(20.0));
+        assertFalse(AchievementRules.saturationDoublesRegen(17.999));
+        assertFalse(AchievementRules.saturationDoublesRegen(0.0));
+        assertEquals(0.01, AchievementRules.withSaturationRegen(0.01, 17.999), 1e-9);
+        assertEquals(0.02, AchievementRules.withSaturationRegen(0.01, 18.0), 1e-9);
+        assertEquals(0.30, AchievementRules.withSaturationRegen(0.15, 20.0), 1e-9);
+        assertEquals(0.02, AchievementRules.addMana(0.0, 1, AchievementRules.withSaturationRegen(0.01, 18.0)), 1e-9);
+        assertEquals(1.025, AchievementRules.addMana(1.0, 1, AchievementRules.withSaturationRegen(0.05, 18.0)), 1e-9);
     }
 
     @Test

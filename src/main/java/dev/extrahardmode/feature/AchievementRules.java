@@ -17,15 +17,15 @@ public final class AchievementRules {
     public static final int TICKS_PER_MINUTE = 1200;
     /** Base regen per Minecraft minute is {@code (manaLevel + currentMana) / REGEN_DIVISOR}. */
     public static final double REGEN_DIVISOR = 200.0;
-    /** Saturation restore: current mana must be below {@code saturation - SATURATION_MANA_OFFSET}. */
-    public static final double SATURATION_MANA_OFFSET = 17.0;
-    public static final double SATURATION_MANA_RESTORE = 1.0;
-    public static final float SATURATION_MANA_COST = 1.0F;
+    /** Saturation at or above this doubles the regen rate for that minute and is not spent. */
+    public static final double SATURATION_REGEN_MINIMUM = 18.0;
+    public static final double SATURATION_REGEN_MULTIPLIER = 2.0;
     public static final double QUARTZ_REGEN_MULTIPLIER = 3.0;
     /** A quartz block in the main inventory. Added to the nether-quartz multiplier, not multiplied by it. */
     public static final double QUARTZ_BLOCK_REGEN_MULTIPLIER = 7.0;
     /** One nether quartz is consumed per this much quartz-boosted mana (one crystal). */
-    public static final double QUARTZ_MANA_PER_ITEM = 2.0;
+    /** One nether quartz, or one quartz block, is consumed per this much boosted mana. */
+    public static final double QUARTZ_MANA_PER_ITEM = 1.0;
     /** Regen multiplier once current mana is at or above mana level. */
     public static final double OVERFLOW_REGEN_MULTIPLIER = 0.25;
     /** Stored mana cannot exceed this (10 crystals). */
@@ -177,22 +177,20 @@ public final class AchievementRules {
         return manaLevel > 0 && current < manaLevel;
     }
 
-    /**
-     * Extra 1 mana per minute, paid with 1 saturation, when below mana level and
-     * {@code currentMana < saturation - 17}.
-     */
-    public static boolean shouldRestoreFromSaturation(int manaLevel, double currentMana, double saturation) {
-        if (manaLevel <= 0 || currentMana >= manaLevel) {
-            return false;
-        }
-        if (saturation < SATURATION_MANA_COST) {
-            return false;
-        }
-        return currentMana < saturation - SATURATION_MANA_OFFSET;
+    /** True when saturation is high enough to double this minute's regen rate. */
+    public static boolean saturationDoublesRegen(double saturation) {
+        return saturation >= SATURATION_REGEN_MINIMUM;
     }
 
-    public static float saturationAfterManaRestore(float saturation) {
-        return Math.max(0.0F, saturation - SATURATION_MANA_COST);
+    /**
+     * Double {@code regenPerMinute} while saturation is at least {@link #SATURATION_REGEN_MINIMUM}.
+     * Saturation itself is not spent. Quartz and quartz blocks are charged on the doubled gain.
+     */
+    public static double withSaturationRegen(double regenPerMinute, double saturation) {
+        if (!saturationDoublesRegen(saturation)) {
+            return regenPerMinute;
+        }
+        return regenPerMinute * SATURATION_REGEN_MULTIPLIER;
     }
 
     public static double addQuartzCredit(double credit, double gained) {

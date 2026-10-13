@@ -614,12 +614,14 @@ public final class ManaAbilities implements FeatureModule {
                 Math.max(0.0, Achievements.currentMana(caster) - AbilityRules.manaCost(AbilityRules.IRON_HEART)));
         Achievements.sendMana(caster);
         recordAbilityUse(caster, AbilityRules.IRON_HEART);
-        double power = abilityPower(caster, AbilityRules.IRON_HEART, 0);
+        int bonus = renewCatalystBonus(caster, Items.IRON_INGOT);
+        double power = abilityPower(caster, AbilityRules.IRON_HEART, bonus);
         int duration = AbilityRules.ironHeartDurationTicks(power);
         float health = AbilityRules.ironHeartHealth(power);
         if (duration <= 0 || health <= 0.0F) {
             return false;
         }
+        consumeRenewCatalyst(caster, Items.IRON_INGOT);
         startIronHeartLock(caster, duration);
         applyIronHeartBuff(caster, target, health, duration);
         startIronHeartSparkle(target);
@@ -638,7 +640,7 @@ public final class ManaAbilities implements FeatureModule {
 
     /**
      * Air use of stone bricks. A click that can place the block never reaches this.
-     * A second air click cancels. Renewal spends mana but not another brick.
+     * A second air click cancels. Renewal spends mana, and one brick only while it is in hand.
      */
     static boolean tryMasterBuilder(ServerPlayer player) {
         if (!player.getMainHandItem().is(Items.STONE_BRICKS) || Achievements.skipPlayer(player)) {
@@ -729,11 +731,13 @@ public final class ManaAbilities implements FeatureModule {
                 Math.max(0.0, Achievements.currentMana(player) - AbilityRules.manaCost(AbilityRules.MASTER_BUILDER)));
         Achievements.sendMana(player);
         recordAbilityUse(player, AbilityRules.MASTER_BUILDER);
-        double power = abilityPower(player, AbilityRules.MASTER_BUILDER, 0);
+        int bonus = renewCatalystBonus(player, Items.STONE_BRICKS);
+        double power = abilityPower(player, AbilityRules.MASTER_BUILDER, bonus);
         int duration = AbilityRules.masterBuilderDurationTicks(power);
         if (duration <= 0) {
             return false;
         }
+        consumeRenewCatalyst(player, Items.STONE_BRICKS);
         startMasterBuilder(player, duration);
         castMasterBuilder(player);
         tellAbilityUse(player, "tougher.ability.master_builder", "Master Builder", power);
@@ -850,11 +854,13 @@ public final class ManaAbilities implements FeatureModule {
                 Math.max(0.0, Achievements.currentMana(player) - AbilityRules.manaCost(AbilityRules.DIAMOND_SKIN)));
         Achievements.sendMana(player);
         recordAbilityUse(player, AbilityRules.DIAMOND_SKIN);
-        double power = AbilityRules.diamondSkinLevel(abilityPower(player, AbilityRules.DIAMOND_SKIN, 0));
+        int bonus = renewCatalystBonus(player, Items.DIAMOND);
+        double power = AbilityRules.diamondSkinLevel(abilityPower(player, AbilityRules.DIAMOND_SKIN, bonus));
         int duration = AbilityRules.diamondSkinDurationTicks(power);
         if (duration <= 0) {
             return false;
         }
+        consumeRenewCatalyst(player, Items.DIAMOND);
         startDiamondSkin(player, power, duration);
         castDiamondSkin(player);
         tellAbilityUse(player, "tougher.ability.diamond_skin", "Diamond Skin", power);
@@ -1258,11 +1264,19 @@ public final class ManaAbilities implements FeatureModule {
                 player, AbilityRules.DETECT_ORE, "tougher.ability.detect_ore", "Detect ore")) {
             return true;
         }
-        int bonus = detectOreInventoryBonus(player);
+        int quartz = InventorySearch.count(player, Items.QUARTZ);
+        if (quartz < 1) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.detect_ore_quartz",
+                    "Detect ore needs a nether quartz."));
+            markHandled(player);
+            return true;
+        }
+        int bonus = AbilityRules.detectOreItemBonus(quartz, hasRedstoneDust(player));
         double power = abilityPower(player, AbilityRules.DETECT_ORE, bonus);
-        int range = AbilityRules.detectOreRange(power);
+        int range = AbilityRules.detectOreScanRange(power);
         AbilityRules.OreDeposit best = DetectOre.findBest(player, range, power);
-        consumeDetectOreQuartz(player);
+        InventorySearch.consume(player, Items.QUARTZ, AbilityRules.detectOreQuartzConsumeCount(quartz));
         spend(player, null, AbilityRules.DETECT_ORE);
         castEffect(player, SoundEvents.AMETHYST_BLOCK_RESONATE, ParticleTypes.ENCHANT, ParticleTypes.END_ROD);
         tellAbilityUse(player, "tougher.ability.detect_ore", "Detect ore", power);
@@ -1456,7 +1470,9 @@ public final class ManaAbilities implements FeatureModule {
             return;
         }
         if (AbilityRules.hasManaToUse(AbilityRules.LIGHT, Achievements.currentMana(player))) {
-            double power = abilityPower(player, AbilityRules.LIGHT, 0);
+            int bonus = renewCatalystBonus(player, Items.COAL);
+            double power = abilityPower(player, AbilityRules.LIGHT, bonus);
+            consumeRenewCatalyst(player, Items.COAL);
             player.setAttached(
                     EhmAttachments.EHM_MANA_CURRENT,
                     Math.max(0.0, Achievements.currentMana(player) - AbilityRules.manaCost(AbilityRules.LIGHT)));
@@ -1632,14 +1648,6 @@ public final class ManaAbilities implements FeatureModule {
         }
     }
 
-    static int detectOreInventoryBonus(ServerPlayer player) {
-        return AbilityRules.detectOreItemBonus(hasItem(player, Items.QUARTZ), hasRedstoneDust(player));
-    }
-
-    static void consumeDetectOreQuartz(ServerPlayer player) {
-        consumeOne(player, stack -> stack.is(Items.QUARTZ));
-    }
-
     static int withRedstoneBonus(ServerPlayer player, int itemBonus) {
         return Math.max(0, itemBonus) + AbilityRules.redstoneDustBonus(hasRedstoneDust(player));
     }
@@ -1651,7 +1659,7 @@ public final class ManaAbilities implements FeatureModule {
                 heldItemId(held),
                 held.getCount(),
                 hasRedstoneDust(player),
-                hasItem(player, Items.QUARTZ));
+                InventorySearch.count(player, Items.QUARTZ) >= 2);
     }
 
     public static String meLineValue(ServerPlayer player, AbilityRules.AbilitySkill skill) {
@@ -1698,11 +1706,11 @@ public final class ManaAbilities implements FeatureModule {
     }
 
     static void consumeRedstoneDustBooster(ServerPlayer player) {
-        consumeOne(player, stack -> stack.is(Items.REDSTONE));
+        InventorySearch.consumeOneIgnoringBundles(player, Items.REDSTONE);
     }
 
     static boolean hasRedstoneDust(ServerPlayer player) {
-        return hasItem(player, Items.REDSTONE);
+        return InventorySearch.hasIgnoringBundles(player, Items.REDSTONE);
     }
 
     static boolean hasItem(ServerPlayer player, net.minecraft.world.item.Item item) {
@@ -1781,11 +1789,10 @@ public final class ManaAbilities implements FeatureModule {
             return;
         }
         if (Achievements.currentMana(player) >= AbilityRules.MANA_COST) {
-            ItemStack held = player.getMainHandItem();
-            boolean feather = held.is(Items.FEATHER);
-            int bonus = withRedstoneBonus(player, feather ? AbilityRules.catalystBonus(held.getCount()) : 0);
+            int bonus = withRedstoneBonus(player, renewCatalystBonus(player, Items.FEATHER));
             double power = abilityPower(player, AbilityRules.FLIGHT, bonus);
-            consumeManaAndHeld(player, feather ? Items.FEATHER : null);
+            consumeRenewCatalyst(player, Items.FEATHER);
+            consumeManaAndHeld(player, null);
             recordAbilityUse(player, AbilityRules.FLIGHT);
             int extra = AbilityRules.flightDurationTicks(power);
             float speed = AbilityRules.flightSpeed(power);
@@ -1904,14 +1911,16 @@ public final class ManaAbilities implements FeatureModule {
             }
             hoeBonus += AbilityRules.pickaxeBonus(heldItemId(held));
         } else if (held.is(Items.COMPASS)) {
-            hoeBonus += AbilityRules.detectOreItemBonus(hasItem(player, Items.QUARTZ), false);
-        } else if (held.is(Items.STRING)) {
-            hoeBonus += AbilityRules.catalystBonus(held.getCount());
-        } else if (held.is(Items.ARROW)
+            hoeBonus += AbilityRules.detectOreQuartzBonus(InventorySearch.count(player, Items.QUARTZ));
+        } else if (held.is(Items.STRING)
+                || held.is(Items.ARROW)
                 || held.is(Items.CHARCOAL)
                 || held.is(Items.IRON_INGOT)
                 || held.is(Items.STONE_BRICKS)
-                || held.is(Items.DIAMOND)) {
+                || held.is(Items.DIAMOND)
+                || held.is(Items.PAPER)
+                || held.is(Items.FEATHER)
+                || held.is(Items.SPIDER_EYE)) {
             hoeBonus += AbilityRules.catalystBonus(held.getCount());
         } else if (isLightCoal(held)) {
             hoeBonus += AbilityRules.catalystBonus(held.getCount());
@@ -2018,17 +2027,49 @@ public final class ManaAbilities implements FeatureModule {
         Achievements.sendMana(player);
     }
 
-    /** Leaves the last item in the stack so the ability can still be triggered. */
-    static boolean tryConsumeHeld(ServerPlayer player, net.minecraft.world.item.Item consumed) {
+    /**
+     * Fresh cast. One held catalyst is spent. Two or more spend two, which is what
+     * grants the +2. Tools and weapons are not passed in.
+     */
+    static void tryConsumeHeld(ServerPlayer player, net.minecraft.world.item.Item consumed) {
         if (consumed == null) {
-            return false;
+            return;
         }
         ItemStack held = player.getMainHandItem();
-        if (!held.is(consumed) || !AbilityRules.consumesCatalyst(held.getCount())) {
-            return false;
+        if (!held.is(consumed)) {
+            return;
         }
-        held.shrink(1);
-        return true;
+        int take = AbilityRules.catalystConsumeCount(held.getCount());
+        if (take > 0) {
+            held.shrink(take);
+        }
+    }
+
+    /** +2 when a renew will spend one catalyst that is still in the main hand. */
+    static int renewCatalystBonus(ServerPlayer player, net.minecraft.world.item.Item catalyst) {
+        if (player == null || catalyst == null) {
+            return 0;
+        }
+        ItemStack held = player.getMainHandItem();
+        if (!held.is(catalyst)) {
+            return 0;
+        }
+        return AbilityRules.renewCatalystBonus(held.getCount());
+    }
+
+    /** Spends one held catalyst on a renew. Does nothing when that item is not in hand. */
+    static void consumeRenewCatalyst(ServerPlayer player, net.minecraft.world.item.Item catalyst) {
+        if (player == null || catalyst == null) {
+            return;
+        }
+        ItemStack held = player.getMainHandItem();
+        if (!held.is(catalyst)) {
+            return;
+        }
+        int take = AbilityRules.renewConsumeCount(held.getCount());
+        if (take > 0) {
+            held.shrink(take);
+        }
     }
 
     public static void sendFlight(ServerPlayer player) {
@@ -2177,50 +2218,86 @@ public final class ManaAbilities implements FeatureModule {
     }
 
     static void syncStrongCastHud(ServerPlayer player, boolean force) {
-        List<AbilityReadyRules.StrongCast> casts = List.of();
+        List<AbilityReadyRules.HudIcon> casts = List.of();
         if (!Achievements.skipPlayer(player) && WorldGate.isModuleActive(player.level(), ID)) {
             long now = 0L;
             if (player.level().getServer() != null) {
                 now = player.level().getServer().overworld().getGameTime();
             }
             Map<String, Long> lastUse = player.getAttachedOrElse(EhmAttachments.EHM_ABILITY_LAST_USE, Map.of());
-            casts = AbilityReadyRules.strongCasts(
+            casts = AbilityReadyRules.hudIcons(
                     Achievements.manaLevel(player),
-                    Achievements.currentMana(player),
                     usesMap(player),
                     learnedSet(player),
                     goldAbilityBonus(player),
                     supplyStacks(player),
                     InventorySearch.hasOneMain(player, Items.HONEY_BOTTLE),
                     now,
-                    lastUse == null ? Map.of() : lastUse);
+                    lastUse == null ? Map.of() : lastUse,
+                    holdingBook(player),
+                    abilityForHeld(player.getMainHandItem()),
+                    activeAbilities(player));
         }
-        String key = strongCastKey(casts);
+        String key = hudIconKey(casts);
         if (!force && key.equals(STRONG_CAST_SENT.get(player.getUUID()))) {
             return;
         }
         STRONG_CAST_SENT.put(player.getUUID(), key);
         List<ClientboundAbilityReadyPayload.Entry> entries = new ArrayList<>();
-        for (AbilityReadyRules.StrongCast cast : casts) {
-            int size = AbilityReadyRules.iconPixels(cast.level());
-            int level = AbilityReadyRules.levelNumber(cast.level());
-            if (size > 0 && level > 0) {
-                entries.add(new ClientboundAbilityReadyPayload.Entry(cast.ability(), size, level));
+        for (AbilityReadyRules.HudIcon icon : casts) {
+            int size = AbilityReadyRules.hudIconPixels(icon.level(), true);
+            int level = AbilityReadyRules.hudLevelNumber(icon.level());
+            if (size <= 0) {
+                continue;
             }
+            entries.add(new ClientboundAbilityReadyPayload.Entry(
+                    icon.ability(), size, level, icon.learned(), icon.cooldownSeconds()));
         }
         ServerPlayNetworking.send(
                 player,
                 entries.isEmpty() ? ClientboundAbilityReadyPayload.EMPTY : new ClientboundAbilityReadyPayload(entries));
     }
 
-    static String strongCastKey(List<AbilityReadyRules.StrongCast> casts) {
+    static boolean holdingBook(ServerPlayer player) {
+        return AbilityReadyRules.isBook(heldItemId(player.getMainHandItem()))
+                || AbilityReadyRules.isBook(heldItemId(player.getOffhandItem()));
+    }
+
+    static java.util.Set<String> activeAbilities(ServerPlayer player) {
+        java.util.Set<String> active = new java.util.HashSet<>();
+        if (remainingFlight(player) > 0) {
+            active.add(AbilityRules.FLIGHT);
+        }
+        if (remainingPowerMine(player) > 0) {
+            active.add(AbilityRules.POWER_MINE);
+        }
+        if (remainingPlayerLight(player) > 0) {
+            active.add(AbilityRules.LIGHT);
+        }
+        if (remainingIronHeartBuff(player) > 0) {
+            active.add(AbilityRules.IRON_HEART);
+        }
+        if (remainingMasterBuilder(player) > 0) {
+            active.add(AbilityRules.MASTER_BUILDER);
+        }
+        if (remainingDiamondSkin(player) > 0) {
+            active.add(AbilityRules.DIAMOND_SKIN);
+        }
+        return active;
+    }
+
+    static String hudIconKey(List<AbilityReadyRules.HudIcon> icons) {
         StringBuilder key = new StringBuilder();
-        for (AbilityReadyRules.StrongCast cast : casts) {
-            key.append(cast.ability())
+        for (AbilityReadyRules.HudIcon icon : icons) {
+            key.append(icon.ability())
                     .append(':')
-                    .append(AbilityReadyRules.iconPixels(cast.level()))
+                    .append(AbilityReadyRules.hudIconPixels(icon.level(), true))
                     .append(':')
-                    .append(AbilityReadyRules.levelNumber(cast.level()))
+                    .append(AbilityReadyRules.hudLevelNumber(icon.level()))
+                    .append(':')
+                    .append(icon.learned())
+                    .append(':')
+                    .append(icon.cooldownSeconds())
                     .append(';');
         }
         return key.toString();
@@ -2239,8 +2316,15 @@ public final class ManaAbilities implements FeatureModule {
         if (stack == null || stack.isEmpty()) {
             return;
         }
+        collectSupply(stack, out, false);
+    }
+
+    static void collectSupply(ItemStack stack, List<AbilityReadyRules.SupplyStack> out, boolean insideBundle) {
+        if (stack == null || stack.isEmpty()) {
+            return;
+        }
         String id = heldItemId(stack);
-        if (!id.isEmpty()) {
+        if (!id.isEmpty() && AbilityReadyRules.countsForAbilitySupply(id, insideBundle)) {
             out.add(new AbilityReadyRules.SupplyStack(id, stack.getCount()));
         }
         BundleContents contents = stack.get(DataComponents.BUNDLE_CONTENTS);
@@ -2248,7 +2332,7 @@ public final class ManaAbilities implements FeatureModule {
             return;
         }
         for (ItemStackTemplate template : contents.items()) {
-            collectSupply(template.create(), out);
+            collectSupply(template.create(), out, true);
         }
     }
 

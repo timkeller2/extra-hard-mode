@@ -268,10 +268,10 @@ def build():
         Paragraph(
             "Mana is shown as cyan crystals. Two mana points fill one crystal. "
             "You regenerate (mana level + current mana) / 200 per minute. "
-            "Nether quartz in your inventory makes that 3 times faster until you reach your mana level, using 1 quartz per 2 mana. "
-            "A quartz block in your main inventory makes it 7 times the base rate until you reach your mana level, using 1 block per 2 mana. "
+            "Nether quartz in your inventory makes that 3 times faster until you reach your mana level, using 1 quartz per mana. "
+            "A quartz block in your main inventory makes it 7 times the base rate until you reach your mana level, using 1 block per mana. "
             "Both together are 10 times, and each is consumed only for its own share. "
-            "If your mana is below your mana level and below saturation minus 17, you also restore 1 mana per minute for 1 saturation. That does not spend quartz. "
+            "Saturation of 18 or more doubles that regen and is not consumed. Below 18 the bonus stops. The doubled regen spends nether quartz and quartz blocks. "
             "Past your level, regeneration is one-quarter speed. The old ceiling of 20 mana rises when Well Fed pushes your level past 20. "
             "Achievements and wise teachers can raise the permanent mana level. Well Fed adds levels on top, and those extra levels leave when Well Fed drops.",
             s["body"],
@@ -279,7 +279,10 @@ def build():
         Paragraph("Abilities", s["h"]),
         Paragraph(
             "Hold the catalyst and right-click. Power starts as the square root of how many times you have used that ability. "
-            "Extra catalyst and a piece of redstone dust each add 2, and the redstone is consumed. "
+            "A cast consumes one catalyst. Two in hand consume both and add 2. One consumed catalyst adds nothing. "
+            "Swords, hoes, and pickaxes are not consumed. "
+            "A renew spends no catalyst unless you are holding it, which spends one and adds 2. "
+            "Loose redstone dust still adds 2 and is consumed. Dust inside a bundle does not count and is not spent. "
             "Fire bolt and Magic arrow also add your mana level. "
             "Gold armor adds 1 after 30 seconds, then 60, 120, and 240 seconds more. Four pieces put on together reach +4 in 450 seconds. "
             "A golden item in either hand, such as a golden hoe, adds 1 more after 30 seconds. "
@@ -291,13 +294,13 @@ def build():
         bullets(
             [
                 "Paper: Healing. Iron ingot: Iron Heart. Feather: Flight. Charcoal: Fire bolt. Arrow: Magic arrow.",
-                "Any hoe: Let it grow, on a plant. Coal: Let there be light. Any pickaxe: Power mining. Compass: Detect ore.",
+                "Any hoe: Let it grow, on a plant. Coal: Let there be light. Any pickaxe: Power mining. Compass: Detect ore. The compass is kept. One nether quartz is required and consumed, and a second quartz is consumed for +2. Reach is 4 + ability level minus that ore's difficulty.",
                 "String: Slow. Spider eye: Sense Evil. Golden sword: Smite Evil. Stone bricks in the air: Master Builder. Diamond: Diamond Skin.",
-                "Master Builder lasts 30 seconds times ability level, renews while you have mana, and cancels on another air click. An extra brick in hand is consumed for +2.",
-                "Diamond Skin costs 2 mana and lasts 30 seconds times ability level. Its effective level is at least 2, so a bare cast still halves health damage. It renews while you have 2 mana, and cancels on another right-click. An extra diamond in hand is consumed for +2.",
+                "Master Builder lasts 30 seconds times ability level, renews while you have mana, and cancels on another air click. One brick is consumed. Two in hand consume both and add +2. A renew spends a brick only when you are holding one, and that adds +2.",
+                "Diamond Skin costs 2 mana and lasts 30 seconds times ability level. Its effective level is at least 2, so a bare cast still halves health damage. It renews while you have 2 mana, and cancels on another right-click. One diamond is consumed. Two in hand consume both and add +2. A renew spends a diamond only when you are holding one, and that adds +2.",
                 "While Diamond Skin lasts, damage that would reach your health is divided by the ability level. Armor still applies first. Each point prevented shortens the effect by 3 seconds. Poison, drowning, and suffocation are not reduced. A quarter-second cyan sparkle plays when a hit is reduced.",
                 "You can learn up to half your mana level in abilities, rounded up, by using them. Unlearned use still gains skill, at -3 power, floored at 1, until a slot is free.",
-                "Bottom-right icons list abilities you can cast above level 2. Each icon is 5 percent of normal size times that level, and that level sits on its right at the same scale.",
+                "Bottom-right icons list abilities above level 2, highest first. Each icon is 5% of normal size times that level, and that level sits on its right at the same scale. Hold a book to see all of them. Otherwise only an active ability, one on cooldown, or the ability for the item in your hand is shown. Cooldown seconds are yellow on the icon. A learned ability's level number is golden.",
                 "A wise teacher in a 24-point home teaches one ability for 30 emeralds. Each house point above 24 takes 2 emeralds off, down to free. The lesson ignores the learning cap and does not use a self-learned slot. Paying for an ability you already know frees that slot.",
                 "Sneak with a diamond block and a lapis lazuli block and that teacher raises your permanent mana by 1, once per teacher.",
             ],
@@ -335,6 +338,7 @@ def build():
                 "Residents have 40 health plus their house points, and regain 1 health a minute. Looking at one shows hearts, one per 10 health, beside the restock time.",
                 "They shoot mobs that come within 12 blocks and are after them. The bow hits 3 harder than a normal arrow. A close attack makes them switch to an iron sword.",
                 "A zombie cannot turn a resident unless the hit that kills them starts while they are already below 5 health.",
+                "A home stops listing a resident who has died or is no longer around the bed.",
                 "Council members give each player a personal kill bounty: 6 to 18 common mobs at first, 30% larger and rarer after each success, with 7 Minecraft days to finish. The reward is experience from the slain health, plus emeralds when you return.",
             ],
             s["bullet"],

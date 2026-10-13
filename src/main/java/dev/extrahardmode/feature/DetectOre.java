@@ -34,9 +34,15 @@ public final class DetectOre {
                 continue;
             }
             String id = blockId(state);
-            if (AbilityRules.canDetectOre(id, power)) {
-                samples.add(new AbilityRules.OreSample(id, pos.getX(), pos.getY(), pos.getZ()));
+            if (!AbilityRules.canDetectOre(id, power)) {
+                continue;
             }
+            int oreRange = AbilityRules.detectOreRange(power, AbilityRules.oreDetectLevel(id));
+            if (!AbilityRules.withinDetectOreReach(
+                    origin.getX(), origin.getY(), origin.getZ(), pos.getX(), pos.getY(), pos.getZ(), oreRange)) {
+                continue;
+            }
+            samples.add(new AbilityRules.OreSample(id, pos.getX(), pos.getY(), pos.getZ()));
         }
         return AbilityRules.bestDepositAtPlayerLevel(
                 samples, origin.getX(), origin.getY(), origin.getZ());

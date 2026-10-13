@@ -1,6 +1,7 @@
 package dev.extrahardmode.feature;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -154,6 +155,95 @@ class AbilityReadyRulesTest {
         assertTrue(AbilityReadyRules.strongCasts(
                         4, 5.0, Map.of(), Set.of(AbilityRules.DIAMOND_SKIN), 0, diamond, false, 0L, Map.of())
                 .isEmpty());
+    }
+
+    @Test
+    void hudIconsSortByLevelAndFilterUnlessHoldingABook() {
+        assertTrue(AbilityReadyRules.countsForAbilitySupply(AbilityReadyRules.REDSTONE_ID, false));
+        assertFalse(AbilityReadyRules.countsForAbilitySupply(AbilityReadyRules.REDSTONE_ID, true));
+        assertTrue(AbilityReadyRules.countsForAbilitySupply(AbilityRules.FEATHER_ID, true));
+        assertFalse(AbilityReadyRules.countsForAbilitySupply("", true));
+        assertTrue(AbilityReadyRules.isBook("minecraft:book"));
+        assertTrue(AbilityReadyRules.isBook("minecraft:enchanted_book"));
+        assertTrue(AbilityReadyRules.isBook("minecraft:written_book"));
+        assertFalse(AbilityReadyRules.isBook("minecraft:bookshelf"));
+        assertFalse(AbilityReadyRules.isBook("minecraft:feather"));
+        assertEquals(0, AbilityReadyRules.cooldownSeconds(0));
+        assertEquals(1, AbilityReadyRules.cooldownSeconds(1));
+        assertEquals(1, AbilityReadyRules.cooldownSeconds(20));
+        assertEquals(2, AbilityReadyRules.cooldownSeconds(21));
+        assertEquals(8, AbilityReadyRules.hudIconPixels(1.0, true));
+        assertEquals(0, AbilityReadyRules.hudIconPixels(1.0, false));
+        assertEquals(8, AbilityReadyRules.hudIconPixels(10.0, true));
+
+        List<AbilityReadyRules.SupplyStack> supplies = List.of(
+                new AbilityReadyRules.SupplyStack(AbilityRules.PAPER_ID, 1),
+                new AbilityReadyRules.SupplyStack(AbilityRules.FEATHER_ID, 1),
+                new AbilityReadyRules.SupplyStack(AbilityRules.CHARCOAL_ID, 1));
+        Map<String, Integer> uses = Map.of(
+                AbilityRules.HEAL, 100,
+                AbilityRules.FLIGHT, 16,
+                AbilityRules.FIRE_BOLT, 0);
+        List<AbilityReadyRules.HudIcon> withBook = AbilityReadyRules.hudIcons(
+                3,
+                uses,
+                Set.of(AbilityRules.HEAL),
+                0,
+                supplies,
+                false,
+                0L,
+                Map.of(),
+                true,
+                null,
+                Set.of());
+        assertEquals(4, withBook.size());
+        assertEquals(AbilityRules.HEAL, withBook.get(0).ability());
+        assertEquals(10.0, withBook.get(0).level(), 1e-9);
+        assertTrue(withBook.get(0).learned());
+        assertEquals(AbilityRules.FLIGHT, withBook.get(1).ability());
+        assertEquals(4.0, withBook.get(1).level(), 1e-9);
+        assertFalse(withBook.get(1).learned());
+        assertEquals(AbilityRules.FIRE_BOLT, withBook.get(2).ability());
+        assertEquals(3.0, withBook.get(2).level(), 1e-9);
+        assertEquals(AbilityRules.MAGIC_ARROW, withBook.get(3).ability());
+        assertEquals(3.0, withBook.get(3).level(), 1e-9);
+
+        List<AbilityReadyRules.HudIcon> hidden = AbilityReadyRules.hudIcons(
+                3, uses, Set.of(AbilityRules.HEAL), 0, supplies, false, 0L, Map.of(), false, null, Set.of());
+        assertTrue(hidden.isEmpty());
+
+        List<AbilityReadyRules.HudIcon> held = AbilityReadyRules.hudIcons(
+                3,
+                uses,
+                Set.of(AbilityRules.HEAL),
+                0,
+                supplies,
+                false,
+                0L,
+                Map.of(),
+                false,
+                AbilityRules.FLIGHT,
+                Set.of());
+        assertEquals(List.of(AbilityRules.FLIGHT), held.stream().map(AbilityReadyRules.HudIcon::ability).toList());
+
+        int healCooldown = AbilityRules.cooldownTicks(AbilityRules.HEAL, 3, 100);
+        List<AbilityReadyRules.HudIcon> cooling = AbilityReadyRules.hudIcons(
+                3,
+                uses,
+                Set.of(AbilityRules.HEAL),
+                0,
+                List.of(),
+                false,
+                50L,
+                Map.of(AbilityRules.HEAL, 50L),
+                false,
+                null,
+                Set.of(AbilityRules.LIGHT));
+        assertEquals(AbilityRules.HEAL, cooling.get(0).ability());
+        assertEquals(AbilityReadyRules.cooldownSeconds(healCooldown), cooling.get(0).cooldownSeconds());
+        assertEquals(AbilityRules.LIGHT, cooling.get(1).ability());
+        assertEquals(0, cooling.get(1).cooldownSeconds());
+        assertEquals(AbilityReadyRules.FORCED_ICON_PIXELS, AbilityReadyRules.hudIconPixels(cooling.get(1).level(), true));
     }
 
     @Test
