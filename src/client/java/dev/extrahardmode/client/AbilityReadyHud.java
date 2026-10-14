@@ -17,6 +17,8 @@ import org.joml.Matrix3x2fStack;
 /** Bottom-right ability icons, highest level first, with each level to the right of its icon. */
 public final class AbilityReadyHud {
     public static final net.minecraft.resources.Identifier ELEMENT_ID = ExtraHardModeMod.id("ability_ready");
+    /** Cooldown seconds on the icon, half the normal HUD font. */
+    static final float COOLDOWN_TEXT_SCALE = 0.5F;
 
     private AbilityReadyHud() {}
 
@@ -80,15 +82,25 @@ public final class AbilityReadyHud {
         }
     }
 
-    /** Yellow seconds centered on the icon, in GUI pixels so they stay readable. */
+    /** Yellow seconds centered on the icon, at half the normal HUD font size. */
     static void drawCooldown(
             GuiGraphicsExtractor graphics,
             net.minecraft.client.gui.Font font,
             String text,
             AbilityReadyRules.Placement placement) {
-        int x = placement.x() + (placement.size() - font.width(text)) / 2;
-        int y = placement.y() + (placement.size() - font.lineHeight) / 2;
-        graphics.text(font, text, x, y, AbilityReadyRules.COOLDOWN_COLOR, true);
+        float textWidth = font.width(text) * COOLDOWN_TEXT_SCALE;
+        float textHeight = font.lineHeight * COOLDOWN_TEXT_SCALE;
+        float x = placement.x() + (placement.size() - textWidth) / 2.0F;
+        float y = placement.y() + (placement.size() - textHeight) / 2.0F;
+        Matrix3x2fStack pose = graphics.pose();
+        pose.pushMatrix();
+        try {
+            pose.translate(x, y);
+            pose.scale(COOLDOWN_TEXT_SCALE, COOLDOWN_TEXT_SCALE);
+            graphics.text(font, text, 0, 0, AbilityReadyRules.COOLDOWN_COLOR, true);
+        } finally {
+            pose.popMatrix();
+        }
     }
 
     static void drawIcon(GuiGraphicsExtractor graphics, String ability, AbilityReadyRules.Placement placement) {
