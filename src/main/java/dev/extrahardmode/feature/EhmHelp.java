@@ -260,7 +260,8 @@ public final class EhmHelp {
                         "Hunger: Through Well Fed 5: 2% less saturation loss, +1 damage every two levels, faster regen, and Luck at 3.",
                         "Hunger: Poison and hunger last 10% less per Well Fed level, up to half.",
                         "Hunger: Every Well Fed level adds 1 health, 1 hunger, and 1 mana level, even past 5. Health and hunger arrive filled. The mana level does not.",
-                        "Hunger: Those bonuses leave when Well Fed drops. Eating does not restore mana."));
+                        "Hunger: Those bonuses leave when Well Fed drops. Eating does not restore mana.",
+                        "Hunger: The locator bar is off until you eat a golden carrot. It stays on until your saturation is gone. Another player sees you only while their bar is on too."));
     }
 
     private static Page crops() {

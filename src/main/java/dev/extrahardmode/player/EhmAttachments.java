@@ -165,6 +165,14 @@ public final class EhmAttachments {
             ExtraHardModeMod.id("food_history"),
             builder -> builder.persistent(Codec.STRING.listOf()).copyOnDeath().initializer(List::of));
 
+    /**
+     * Golden carrot has opened the locator bar, and saturation has not hit zero since.
+     * While this is set the player can see other players. They still broadcast.
+     */
+    public static final AttachmentType<Boolean> EHM_LOCATOR_CARROT = AttachmentRegistry.create(
+            ExtraHardModeMod.id("locator_carrot"),
+            builder -> builder.persistent(Codec.BOOL).copyOnDeath().initializer(() -> Boolean.FALSE));
+
     /** Persistent; biome-family bosses skip grinders and crowding, and drop special loot. */
     public static final AttachmentType<Boolean> EHM_BIOME_BOSS = AttachmentRegistry.create(
             ExtraHardModeMod.id("biome_boss"),

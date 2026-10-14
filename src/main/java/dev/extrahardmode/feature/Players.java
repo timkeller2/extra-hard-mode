@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.core.BlockPos;
@@ -57,6 +58,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.block.BaseFireBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -90,6 +92,10 @@ public final class Players implements FeatureModule {
     public void bootstrap(FeatureBus bus) {
         bus.listen(ServerLivingEntityEvents.ALLOW_DAMAGE, ID, Players::onAllowDamage);
         bus.listen(ServerPlayerEvents.AFTER_RESPAWN, ID, Players::onAfterRespawn);
+        bus.listen(
+                ServerPlayConnectionEvents.JOIN,
+                ID,
+                (handler, sender, server) -> PlayerLocator.refresh(handler.player));
         bus.listen(ServerPlayerEvents.LEAVE, ID, player -> {
             ArmorWeightTask.clear(player);
             PENDING_BED_CLEARS.remove(player.getUUID());
@@ -103,12 +109,21 @@ public final class Players implements FeatureModule {
             }
             if (!WorldGate.isModuleActive(level, ID)) {
                 ArmorWeightTask.clearAll(level);
+                PlayerLocator.clearAll(level);
             }
         });
     }
 
     @Override
+    public void onWorldLoad(ServerLevel level) {
+        if (!level.getGameRules().get(GameRules.LOCATOR_BAR)) {
+            level.getGameRules().set(GameRules.LOCATOR_BAR, true, level.getServer());
+        }
+    }
+
+    @Override
     public void serverTick(ServerLevel level) {
+        PlayerLocator.refreshAll(level);
         if (level.getGameTime() % 20 != 0) {
             return;
         }
@@ -286,6 +301,7 @@ public final class Players implements FeatureModule {
     }
 
     static void onAfterRespawn(ServerPlayer oldPlayer, ServerPlayer newPlayer, boolean alive) {
+        PlayerLocator.refresh(newPlayer);
         if (alive) {
             return;
         }

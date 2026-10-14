@@ -1,6 +1,7 @@
 package dev.extrahardmode.mixin;
 
 import dev.extrahardmode.feature.Hunger;
+import dev.extrahardmode.feature.PlayerLocator;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
@@ -18,6 +19,7 @@ public abstract class FoodPropertiesMixin {
     private void ehm$varietyBonus(Level level, LivingEntity entity, ItemStack stack, Consumable consumable, CallbackInfo ci) {
         if (entity instanceof Player player) {
             Hunger.onFoodEaten(player, stack);
+            PlayerLocator.onFoodEaten(player, stack);
         }
     }
 }

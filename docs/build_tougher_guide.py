@@ -152,7 +152,9 @@ def build():
             "A food you have not eaten in your last 7 meals gives +1 hunger, or +1 saturation if the bar is already full. "
             "Seven different foods in the last 7 meals gives another +1 hunger, +1 saturation, and 3 experience, "
             "and it can happen again on later meals that keep that streak. "
-            "The same food 5 times in the last 7 meals restores less; 7 of the last 7 restores even less.",
+            "The same food 5 times in the last 7 meals restores less; 7 of the last 7 restores even less. "
+            "The locator bar is off until you eat a golden carrot. It stays on until your saturation is gone. "
+            "Another player sees you only while their own bar is on too.",
             s["body"],
         ),
         Paragraph("Well Fed", s["h"]),
