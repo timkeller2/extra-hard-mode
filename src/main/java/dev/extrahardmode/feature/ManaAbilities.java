@@ -384,7 +384,8 @@ public final class ManaAbilities implements FeatureModule {
         castEffect(player, SoundEvents.PHANTOM_FLAP, ParticleTypes.CLOUD, ParticleTypes.END_ROD);
         tellAbilityUse(player, "tougher.ability.flight", "Flight", power);
         player.sendSystemMessage(Component.translatableWithFallback(
-                "tougher.message.flight_start", "Jump to rise, sneak to descend. Land to stop flying."));
+                "tougher.message.flight_start",
+                "Jump to rise, sneak in the air to descend. Sneak on a block to stop flying."));
         markHandled(player);
         return true;
     }
@@ -411,9 +412,8 @@ public final class ManaAbilities implements FeatureModule {
         if (honey && InventorySearch.consumeOneMain(player, Items.HONEY_BOTTLE)) {
             player.getInventory().placeItemBackInInventory(new ItemStack(Items.GLASS_BOTTLE), net.minecraft.util.Prediction.SERVER_ONLY);
         }
-        target.heal((float) power);
         spend(player, Items.PAPER, AbilityRules.HEAL);
-        startHealSparkle(target);
+        startHealSparkle(target, (float) power);
         tellAbilityUse(player, "tougher.ability.heal", "Healing", power);
         return true;
     }
@@ -450,23 +450,61 @@ public final class ManaAbilities implements FeatureModule {
         return true;
     }
 
+    /** Blue sparkle with no healing. Leaves a heal already in progress on its own clock. */
     static void startHealSparkle(ServerPlayer target) {
         ServerLevel level = (ServerLevel) target.level();
-        target.setAttached(EhmAttachments.EHM_HEAL_SPARKLE_UNTIL, level.getGameTime() + AbilityRules.HEAL_SPARKLE_TICKS);
+        long now = level.getGameTime();
+        Long existing = target.getAttachedOrElse(EhmAttachments.EHM_HEAL_SPARKLE_UNTIL, -1L);
+        float owed = target.getAttachedOrElse(EhmAttachments.EHM_HEAL_REMAINING, 0.0F);
+        if (owed <= 0.0F || existing == null || existing <= now) {
+            target.setAttached(EhmAttachments.EHM_HEAL_SPARKLE_UNTIL, now + AbilityRules.HEAL_SPARKLE_TICKS);
+        }
+        spawnHealSparkle(target, level);
+    }
+
+    /** Adds this cast to the health still owed and spreads it across a fresh sparkle. */
+    static void startHealSparkle(ServerPlayer target, float amount) {
+        ServerLevel level = (ServerLevel) target.level();
+        float owed = target.getAttachedOrElse(EhmAttachments.EHM_HEAL_REMAINING, 0.0F);
+        if (owed < 0.0F) {
+            owed = 0.0F;
+        }
+        target.setAttached(EhmAttachments.EHM_HEAL_REMAINING, owed + Math.max(0.0F, amount));
+        target.setAttached(
+                EhmAttachments.EHM_HEAL_SPARKLE_UNTIL, level.getGameTime() + AbilityRules.HEAL_SPARKLE_TICKS);
         spawnHealSparkle(target, level);
     }
 
     static void tickHealSparkle(ServerPlayer player) {
         Long until = player.getAttachedOrElse(EhmAttachments.EHM_HEAL_SPARKLE_UNTIL, -1L);
-        if (until == null || until < 0L) {
+        float remaining = player.getAttachedOrElse(EhmAttachments.EHM_HEAL_REMAINING, 0.0F);
+        if ((until == null || until < 0L) && remaining <= 0.0F) {
+            return;
+        }
+        if (!player.isAlive()) {
+            clearHealSparkle(player);
             return;
         }
         ServerLevel level = (ServerLevel) player.level();
-        if (!player.isAlive() || until <= level.getGameTime()) {
-            player.setAttached(EhmAttachments.EHM_HEAL_SPARKLE_UNTIL, -1L);
+        long ticksLeft = until == null ? 0L : until - level.getGameTime();
+        if (ticksLeft <= 0L) {
+            if (remaining > 0.0F) {
+                player.heal(remaining);
+            }
+            clearHealSparkle(player);
             return;
         }
+        HealSparkleRules.Slice slice = HealSparkleRules.slice(remaining, ticksLeft);
+        if (slice.apply() > 0.0F) {
+            player.heal(slice.apply());
+        }
+        player.setAttached(EhmAttachments.EHM_HEAL_REMAINING, slice.remaining());
         spawnHealSparkle(player, level);
+    }
+
+    private static void clearHealSparkle(ServerPlayer player) {
+        player.setAttached(EhmAttachments.EHM_HEAL_SPARKLE_UNTIL, -1L);
+        player.setAttached(EhmAttachments.EHM_HEAL_REMAINING, 0.0F);
     }
 
     static void spawnHealSparkle(ServerPlayer target, ServerLevel level) {
@@ -1772,13 +1810,14 @@ public final class ManaAbilities implements FeatureModule {
             stopFlight(player, false);
             return;
         }
-        if (!player.onGround()) {
-            player.setAttached(EhmAttachments.EHM_FLIGHT_LEFT_GROUND, Boolean.TRUE);
-        }
-        if (Boolean.TRUE.equals(player.getAttachedOrElse(EhmAttachments.EHM_FLIGHT_LEFT_GROUND, Boolean.FALSE))
-                && player.onGround()) {
+        if (AbilityRules.flightStops(player.isShiftKeyDown(), player.onGround())) {
             stopFlight(player, false);
             return;
+        }
+        Abilities kept = player.getAbilities();
+        if (!kept.mayfly || !kept.flying) {
+            Float speed = player.getAttached(EhmAttachments.EHM_FLIGHT_SPEED);
+            applyFlightAbilities(player, speed == null ? AbilityRules.flightSpeed(1) : speed);
         }
         int remaining = remainingFlight(player) - 1;
         if (remaining > 0) {
@@ -1816,7 +1855,6 @@ public final class ManaAbilities implements FeatureModule {
         player.setAttached(EhmAttachments.EHM_FLIGHT_ACTIVE, Boolean.TRUE);
         player.setAttached(EhmAttachments.EHM_FLIGHT_REMAINING, duration);
         player.setAttached(EhmAttachments.EHM_FLIGHT_BAR_MAX, duration);
-        player.setAttached(EhmAttachments.EHM_FLIGHT_LEFT_GROUND, Boolean.FALSE);
         player.setAttached(EhmAttachments.EHM_FLIGHT_SAVED_SPEED, player.getAbilities().getFlyingSpeed());
         player.setAttached(EhmAttachments.EHM_FLIGHT_SPEED, AbilityRules.flightSpeed(power));
         applyFlightAbilities(player, AbilityRules.flightSpeed(power));
@@ -1837,7 +1875,6 @@ public final class ManaAbilities implements FeatureModule {
         player.setAttached(EhmAttachments.EHM_FLIGHT_ACTIVE, Boolean.FALSE);
         player.setAttached(EhmAttachments.EHM_FLIGHT_REMAINING, 0);
         player.setAttached(EhmAttachments.EHM_FLIGHT_BAR_MAX, 0);
-        player.setAttached(EhmAttachments.EHM_FLIGHT_LEFT_GROUND, Boolean.FALSE);
         Abilities abilities = player.getAbilities();
         abilities.flying = false;
         if (!player.isCreative() && !player.isSpectator()) {

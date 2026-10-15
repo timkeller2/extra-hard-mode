@@ -390,6 +390,14 @@ class InhabitantRulesTest {
         assertEquals(175, InhabitantRules.tradeMaxPercent(38));
         assertEquals(88, InhabitantRules.tradeMinPercent(38));
         assertEquals(175, InhabitantRules.tradeMaxPercent(40));
+        assertEquals(0.0, InhabitantRules.tradeExperienceBonus(0), 0.0);
+        assertEquals(0.0, InhabitantRules.tradeExperienceBonus(-4), 0.0);
+        assertEquals(1.0, InhabitantRules.tradeExperienceBonus(1), 0.0);
+        assertEquals(2.0, InhabitantRules.tradeExperienceBonus(4), 0.0);
+        assertEquals(14.0, InhabitantRules.stockScore(14, 0), 0.0);
+        assertEquals(16.0, InhabitantRules.stockScore(14, 4), 0.0);
+        assertEquals(55, InhabitantRules.tradeMaxPercent(InhabitantRules.stockScore(14, 1)));
+        assertEquals(175, InhabitantRules.tradeMaxPercent(InhabitantRules.stockScore(38, 100)));
         assertEquals(1, InhabitantRules.scaledAmount(5, 25));
         assertEquals(3, InhabitantRules.scaledAmount(5, 50));
         assertEquals(1, InhabitantRules.scaledAmount(1, 25));

@@ -17,8 +17,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(Item.class)
 public abstract class HoeItemMixin {
-    /** The hoe that started this use. Survives the stack breaking before useOn returns. */
-    private static final ThreadLocal<Item> TILL_HOE = new ThreadLocal<>();
+    /** The hoe that started this use, including enchantments. Survives the stack breaking. */
+    private static final ThreadLocal<ItemStack> TILL_HOE = new ThreadLocal<>();
 
     @Inject(method = "useOn", at = @At("HEAD"))
     private void ehm$rememberHoe(UseOnContext context, CallbackInfoReturnable<InteractionResult> cir) {
@@ -28,7 +28,7 @@ public abstract class HoeItemMixin {
         }
         ItemStack hand = context.getItemInHand();
         if (hand.is(ItemTags.HOES)) {
-            TILL_HOE.set(hand.getItem());
+            TILL_HOE.set(hand.copy());
         } else {
             TILL_HOE.remove();
         }
@@ -40,10 +40,10 @@ public abstract class HoeItemMixin {
             TILL_HOE.remove();
             return;
         }
-        Item remembered = TILL_HOE.get();
+        ItemStack remembered = TILL_HOE.get();
         TILL_HOE.remove();
         ItemStack hand = context.getItemInHand();
-        ItemStack hoe = hand.is(ItemTags.HOES) ? hand : remembered == null ? ItemStack.EMPTY : new ItemStack(remembered);
+        ItemStack hoe = hand.is(ItemTags.HOES) ? hand : remembered == null ? ItemStack.EMPTY : remembered;
         if (!hoe.is(ItemTags.HOES)) {
             return;
         }

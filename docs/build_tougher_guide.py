@@ -210,6 +210,7 @@ def build():
             "A roll of 1 to 10 is then subtracted, and twice the hoe quality is added: wood or stone 0, copper 2, iron 4, diamond 6, gold 8, netherite 10. "
             "A hoe that breaks on that till still counts. "
             "Later hoeing steps the plot toward the hoe's target (wood or stone -10, copper -5, iron 0, diamond +10, gold +20, netherite +30). "
+            "Each Efficiency level adds 0.25 to that target's hoe quality: wood or stone 0, copper 1, iron 2, diamond 3, gold 4, netherite 5. "
             "A worsening step is one-tenth of the gap (at least 1, at most 4). An improving step is 3. "
             "Harvesting without a hoe subtracts 5. Replanting the same crop subtracts 5. "
             "Let it grow adds 3 under each plant it grows. Bone meal adds 5.",
@@ -295,7 +296,7 @@ def build():
         ),
         bullets(
             [
-                "Paper: Healing. Iron ingot: Iron Heart. Feather: Flight. Charcoal: Fire bolt. Arrow: Magic arrow.",
+                "Paper: Healing. The health is spread across the 6-second blue sparkle. Iron ingot: Iron Heart. Feather: Flight. Sneak on a block to stop; sneaking in the air descends. Charcoal: Fire bolt. Arrow: Magic arrow.",
                 "Any hoe: Let it grow, on a plant. Coal: Let there be light. Any pickaxe: Power mining. Compass: Detect ore. The compass is kept. One nether quartz is required and consumed, and a second quartz is consumed for +2. Reach is 4 + ability level minus that ore's difficulty.",
                 "String: Slow. Spider eye: Sense Evil. Golden sword: Smite Evil. Stone bricks in the air: Master Builder. Diamond: Diamond Skin.",
                 "Master Builder lasts 30 seconds times ability level, renews while you have mana, and cancels on another air click. One brick is consumed. Two in hand consume both and add +2. A renew spends a brick only when you are holding one, and that adds +2.",
@@ -337,6 +338,7 @@ def build():
             [
                 "Most residents restock every 14 Minecraft days. Armorsmiths restock every 30. Look at one who is waiting to see the time left, in days and hours.",
                 "Shop size follows house points. The top of the roll is 50% at 14 points and 175% at 38. The bottom is half of that. Prices do not inflate. A farm neighbor may sell one seed or plantable vegetable for 6 to 16 emeralds.",
+                "Each trade adds 1 to that resident's trading experience. When their stock changes, the square root of that experience is added to the house points for the new shop.",
                 "Residents have 40 health plus their house points, and regain 1 health a minute. Looking at one shows hearts, one per 10 health, beside the restock time.",
                 "They shoot mobs that come within 12 blocks and are after them. The bow hits 3 harder than a normal arrow. A close attack makes them switch to an iron sword.",
                 "A zombie cannot turn a resident unless the hit that kills them starts while they are already below 5 health.",

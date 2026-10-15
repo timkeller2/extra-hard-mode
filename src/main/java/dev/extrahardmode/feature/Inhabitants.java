@@ -463,7 +463,7 @@ public final class Inhabitants implements FeatureModule {
                 result.amenities(),
                 CropGrowthRules.beesInactive(AntiFarming.currentSeasonalLossRate(level)),
                 random,
-                result.gates().score());
+                shopScore(villager, result.gates().score()));
         if (!level.addFreshEntity(villager)) {
             villager.discard();
             return;
@@ -515,7 +515,7 @@ public final class Inhabitants implements FeatureModule {
             InhabitantRules.AmenityCounts amenities,
             boolean blight,
             RandomSource random,
-            int score) {
+            double score) {
         MerchantOffers offers = villager.getOffers();
         offers.clear();
         offers.addAll(offersFor(specialty, amenities, blight, random, score));
@@ -526,7 +526,7 @@ public final class Inhabitants implements FeatureModule {
             InhabitantRules.AmenityCounts amenities,
             boolean blight,
             RandomSource random,
-            int score) {
+            double score) {
         int storage = amenities == null ? 0 : amenities.storage();
         java.util.Random rng = new java.util.Random(random == null ? 0L : random.nextLong());
         List<MerchantOffer> offers = new ArrayList<>();
@@ -613,7 +613,7 @@ public final class Inhabitants implements FeatureModule {
                         result.amenities(),
                         blight,
                         random,
-                        result.gates().score());
+                        shopScore(villager, result.gates().score()));
                 data.put(home.withLastRestock(day));
             }
         }
@@ -886,6 +886,29 @@ public final class Inhabitants implements FeatureModule {
         }
     }
 
+    /** One completed trade. Ordinary villagers are ignored. */
+    public static void onTrade(Villager villager) {
+        if (villager == null || !isInhabitant(villager) || villager.level().isClientSide()) {
+            return;
+        }
+        int xp = tradeXp(villager);
+        if (xp < Integer.MAX_VALUE) {
+            villager.setAttached(EhmAttachments.EHM_RESIDENT_TRADE_XP, xp + 1);
+        }
+    }
+
+    static int tradeXp(Villager villager) {
+        if (villager == null) {
+            return 0;
+        }
+        return Math.max(0, villager.getAttachedOrElse(EhmAttachments.EHM_RESIDENT_TRADE_XP, 0));
+    }
+
+    /** House points plus the square root of this resident's trading experience. */
+    static double shopScore(Villager villager, int housePoints) {
+        return InhabitantRules.stockScore(housePoints, tradeXp(villager));
+    }
+
     public static void ensureOffers(Villager villager) {
         if (!isInhabitant(villager) || !(villager.level() instanceof ServerLevel level)) {
             return;
@@ -904,7 +927,7 @@ public final class Inhabitants implements FeatureModule {
                     result.amenities(),
                     CropGrowthRules.beesInactive(AntiFarming.currentSeasonalLossRate(level)),
                     level.getRandom(),
-                    result.gates().score());
+                    shopScore(villager, result.gates().score()));
         }
     }
 

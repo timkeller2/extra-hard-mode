@@ -21,6 +21,8 @@ import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.api.loot.v3.LootTableEvents;
 import dev.extrahardmode.network.ClientboundSoilLookPayload;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
@@ -48,6 +50,9 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.block.AttachedStemBlock;
 import net.minecraft.world.level.block.BeehiveBlock;
@@ -412,9 +417,24 @@ public final class AntiFarming implements FeatureModule {
             modifier = CropGrowthRules.firstTillModifier(
                     d10, countWaterSources(level, soil, CropGrowthRules.FIRST_TILL_WATER_RANGE), quality);
         } else {
-            modifier = CropGrowthRules.afterHoeWork(before, quality);
+            modifier = CropGrowthRules.afterHoeWork(before, targetHoeQuality(level, hoe, quality));
         }
         data.setModifier(soil, modifier);
+    }
+
+    /** Material quality plus 0.25 per Efficiency level. First till does not call this. */
+    static double targetHoeQuality(ServerLevel level, ItemStack hoe, int materialQuality) {
+        return CropGrowthRules.targetHoeQuality(materialQuality, efficiencyLevel(level, hoe));
+    }
+
+    static int efficiencyLevel(ServerLevel level, ItemStack hoe) {
+        if (hoe == null || hoe.isEmpty()) {
+            return 0;
+        }
+        Holder<Enchantment> efficiency = level.registryAccess()
+                .lookupOrThrow(Registries.ENCHANTMENT)
+                .getOrThrow(Enchantments.EFFICIENCY);
+        return Math.max(0, EnchantmentHelper.getItemEnchantmentLevel(efficiency, hoe));
     }
 
     static int countWaterSources(ServerLevel level, BlockPos origin, int range) {
@@ -444,7 +464,8 @@ public final class AntiFarming implements FeatureModule {
         int next;
         boolean hoe = tool != null && !tool.isEmpty() && tool.is(ItemTags.HOES);
         if (hoe) {
-            next = CropGrowthRules.afterHoeWork(before, AbilityRules.growHoeBonus(itemId(tool)));
+            next = CropGrowthRules.afterHoeWork(
+                    before, targetHoeQuality(level, tool, AbilityRules.growHoeBonus(itemId(tool))));
         } else {
             next = CropGrowthRules.afterHandHarvest(before);
         }

@@ -312,6 +312,7 @@ public final class EhmHelp {
                         "Soil: A 1d10 is then subtracted, and twice the hoe quality is added: wood/stone 0, copper 2, iron 4, diamond 6, gold 8, netherite 10.",
                         "Soil: Later tilling or harvesting with a hoe moves that shown value toward the hoe's target.",
                         "Soil: Hoe targets: wood/stone −10, copper −5, iron 0, diamond +10, gold +20, netherite +30.",
+                        "Soil: Each Efficiency level adds 0.25 to that target's hoe quality: wood/stone 0, copper 1, iron 2, diamond 3, gold 4, netherite 5.",
                         "Soil: If that would make the plot worse, the step is 1/10 of the gap to the target (at least 1, at most 4).",
                         "Soil: If it would improve the plot, the step is 3. Harvesting by any other means subtracts 5.",
                         "Soil: Planting the same crop again on a plot subtracts 5 from the shown modifier.",

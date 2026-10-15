@@ -6,6 +6,7 @@ import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.feature.CouncilMissionRules;
 import it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -13,7 +14,9 @@ import java.util.Map;
 import java.util.UUID;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
+import net.fabricmc.fabric.impl.attachment.AttachmentRegistryImpl;
 import net.minecraft.core.UUIDUtil;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 
 public final class EhmAttachments {
@@ -139,6 +142,11 @@ public final class EhmAttachments {
 
     public static final AttachmentType<Integer> EHM_BLAZE_SPLIT =
             AttachmentRegistry.create(ExtraHardModeMod.id("blaze_split"), builder -> builder.initializer(() -> 0));
+
+    /** Completed trades. The next stock roll adds the square root of this to the house points. */
+    public static final AttachmentType<Integer> EHM_RESIDENT_TRADE_XP = AttachmentRegistry.create(
+            ExtraHardModeMod.id("resident_trade_xp"),
+            builder -> builder.persistent(Codec.INT).initializer(() -> 0));
 
     /** Health at the start of the latest hit, so zombie conversion can see if they were already below 5. */
     public static final AttachmentType<Float> EHM_RESIDENT_HEALTH_BEFORE = AttachmentRegistry.create(
@@ -307,8 +315,6 @@ public final class EhmAttachments {
     public static final AttachmentType<Float> EHM_FLIGHT_SPEED = AttachmentRegistry.create(
             ExtraHardModeMod.id("flight_speed"),
             builder -> builder.persistent(Codec.FLOAT).initializer(() -> 0.05F));
-    public static final AttachmentType<Boolean> EHM_FLIGHT_LEFT_GROUND = AttachmentRegistry.create(
-            ExtraHardModeMod.id("flight_left_ground"), builder -> builder.initializer(() -> Boolean.FALSE));
     public static final AttachmentType<Integer> EHM_POWER_MINE_REMAINING = AttachmentRegistry.create(
             ExtraHardModeMod.id("power_mine_remaining"),
             builder -> builder.persistent(Codec.INT).initializer(() -> 0));
@@ -321,7 +327,12 @@ public final class EhmAttachments {
     public static final AttachmentType<Long> EHM_SLOW_UNTIL = AttachmentRegistry.create(
             ExtraHardModeMod.id("slow_until"), builder -> builder.initializer(() -> -1L));
     public static final AttachmentType<Long> EHM_HEAL_SPARKLE_UNTIL = AttachmentRegistry.create(
-            ExtraHardModeMod.id("heal_sparkle_until"), builder -> builder.initializer(() -> -1L));
+            ExtraHardModeMod.id("heal_sparkle_until"),
+            builder -> builder.persistent(Codec.LONG).initializer(() -> -1L));
+    /** Health still owed by a Healing cast, paid out across the sparkle. */
+    public static final AttachmentType<Float> EHM_HEAL_REMAINING = AttachmentRegistry.create(
+            ExtraHardModeMod.id("heal_remaining"),
+            builder -> builder.persistent(Codec.FLOAT).initializer(() -> 0.0F));
     public static final AttachmentType<Integer> EHM_IRON_HEART_LOCK = AttachmentRegistry.create(
             ExtraHardModeMod.id("iron_heart_lock"),
             builder -> builder.persistent(Codec.INT).initializer(() -> 0));
@@ -447,9 +458,40 @@ public final class EhmAttachments {
                     .copyOnDeath()
                     .initializer(() -> CouncilMissionRules.NONE));
 
+    /** Namespace used before the mod id became tougher. Saved animals still carry it. */
+    static final String LEGACY_NAMESPACE = "extrahardmode";
+
     private EhmAttachments() {}
 
     public static void register() {
-        // Static fields register on class load.
+        aliasLegacyIds();
+    }
+
+    /**
+     * Animals saved under extrahardmode:overgraze_at are skipped as unknown and
+     * log a warning on every load. Point that old id at the current type so the
+     * value is kept and the next save writes tougher:.
+     */
+    static void aliasLegacyIds() {
+        for (Field field : EhmAttachments.class.getDeclaredFields()) {
+            if (!AttachmentType.class.isAssignableFrom(field.getType())) {
+                continue;
+            }
+            AttachmentType<?> type;
+            try {
+                type = (AttachmentType<?>) field.get(null);
+            } catch (IllegalAccessException exception) {
+                throw new IllegalStateException(field.getName(), exception);
+            }
+            if (type == null) {
+                continue;
+            }
+            Identifier id = type.identifier();
+            if (id == null || !ExtraHardModeMod.MOD_ID.equals(id.getNamespace())) {
+                continue;
+            }
+            AttachmentRegistryImpl.register(
+                    Identifier.fromNamespaceAndPath(LEGACY_NAMESPACE, id.getPath()), type);
+        }
     }
 }

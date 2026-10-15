@@ -35,6 +35,8 @@ public final class CropGrowthRules {
     /** Soil crop-loss modifier = this − (hoe quality × {@link #HOE_SOIL_PER_QUALITY}). */
     public static final int HOE_SOIL_BASE = 10;
     public static final int HOE_SOIL_PER_QUALITY = 5;
+    /** Added to the quality used for that target, once per Efficiency level. */
+    public static final double EFFICIENCY_TARGET_QUALITY_PER_LEVEL = 0.25;
     /** Added to the soil modifier when a crop is harvested without a hoe. */
     public static final int HAND_HARVEST_SOIL_INCREASE = 5;
     /** Added when the same crop is planted again on a plot. */
@@ -298,15 +300,32 @@ public final class CropGrowthRules {
     }
 
     /**
+     * Quality used for {@link #hoeSoilModifier(double)}. Material quality, plus
+     * {@link #EFFICIENCY_TARGET_QUALITY_PER_LEVEL} per Efficiency level.
+     * First till does not use this.
+     */
+    public static double targetHoeQuality(int materialQuality, int efficiencyLevel) {
+        return Math.max(0, materialQuality)
+                + Math.max(0, efficiencyLevel) * EFFICIENCY_TARGET_QUALITY_PER_LEVEL;
+    }
+
+    /**
      * Extra crop-loss percent from hoe quality (Let it grow material bonus).
      * Wood/stone 10, copper 5, iron 0, diamond −10, gold −20, netherite −30.
+     * Efficiency raises the quality first, via {@link #targetHoeQuality(int, int)}.
+     * A fractional quality rounds to the nearest stored percent.
      */
-    public static int hoeSoilModifier(int hoeQuality) {
-        int value = HOE_SOIL_BASE - Math.max(0, hoeQuality) * HOE_SOIL_PER_QUALITY;
-        if (value < 0) {
-            return value * HOE_SOIL_GOOD_FACTOR;
+    public static int hoeSoilModifier(double hoeQuality) {
+        double quality = Math.max(0.0, hoeQuality);
+        double value = HOE_SOIL_BASE - quality * HOE_SOIL_PER_QUALITY;
+        if (value < 0.0) {
+            value *= HOE_SOIL_GOOD_FACTOR;
         }
-        return value;
+        return (int) Math.round(value);
+    }
+
+    public static int hoeSoilModifier(int hoeQuality) {
+        return hoeSoilModifier((double) hoeQuality);
     }
 
     public static int afterHandHarvest(int modifier) {
@@ -338,6 +357,10 @@ public final class CropGrowthRules {
      * and will not overshoot.
      */
     public static int afterHoeWork(int current, int hoeQuality) {
+        return afterHoeWork(current, (double) hoeQuality);
+    }
+
+    public static int afterHoeWork(int current, double hoeQuality) {
         int target = hoeSoilModifier(hoeQuality);
         return stepToward(current, target, hoeWorkStep(current, target));
     }

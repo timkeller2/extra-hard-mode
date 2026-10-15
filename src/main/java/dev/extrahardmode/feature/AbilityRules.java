@@ -55,7 +55,7 @@ public final class AbilityRules {
     public static final float FLIGHT_SPEED_FACTOR = 0.7F;
     /** Ability power at which flight reaches {@link #FLIGHT_SPEED_FACTOR} of walking speed. */
     public static final double FLIGHT_WALKING_POWER = 10.0;
-    /** Small hop on takeoff so standing on a block does not cancel flight immediately. */
+    /** Small hop on takeoff. */
     public static final double FLIGHT_LAUNCH_Y = 0.35;
     public static final int COOLDOWN_BASE_TICKS = 2400;
     public static final int COOLDOWN_REDUCE_PER_POINT_TICKS = 100;
@@ -489,7 +489,7 @@ public final class AbilityRules {
             case FIRE_BOLT -> "Hold charcoal and right-click. The bolt seeks a creature along your aim.";
             case MAGIC_ARROW ->
                 "Hold an arrow and right-click. It seeks a creature along your aim and does not ignite.";
-            case FLIGHT -> "Hold a feather and right-click. Jump to rise, sneak to descend, and land to stop.";
+            case FLIGHT -> "Hold a feather and right-click. Jump to rise, sneak in the air to descend, and sneak on a block to stop.";
             case GROW -> "Hold any hoe and right-click a plant. It costs 1 mana and some hoe durability.";
             case LIGHT -> "Hold coal and right-click to shine. Right-click again with coal to snuff it.";
             case POWER_MINE -> "Hold any pickaxe and right-click. Hardened stone stops eating extra durability for a while.";
@@ -578,7 +578,7 @@ public final class AbilityRules {
                     "Healing: If no teammate is targeted and you are injured, you heal yourself instead.",
                     "Healing: Costs 1 mana. A honey bottle in your main inventory (not a bundle) is consumed for +4, with or without mana.",
                     "Healing: If you have no mana, a honey bottle still lets you heal, even with no mana levels.",
-                    "Healing: The recipient sparkles blue for 6 seconds. One paper is consumed. Two in hand consume both and add +2.");
+                    "Healing: The recipient sparkles blue for 6 seconds, and the healing is spread across that sparkle. One paper is consumed. Two in hand consume both and add +2.");
             case IRON_HEART -> List.of(
                     "Iron Heart: Right-click while holding an iron ingot. Costs 1 mana. Raises maximum health by ability level for ability level minutes.",
                     "Iron Heart: If another player is targeted within 2 + ability level blocks, they receive the buff instead.",
@@ -595,7 +595,7 @@ public final class AbilityRules {
                     "Magic arrow: It deals arrow damage; it does not ignite. Range scales with ability level. Ability level includes your mana level.",
                     "Magic arrow: Cooldown is 10 seconds minus (mana level + skill). One arrow is consumed. Two in hand consume both and add +2.");
             case FLIGHT -> List.of(
-                    "Flight: Right-click while holding a feather. Costs 1 mana. Jump to rise, sneak to descend, land to stop.",
+                    "Flight: Right-click while holding a feather. Costs 1 mana. Jump to rise, sneak in the air to descend, and sneak on a block to stop.",
                     "Flight: Speed scales with ability level and reaches 70% of walking speed at 10.",
                     "Flight: One feather is consumed. Two in hand consume both and add +2.",
                     "Flight: If it ends and you still have mana, another mana is spent and it continues, and you gain skill as if you cast it again.",
@@ -1569,6 +1569,11 @@ public final class AbilityRules {
             }
         }
         return best;
+    }
+
+    /** Sneaking stops flight only while standing on a block. In the air, sneak still descends. */
+    public static boolean flightStops(boolean sneaking, boolean onBlock) {
+        return sneaking && onBlock;
     }
 
     public static double flightLaunchY(double currentY) {

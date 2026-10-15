@@ -253,7 +253,7 @@
   "tougher.message.ability_no_mana": "You need mana to do that.",
   "tougher.message.crop_season_loss": "The current crop loss rate is %s%%.",
   "tougher.message.crop_season_bees": "Bees are staying in their hives.",
-  "tougher.message.flight_start": "Jump to rise, sneak to descend. Land to stop flying.",
+  "tougher.message.flight_start": "Jump to rise, sneak in the air to descend. Sneak on a block to stop flying.",
   "tougher.message.flight_fall": "You are out of mana and fall.",
   "tougher.message.food_variety": "You appreciate the food variety! +1 bonus",
   "tougher.message.food_unique_window": "You ate seven different foods! Extra +1 hunger and saturation, and 3 experience.",

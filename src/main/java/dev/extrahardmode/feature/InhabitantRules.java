@@ -429,6 +429,7 @@ public final class InhabitantRules {
                 "Shops: The bottom of that roll is half the top. A 14-point home rolls 25-50% of the usual trade types and of each listing's uses.",
                 "Shops: Houses under 14 points use that same 25-50% band. There is at least one use of each listing that is rolled.",
                 "Shops: Each listing rolls its uses separately. Extra types beyond the usual shop are random trades.",
+                "Shops: Each trade adds 1 trading experience. A stock change adds the square root of that experience to the house points.",
                 "Shops: A farm neighbor may sell one seed or plantable vegetable for 6 to 16 emeralds.");
     }
 
@@ -721,15 +722,40 @@ public final class InhabitantRules {
      * {@link #MAX_HOUSE_SCORE}. Scores outside that span clamp.
      */
     public static int tradeMaxPercent(int score) {
-        int clamped = Math.clamp(score, TRADE_SCORE_FLOOR, MAX_HOUSE_SCORE);
-        int span = MAX_HOUSE_SCORE - TRADE_SCORE_FLOOR;
-        int rise = TRADE_UPPER_AT_CAP - TRADE_UPPER_AT_FLOOR;
-        return TRADE_UPPER_AT_FLOOR + (int) Math.round((clamped - TRADE_SCORE_FLOOR) * (rise / (double) span));
+        return tradeMaxPercent((double) score);
+    }
+
+    /**
+     * Same roll as {@link #tradeMaxPercent(int)}. A fractional score is the house
+     * points plus the square root of the resident's trading experience.
+     */
+    public static int tradeMaxPercent(double score) {
+        double clamped = Math.clamp(score, (double) TRADE_SCORE_FLOOR, (double) MAX_HOUSE_SCORE);
+        double span = MAX_HOUSE_SCORE - TRADE_SCORE_FLOOR;
+        double rise = TRADE_UPPER_AT_CAP - TRADE_UPPER_AT_FLOOR;
+        return TRADE_UPPER_AT_FLOOR + (int) Math.round((clamped - TRADE_SCORE_FLOOR) * (rise / span));
     }
 
     /** Bottom of the shop roll: half the top, rounded. */
     public static int tradeMinPercent(int score) {
+        return tradeMinPercent((double) score);
+    }
+
+    public static int tradeMinPercent(double score) {
         return (int) Math.round(tradeMaxPercent(score) / 2.0);
+    }
+
+    /** Square root of completed trades. Zero trades add nothing. */
+    public static double tradeExperienceBonus(int trades) {
+        if (trades <= 0) {
+            return 0.0;
+        }
+        return Math.sqrt(trades);
+    }
+
+    /** House points plus {@link #tradeExperienceBonus(int)}, used when stock is rolled. */
+    public static double stockScore(int housePoints, int trades) {
+        return housePoints + tradeExperienceBonus(trades);
     }
 
     /** Inclusive roll in {@code [minPercent, maxPercent]}. */
@@ -904,7 +930,7 @@ public final class InhabitantRules {
      * Extra types beyond the usual shop are random leftover listings.
      */
     public static List<TradeListing> scaledListings(
-            String specialty, int score, int storage, boolean blight, Random random) {
+            String specialty, double score, int storage, boolean blight, Random random) {
         Random rng = random == null ? new Random(0L) : random;
         String type = specialty == null || specialty.isEmpty() ? TRADER : specialty;
         if (WISE_TEACHER.equals(type)) {

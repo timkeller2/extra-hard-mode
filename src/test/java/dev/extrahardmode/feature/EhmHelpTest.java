@@ -98,6 +98,8 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("diamond +10"));
         assertTrue(String.join(" ", lines).contains("gold +20"));
         assertTrue(String.join(" ", lines).contains("netherite +30"));
+        assertTrue(String.join(" ", lines).contains("Each Efficiency level adds 0.25"));
+        assertTrue(String.join(" ", lines).contains("netherite 5"));
         assertTrue(String.join(" ", lines).contains("1/10 of the gap"));
         assertTrue(String.join(" ", lines).contains("at most 4"));
         assertTrue(String.join(" ", lines).contains("the step is 3"));
@@ -207,6 +209,8 @@ class EhmHelpTest {
         assertTrue(all.contains("25-50%"));
         assertTrue(all.contains("175%"));
         assertTrue(all.contains("random trades"));
+        assertTrue(all.contains("trading experience"));
+        assertTrue(all.contains("square root"));
         assertTrue(all.contains("council member"));
         assertTrue(all.contains("three times as likely"));
         assertTrue(all.contains("Zombie Bounty 3/12"));

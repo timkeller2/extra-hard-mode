@@ -235,6 +235,15 @@ class CropGrowthRulesTest {
         assertFalse(CropGrowthRules.chargeHoeForInstantHarvest(false, 0.0F));
         assertEquals(1, CropGrowthRules.HOE_INSTANT_HARVEST_DAMAGE);
         assertEquals(-30, CropGrowthRules.hoeSoilModifier(AbilityRules.growHoeBonus("minecraft:netherite_hoe")));
+        assertEquals(0.25, CropGrowthRules.EFFICIENCY_TARGET_QUALITY_PER_LEVEL, 0.0);
+        assertEquals(0.0, CropGrowthRules.targetHoeQuality(0, 0), 0.0);
+        assertEquals(0.25, CropGrowthRules.targetHoeQuality(0, 1), 0.0);
+        assertEquals(5.0, CropGrowthRules.targetHoeQuality(5, 0), 0.0);
+        assertEquals(6.25, CropGrowthRules.targetHoeQuality(5, 5), 0.0);
+        assertEquals(0.0, CropGrowthRules.targetHoeQuality(-3, -1), 0.0);
+        assertEquals(9, CropGrowthRules.hoeSoilModifier(CropGrowthRules.targetHoeQuality(0, 1)));
+        assertEquals(4, CropGrowthRules.hoeSoilModifier(CropGrowthRules.targetHoeQuality(0, 5)));
+        assertEquals(-32, CropGrowthRules.hoeSoilModifier(CropGrowthRules.targetHoeQuality(5, 1)));
         assertEquals(10, CropGrowthRules.afterHandHarvest(5));
         assertEquals(-10, CropGrowthRules.afterHandHarvest(-15));
         assertEquals(5, CropGrowthRules.HAND_HARVEST_SOIL_INCREASE);

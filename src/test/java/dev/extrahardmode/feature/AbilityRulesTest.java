@@ -98,6 +98,7 @@ class AbilityRulesTest {
         assertTrue(healHelp.contains("heal yourself"));
         assertTrue(healHelp.contains("Right-click"));
         assertTrue(healHelp.contains("sparkles blue"));
+        assertTrue(healHelp.contains("spread across that sparkle"));
         assertTrue(healHelp.contains("2 + ability level"));
         assertTrue(healHelp.contains("honey bottle"));
         assertTrue(healHelp.contains("+4"));
@@ -138,6 +139,7 @@ class AbilityRulesTest {
         assertTrue(magicHelp.contains("does not ignite"));
         assertTrue(magicHelp.contains("10 seconds"));
         assertTrue(magicHelp.contains("mana level"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.FLIGHT).contains("sneak on a block"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.FLIGHT).contains("Right-click"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.FLIGHT).contains("gain skill"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.LIGHT).contains("gain skill"));
@@ -572,6 +574,9 @@ class AbilityRulesTest {
         assertEquals(0.014F, AbilityRules.flightSpeed(10), 1e-6F);
         assertEquals(0.014F, AbilityRules.flightSpeed(20), 1e-6F);
         assertEquals(0.7F, AbilityRules.FLIGHT_SPEED_FACTOR, 1e-6F);
+        assertFalse(AbilityRules.flightStops(false, true));
+        assertFalse(AbilityRules.flightStops(true, false));
+        assertTrue(AbilityRules.flightStops(true, true));
         assertEquals(0.35, AbilityRules.flightLaunchY(0.0), 1e-9);
         assertEquals(0.5, AbilityRules.flightLaunchY(0.5), 1e-9);
     }
