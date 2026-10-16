@@ -91,6 +91,7 @@
     "SmallFireballMixin",
     "StemBlockAccess",
     "StemBlockMixin",
+    "SpreadingSnowyBlockMixin",
     "SugarCaneBlockMixin",
     "TextDisplayAccess",
     "UnsafeBedMixin",

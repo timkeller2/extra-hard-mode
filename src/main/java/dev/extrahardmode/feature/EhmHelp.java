@@ -280,6 +280,7 @@ public final class EhmHelp {
                 "tougher.help.animals.",
                 List.of(
                         "Animals: Animals wait 6 times as long to breed again. Chickens lay eggs 6 times as slowly.",
+                        "Animals: Grass Growth Rate: 25% of the usual spread onto dirt. farming.grassGrowthPercent of 100 is the usual rate. 0 never spreads.",
                         "Animals: Livestock overgraze by eating grass they can walk to within 6 blocks and turning that block into dirt.",
                         "Animals: About 9 grass blocks keep a cow, pig, sheep, or other large animal fed. About 4 keep a chicken or rabbit fed.",
                         "Animals: Sheep do this as well, and they still eat grass on their own to regrow their wool.",
@@ -369,7 +370,7 @@ public final class EhmHelp {
                         "Mana: Nether quartz and a quartz block together make regen 10 times the base rate. Each is consumed for its own share, 1 per mana.",
                         "Mana: Saturation of 18 or more doubles your mana regen. Below 18 that bonus stops.",
                         "Mana: That doubled regen does not consume saturation. It does spend nether quartz and quartz blocks.",
-                        "Mana: Past your level you regen at 1/4 speed, up to 20 mana (10 crystals). Achievements can raise your mana level."));
+                        "Mana: Past your level you regen at 1/4 speed. The ceiling of 20 mana rises when Well Fed pushes your level past 20. Achievements can raise your mana level."));
     }
 
     private static Page abilities() {
@@ -402,8 +403,8 @@ public final class EhmHelp {
                 "tougher.help.achievements.",
                 List.of(
                         "Achievements: Place many of one block or defeat many of one monster that drops loot.",
-                        "Achievements: Each achievement gives 50 experience and a diamond. Everyone can earn every achievement.",
-                        "Achievements: By default the first player to claim one server-wide gets 25 extra experience.",
+                        "Achievements: Each achievement gives 50 experience and 4 to 7 emeralds. Everyone can earn every achievement.",
+                        "Achievements: By default the first player to claim one server-wide gets 25 extra experience and 3 more emeralds.",
                         "Achievements: You have (your experience level)% chance to gain a mana level.",
                         "Achievements: A diamond block plus enough lapis lazuli blocks buys an extra mana level and sparkles you blue for 6 seconds.",
                         "Achievements: That cost is 1 diamond block plus lapis, starting at 1, then 1 more each time you pay this way.",

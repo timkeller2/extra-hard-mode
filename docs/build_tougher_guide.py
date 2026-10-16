@@ -229,6 +229,7 @@ def build():
         bullets(
             [
                 "Animals wait 6 times as long to breed. Chickens lay eggs 6 times as slowly.",
+                "Grass spreads onto dirt at a Grass Growth Rate of 25%. That is farming.grassGrowthPercent. 100 is the usual rate and 0 never spreads.",
                 "Livestock overgraze by eating grass they can walk to within 6 blocks and turning that block into dirt. About 9 grass blocks keep a large animal fed. About 4 keep a chicken or rabbit fed.",
                 "Sheep do this as well, and they still eat grass on their own to regrow their wool.",
                 "If no grass block is in reach, an animal has a 33% chance to eat from a chest or barrel it can reach within 20 blocks. It eats short grass, the item shears collect, before its breeding food. If neither is left, a second 33% chance starves it and it drops no meat.",
@@ -313,8 +314,8 @@ def build():
             Paragraph("Achievements", s["h"]),
             bullets(
                 [
-                    "Place many of one block, or defeat many of one monster that drops loot. Each claim gives 50 experience and a diamond. Everyone can earn every achievement.",
-                    "The first player on the server to claim one gets 25 extra experience by default.",
+                    "Place many of one block, or defeat many of one monster that drops loot. Each claim gives 50 experience and 4 to 7 emeralds. Everyone can earn every achievement.",
+                    "The first player on the server to claim one gets 25 extra experience and 3 more emeralds by default.",
                     "You have your experience level as a percent chance to gain a mana level.",
                     "A diamond block plus lapis lazuli blocks buys an extra mana level and a 6-second blue shimmer. The lapis cost starts at 1 block and rises by 1 each time.",
                     "The first visit to a biome is 50 experience, and 100 more if you are first on the server. The first habitable home in a biome is house points times 3. The first trip 300 blocks from spawn is 100 experience.",
@@ -330,20 +331,26 @@ def build():
             "Furnishings come from size, extra rooms, windows, art, rugs, seating, storage, workstations, lights, plants, books, a second bed, and a kitchen. "
             "Empty eligible homes are checked at dawn. Chance starts at 8% at 12 points and rises with the score. It is halved in blight. "
             "Chests bias a hauler, a kitchen biases a cook, and plants or workstations bias a farmer. "
-            "18 points can bring a bounty board or a wealthy trader. 24 can bring an armorsmith or a wise teacher. 30 can bring a master armorsmith. "
+            "18 points can bring a drop collector, a wealthy trader, or a jeweler. 24 can bring an armorsmith or a wise teacher. 30 can bring a master armorsmith. "
             "A council member can appear in any eligible home and is especially likely. New residents prefer a specialty that has not appeared yet.",
             s["body"],
         ),
         bullets(
             [
+                "The name over a resident is their name and occupation, such as Mira the Jeweler.",
+                "Clothes are a villager outfit, so two of one occupation may look different. A jeweler, wealthy trader, or drop collector wears a finer coat. An armorsmith or wise teacher ranks higher, and a master armorsmith or council member wears the highest rank.",
                 "Most residents restock every 14 Minecraft days. Armorsmiths restock every 30. Look at one who is waiting to see the time left, in days and hours.",
                 "Shop size follows house points. The top of the roll is 50% at 14 points and 175% at 38. The bottom is half of that. Prices do not inflate. A farm neighbor may sell one seed or plantable vegetable for 6 to 16 emeralds.",
+                "A jeweler sells a diamond for 8 emeralds, 4 gold ingots for 2, an iron block for 6, and a copper or redstone block for 2. Larger shops add lapis, amethyst, quartz, gold nuggets, ingots, and blocks of gold, lapis, amethyst, quartz, and diamond. A diamond block is 72 emeralds.",
                 "Each trade adds 1 to that resident's trading experience. When their stock changes, the square root of that experience is added to the house points for the new shop.",
+                "That stock change also rolls item amounts once from -25% to +25% and adds 0 to 25 from the house and trading experience. Buying gives that many more items. Selling to the resident asks for that many fewer. Emerald prices stay the same.",
                 "Residents have 40 health plus their house points, and regain 1 health a minute. Looking at one shows hearts, one per 10 health, beside the restock time.",
                 "They shoot mobs that come within 12 blocks and are after them. The bow hits 3 harder than a normal arrow. A close attack makes them switch to an iron sword.",
                 "A zombie cannot turn a resident unless the hit that kills them starts while they are already below 5 health.",
                 "A home stops listing a resident who has died or is no longer around the bed.",
-                "Council members give each player a personal kill bounty: 6 to 18 common mobs at first, 30% larger and rarer after each success, with 7 Minecraft days to finish. The reward is experience from the slain health, plus emeralds when you return.",
+                "A drop collector warns you when a biome boss is out, and names the compass direction from that resident. East is where the sun rises.",
+                "Council members each give a personal kill bounty: 6 to 18 common mobs at first, with 14 Minecraft days to finish. Each success with that resident makes their next hunt 20% larger and rarer. Another council member keeps a separate ladder, so one can stay easier. You can hold 5 at a time, including ones waiting for emeralds. The next bounty from that resident waits 7 Minecraft days after the last one was given, and only after you finish it.",
+                "A kill counts toward every open bounty on that mob. One bounty shows Zombie Bounty 3/12 above the ability icons. Two or more name the resident and stack upward. A bounty that runs out is not replaced in that conversation. The reward is experience from the slain health, plus emeralds when you return to that resident.",
             ],
             s["bullet"],
         ),

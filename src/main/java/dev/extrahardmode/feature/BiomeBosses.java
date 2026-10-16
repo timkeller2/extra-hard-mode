@@ -205,16 +205,16 @@ public final class BiomeBosses implements FeatureModule {
     }
 
     /** Same-dimension bosses win; otherwise the nearest loaded boss in any dimension. */
-    public static Entity nearestBoss(ServerPlayer player) {
-        if (player == null) {
+    public static Entity nearestBoss(Entity origin) {
+        if (!(origin != null && origin.level() instanceof ServerLevel level) || level.getServer() == null) {
             return null;
         }
         Entity best = null;
         boolean bestSame = false;
         double bestDist = Double.POSITIVE_INFINITY;
-        for (Entity boss : loadedBosses(player.level().getServer())) {
-            boolean same = boss.level() == player.level();
-            double dist = player.distanceToSqr(boss);
+        for (Entity boss : loadedBosses(level.getServer())) {
+            boolean same = boss.level() == origin.level();
+            double dist = origin.distanceToSqr(boss);
             if (best == null || (same && !bestSame) || (same == bestSame && dist < bestDist)) {
                 best = boss;
                 bestSame = same;

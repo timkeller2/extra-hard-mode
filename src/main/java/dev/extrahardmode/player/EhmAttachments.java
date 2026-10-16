@@ -82,6 +82,10 @@ public final class EhmAttachments {
     public static final AttachmentType<String> EHM_INHABITANT_HOME = AttachmentRegistry.create(
             ExtraHardModeMod.id("inhabitant_home"),
             builder -> builder.persistent(Codec.STRING).initializer(() -> ""));
+    /** Saved villager costume: profession, biome style, and rank. Rolled once. */
+    public static final AttachmentType<String> EHM_RESIDENT_OUTFIT = AttachmentRegistry.create(
+            ExtraHardModeMod.id("resident_outfit"),
+            builder -> builder.persistent(Codec.STRING).initializer(() -> ""));
     /** Ability id this wise teacher offers. Persistent on the villager. */
     public static final AttachmentType<String> EHM_WISE_ABILITY = AttachmentRegistry.create(
             ExtraHardModeMod.id("wise_ability"),
@@ -448,15 +452,29 @@ public final class EhmAttachments {
                                     .forGetter(CouncilMissionRules.Mission::lastCompletedTarget),
                             Codec.INT
                                     .optionalFieldOf("completed_count", 0)
-                                    .forGetter(CouncilMissionRules.Mission::completedCount))
+                                    .forGetter(CouncilMissionRules.Mission::completedCount),
+                            Codec.STRING
+                                    .optionalFieldOf("giver_id", "")
+                                    .forGetter(CouncilMissionRules.Mission::giverId),
+                            Codec.STRING
+                                    .optionalFieldOf("giver_name", "")
+                                    .forGetter(CouncilMissionRules.Mission::giverName))
                     .apply(instance, CouncilMissionRules.Mission::new));
 
-    /** Per-player council kill bounty and lifetime hunt progress. */
+    /** Per-player council kill bounty kept so older saves still load. New hunts use {@link #EHM_COUNCIL_MISSIONS}. */
     public static final AttachmentType<CouncilMissionRules.Mission> EHM_COUNCIL_MISSION = AttachmentRegistry.create(
             ExtraHardModeMod.id("council_mission"),
             builder -> builder.persistent(COUNCIL_MISSION_CODEC)
                     .copyOnDeath()
                     .initializer(() -> CouncilMissionRules.NONE));
+
+    /** One slot per council member, capped at {@link CouncilMissionRules#MAX_OPEN_MISSIONS} open hunts. */
+    public static final AttachmentType<List<CouncilMissionRules.Mission>> EHM_COUNCIL_MISSIONS =
+            AttachmentRegistry.create(
+                    ExtraHardModeMod.id("council_missions"),
+                    builder -> builder.persistent(COUNCIL_MISSION_CODEC.listOf())
+                            .copyOnDeath()
+                            .initializer(ArrayList::new));
 
     /** Namespace used before the mod id became tougher. Saved animals still carry it. */
     static final String LEGACY_NAMESPACE = "extrahardmode";

@@ -4,6 +4,7 @@ import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.feature.AbilityDurationRules;
 import dev.extrahardmode.feature.CouncilMissionRules;
 import dev.extrahardmode.network.ClientboundCouncilBountyPayload;
+import java.util.List;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.minecraft.client.Minecraft;
@@ -30,9 +31,12 @@ public final class CouncilBountyHud {
         if (minecraft.player == null || minecraft.player.isSpectator() || minecraft.font == null) {
             return;
         }
-        String text = CouncilMissionRules.hudLabel(bounty.label(), bounty.kills(), bounty.target());
+        List<String> lines = bounty.lines();
         int x = AbilityDurationRules.originX();
-        int y = CouncilMissionRules.bountyHudY(graphics.guiHeight(), minecraft.font.lineHeight);
-        graphics.text(minecraft.font, text, x, y, COLOR, true);
+        int lineHeight = minecraft.font.lineHeight;
+        for (int i = 0; i < lines.size(); i++) {
+            int y = CouncilMissionRules.bountyHudLineY(graphics.guiHeight(), lineHeight, i, lines.size());
+            graphics.text(minecraft.font, lines.get(i), x, y, COLOR, true);
+        }
     }
 }

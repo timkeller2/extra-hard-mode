@@ -292,8 +292,9 @@ public final class Achievements implements FeatureModule {
             grantedThrough = i + 1;
             announce(player, builder, subject);
             celebrate(player);
-            giveReward(player, competitive && first);
-            grantDiamond(player);
+            boolean firstClaim = competitive && first;
+            giveReward(player, firstClaim);
+            grantEmeralds(player, firstClaim);
         }
         if (grantedThrough != already) {
             putCount(player, awardedType, key, grantedThrough);
@@ -329,8 +330,9 @@ public final class Achievements implements FeatureModule {
                         player.level(), player.getX(), player.getY() + 1.0, player.getZ(), rocket));
     }
 
-    static void grantDiamond(ServerPlayer player) {
-        give(player, new ItemStack(Items.DIAMOND));
+    static void grantEmeralds(ServerPlayer player, boolean firstClaim) {
+        int count = AchievementRules.rewardEmeralds(player.getRandom().nextInt(), firstClaim);
+        give(player, new ItemStack(Items.EMERALD, count));
     }
 
     static void give(ServerPlayer player, ItemStack stack) {

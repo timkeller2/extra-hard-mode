@@ -37,6 +37,19 @@ public final class InhabitantRules {
     public static final int ARMOR_TRADE_USES = 1;
     public static final int WEALTHY_OFFER_COUNT = 8;
     public static final int WEALTHY_TRADE_USES = 4;
+    /** One diamond. Matches a wealthy trader and a master armorsmith. */
+    public static final int JEWELER_DIAMOND_EMERALDS = 8;
+    /** Four gold ingots, matching a wealthy trader. */
+    public static final int JEWELER_GOLD_INGOT_COUNT = 4;
+    public static final int JEWELER_GOLD_EMERALDS = 2;
+    /** One iron block. Nine ingots would be about 2 emeralds; the block costs more. */
+    public static final int JEWELER_IRON_BLOCK_EMERALDS = 6;
+    /** One copper block or one redstone block. Each is a small stack of the loose item, sold as a block. */
+    public static final int JEWELER_SMALL_BLOCK_EMERALDS = 2;
+    /** Nine diamonds at {@link #JEWELER_DIAMOND_EMERALDS} each. */
+    public static final int JEWELER_DIAMOND_BLOCK_EMERALDS = 72;
+    /** Nine gold ingots, with the same kind of premium as an iron block. */
+    public static final int JEWELER_GOLD_BLOCK_EMERALDS = 12;
     /**
      * Shop roll top is {@link #TRADE_UPPER_AT_FLOOR}% at this score and
      * {@link #TRADE_UPPER_AT_CAP}% at {@link #MAX_HOUSE_SCORE}. Lower scores use the floor.
@@ -97,6 +110,7 @@ public final class InhabitantRules {
     public static final String ARMORSMITH = "armorsmith";
     public static final String MASTER_ARMORSMITH = "master_armorsmith";
     public static final String WISE_TEACHER = "wise_teacher";
+    public static final String JEWELER = "jeweler";
     public static final String COUNCIL = "council";
     /** Emeralds a wise teacher charges in a 24-point home. Each point above that takes {@link #WISE_PRICE_PER_POINT} off, down to free. */
     public static final int WISE_ABILITY_EMERALDS = 30;
@@ -112,6 +126,7 @@ public final class InhabitantRules {
             ARMORSMITH,
             MASTER_ARMORSMITH,
             WISE_TEACHER,
+            JEWELER,
             COUNCIL);
 
     public record WealthyListing(String itemId, int count, int emeralds) {}
@@ -123,6 +138,10 @@ public final class InhabitantRules {
     public record TradeListing(String itemId, int count, int emeralds, int maxUses, boolean buy) {
         public TradeListing withUses(int uses) {
             return new TradeListing(itemId, count, emeralds, Math.max(1, uses), buy);
+        }
+
+        public TradeListing withCount(int nextCount) {
+            return new TradeListing(itemId, Math.max(0, nextCount), emeralds, maxUses, buy);
         }
     }
 
@@ -178,6 +197,28 @@ public final class InhabitantRules {
             sellOf("minecraft:nether_wart", 1, 12, FARM_PLANT_USES),
             sellOf("minecraft:torchflower_seeds", 1, FARM_PLANT_MAX_EMERALDS, FARM_PLANT_USES),
             sellOf("minecraft:pitcher_pod", 1, FARM_PLANT_MAX_EMERALDS, FARM_PLANT_USES));
+
+    /** Goods a jeweler keeps in the usual shop. Larger houses draw the rest from {@link #JEWELER_EXTRA_SELLS}. */
+    public static final List<TradeListing> JEWELER_USUAL_SELLS = List.of(
+            sellOf("minecraft:diamond", 1, JEWELER_DIAMOND_EMERALDS, WEALTHY_TRADE_USES),
+            sellOf("minecraft:redstone_block", 1, JEWELER_SMALL_BLOCK_EMERALDS, WEALTHY_TRADE_USES),
+            sellOf("minecraft:gold_ingot", JEWELER_GOLD_INGOT_COUNT, JEWELER_GOLD_EMERALDS, WEALTHY_TRADE_USES),
+            sellOf("minecraft:iron_block", 1, JEWELER_IRON_BLOCK_EMERALDS, WEALTHY_TRADE_USES),
+            sellOf("minecraft:copper_block", 1, JEWELER_SMALL_BLOCK_EMERALDS, WEALTHY_TRADE_USES));
+
+    /** Gem and metal listings a larger jeweler adds after the usual shop. */
+    public static final List<TradeListing> JEWELER_EXTRA_SELLS = List.of(
+            sellOf("minecraft:lapis_lazuli", 12, 1, WEALTHY_TRADE_USES),
+            sellOf("minecraft:lapis_block", 1, JEWELER_SMALL_BLOCK_EMERALDS, WEALTHY_TRADE_USES),
+            sellOf("minecraft:amethyst_shard", 8, 1, WEALTHY_TRADE_USES),
+            sellOf("minecraft:amethyst_block", 1, 1, WEALTHY_TRADE_USES),
+            sellOf("minecraft:quartz", 12, 1, WEALTHY_TRADE_USES),
+            sellOf("minecraft:quartz_block", 1, 1, WEALTHY_TRADE_USES),
+            sellOf("minecraft:gold_nugget", 9, 1, WEALTHY_TRADE_USES),
+            sellOf("minecraft:gold_block", 1, JEWELER_GOLD_BLOCK_EMERALDS, WEALTHY_TRADE_USES),
+            sellOf("minecraft:diamond_block", 1, JEWELER_DIAMOND_BLOCK_EMERALDS, WEALTHY_TRADE_USES),
+            sellOf("minecraft:iron_ingot", 8, 2, WEALTHY_TRADE_USES),
+            sellOf("minecraft:copper_ingot", 12, 1, WEALTHY_TRADE_USES));
 
     private static final String[] NAMES = {
         "Alder", "Bram", "Cora", "Dune", "Ellis", "Fern", "Goss", "Hela", "Ivo", "Jules",
@@ -406,11 +447,13 @@ public final class InhabitantRules {
 
     public static List<String> homesResidentLines() {
         return List.of(
+                "Residents: The name over their head is their name and occupation, such as Mira the Jeweler.",
+                "Residents: Clothes are a villager outfit, so two jewelers may differ. Finer residents wear higher-ranked clothes.",
                 "Residents: Eligible loaded homes are checked at dawn. An empty eligible home is timestamped the day it becomes inhabitable.",
                 "Residents: When you visit later, each missed day is rolled once (same chances as dawn), then the timestamp is set to today.",
                 "Residents: Houses in unloaded chunks can still fill. Chance starts at 8% at 12 points and rises with extra points (halved in blight).",
                 "Residents: Chests bias a hauler, a kitchen biases a cook, and plants or workstations bias a farm neighbor.",
-                "Residents: 18 points can attract a bounty board or wealthy trader, 24 an armorsmith or a wise teacher, and 30 a master armorsmith.",
+                "Residents: 18 points can attract a drop collector, a wealthy trader, or a jeweler, 24 an armorsmith or a wise teacher, and 30 a master armorsmith.",
                 "Residents: A council member can appear in any eligible home. New residents prefer a type that has not appeared yet.",
                 "Residents: The house must be able to host that type. Once every type has spawned, the usual furnishing biases apply.",
                 "Residents: Council members are three times as likely as the most common other type. One resident per home.",
@@ -430,16 +473,26 @@ public final class InhabitantRules {
                 "Shops: Houses under 14 points use that same 25-50% band. There is at least one use of each listing that is rolled.",
                 "Shops: Each listing rolls its uses separately. Extra types beyond the usual shop are random trades.",
                 "Shops: Each trade adds 1 trading experience. A stock change adds the square root of that experience to the house points.",
-                "Shops: A farm neighbor may sell one seed or plantable vegetable for 6 to 16 emeralds.");
+                "Shops: Each stock change rolls item amounts once from -25% to +25%, then adds 0 to 25 for house points and trading experience.",
+                "Shops: That total adds items when you buy and subtracts the items required when you sell to the resident. Emerald prices stay the same.",
+                "Shops: A farm neighbor may sell one seed or plantable vegetable for 6 to 16 emeralds.",
+                "Shops: A jeweler sells a diamond for 8 emeralds, 4 gold ingots for 2, an iron block for 6, and a copper or redstone block for 2.",
+                "Shops: Larger jewelers also sell lapis, amethyst, quartz, gold nuggets, and blocks of gold, lapis, amethyst, quartz, and diamond. A diamond block is 72 emeralds.");
     }
 
     public static List<String> homesBountyLines() {
         return List.of(
                 "Bounties: Council members give each player a personal kill bounty when you check in.",
-                "Bounties: The first hunt is 6-18 common mobs; each success is 30% larger and rarer. You have 7 Minecraft days.",
+                "Bounties: The first hunt from a resident is 6-18 common mobs. Each success with that resident makes their next hunt 20% larger and rarer.",
+                "Bounties: You have 14 Minecraft days. A bounty that runs out is not replaced in that conversation.",
+                "Bounties: The next bounty from that resident waits 7 Minecraft days after the last one was given, and only after you finish the previous one.",
+                "Bounties: Each council member can give you one. You can hold 5 at a time, counting hunts and unpaid emerald turn-ins.",
+                "Bounties: A kill counts for every open bounty on that mob.",
                 "Bounties: Finishing grants XP equal to one quarter of the slain mobs' health plus 25, with 10% more per extra house point.",
-                "Bounties: You also get a congratulations message and a sound. Return to collect emeralds equal to one tenth of that XP.",
-                "Bounties: Collecting plays a sound and offers a new bounty. Zombie Bounty 3/12 sits above the bottom-left ability icons.");
+                "Bounties: You also get a congratulations message and a sound. Return to that resident for emeralds equal to one tenth of that XP.",
+                "Bounties: Collecting plays a sound. If 7 days have passed, that resident offers a new bounty.",
+                "Bounties: One bounty reads Zombie Bounty 3/12 above the ability icons. Two or more name the resident and stack upward.",
+                "Bounties: A drop collector warns you when a biome boss is out, and names the compass direction from that resident. East is the rising sun.");
     }
 
     public static List<String> homesHelpLines() {
@@ -513,7 +566,7 @@ public final class InhabitantRules {
         return switch (type) {
             case MASTER_ARMORSMITH -> MASTER_SCORE;
             case ARMORSMITH, WISE_TEACHER -> NOTABLE_SCORE;
-            case WEALTHY, BOUNTY -> FINE_SCORE;
+            case WEALTHY, BOUNTY, JEWELER -> FINE_SCORE;
             default -> MIN_SCORE;
         };
     }
@@ -560,6 +613,8 @@ public final class InhabitantRules {
             bag.add(BOUNTY);
             bag.add(WEALTHY);
             bag.add(WEALTHY);
+            bag.add(JEWELER);
+            bag.add(JEWELER);
         }
         if (score >= NOTABLE_SCORE) {
             bag.add(BOUNTY);
@@ -592,6 +647,149 @@ public final class InhabitantRules {
         return bag.get(index);
     }
 
+    /** Work clothes. Stone or iron rank. */
+    public static final List<String> COMMON_OUTFITS = List.of(
+            "minecraft:farmer",
+            "minecraft:fisherman",
+            "minecraft:shepherd",
+            "minecraft:fletcher",
+            "minecraft:butcher",
+            "minecraft:mason",
+            "minecraft:leatherworker");
+    /** Nicer coats and robes. Iron through emerald rank. */
+    public static final List<String> FINE_OUTFITS = List.of(
+            "minecraft:librarian",
+            "minecraft:cartographer",
+            "minecraft:cleric",
+            "minecraft:toolsmith",
+            "minecraft:weaponsmith",
+            "minecraft:leatherworker");
+    /** Smith and scholar clothes. Gold through diamond rank. */
+    public static final List<String> NOTABLE_OUTFITS = List.of(
+            "minecraft:armorer",
+            "minecraft:weaponsmith",
+            "minecraft:toolsmith",
+            "minecraft:cleric",
+            "minecraft:librarian");
+    /** The same fine clothes, kept at emerald or diamond rank. */
+    public static final List<String> ELITE_OUTFITS = List.of(
+            "minecraft:armorer",
+            "minecraft:weaponsmith",
+            "minecraft:cleric",
+            "minecraft:librarian");
+    public static final List<String> OUTFIT_STYLES = List.of(
+            "minecraft:plains",
+            "minecraft:desert",
+            "minecraft:jungle",
+            "minecraft:savanna",
+            "minecraft:snow",
+            "minecraft:swamp",
+            "minecraft:taiga");
+
+    /** One rolled costume. {@code level} is the villager rank badge, from 1 to 5. */
+    public record Outfit(String professionId, String styleId, int level) {}
+
+    /**
+     * Vanilla drops a level-1 profession that has no job block when villager
+     * experience is 0, and that wipe clears the trade list. Residents keep at
+     * least this much experience so the costume and the shop stay.
+     */
+    public static final int COSTUME_EXPERIENCE = 1;
+
+    public static boolean vanillaClearsNoviceCostume(int level, int villagerXp) {
+        return level <= 1 && villagerXp <= 0;
+    }
+
+    public static List<String> outfitProfessions(String specialty) {
+        return switch (specialty == null ? "" : specialty) {
+            case MASTER_ARMORSMITH, COUNCIL -> ELITE_OUTFITS;
+            case ARMORSMITH, WISE_TEACHER -> NOTABLE_OUTFITS;
+            case WEALTHY, BOUNTY, JEWELER -> FINE_OUTFITS;
+            default -> COMMON_OUTFITS;
+        };
+    }
+
+    public static int outfitLevelMin(String specialty) {
+        return switch (specialty == null ? "" : specialty) {
+            case MASTER_ARMORSMITH, COUNCIL -> 4;
+            case ARMORSMITH, WISE_TEACHER -> 3;
+            case WEALTHY, BOUNTY, JEWELER -> 2;
+            default -> 1;
+        };
+    }
+
+    public static int outfitLevelMax(String specialty) {
+        return switch (specialty == null ? "" : specialty) {
+            case MASTER_ARMORSMITH, COUNCIL -> 5;
+            case ARMORSMITH, WISE_TEACHER -> 5;
+            case WEALTHY, BOUNTY, JEWELER -> 4;
+            default -> 2;
+        };
+    }
+
+    public static Outfit pickOutfit(String specialty, int professionRoll, int styleRoll, int levelRoll) {
+        List<String> professions = outfitProfessions(specialty);
+        int min = outfitLevelMin(specialty);
+        int span = Math.max(1, outfitLevelMax(specialty) - min + 1);
+        return new Outfit(
+                professions.get(Math.floorMod(professionRoll, professions.size())),
+                OUTFIT_STYLES.get(Math.floorMod(styleRoll, OUTFIT_STYLES.size())),
+                min + Math.floorMod(levelRoll, span));
+    }
+
+    public static String outfitKey(Outfit outfit) {
+        if (outfit == null) {
+            return "";
+        }
+        return outfit.professionId() + "|" + outfit.styleId() + "|" + outfit.level();
+    }
+
+    public static Outfit parseOutfit(String key) {
+        if (key == null || key.isBlank()) {
+            return null;
+        }
+        String[] parts = key.split("\\|", -1);
+        if (parts.length != 3 || parts[0].isEmpty() || parts[1].isEmpty()) {
+            return null;
+        }
+        try {
+            int level = Integer.parseInt(parts[2]);
+            if (level < 1 || level > 5) {
+                return null;
+            }
+            return new Outfit(parts[0], parts[1], level);
+        } catch (NumberFormatException ex) {
+            return null;
+        }
+    }
+
+    /** Floating name, such as {@code Mira the Jeweler}. */
+    public static String nameplate(String name, String specialty) {
+        String who = name == null || name.isBlank() ? "Traveler" : name.trim();
+        return who + " the " + titleWords(specialtyFallback(specialty));
+    }
+
+    static String titleWords(String words) {
+        if (words == null || words.isEmpty()) {
+            return "Traveler";
+        }
+        StringBuilder out = new StringBuilder(words.length());
+        boolean cap = true;
+        for (int i = 0; i < words.length(); i++) {
+            char c = words.charAt(i);
+            if (Character.isWhitespace(c)) {
+                out.append(c);
+                cap = true;
+            } else if (cap) {
+                out.append(Character.toUpperCase(c));
+                cap = false;
+            } else {
+                out.append(c);
+            }
+        }
+        return out.toString();
+    }
+
     public static String specialtyFallback(String specialty) {
         if (specialty == null) {
             return "traveler";
@@ -600,12 +798,13 @@ public final class InhabitantRules {
             case HAULER -> "hauler";
             case COOK -> "cook";
             case FARM -> "farm neighbor";
-            case BOUNTY -> "bounty board";
+            case BOUNTY -> "drop collector";
             case TRADER -> "trader";
             case WEALTHY -> "wealthy trader";
             case ARMORSMITH -> "armorsmith";
             case MASTER_ARMORSMITH -> "master armorsmith";
             case WISE_TEACHER -> "wise teacher";
+            case JEWELER -> "jeweler";
             case COUNCIL -> "council member";
             default -> "traveler";
         };
@@ -758,6 +957,52 @@ public final class InhabitantRules {
         return housePoints + tradeExperienceBonus(trades);
     }
 
+    /** Lowest random piece of an item-amount roll. */
+    public static final int QUANTITY_ROLL_MIN = -25;
+    /** Highest random piece of an item-amount roll. */
+    public static final int QUANTITY_ROLL_MAX = 25;
+    /** House and trading-experience piece of an item-amount roll, at {@link #MAX_HOUSE_SCORE}. */
+    public static final int QUANTITY_MODIFIER_MAX = 25;
+
+    /**
+     * 0 at {@link #TRADE_SCORE_FLOOR} and {@link #QUANTITY_MODIFIER_MAX} at {@link #MAX_HOUSE_SCORE}.
+     * The score is house points plus the square root of trading experience.
+     */
+    public static int quantityModifier(double score) {
+        double clamped = Math.clamp(score, (double) TRADE_SCORE_FLOOR, (double) MAX_HOUSE_SCORE);
+        double span = MAX_HOUSE_SCORE - TRADE_SCORE_FLOOR;
+        return (int) Math.round((clamped - TRADE_SCORE_FLOOR) * (QUANTITY_MODIFIER_MAX / span));
+    }
+
+    /** Inclusive roll from {@link #QUANTITY_ROLL_MIN} to {@link #QUANTITY_ROLL_MAX}. */
+    public static int rollQuantitySwing(int roll) {
+        int span = QUANTITY_ROLL_MAX - QUANTITY_ROLL_MIN + 1;
+        return QUANTITY_ROLL_MIN + Math.floorMod(roll, span);
+    }
+
+    /** Random swing plus the house and experience modifier. About -25 to +50. */
+    public static int quantityDealPercent(int swing, int modifier) {
+        int swingClamped = Math.clamp(swing, QUANTITY_ROLL_MIN, QUANTITY_ROLL_MAX);
+        int modifierClamped = Math.clamp(modifier, 0, QUANTITY_MODIFIER_MAX);
+        return swingClamped + modifierClamped;
+    }
+
+    /**
+     * A purchase ({@code buy} false) gains {@code percent} items. A sale to the resident
+     * ({@code buy} true) requires {@code percent} fewer items. At least 1 when the default is positive.
+     */
+    public static int adjustedQuantity(int count, int percent, boolean buy) {
+        if (count <= 0) {
+            return 0;
+        }
+        int applied = buy ? -percent : percent;
+        long scaled = Math.round(count * ((100.0 + applied) / 100.0));
+        if (scaled > Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        }
+        return Math.max(1, (int) scaled);
+    }
+
     /** Inclusive roll in {@code [minPercent, maxPercent]}. */
     public static int rollTradePercent(int minPercent, int maxPercent, int roll) {
         int min = Math.max(0, minPercent);
@@ -814,6 +1059,7 @@ public final class InhabitantRules {
                     sellOf("minecraft:compass", 1, 5, 4),
                     sellOf("minecraft:clock", 1, 5, 4));
             case WEALTHY -> wealthyTradeListings().subList(0, Math.min(WEALTHY_OFFER_COUNT, WEALTHY_POOL.size()));
+            case JEWELER -> JEWELER_USUAL_SELLS;
             default -> List.of(
                     sellOf("minecraft:bread", 4, 1, 8),
                     sellOf("minecraft:coal", 8, 1, 8),
@@ -884,6 +1130,7 @@ public final class InhabitantRules {
                     sellOf("minecraft:item_frame", 4, 1, 8),
                     sellOf("minecraft:lantern", 4, 1, 8));
             case WEALTHY -> List.of();
+            case JEWELER -> JEWELER_EXTRA_SELLS;
             default -> List.of(
                     sellOf("minecraft:stick", 16, 1, 8),
                     sellOf("minecraft:paper", 12, 1, 8),
@@ -928,6 +1175,8 @@ public final class InhabitantRules {
      * House-score shop: type count and per-listing uses roll from half the top
      * percent up to that top. The top is 50% at 14 points and 175% at 38.
      * Extra types beyond the usual shop are random leftover listings.
+     * Item amounts share one roll from -25% to +25%, plus 0 to 25 from the score.
+     * Purchases gain that percent; sales to the resident require that percent fewer.
      */
     public static List<TradeListing> scaledListings(
             String specialty, double score, int storage, boolean blight, Random random) {
@@ -980,10 +1229,12 @@ public final class InhabitantRules {
                 chosen.add(listing);
             }
         }
+        int quantityPercent = quantityDealPercent(rollQuantitySwing(rng.nextInt()), quantityModifier(score));
         List<TradeListing> scaled = new ArrayList<>(chosen.size());
         for (TradeListing listing : chosen) {
             int usePercent = rollTradePercent(minPercent, maxPercent, rng.nextInt());
-            scaled.add(listing.withUses(scaledAmount(listing.maxUses(), usePercent)));
+            int count = adjustedQuantity(listing.count(), quantityPercent, listing.buy());
+            scaled.add(listing.withCount(count).withUses(scaledAmount(listing.maxUses(), usePercent)));
         }
         return scaled;
     }
@@ -1041,6 +1292,26 @@ public final class InhabitantRules {
 
     static TradeListing sellOf(String itemId, int count, int emeralds, int uses) {
         return new TradeListing(itemId, count, emeralds, uses, false);
+    }
+
+    private static final String[] COMPASS_DIRECTIONS = {
+        "east", "southeast", "south", "southwest", "west", "northwest", "north", "northeast"
+    };
+
+    /**
+     * Eight-way compass name for a step of {@code east} (+X, the rising sun) and {@code south} (+Z).
+     * Returns null when the two places are the same.
+     */
+    public static String compassDirection(double east, double south) {
+        if (east * east + south * south < 1.0e-8) {
+            return null;
+        }
+        double angle = Math.toDegrees(Math.atan2(south, east));
+        if (angle < 0.0) {
+            angle += 360.0;
+        }
+        int index = (int) Math.floor((angle + 22.5) / 45.0) % COMPASS_DIRECTIONS.length;
+        return COMPASS_DIRECTIONS[index];
     }
 
     /**

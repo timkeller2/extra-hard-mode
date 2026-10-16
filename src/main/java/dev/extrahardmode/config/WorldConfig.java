@@ -4,6 +4,7 @@ import com.electronwill.nightconfig.core.Config;
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.electronwill.nightconfig.toml.TomlFormat;
 import dev.extrahardmode.ExtraHardModeMod;
+import dev.extrahardmode.feature.GrassSpreadRules;
 import dev.extrahardmode.feature.HardenedBudget;
 import dev.extrahardmode.feature.HungerRules;
 import dev.extrahardmode.feature.OvergrazingRules;
@@ -105,6 +106,7 @@ public final class WorldConfig {
     private int overgrazingLookChance = OvergrazingRules.LOOK_CHANCE_PERCENT;
     private int overgrazingChestRange = OvergrazingRules.DEFAULT_CHEST_RANGE;
     private int cropMatureDurationPercent = 300;
+    private int grassGrowthPercent = GrassSpreadRules.DEFAULT_PERCENT;
     private int animalBreedCooldownMultiplier = 6;
     private int eggLayTimeMultiplier = 6;
     private int hiveHoneycombCount = 1;
@@ -483,6 +485,10 @@ public final class WorldConfig {
 
     public int cropMatureDurationPercent() {
         return cropMatureDurationPercent;
+    }
+
+    public int grassGrowthPercent() {
+        return grassGrowthPercent;
     }
 
     public int animalBreedCooldownMultiplier() {
@@ -949,7 +955,7 @@ public final class WorldConfig {
                 writeDefaultIfMissing(
                         file,
                         "achievements.competitive",
-                        "The first player to claim a builder or slayer achievement server-wide gets 25 extra experience. Everyone can still earn every achievement. Default true.",
+                        "The first player to claim a builder or slayer achievement server-wide gets 25 extra experience and 3 more emeralds. Everyone can still earn every achievement. Default true.",
                         true);
                 writeDefaultIfMissing(
                         file,
@@ -1334,6 +1340,8 @@ public final class WorldConfig {
                         "Percent chance an animal that cannot find a grass block looks in chests. It eats short grass before breeding food, then may starve. Default 33.");
                 file.set("farming.overgrazing.chestRange", overgrazingChestRange);
                 file.set("farming.cropMatureDurationPercent", cropMatureDurationPercent);
+                file.set("farming.grassGrowthPercent", grassGrowthPercent);
+                file.setComment("farming.grassGrowthPercent", GrassSpreadRules.CONFIG_COMMENT);
                 file.set("farming.animalBreedCooldownMultiplier", animalBreedCooldownMultiplier);
                 file.set("farming.eggLayTimeMultiplier", eggLayTimeMultiplier);
                 file.set("farming.hiveHoneycombCount", hiveHoneycombCount);
@@ -1522,6 +1530,8 @@ public final class WorldConfig {
         overgrazingChestRange = OvergrazingRules.clampRange(
                 getInt(file, "farming.overgrazing.chestRange", OvergrazingRules.DEFAULT_CHEST_RANGE));
         cropMatureDurationPercent = Math.max(1, getInt(file, "farming.cropMatureDurationPercent", 300));
+        grassGrowthPercent = clampPercent(
+                getInt(file, "farming.grassGrowthPercent", GrassSpreadRules.DEFAULT_PERCENT));
         animalBreedCooldownMultiplier = Math.max(1, getInt(file, "farming.animalBreedCooldownMultiplier", 6));
         eggLayTimeMultiplier = Math.max(1, getInt(file, "farming.eggLayTimeMultiplier", 6));
         hiveHoneycombCount = Math.clamp(getInt(file, "farming.hiveHoneycombCount", 1), 0, 64);
@@ -1690,6 +1700,8 @@ public final class WorldConfig {
                 "farming.cropMatureDurationPercent",
                 "How long crops take to mature. 100 is vanilla, 200 is twice as long, 50 is twice as fast. Default 300.",
                 300);
+        writeDefaultIfMissing(
+                file, "farming.grassGrowthPercent", GrassSpreadRules.CONFIG_COMMENT, GrassSpreadRules.DEFAULT_PERCENT);
         writeDefaultIfMissing(
                 file,
                 "farming.animalBreedCooldownMultiplier",

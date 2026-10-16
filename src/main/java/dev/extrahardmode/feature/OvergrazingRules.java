@@ -3,13 +3,15 @@ package dev.extrahardmode.feature;
 /**
  * Overgrazing thresholds and rolls. Minecraft-free so JUnit can cover the math.
  *
- * <p>Bite timing matches vanilla grass spread. A grass block tries to spread on
- * a lit random tick (default speed 3, and only while surface light stays at
- * least 9, which is about 13,700 ticks of each day). One flat pasture of
- * {@link #DEFAULT_LARGE_BLOCKS} blocks keeps up with a large animal at
- * {@link #DEFAULT_LARGE_INTERVAL_TICKS}. {@link #DEFAULT_SMALL_BLOCKS} blocks
- * keep up with a chicken or rabbit at {@link #DEFAULT_SMALL_INTERVAL_TICKS}.
- * Raising the block count makes that animal eat sooner, so it needs more grass.
+ * <p>Bite timing was chosen against vanilla grass spread. A grass block tries to
+ * spread on a lit random tick (default speed 3, and only while surface light
+ * stays at least 9, which is about 13,700 ticks of each day). At that full
+ * rate, one flat pasture of {@link #DEFAULT_LARGE_BLOCKS} blocks keeps up with
+ * a large animal at {@link #DEFAULT_LARGE_INTERVAL_TICKS}, and
+ * {@link #DEFAULT_SMALL_BLOCKS} blocks keep up with a chicken or rabbit at
+ * {@link #DEFAULT_SMALL_INTERVAL_TICKS}. {@link GrassSpreadRules} defaults to
+ * a quarter of that spread, so the same pasture shrinks. Raising the block
+ * count makes that animal eat sooner, so it needs more grass.
  */
 public final class OvergrazingRules {
     public static final int DEFAULT_CHEST_RANGE = 20;

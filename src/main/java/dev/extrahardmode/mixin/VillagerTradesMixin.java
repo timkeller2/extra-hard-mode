@@ -8,6 +8,8 @@ import dev.extrahardmode.feature.VillagerNerf;
 import dev.extrahardmode.feature.VillagerRestockRules;
 import dev.extrahardmode.world.WorldGate;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -56,6 +58,14 @@ public abstract class VillagerTradesMixin {
             return;
         }
         VillagerNerf.apply(self);
+    }
+
+    @Inject(method = "mobInteract", at = @At("HEAD"))
+    private void tougher$residentShopReady(Player player, InteractionHand hand, CallbackInfoReturnable<InteractionResult> cir) {
+        Villager self = (Villager) (Object) this;
+        if (Inhabitants.isInhabitant(self) && !self.level().isClientSide()) {
+            Inhabitants.prepareTrade(self);
+        }
     }
 
     @Inject(method = "startTrading", at = @At("HEAD"))

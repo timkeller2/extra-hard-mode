@@ -2,6 +2,8 @@ package dev.extrahardmode.feature;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
@@ -13,6 +15,20 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class InhabitantRulesTest {
+    @Test
+    void compassDirectionUsesTheRisingSunAsEast() {
+        assertEquals("east", InhabitantRules.compassDirection(10, 0));
+        assertEquals("west", InhabitantRules.compassDirection(-10, 0));
+        assertEquals("south", InhabitantRules.compassDirection(0, 10));
+        assertEquals("north", InhabitantRules.compassDirection(0, -10));
+        assertEquals("northeast", InhabitantRules.compassDirection(10, -10));
+        assertEquals("southeast", InhabitantRules.compassDirection(10, 10));
+        assertEquals("southwest", InhabitantRules.compassDirection(-10, 10));
+        assertEquals("northwest", InhabitantRules.compassDirection(-10, -10));
+        assertEquals("east", InhabitantRules.compassDirection(10, 1));
+        assertEquals(null, InhabitantRules.compassDirection(0, 0));
+    }
+
     @Test
     void missingResidentIsClearedOnlyWhenTheHomeAreaCanSeeThem() {
         assertFalse(InhabitantRules.residentMissing(true, true, true));
@@ -138,7 +154,7 @@ class InhabitantRulesTest {
                 List.of("hauler", "cook", "farm", "trader", "council"),
                 InhabitantRules.unseenSpecialties(List.of(), 12));
         assertEquals(
-                List.of("hauler", "cook", "farm", "bounty", "trader", "wealthy", "council"),
+                List.of("hauler", "cook", "farm", "bounty", "trader", "wealthy", "jeweler", "council"),
                 InhabitantRules.unseenSpecialties(List.of(), 18));
         assertTrue(InhabitantRules.unseenSpecialties(List.of(), 24).contains(InhabitantRules.ARMORSMITH));
         assertTrue(InhabitantRules.unseenSpecialties(List.of(), 24).contains(InhabitantRules.WISE_TEACHER));
@@ -151,6 +167,8 @@ class InhabitantRulesTest {
         assertTrue(InhabitantRules.specialtyAllowed(InhabitantRules.MASTER_ARMORSMITH, 30));
         assertFalse(InhabitantRules.specialtyAllowed(InhabitantRules.WEALTHY, 17));
         assertTrue(InhabitantRules.specialtyAllowed(InhabitantRules.WEALTHY, 18));
+        assertFalse(InhabitantRules.specialtyAllowed(InhabitantRules.JEWELER, 17));
+        assertTrue(InhabitantRules.specialtyAllowed(InhabitantRules.JEWELER, 18));
         assertTrue(InhabitantRules.unseenSpecialties(InhabitantRules.SPECIALTIES).isEmpty());
         assertEquals(
                 InhabitantRules.TRADER,
@@ -167,6 +185,31 @@ class InhabitantRulesTest {
         assertEquals("wealthy trader", InhabitantRules.specialtyFallback(InhabitantRules.WEALTHY));
         assertEquals("council member", InhabitantRules.specialtyFallback(InhabitantRules.COUNCIL));
         assertEquals("wise teacher", InhabitantRules.specialtyFallback(InhabitantRules.WISE_TEACHER));
+        assertEquals("jeweler", InhabitantRules.specialtyFallback(InhabitantRules.JEWELER));
+        assertEquals("drop collector", InhabitantRules.specialtyFallback(InhabitantRules.BOUNTY));
+        assertEquals("Nia the Drop Collector", InhabitantRules.nameplate("Nia", InhabitantRules.BOUNTY));
+        assertEquals("Mira the Jeweler", InhabitantRules.nameplate("Mira", InhabitantRules.JEWELER));
+        assertEquals("Ada the Council Member", InhabitantRules.nameplate("Ada", InhabitantRules.COUNCIL));
+        assertEquals("Bram the Master Armorsmith", InhabitantRules.nameplate("Bram", InhabitantRules.MASTER_ARMORSMITH));
+        assertEquals("Cora the Farm Neighbor", InhabitantRules.nameplate(" Cora ", InhabitantRules.FARM));
+        assertEquals("Traveler the Hauler", InhabitantRules.nameplate("  ", InhabitantRules.HAULER));
+        InhabitantRules.Outfit hauler = InhabitantRules.pickOutfit(InhabitantRules.HAULER, 0, 0, 0);
+        InhabitantRules.Outfit otherHauler = InhabitantRules.pickOutfit(InhabitantRules.HAULER, 1, 1, 1);
+        assertNotEquals(hauler.professionId(), otherHauler.professionId());
+        assertNotEquals(hauler.styleId(), otherHauler.styleId());
+        assertEquals(1, hauler.level());
+        assertEquals(2, otherHauler.level());
+        assertFalse(hauler.professionId().contains("armorer"));
+        InhabitantRules.Outfit jeweler = InhabitantRules.pickOutfit(InhabitantRules.JEWELER, 0, 2, 1);
+        assertEquals("minecraft:librarian", jeweler.professionId());
+        assertEquals(3, jeweler.level());
+        assertFalse(jeweler.professionId().contains("farmer"));
+        InhabitantRules.Outfit councilOutfit = InhabitantRules.pickOutfit(InhabitantRules.COUNCIL, 0, 4, 1);
+        assertEquals("minecraft:armorer", councilOutfit.professionId());
+        assertEquals("minecraft:snow", councilOutfit.styleId());
+        assertEquals(5, councilOutfit.level());
+        assertEquals(councilOutfit, InhabitantRules.parseOutfit(InhabitantRules.outfitKey(councilOutfit)));
+        assertNull(InhabitantRules.parseOutfit("bad"));
         assertEquals(30, InhabitantRules.WISE_ABILITY_EMERALDS);
         assertEquals(30, InhabitantRules.wiseAbilityPrice(24));
         assertEquals(28, InhabitantRules.wiseAbilityPrice(25));
@@ -210,6 +253,14 @@ class InhabitantRulesTest {
             }
         }
         assertTrue(council >= 50);
+    }
+
+    @Test
+    void noviceCostumeStaysWhenTheResidentHasExperience() {
+        assertTrue(InhabitantRules.vanillaClearsNoviceCostume(1, 0));
+        assertFalse(InhabitantRules.vanillaClearsNoviceCostume(1, InhabitantRules.COSTUME_EXPERIENCE));
+        assertFalse(InhabitantRules.vanillaClearsNoviceCostume(2, 0));
+        assertEquals(1, InhabitantRules.COSTUME_EXPERIENCE);
     }
 
     @Test
@@ -285,6 +336,49 @@ class InhabitantRulesTest {
         long unique = first.stream().map(InhabitantRules.WealthyListing::itemId).distinct().count();
         assertEquals(8, unique);
         assertTrue(InhabitantRules.WEALTHY_POOL.size() >= 8);
+    }
+
+    @Test
+    void jewelerSellsGemsAndMetalBlocks() {
+        Map<String, InhabitantRules.TradeListing> stock = new HashMap<>();
+        for (InhabitantRules.TradeListing listing : InhabitantRules.JEWELER_USUAL_SELLS) {
+            assertFalse(listing.buy());
+            assertEquals(InhabitantRules.WEALTHY_TRADE_USES, listing.maxUses());
+            assertEquals(null, stock.put(listing.itemId(), listing));
+        }
+        for (InhabitantRules.TradeListing listing : InhabitantRules.JEWELER_EXTRA_SELLS) {
+            assertFalse(listing.buy());
+            assertEquals(null, stock.put(listing.itemId(), listing));
+        }
+        assertEquals(5, InhabitantRules.JEWELER_USUAL_SELLS.size());
+        assertEquals(1, stock.get("minecraft:diamond").count());
+        assertEquals(InhabitantRules.JEWELER_DIAMOND_EMERALDS, stock.get("minecraft:diamond").emeralds());
+        assertEquals(InhabitantRules.JEWELER_SMALL_BLOCK_EMERALDS, stock.get("minecraft:redstone_block").emeralds());
+        assertEquals(InhabitantRules.JEWELER_GOLD_INGOT_COUNT, stock.get("minecraft:gold_ingot").count());
+        assertEquals(InhabitantRules.JEWELER_GOLD_EMERALDS, stock.get("minecraft:gold_ingot").emeralds());
+        assertEquals(InhabitantRules.JEWELER_IRON_BLOCK_EMERALDS, stock.get("minecraft:iron_block").emeralds());
+        assertEquals(InhabitantRules.JEWELER_SMALL_BLOCK_EMERALDS, stock.get("minecraft:copper_block").emeralds());
+        assertEquals(InhabitantRules.JEWELER_DIAMOND_BLOCK_EMERALDS, stock.get("minecraft:diamond_block").emeralds());
+        assertEquals(InhabitantRules.JEWELER_GOLD_BLOCK_EMERALDS, stock.get("minecraft:gold_block").emeralds());
+        assertEquals(14, InhabitantRules.restockDays(InhabitantRules.JEWELER));
+        boolean sawExtra = false;
+        for (int seed = 0; seed < 40; seed++) {
+            List<InhabitantRules.TradeListing> offers =
+                    InhabitantRules.scaledListings(InhabitantRules.JEWELER, 38, 0, false, new Random(seed));
+            assertFalse(offers.isEmpty());
+            for (InhabitantRules.TradeListing listing : offers) {
+                InhabitantRules.TradeListing priced = stock.get(listing.itemId());
+                if (priced == null) {
+                    continue;
+                }
+                assertEquals(priced.emeralds(), listing.emeralds());
+                if (InhabitantRules.JEWELER_EXTRA_SELLS.stream()
+                        .anyMatch(extra -> extra.itemId().equals(listing.itemId()))) {
+                    sawExtra = true;
+                }
+            }
+        }
+        assertTrue(sawExtra);
     }
 
     @Test
@@ -375,6 +469,7 @@ class InhabitantRulesTest {
         assertEquals(4, InhabitantRules.defaultTradeTypeCount(InhabitantRules.ARMORSMITH));
         assertEquals(4, InhabitantRules.defaultTradeTypeCount(InhabitantRules.MASTER_ARMORSMITH));
         assertEquals(8, InhabitantRules.defaultTradeTypeCount(InhabitantRules.WEALTHY));
+        assertEquals(5, InhabitantRules.defaultTradeTypeCount(InhabitantRules.JEWELER));
         assertEquals(0, InhabitantRules.extraTradePoints(12, InhabitantRules.HAULER));
         assertEquals(38, InhabitantRules.MAX_HOUSE_SCORE);
         assertEquals(50, InhabitantRules.tradeMaxPercent(12));
@@ -398,6 +493,24 @@ class InhabitantRulesTest {
         assertEquals(16.0, InhabitantRules.stockScore(14, 4), 0.0);
         assertEquals(55, InhabitantRules.tradeMaxPercent(InhabitantRules.stockScore(14, 1)));
         assertEquals(175, InhabitantRules.tradeMaxPercent(InhabitantRules.stockScore(38, 100)));
+        assertEquals(0, InhabitantRules.quantityModifier(14));
+        assertEquals(0, InhabitantRules.quantityModifier(0));
+        assertEquals(25, InhabitantRules.quantityModifier(38));
+        assertEquals(25, InhabitantRules.quantityModifier(90));
+        assertEquals(13, InhabitantRules.quantityModifier(26));
+        assertEquals(1, InhabitantRules.quantityModifier(InhabitantRules.stockScore(14, 1)));
+        assertEquals(-25, InhabitantRules.rollQuantitySwing(0));
+        assertEquals(25, InhabitantRules.rollQuantitySwing(50));
+        assertEquals(-25, InhabitantRules.quantityDealPercent(-25, 0));
+        assertEquals(50, InhabitantRules.quantityDealPercent(25, 25));
+        assertEquals(0, InhabitantRules.quantityDealPercent(-25, 25));
+        assertEquals(8, InhabitantRules.adjustedQuantity(16, 50, true));
+        assertEquals(12, InhabitantRules.adjustedQuantity(8, 50, false));
+        assertEquals(20, InhabitantRules.adjustedQuantity(16, -25, true));
+        assertEquals(6, InhabitantRules.adjustedQuantity(8, -25, false));
+        assertEquals(1, InhabitantRules.adjustedQuantity(1, 25, false));
+        assertEquals(2, InhabitantRules.adjustedQuantity(1, 50, false));
+        assertEquals(1, InhabitantRules.adjustedQuantity(1, 50, true));
         assertEquals(1, InhabitantRules.scaledAmount(5, 25));
         assertEquals(3, InhabitantRules.scaledAmount(5, 50));
         assertEquals(1, InhabitantRules.scaledAmount(1, 25));

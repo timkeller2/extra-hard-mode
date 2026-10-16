@@ -19,6 +19,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -34,6 +35,7 @@ import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.npc.villager.VillagerProfession;
+import net.minecraft.world.entity.npc.villager.VillagerType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -273,8 +275,12 @@ public final class Inhabitants implements FeatureModule {
             if (entity == null || !entity.isAlive()) {
                 continue;
             }
-            if (entity instanceof Villager villager && isInhabitant(villager)) {
-                ResidentDefense.tick(level, villager, home.score());
+            if (entity instanceof Villager villager) {
+                showNameplate(villager, home.name(), home.specialty());
+                showOutfit(villager, home.specialty(), level.getRandom());
+                if (isInhabitant(villager)) {
+                    ResidentDefense.tick(level, villager, home.score());
+                }
             }
             ResidenceScan.Result result = ResidenceScan.inspect(
                     level, home.bed(), occupiedBeds(level, home.id()), cfg.inhabitantMinLight(), cfg.inhabitantSpacing());
@@ -452,7 +458,7 @@ public final class Inhabitants implements FeatureModule {
         String specialty = InhabitantRules.pickSpecialty(
                 result.amenities(), result.gates().score(), random.nextInt(), data.spawnedSpecialties());
         String name = InhabitantRules.pickName(random.nextInt());
-        stamp(villager, ResidenceScan.homeId(result.bed()), specialty, name);
+        stamp(villager, ResidenceScan.homeId(result.bed()), specialty, name, random);
         if (InhabitantRules.WISE_TEACHER.equals(specialty)) {
             villager.setAttached(
                     EhmAttachments.EHM_WISE_ABILITY, InhabitantRules.pickWiseAbility(random.nextInt()));
@@ -496,17 +502,84 @@ public final class Inhabitants implements FeatureModule {
         level.playSound(null, spawn, SoundEvents.WOODEN_DOOR_OPEN, SoundSource.BLOCKS, 0.8F, 1.0F);
     }
 
-    static void stamp(Villager villager, String homeId, String specialty, String name) {
+    static void showNameplate(Villager villager, String name, String specialty) {
+        String plate = InhabitantRules.nameplate(name, specialty);
+        Component current = villager.getCustomName();
+        if (current == null || !plate.equals(current.getString()) || !villager.isCustomNameVisible()) {
+            villager.setCustomName(Component.literal(plate));
+            villager.setCustomNameVisible(true);
+        }
+    }
+
+    /**
+     * Roll once, then put those clothes back if the game changes them. Changing profession
+     * clears the trade list, so a stocked resident keeps the offers they already had.
+     */
+    static void showOutfit(Villager villager, String specialty, RandomSource random) {
+        String saved = villager.getAttachedOrElse(EhmAttachments.EHM_RESIDENT_OUTFIT, "");
+        InhabitantRules.Outfit outfit = InhabitantRules.parseOutfit(saved);
+        if (outfit == null) {
+            RandomSource rng = random == null ? villager.getRandom() : random;
+            outfit = InhabitantRules.pickOutfit(specialty, rng.nextInt(), rng.nextInt(), rng.nextInt());
+            villager.setAttached(EhmAttachments.EHM_RESIDENT_OUTFIT, InhabitantRules.outfitKey(outfit));
+        }
+        applyOutfit(villager, outfit);
+        holdCostume(villager);
+    }
+
+    /** A novice coat with no experience is deleted, and the shop closes with it. */
+    public static void holdCostume(Villager villager) {
+        if (villager == null) {
+            return;
+        }
+        if (InhabitantRules.vanillaClearsNoviceCostume(villager.getVillagerData().level(), villager.getVillagerXp())) {
+            villager.setVillagerXp(InhabitantRules.COSTUME_EXPERIENCE);
+        }
+    }
+
+    /** Put the costume back and refill an empty shop before the trade screen decides. */
+    public static void prepareTrade(Villager villager) {
+        if (!isInhabitant(villager) || !(villager.level() instanceof ServerLevel level)) {
+            return;
+        }
+        InhabitantData.Home home = InhabitantData.of(level).byLiving(villager.getUUID());
+        if (home != null) {
+            showOutfit(villager, home.specialty(), level.getRandom());
+        } else {
+            holdCostume(villager);
+        }
+        ensureOffers(villager);
+    }
+
+    static void applyOutfit(Villager villager, InhabitantRules.Outfit outfit) {
+        Identifier professionId = Identifier.tryParse(outfit.professionId());
+        Identifier styleId = Identifier.tryParse(outfit.styleId());
+        if (professionId == null || styleId == null) {
+            return;
+        }
+        ResourceKey<VillagerProfession> profession = ResourceKey.create(Registries.VILLAGER_PROFESSION, professionId);
+        ResourceKey<VillagerType> style = ResourceKey.create(Registries.VILLAGER_TYPE, styleId);
+        var access = villager.registryAccess();
+        var dressed = villager.getVillagerData().withProfession(access, profession).withType(access, style).withLevel(outfit.level());
+        if (dressed.equals(villager.getVillagerData()) && villager.getVillagerDataFinalized()) {
+            return;
+        }
+        MerchantOffers offers = villager.getOffers();
+        boolean keepOffers = offers != null && !offers.isEmpty();
+        villager.setVillagerData(dressed);
+        villager.setVillagerDataFinalized(true);
+        if (keepOffers) {
+            villager.setOffers(offers);
+        }
+    }
+
+    static void stamp(Villager villager, String homeId, String specialty, String name, RandomSource random) {
         villager.setAttached(EhmAttachments.EHM_INHABITANT, Boolean.TRUE);
         villager.setAttached(EhmAttachments.EHM_INHABITANT_HOME, homeId);
         villager.setAttached(EhmAttachments.EHM_OURS, Boolean.TRUE);
         villager.setPersistenceRequired();
-        villager.setCustomName(Component.literal(name));
-        villager.setCustomNameVisible(true);
-        villager.setVillagerData(villager.getVillagerData()
-                .withProfession(villager.registryAccess()
-                        .lookupOrThrow(Registries.VILLAGER_PROFESSION)
-                        .getOrThrow(VillagerProfession.NITWIT)));
+        showNameplate(villager, name, specialty);
+        showOutfit(villager, specialty, random);
     }
 
     static void applyOffers(
@@ -548,10 +621,17 @@ public final class Inhabitants implements FeatureModule {
         if (item == null || item == Items.AIR) {
             return null;
         }
+        int count = offerCount(item, listing.count());
         if (listing.buy()) {
-            return buy(item, listing.count(), listing.maxUses());
+            return buy(item, count, listing.maxUses());
         }
-        return sell(item, listing.count(), listing.emeralds(), listing.maxUses());
+        return sell(item, count, listing.emeralds(), listing.maxUses());
+    }
+
+    /** A trade slot cannot hold more than the item's stack. */
+    static int offerCount(net.minecraft.world.item.Item item, int count) {
+        int max = Math.max(1, new net.minecraft.world.item.ItemStack(item).getMaxStackSize());
+        return Math.clamp(count, 1, max);
     }
 
     static net.minecraft.world.item.Item itemFromId(String itemId) {
@@ -880,10 +960,26 @@ public final class Inhabitants implements FeatureModule {
             return;
         }
         if (BiomeBosses.anySpawned(level.getServer())) {
-            serverPlayer.sendSystemMessage(Component.translatableWithFallback(
+            warnAboutBiomeBoss(serverPlayer, villager);
+        }
+    }
+
+    static void warnAboutBiomeBoss(ServerPlayer player, Villager resident) {
+        Entity boss = BiomeBosses.nearestBoss(resident);
+        String way = null;
+        if (boss != null && boss.level() == resident.level()) {
+            way = InhabitantRules.compassDirection(boss.getX() - resident.getX(), boss.getZ() - resident.getZ());
+        }
+        if (way == null) {
+            player.sendSystemMessage(Component.translatableWithFallback(
                     "tougher.message.inhabitant_bounty_boss",
                     "Something huge is out there. You would be wise to be careful."));
+            return;
         }
+        player.sendSystemMessage(Component.translatableWithFallback(
+                "tougher.message.inhabitant_bounty_boss_way",
+                "Something huge is out there, to the %s. You would be wise to be careful.",
+                Component.literal(way)));
     }
 
     /** One completed trade. Ordinary villagers are ignored. */

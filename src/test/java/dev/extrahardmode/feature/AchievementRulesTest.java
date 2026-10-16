@@ -97,6 +97,13 @@ class AchievementRulesTest {
         assertEquals(25, AchievementRules.FIRST_CLAIM_BONUS_EXPERIENCE);
         assertEquals(50, AchievementRules.rewardExperience(false));
         assertEquals(75, AchievementRules.rewardExperience(true));
+        assertEquals(4, AchievementRules.rewardEmeralds(0, false));
+        assertEquals(7, AchievementRules.rewardEmeralds(3, false));
+        assertEquals(4, AchievementRules.rewardEmeralds(4, false));
+        assertEquals(7, AchievementRules.rewardEmeralds(-1, false));
+        assertEquals(7, AchievementRules.rewardEmeralds(0, true));
+        assertEquals(10, AchievementRules.rewardEmeralds(3, true));
+        assertEquals(3, AchievementRules.FIRST_CLAIM_EMERALD_BONUS);
         assertEquals(0, AchievementRules.manaChancePercent(0));
         assertEquals(15, AchievementRules.manaChancePercent(15));
         assertEquals(100, AchievementRules.manaChancePercent(100));
