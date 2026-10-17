@@ -24,8 +24,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -35,7 +33,6 @@ import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
 import net.minecraft.world.item.DyeColor;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.FireworkExplosion;
@@ -206,68 +203,15 @@ public final class Achievements implements FeatureModule {
         double cap = AchievementRules.manaCap(level);
         Double stored = player.getAttachedOrElse(EhmAttachments.EHM_MANA_CURRENT, 0.0);
         double current = AchievementRules.clampMana(stored == null ? 0.0 : stored, cap);
-        boolean belowLevel = AchievementRules.shouldBoostWithQuartz(level, current);
-        boolean quartz = belowLevel && hasItem(player, Items.QUARTZ);
-        boolean quartzBlock = belowLevel && InventorySearch.hasOneMain(player, Items.QUARTZ_BLOCK);
-        double rate = AchievementRules.regenPerMinute(level, current, quartz, quartzBlock);
+        double rate = AchievementRules.regenPerMinute(
+                level, current, ManaAbilities.batteryRegenMultiplier(player));
         double saturation = player.getFoodData().getSaturationLevel();
         double next = AchievementRules.addMana(
                 current, level, AchievementRules.withSaturationRegen(rate, saturation));
-        double gained = next - current;
-        if (quartz) {
-            settleQuartzCredit(player, gained * AchievementRules.quartzConsumptionShare(true, quartzBlock));
-        }
-        if (quartzBlock) {
-            settleQuartzBlockCredit(player, gained * AchievementRules.quartzBlockConsumptionShare(quartz, true));
-        }
         if (stored == null || next != stored) {
             player.setAttached(EhmAttachments.EHM_MANA_CURRENT, next);
             sendMana(player);
         }
-    }
-
-    static void settleQuartzCredit(ServerPlayer player, double gained) {
-        Double stored = player.getAttachedOrElse(EhmAttachments.EHM_QUARTZ_MANA_CREDIT, 0.0);
-        double credit = AchievementRules.addQuartzCredit(stored == null ? 0.0 : stored, gained);
-        int want = AchievementRules.quartzItemsForCredit(credit);
-        int taken = 0;
-        while (taken < want && consumeQuartz(player)) {
-            taken++;
-        }
-        if (taken > 0) {
-            playQuartzSpent(player, 1.5F);
-        }
-        player.setAttached(
-                EhmAttachments.EHM_QUARTZ_MANA_CREDIT, AchievementRules.remainingQuartzCredit(credit, taken));
-    }
-
-    static void settleQuartzBlockCredit(ServerPlayer player, double gained) {
-        Double stored = player.getAttachedOrElse(EhmAttachments.EHM_QUARTZ_BLOCK_MANA_CREDIT, 0.0);
-        double credit = AchievementRules.addQuartzCredit(stored == null ? 0.0 : stored, gained);
-        int want = AchievementRules.quartzItemsForCredit(credit);
-        int taken = 0;
-        while (taken < want && InventorySearch.consumeOneMain(player, Items.QUARTZ_BLOCK)) {
-            taken++;
-        }
-        if (taken > 0) {
-            playQuartzSpent(player, 0.85F);
-        }
-        player.setAttached(
-                EhmAttachments.EHM_QUARTZ_BLOCK_MANA_CREDIT, AchievementRules.remainingQuartzCredit(credit, taken));
-    }
-
-    /** A short crystal chime when nether quartz or a quartz block is spent on mana. */
-    static void playQuartzSpent(ServerPlayer player, float pitch) {
-        if (!(player.level() instanceof ServerLevel level)) {
-            return;
-        }
-        level.playSound(
-                null,
-                player.blockPosition(),
-                SoundEvents.AMETHYST_BLOCK_CHIME,
-                SoundSource.PLAYERS,
-                0.4F,
-                pitch);
     }
 
     static void grantNewTiers(
@@ -346,19 +290,8 @@ public final class Achievements implements FeatureModule {
 
     static void giveReward(ServerPlayer player, boolean firstClaim) {
         player.giveExperiencePoints(AchievementRules.rewardExperience(firstClaim));
-        int gained = 0;
         if (AchievementRules.manaFromExperience(player.experienceLevel, player.getRandom().nextInt(100))) {
-            gained++;
-        }
-        boolean consumedBlocks = tryConsumeManaBlocks(player);
-        if (consumedBlocks) {
-            gained++;
-        }
-        if (gained > 0) {
-            grantMana(player, gained);
-        }
-        if (consumedBlocks) {
-            ManaAbilities.startHealSparkle(player);
+            grantMana(player, 1);
         }
     }
 
@@ -387,57 +320,6 @@ public final class Achievements implements FeatureModule {
                 player.getName(),
                 Component.literal(String.valueOf(storedManaLevel(player))));
         player.level().getServer().getPlayerList().broadcastSystemMessage(message, false);
-    }
-
-    static boolean tryConsumeManaBlocks(ServerPlayer player) {
-        int diamonds = countItem(player, Items.DIAMOND_BLOCK);
-        int lapis = countItem(player, Items.LAPIS_BLOCK);
-        int required = requiredLapis(player);
-        if (AchievementRules.shouldHintLapis(diamonds, lapis, required)) {
-            player.sendSystemMessage(Component.translatableWithFallback(
-                    "tougher.message.mana_lapis_needed",
-                    "You need %s lapis lazuli blocks to gain a mana level this way.",
-                    Component.literal(Integer.toString(required))));
-            return false;
-        }
-        if (!AchievementRules.canPayManaBlocks(diamonds, lapis, required)) {
-            return false;
-        }
-        if (!consumeCount(player, Items.DIAMOND_BLOCK, AchievementRules.MANA_DIAMOND_COST)
-                || !consumeCount(player, Items.LAPIS_BLOCK, required)) {
-            return false;
-        }
-        player.setAttached(EhmAttachments.EHM_MANA_LAPIS_PAYMENTS, lapisPayments(player) + 1);
-        return true;
-    }
-
-    static int requiredLapis(ServerPlayer player) {
-        return AchievementRules.lapisCost(lapisPayments(player));
-    }
-
-    static int lapisPayments(ServerPlayer player) {
-        Integer value = player.getAttachedOrElse(EhmAttachments.EHM_MANA_LAPIS_PAYMENTS, 0);
-        return value == null ? 0 : Math.max(0, value);
-    }
-
-    static int countItem(ServerPlayer player, Item item) {
-        return InventorySearch.count(player, item);
-    }
-
-    static boolean consumeCount(ServerPlayer player, Item item, int amount) {
-        return InventorySearch.consume(player, item, amount);
-    }
-
-    static boolean hasItem(ServerPlayer player, Item item) {
-        return InventorySearch.has(player, item);
-    }
-
-    static boolean consumeOne(ServerPlayer player, Item item) {
-        return InventorySearch.consumeOne(player, item);
-    }
-
-    static boolean consumeQuartz(ServerPlayer player) {
-        return InventorySearch.consumeOne(player, Items.QUARTZ);
     }
 
     static boolean skipPlayer(Player player) {
@@ -564,13 +446,23 @@ public final class Achievements implements FeatureModule {
         return value == null ? 0 : Math.max(0, value);
     }
 
-    /** Permanent mana plus Well Fed. Well Fed's share leaves when the diet does. */
+    /** Permanent mana, Well Fed, and ready golden equipment. Gold's share leaves when that gear does. */
     public static int manaLevel(ServerPlayer player) {
-        return storedManaLevel(player) + WellFed.level(player);
+        return storedManaLevel(player) + WellFed.level(player) + readyGoldLevels(player);
+    }
+
+    /** Ready gold armor and a held golden item. Reads the wear record; it does not start the timer. */
+    static int readyGoldLevels(ServerPlayer player) {
+        if (!(player.level() instanceof ServerLevel level)) {
+            return 0;
+        }
+        return AbilityRules.readyGoldBonus(
+                player.getAttachedOrElse(EhmAttachments.EHM_GOLD_WEAR, Map.of()), level.getGameTime());
     }
 
     static double currentMana(ServerPlayer player) {
         Double value = player.getAttachedOrElse(EhmAttachments.EHM_MANA_CURRENT, 0.0);
-        return value == null ? 0.0 : AchievementRules.clampMana(value);
+        double stored = value == null ? 0.0 : value;
+        return AchievementRules.clampMana(stored, AchievementRules.manaCap(manaLevel(player)));
     }
 }

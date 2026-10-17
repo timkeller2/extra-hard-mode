@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
@@ -36,12 +37,14 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -50,7 +53,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
 import net.minecraft.world.entity.projectile.arrow.Arrow;
-import net.minecraft.world.entity.projectile.hurtingprojectile.SmallFireball;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -75,10 +77,16 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
 
-/** Mana abilities: heal, iron heart, fire bolt, magic arrow, flight, let it grow, let there be light, power mining, detect ore, slow, sense evil, smite evil, master builder, diamond skin. */
+/** Mana abilities: heal, iron heart, magic arrow, flight, let it grow, let there be light, power mining, detect ore, slow, sense evil, smite evil, master builder, diamond skin, empower, battery, lapis shield. */
 public final class ManaAbilities implements FeatureModule {
     public static final Identifier ID = ExtraHardModeMod.id("mana_abilities");
     private static final float MINING_REACH = 5.0F;
+    /** Look range for Lapis Shield when the click itself did not land on a character. */
+    private static final double LAPIS_SHIELD_LOOK_RANGE = 5.0;
+    private static final int LAPIS_SILENT = 0;
+    private static final int LAPIS_CANCEL = 1;
+    private static final int LAPIS_EXPIRE = 2;
+    private static final int LAPIS_BROKE = 3;
     private static final Map<UUID, Identifier> SLOWED = new ConcurrentHashMap<>();
 
     @Override
@@ -93,6 +101,12 @@ public final class ManaAbilities implements FeatureModule {
         bus.listen(UseBlockCallback.EVENT, ID, ManaAbilities::onUseBlock);
         bus.listen(UseEntityCallback.EVENT, ID, ManaAbilities::onUseEntity);
         bus.listen(ServerLivingEntityEvents.AFTER_DEATH, ID, ManaAbilities::onDeath);
+        bus.listen(ServerPlayConnectionEvents.DISCONNECT, ID, (handler, server) -> {
+            if (handler.player instanceof ServerPlayer player) {
+                endOutgoingLapisShield(player, LAPIS_SILENT);
+                endLapisShieldOn(player, LAPIS_SILENT);
+            }
+        });
     }
 
     @Override
@@ -111,6 +125,11 @@ public final class ManaAbilities implements FeatureModule {
     @Override
     public void serverTick(ServerLevel level) {
         for (ServerPlayer player : level.players()) {
+            tickGoldWear(player);
+            tickGoldShimmer(player);
+            tickEmpower(player);
+            tickBattery(player);
+            tickLapisShield(player);
             tickFlight(player);
             tickPowerMine(player);
             tickPlayerLight(player);
@@ -122,8 +141,6 @@ public final class ManaAbilities implements FeatureModule {
             tickDiamondSkin(player);
             tickDiamondSkinSparkle(player);
             tickSenseSparkle(player);
-            tickGoldWear(player);
-            tickGoldShimmer(player);
             maybeSendAbilityDurations(player);
             syncStrongCastHud(player, false);
         }
@@ -156,9 +173,6 @@ public final class ManaAbilities implements FeatureModule {
             if (serverPlayer.getMainHandItem().is(Items.FEATHER) && tryFlight(serverPlayer)) {
                 return InteractionResult.FAIL;
             }
-            if (serverPlayer.getMainHandItem().is(Items.CHARCOAL) && tryFireBolt(serverPlayer, null)) {
-                return InteractionResult.FAIL;
-            }
             if (serverPlayer.getMainHandItem().is(Items.ARROW) && tryMagicArrow(serverPlayer, null)) {
                 return InteractionResult.FAIL;
             }
@@ -178,6 +192,15 @@ public final class ManaAbilities implements FeatureModule {
                 return InteractionResult.FAIL;
             }
             if (serverPlayer.getMainHandItem().is(Items.DIAMOND) && tryDiamondSkin(serverPlayer)) {
+                return InteractionResult.FAIL;
+            }
+            if (serverPlayer.getMainHandItem().is(Items.REDSTONE) && tryEmpower(serverPlayer)) {
+                return InteractionResult.FAIL;
+            }
+            if (serverPlayer.getMainHandItem().is(Items.QUARTZ_BLOCK) && tryBattery(serverPlayer)) {
+                return InteractionResult.FAIL;
+            }
+            if (serverPlayer.getMainHandItem().is(Items.LAPIS_LAZULI) && tryLapisShield(serverPlayer, null)) {
                 return InteractionResult.FAIL;
             }
         }
@@ -248,14 +271,6 @@ public final class ManaAbilities implements FeatureModule {
                 && player instanceof ServerPlayer serverPlayer
                 && level instanceof ServerLevel serverLevel
                 && WorldGate.isModuleActive(serverLevel, ID)
-                && serverPlayer.getMainHandItem().is(Items.CHARCOAL)
-                && tryFireBolt(serverPlayer, null)) {
-            return InteractionResult.FAIL;
-        }
-        if (hand == InteractionHand.MAIN_HAND
-                && player instanceof ServerPlayer serverPlayer
-                && level instanceof ServerLevel serverLevel
-                && WorldGate.isModuleActive(serverLevel, ID)
                 && serverPlayer.getMainHandItem().is(Items.ARROW)
                 && tryMagicArrow(serverPlayer, null)) {
             return InteractionResult.FAIL;
@@ -300,6 +315,14 @@ public final class ManaAbilities implements FeatureModule {
                 && tryDiamondSkin(serverPlayer)) {
             return InteractionResult.FAIL;
         }
+        if (hand == InteractionHand.MAIN_HAND
+                && player instanceof ServerPlayer serverPlayer
+                && level instanceof ServerLevel serverLevel
+                && WorldGate.isModuleActive(serverLevel, ID)
+                && serverPlayer.getMainHandItem().is(Items.LAPIS_LAZULI)
+                && tryLapisShield(serverPlayer, null)) {
+            return InteractionResult.FAIL;
+        }
         skipGrowAfterUse(player, level, hand);
         return InteractionResult.PASS;
     }
@@ -327,14 +350,6 @@ public final class ManaAbilities implements FeatureModule {
                 && player instanceof ServerPlayer serverPlayer
                 && level instanceof ServerLevel serverLevel
                 && WorldGate.isModuleActive(serverLevel, ID)
-                && serverPlayer.getMainHandItem().is(Items.CHARCOAL)
-                && tryFireBolt(serverPlayer, entity instanceof LivingEntity living ? living : null)) {
-            return InteractionResult.FAIL;
-        }
-        if (hand == InteractionHand.MAIN_HAND
-                && player instanceof ServerPlayer serverPlayer
-                && level instanceof ServerLevel serverLevel
-                && WorldGate.isModuleActive(serverLevel, ID)
                 && serverPlayer.getMainHandItem().is(Items.ARROW)
                 && tryMagicArrow(serverPlayer, entity instanceof LivingEntity living ? living : null)) {
             return InteractionResult.FAIL;
@@ -345,6 +360,14 @@ public final class ManaAbilities implements FeatureModule {
                 && WorldGate.isModuleActive(serverLevel, ID)
                 && serverPlayer.getMainHandItem().is(Items.GOLDEN_SWORD)
                 && trySmiteEvil(serverPlayer, entity instanceof LivingEntity living ? living : null)) {
+            return InteractionResult.FAIL;
+        }
+        if (hand == InteractionHand.MAIN_HAND
+                && player instanceof ServerPlayer serverPlayer
+                && level instanceof ServerLevel serverLevel
+                && WorldGate.isModuleActive(serverLevel, ID)
+                && serverPlayer.getMainHandItem().is(Items.LAPIS_LAZULI)
+                && tryLapisShield(serverPlayer, entity instanceof LivingEntity living ? living : null)) {
             return InteractionResult.FAIL;
         }
         return InteractionResult.PASS;
@@ -376,7 +399,7 @@ public final class ManaAbilities implements FeatureModule {
         if (blockedByCooldownOrMana(player, AbilityRules.FLIGHT, "tougher.ability.flight", "Flight")) {
             return true;
         }
-        int bonus = withRedstoneBonus(player, AbilityRules.catalystBonus(player.getMainHandItem().getCount()));
+        int bonus = AbilityRules.catalystBonus(player.getMainHandItem().getCount());
         double power = abilityPower(player, AbilityRules.FLIGHT, bonus);
         consumeManaAndHeld(player, Items.FEATHER);
         recordAbilityUse(player, AbilityRules.FLIGHT);
@@ -398,7 +421,7 @@ public final class ManaAbilities implements FeatureModule {
             return true;
         }
         boolean honey = InventorySearch.hasOneMain(player, Items.HONEY_BOTTLE);
-        int bonus = withRedstoneBonus(player, AbilityRules.catalystBonus(player.getMainHandItem().getCount()))
+        int bonus = AbilityRules.catalystBonus(player.getMainHandItem().getCount())
                 + (honey ? AbilityRules.HONEY_HEAL_BONUS : 0);
         double power = abilityPower(player, AbilityRules.HEAL, bonus);
         ServerPlayer target = healTarget(player, clicked, AbilityRules.healRange(power));
@@ -430,7 +453,7 @@ public final class ManaAbilities implements FeatureModule {
             markHandled(player);
             return true;
         }
-        int bonus = withRedstoneBonus(player, AbilityRules.catalystBonus(player.getMainHandItem().getCount()));
+        int bonus = AbilityRules.catalystBonus(player.getMainHandItem().getCount());
         double power = abilityPower(player, AbilityRules.IRON_HEART, bonus);
         ServerPlayer target = ironHeartTarget(player, clicked, AbilityRules.ironHeartRange(power));
         int duration = AbilityRules.ironHeartDurationTicks(power);
@@ -692,7 +715,7 @@ public final class ManaAbilities implements FeatureModule {
             markHandled(player);
             return true;
         }
-        int bonus = withRedstoneBonus(player, AbilityRules.catalystBonus(player.getMainHandItem().getCount()));
+        int bonus = AbilityRules.catalystBonus(player.getMainHandItem().getCount());
         double power = abilityPower(player, AbilityRules.MASTER_BUILDER, bonus);
         int duration = AbilityRules.masterBuilderDurationTicks(power);
         if (duration <= 0) {
@@ -786,6 +809,626 @@ public final class ManaAbilities implements FeatureModule {
         castEffect(player, SoundEvents.AMETHYST_BLOCK_CHIME, ParticleTypes.HAPPY_VILLAGER, ParticleTypes.END_ROD);
     }
 
+    public static boolean empowerActive(ServerPlayer player) {
+        return remainingEmpower(player) > 0;
+    }
+
+    static int remainingEmpower(ServerPlayer player) {
+        Integer value = player.getAttachedOrElse(EhmAttachments.EHM_EMPOWER_REMAINING, 0);
+        return value == null ? 0 : Math.max(0, value);
+    }
+
+    static double empowerLevel(ServerPlayer player) {
+        if (!empowerActive(player)) {
+            return 0.0;
+        }
+        Float value = player.getAttachedOrElse(EhmAttachments.EHM_EMPOWER_POWER, 0.0F);
+        return value == null ? 0.0 : Math.max(0.0, value);
+    }
+
+    /**
+     * Air use of redstone dust. A click that can place redstone wire never reaches this.
+     * A second air click cancels. Renewal spends mana, and one dust only while it is in hand.
+     */
+    static boolean tryEmpower(ServerPlayer player) {
+        if (!player.getMainHandItem().is(Items.REDSTONE) || Achievements.skipPlayer(player)) {
+            return false;
+        }
+        if (alreadyHandled(player, (ServerLevel) player.level())) {
+            return true;
+        }
+        if (empowerActive(player)) {
+            cancelEmpower(player);
+            markHandled(player);
+            return true;
+        }
+        int bonus = AbilityRules.catalystBonus(player.getMainHandItem().getCount());
+        double power = abilityPower(player, AbilityRules.EMPOWER, bonus);
+        int duration = AbilityRules.empowerDurationTicks(power);
+        if (duration <= 0) {
+            return false;
+        }
+        if (blockedByCooldownOrMana(player, AbilityRules.EMPOWER, "tougher.ability.empower", "Empower")) {
+            return true;
+        }
+        spend(player, Items.REDSTONE, AbilityRules.EMPOWER);
+        startEmpower(player, power, duration);
+        castEmpower(player);
+        tellAbilityUse(player, "tougher.ability.empower", "Empower", power);
+        return true;
+    }
+
+    static void startEmpower(ServerPlayer player, double power, int duration) {
+        player.setAttached(EhmAttachments.EHM_EMPOWER_REMAINING, duration);
+        player.setAttached(EhmAttachments.EHM_EMPOWER_BAR_MAX, duration);
+        player.setAttached(EhmAttachments.EHM_EMPOWER_POWER, (float) Math.max(0.0, power));
+        sendAbilityDurations(player);
+    }
+
+    static void cancelEmpower(ServerPlayer player) {
+        if (!empowerActive(player)) {
+            return;
+        }
+        clearEmpower(player, false);
+        sendAbilityDurations(player);
+        player.sendSystemMessage(Component.translatableWithFallback(
+                "tougher.message.empower_cancel", "You cancel Empower."));
+    }
+
+    static void clearEmpower(ServerPlayer player, boolean message) {
+        boolean had = empowerActive(player);
+        player.setAttached(EhmAttachments.EHM_EMPOWER_REMAINING, 0);
+        player.setAttached(EhmAttachments.EHM_EMPOWER_BAR_MAX, 0);
+        player.setAttached(EhmAttachments.EHM_EMPOWER_POWER, 0.0F);
+        if (message && had) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.empower_end", "Empower ends."));
+        }
+    }
+
+    static void tickEmpower(ServerPlayer player) {
+        int remaining = remainingEmpower(player);
+        if (remaining <= 0) {
+            return;
+        }
+        if (Achievements.skipPlayer(player) || !WorldGate.isModuleActive(player.level(), ID)) {
+            clearEmpower(player, false);
+            sendAbilityDurations(player);
+            return;
+        }
+        remaining--;
+        if (remaining > 0) {
+            player.setAttached(EhmAttachments.EHM_EMPOWER_REMAINING, remaining);
+            return;
+        }
+        clearEmpower(player, true);
+        sendAbilityDurations(player);
+    }
+
+    static void castEmpower(ServerPlayer player) {
+        castEffect(
+                player,
+                SoundEvents.AMETHYST_BLOCK_CHIME,
+                ParticleTypes.CRIT,
+                ColorParticleOption.create(ParticleTypes.ENTITY_EFFECT, 0.9F, 0.15F, 0.15F));
+    }
+
+    public static boolean batteryActive(ServerPlayer player) {
+        return remainingBattery(player) > 0;
+    }
+
+    static int remainingBattery(ServerPlayer player) {
+        Integer value = player.getAttachedOrElse(EhmAttachments.EHM_BATTERY_REMAINING, 0);
+        return value == null ? 0 : Math.max(0, value);
+    }
+
+    static double batteryLevel(ServerPlayer player) {
+        if (!batteryActive(player)) {
+            return 0.0;
+        }
+        Float value = player.getAttachedOrElse(EhmAttachments.EHM_BATTERY_POWER, 0.0F);
+        return value == null ? 0.0 : Math.max(0.0, value);
+    }
+
+    /** Regen multiplier for this player. Inactive Battery stays at 1. */
+    public static double batteryRegenMultiplier(ServerPlayer player) {
+        if (player == null || !batteryActive(player)) {
+            return 1.0;
+        }
+        return AbilityRules.batteryRegenMultiplier(batteryLevel(player));
+    }
+
+    /**
+     * Air use of a quartz block. A click that can place the block never reaches this.
+     * A second air click cancels. The cast spends the block and no mana.
+     * While mana is below the player's mana level it renews, and that spends a quartz block.
+     */
+    static boolean tryBattery(ServerPlayer player) {
+        if (!player.getMainHandItem().is(Items.QUARTZ_BLOCK) || Achievements.skipPlayer(player)) {
+            return false;
+        }
+        if (alreadyHandled(player, (ServerLevel) player.level())) {
+            return true;
+        }
+        if (batteryActive(player)) {
+            cancelBattery(player);
+            markHandled(player);
+            return true;
+        }
+        if (batteryReachedLevel(player)) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.battery_level", "Your mana has reached your level."));
+            markHandled(player);
+            return true;
+        }
+        int bonus = AbilityRules.catalystBonus(player.getMainHandItem().getCount());
+        double power = abilityPower(player, AbilityRules.BATTERY, bonus);
+        int duration = AbilityRules.batteryDurationTicks(power);
+        if (blockedByCooldownOrMana(player, AbilityRules.BATTERY, "tougher.ability.battery", "Battery")) {
+            return true;
+        }
+        spend(player, Items.QUARTZ_BLOCK, AbilityRules.BATTERY);
+        startBattery(player, power, duration);
+        castBattery(player);
+        tellAbilityUse(player, "tougher.ability.battery", "Battery", power);
+        return true;
+    }
+
+    static void startBattery(ServerPlayer player, double power, int duration) {
+        player.setAttached(EhmAttachments.EHM_BATTERY_REMAINING, duration);
+        player.setAttached(EhmAttachments.EHM_BATTERY_BAR_MAX, duration);
+        player.setAttached(EhmAttachments.EHM_BATTERY_POWER, (float) Math.max(0.0, power));
+        sendAbilityDurations(player);
+    }
+
+    static void cancelBattery(ServerPlayer player) {
+        if (!batteryActive(player)) {
+            return;
+        }
+        clearBattery(player, false);
+        sendAbilityDurations(player);
+        player.sendSystemMessage(Component.translatableWithFallback(
+                "tougher.message.battery_cancel", "You cancel Battery."));
+    }
+
+    static void clearBattery(ServerPlayer player, boolean message) {
+        boolean had = batteryActive(player);
+        player.setAttached(EhmAttachments.EHM_BATTERY_REMAINING, 0);
+        player.setAttached(EhmAttachments.EHM_BATTERY_BAR_MAX, 0);
+        player.setAttached(EhmAttachments.EHM_BATTERY_POWER, 0.0F);
+        if (message && had) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.battery_end", "Battery ends."));
+        }
+    }
+
+    static void tickBattery(ServerPlayer player) {
+        int remaining = remainingBattery(player);
+        if (remaining <= 0) {
+            return;
+        }
+        if (Achievements.skipPlayer(player) || !WorldGate.isModuleActive(player.level(), ID)) {
+            clearBattery(player, false);
+            sendAbilityDurations(player);
+            return;
+        }
+        if (batteryReachedLevel(player)) {
+            clearBattery(player, false);
+            sendAbilityDurations(player);
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.battery_level", "Your mana has reached your level."));
+            return;
+        }
+        remaining--;
+        if (remaining > 0) {
+            player.setAttached(EhmAttachments.EHM_BATTERY_REMAINING, remaining);
+            return;
+        }
+        if (tryRenewBattery(player)) {
+            return;
+        }
+        clearBattery(player, true);
+        sendAbilityDurations(player);
+    }
+
+    /**
+     * Continues Battery when mana is still below the player's level.
+     * One quartz block in hand is required. A stack of two or more spends two and adds +2.
+     */
+    static boolean tryRenewBattery(ServerPlayer player) {
+        if (player == null || !player.isAlive() || Achievements.skipPlayer(player) || batteryReachedLevel(player)) {
+            return false;
+        }
+        ItemStack held = player.getMainHandItem();
+        if (!held.is(Items.QUARTZ_BLOCK)) {
+            return false;
+        }
+        int count = held.getCount();
+        int take = AbilityRules.catalystConsumeCount(count);
+        if (take <= 0) {
+            return false;
+        }
+        int bonus = AbilityRules.catalystBonus(count);
+        double power = abilityPower(player, AbilityRules.BATTERY, bonus);
+        int duration = AbilityRules.batteryDurationTicks(power);
+        if (duration <= 0) {
+            return false;
+        }
+        held.shrink(take);
+        recordAbilityUse(player, AbilityRules.BATTERY);
+        startBattery(player, power, duration);
+        castBattery(player);
+        tellAbilityUse(player, "tougher.ability.battery", "Battery", power);
+        return true;
+    }
+
+    static boolean batteryReachedLevel(ServerPlayer player) {
+        if (player == null) {
+            return true;
+        }
+        return AchievementRules.manaReachedLevel(Achievements.currentMana(player), Achievements.manaLevel(player));
+    }
+
+    static void castBattery(ServerPlayer player) {
+        castEffect(
+                player,
+                SoundEvents.AMETHYST_BLOCK_CHIME,
+                ParticleTypes.END_ROD,
+                ColorParticleOption.create(ParticleTypes.ENTITY_EFFECT, 0.93F, 0.95F, 0.90F));
+    }
+
+    /**
+     * Right-click with lapis lazuli. The targeted living character gets the shield.
+     * With none targeted, the caster does. A second click cancels. It does not renew.
+     */
+    static boolean tryLapisShield(ServerPlayer player, LivingEntity clicked) {
+        if (!player.getMainHandItem().is(Items.LAPIS_LAZULI) || Achievements.skipPlayer(player)) {
+            return false;
+        }
+        if (alreadyHandled(player, (ServerLevel) player.level())) {
+            return true;
+        }
+        if (player.getAttached(EhmAttachments.EHM_LAPIS_SHIELD_TARGET) != null) {
+            endOutgoingLapisShield(player, outgoingLapisTicks(player) > 0 ? LAPIS_CANCEL : LAPIS_SILENT);
+            markHandled(player);
+            return true;
+        }
+        int bonus = AbilityRules.catalystBonus(player.getMainHandItem().getCount());
+        double power = abilityPower(player, AbilityRules.LAPIS_SHIELD, bonus);
+        int duration = AbilityRules.lapisShieldDurationTicks(power);
+        if (duration <= 0) {
+            return false;
+        }
+        LivingEntity target = lapisShieldTarget(player, clicked);
+        if (shieldedByOther(target, player)) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.lapis_shield_busy", "That character already has a Lapis Shield."));
+            markHandled(player);
+            return true;
+        }
+        if (blockedByCooldownOrMana(
+                player, AbilityRules.LAPIS_SHIELD, "tougher.ability.lapis_shield", "Lapis Shield")) {
+            return true;
+        }
+        spend(player, Items.LAPIS_LAZULI, AbilityRules.LAPIS_SHIELD);
+        startLapisShield(player, target, power, duration);
+        tellAbilityUse(player, "tougher.ability.lapis_shield", "Lapis Shield", power);
+        return true;
+    }
+
+    static LivingEntity lapisShieldTarget(ServerPlayer caster, LivingEntity clicked) {
+        if (isLapisTarget(clicked)) {
+            return clicked;
+        }
+        EntityHitResult hit = raycast(caster, LAPIS_SHIELD_LOOK_RANGE);
+        if (hit != null && hit.getEntity() instanceof LivingEntity living && isLapisTarget(living)) {
+            return living;
+        }
+        return caster;
+    }
+
+    static boolean isLapisTarget(LivingEntity target) {
+        return target != null && target.isAlive() && !(target instanceof ArmorStand);
+    }
+
+    static boolean shieldedByOther(LivingEntity target, ServerPlayer caster) {
+        if (target == null || caster == null) {
+            return false;
+        }
+        UUID owner = target.getAttached(EhmAttachments.EHM_LAPIS_SHIELD_CASTER);
+        if (owner == null || owner.equals(caster.getUUID())) {
+            return false;
+        }
+        return incomingLapisTicks(target) > 0;
+    }
+
+    static void startLapisShield(ServerPlayer caster, LivingEntity target, double power, int duration) {
+        long until = abilityNow(caster) + duration;
+        float stored = (float) Math.max(0.0, power);
+        caster.setAttached(EhmAttachments.EHM_LAPIS_SHIELD_TARGET, target.getUUID());
+        caster.setAttached(EhmAttachments.EHM_LAPIS_SHIELD_TARGET_PLAYER, target instanceof ServerPlayer);
+        caster.setAttached(EhmAttachments.EHM_LAPIS_SHIELD_UNTIL, until);
+        caster.setAttached(EhmAttachments.EHM_LAPIS_SHIELD_BAR_MAX, duration);
+        caster.setAttached(EhmAttachments.EHM_LAPIS_SHIELD_POWER, stored);
+        target.setAttached(EhmAttachments.EHM_LAPIS_SHIELD_CASTER, caster.getUUID());
+        target.setAttached(EhmAttachments.EHM_LAPIS_SHIELD_UNTIL, until);
+        target.setAttached(EhmAttachments.EHM_LAPIS_SHIELD_BAR_MAX, duration);
+        target.setAttached(EhmAttachments.EHM_LAPIS_SHIELD_POWER, stored);
+        sendAbilityDurations(caster);
+        if (target instanceof ServerPlayer shielded && shielded != caster) {
+            sendAbilityDurations(shielded);
+        }
+        spawnLapisBubble(target);
+        if (target.level() instanceof ServerLevel level) {
+            level.playSound(
+                    null,
+                    target.blockPosition(),
+                    SoundEvents.AMETHYST_BLOCK_CHIME,
+                    SoundSource.PLAYERS,
+                    0.9F,
+                    1.35F);
+        }
+    }
+
+    static void endOutgoingLapisShield(ServerPlayer caster, int kind) {
+        if (caster == null) {
+            return;
+        }
+        UUID targetId = caster.getAttached(EhmAttachments.EHM_LAPIS_SHIELD_TARGET);
+        if (targetId == null) {
+            return;
+        }
+        LivingEntity target = findLiving(caster.level().getServer(), targetId);
+        if (target != null && caster.getUUID().equals(target.getAttached(EhmAttachments.EHM_LAPIS_SHIELD_CASTER))) {
+            clearLapisTargetFields(target);
+            if (target instanceof ServerPlayer shielded && shielded != caster) {
+                sendAbilityDurations(shielded);
+                if (kind != LAPIS_SILENT) {
+                    tellLapis(shielded, LAPIS_EXPIRE);
+                }
+            }
+        }
+        clearLapisCasterFields(caster);
+        sendAbilityDurations(caster);
+        tellLapis(caster, kind);
+    }
+
+    static void endLapisShieldOn(LivingEntity target, int kind) {
+        if (target == null) {
+            return;
+        }
+        UUID casterId = target.getAttached(EhmAttachments.EHM_LAPIS_SHIELD_CASTER);
+        if (casterId == null) {
+            return;
+        }
+        clearLapisTargetFields(target);
+        boolean self = target.getUUID().equals(casterId);
+        if (target instanceof ServerPlayer shielded) {
+            sendAbilityDurations(shielded);
+            if (!self && kind != LAPIS_SILENT) {
+                tellLapis(shielded, LAPIS_EXPIRE);
+            }
+        }
+        MinecraftServer server = target.level() instanceof ServerLevel level ? level.getServer() : null;
+        ServerPlayer caster = server == null ? null : server.getPlayerList().getPlayer(casterId);
+        if (caster != null && target.getUUID().equals(caster.getAttached(EhmAttachments.EHM_LAPIS_SHIELD_TARGET))) {
+            clearLapisCasterFields(caster);
+            sendAbilityDurations(caster);
+            tellLapis(caster, kind);
+        } else if (self && target instanceof ServerPlayer shielded) {
+            tellLapis(shielded, kind);
+        }
+    }
+
+    static void clearLapisCasterFields(ServerPlayer caster) {
+        caster.setAttached(EhmAttachments.EHM_LAPIS_SHIELD_TARGET, null);
+        caster.setAttached(EhmAttachments.EHM_LAPIS_SHIELD_TARGET_PLAYER, Boolean.FALSE);
+        caster.setAttached(EhmAttachments.EHM_LAPIS_SHIELD_UNTIL, -1L);
+        caster.setAttached(EhmAttachments.EHM_LAPIS_SHIELD_BAR_MAX, 0);
+        caster.setAttached(EhmAttachments.EHM_LAPIS_SHIELD_POWER, 0.0F);
+    }
+
+    static void clearLapisTargetFields(LivingEntity target) {
+        target.setAttached(EhmAttachments.EHM_LAPIS_SHIELD_CASTER, null);
+        target.setAttached(EhmAttachments.EHM_LAPIS_SHIELD_UNTIL, -1L);
+        target.setAttached(EhmAttachments.EHM_LAPIS_SHIELD_BAR_MAX, 0);
+        target.setAttached(EhmAttachments.EHM_LAPIS_SHIELD_POWER, 0.0F);
+    }
+
+    static void tickLapisShield(ServerPlayer player) {
+        UUID targetId = player.getAttached(EhmAttachments.EHM_LAPIS_SHIELD_TARGET);
+        if (targetId == null) {
+            if (player.getAttached(EhmAttachments.EHM_LAPIS_SHIELD_CASTER) != null && incomingLapisTicks(player) <= 0) {
+                endLapisShieldOn(player, LAPIS_SILENT);
+            }
+            return;
+        }
+        if (Achievements.skipPlayer(player) || !WorldGate.isModuleActive(player.level(), ID)) {
+            endOutgoingLapisShield(player, LAPIS_SILENT);
+            return;
+        }
+        if (outgoingLapisTicks(player) <= 0) {
+            endOutgoingLapisShield(player, LAPIS_EXPIRE);
+            return;
+        }
+        LivingEntity target = findLiving(player.level().getServer(), targetId);
+        if (target == null) {
+            if (Boolean.TRUE.equals(player.getAttachedOrElse(EhmAttachments.EHM_LAPIS_SHIELD_TARGET_PLAYER, Boolean.FALSE))) {
+                endOutgoingLapisShield(player, LAPIS_EXPIRE);
+            }
+            return;
+        }
+        if (!target.isAlive()) {
+            endOutgoingLapisShield(player, LAPIS_SILENT);
+            return;
+        }
+        if (abilityNow(player) % 4L == 0L) {
+            spawnLapisBubble(target);
+        }
+    }
+
+    /**
+     * Damage left after Lapis Shield, before helmet, armor, and health.
+     * The caster pays one lapis lazuli per 3 points blocked, rounded up.
+     * A short payment blocks nothing and drops the shield.
+     */
+    public static float absorbLapisShield(LivingEntity victim, ServerLevel level, DamageSource source, float damage) {
+        if (victim == null || level == null || !(damage > 0.0F)) {
+            return damage;
+        }
+        if (!WorldGate.isModuleActive(level, ID)) {
+            return damage;
+        }
+        UUID ownerId = victim.getAttached(EhmAttachments.EHM_LAPIS_SHIELD_CASTER);
+        if (ownerId == null) {
+            return damage;
+        }
+        if (incomingLapisTicks(victim) <= 0) {
+            endLapisShieldOn(victim, LAPIS_SILENT);
+            return damage;
+        }
+        Float power = victim.getAttachedOrElse(EhmAttachments.EHM_LAPIS_SHIELD_POWER, 0.0F);
+        float absorbed = LapisShieldRules.absorb(damage, power == null ? 0.0F : power);
+        if (!(absorbed > 0.0F)) {
+            return damage;
+        }
+        MinecraftServer server = level.getServer();
+        ServerPlayer caster = server == null ? null : server.getPlayerList().getPlayer(ownerId);
+        if (caster == null
+                || !caster.isAlive()
+                || Achievements.skipPlayer(caster)
+                || !victim.getUUID().equals(caster.getAttached(EhmAttachments.EHM_LAPIS_SHIELD_TARGET))) {
+            endLapisShieldOn(victim, LAPIS_SILENT);
+            return damage;
+        }
+        int cost = LapisShieldRules.lapisCost(absorbed);
+        if (cost <= 0 || !InventorySearch.consumeMain(caster, Items.LAPIS_LAZULI, cost)) {
+            endLapisShieldOn(victim, LAPIS_BROKE);
+            return damage;
+        }
+        spawnLapisHit(victim);
+        return LapisShieldRules.damageAfterAbsorb(damage, absorbed);
+    }
+
+    static void spawnLapisBubble(LivingEntity target) {
+        if (!(target.level() instanceof ServerLevel level)) {
+            return;
+        }
+        double rx = target.getBbWidth() * 0.5 + 0.35;
+        double ry = target.getBbHeight() * 0.5 + 0.15;
+        double cx = target.getX();
+        double cy = target.getY() + target.getBbHeight() * 0.5;
+        double cz = target.getZ();
+        double spin = (level.getGameTime() % 40L) * (Math.PI * 2.0 / 40.0);
+        var blue = ColorParticleOption.create(ParticleTypes.ENTITY_EFFECT, 0.22F, 0.42F, 0.95F);
+        int points = 8;
+        for (int i = 0; i < points; i++) {
+            double angle = spin + (Math.PI * 2.0 * i) / points;
+            double cos = Math.cos(angle);
+            double sin = Math.sin(angle);
+            level.sendParticles(blue, cx + rx * cos, cy, cz + rx * sin, 1, 0.0, 0.0, 0.0, 0.0);
+            level.sendParticles(ParticleTypes.ELECTRIC_SPARK, cx + rx * cos, cy + ry * sin, cz, 1, 0.0, 0.0, 0.0, 0.0);
+        }
+    }
+
+    static void spawnLapisHit(LivingEntity target) {
+        if (!(target.level() instanceof ServerLevel level)) {
+            return;
+        }
+        double x = target.getX();
+        double y = target.getY() + target.getBbHeight() * 0.5;
+        double z = target.getZ();
+        level.playSound(null, target.blockPosition(), SoundEvents.AMETHYST_BLOCK_HIT, SoundSource.PLAYERS, 0.7F, 1.6F);
+        level.sendParticles(ParticleTypes.ELECTRIC_SPARK, x, y, z, 10, 0.4, 0.45, 0.4, 0.04);
+        level.sendParticles(
+                ColorParticleOption.create(ParticleTypes.ENTITY_EFFECT, 0.35F, 0.55F, 1.0F),
+                x,
+                y,
+                z,
+                6,
+                0.35,
+                0.4,
+                0.35,
+                0.0);
+    }
+
+    static long abilityNow(ServerPlayer player) {
+        return player.level().getServer().overworld().getGameTime();
+    }
+
+    static int ticksUntil(long until, long now) {
+        if (until <= now) {
+            return 0;
+        }
+        long left = until - now;
+        return left > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) left;
+    }
+
+    static int outgoingLapisTicks(ServerPlayer player) {
+        if (player == null || player.getAttached(EhmAttachments.EHM_LAPIS_SHIELD_TARGET) == null) {
+            return 0;
+        }
+        if (player.level().getServer() == null) {
+            return 0;
+        }
+        Long until = player.getAttachedOrElse(EhmAttachments.EHM_LAPIS_SHIELD_UNTIL, -1L);
+        return ticksUntil(until == null ? -1L : until, abilityNow(player));
+    }
+
+    static int incomingLapisTicks(LivingEntity entity) {
+        if (entity == null || entity.getAttached(EhmAttachments.EHM_LAPIS_SHIELD_CASTER) == null) {
+            return 0;
+        }
+        if (!(entity.level() instanceof ServerLevel level) || level.getServer() == null) {
+            return 0;
+        }
+        Long until = entity.getAttachedOrElse(EhmAttachments.EHM_LAPIS_SHIELD_UNTIL, -1L);
+        return ticksUntil(until == null ? -1L : until, level.getServer().overworld().getGameTime());
+    }
+
+    static int lapisHudTicks(ServerPlayer player) {
+        int outgoing = outgoingLapisTicks(player);
+        if (outgoing > 0) {
+            return outgoing;
+        }
+        return incomingLapisTicks(player);
+    }
+
+    static LivingEntity findLiving(MinecraftServer server, UUID id) {
+        if (server == null || id == null) {
+            return null;
+        }
+        ServerPlayer online = server.getPlayerList().getPlayer(id);
+        if (online != null) {
+            return online;
+        }
+        for (ServerLevel world : server.getAllLevels()) {
+            Entity found = world.getEntity(id);
+            if (found instanceof LivingEntity living) {
+                return living;
+            }
+        }
+        return null;
+    }
+
+    static void tellLapis(ServerPlayer player, int kind) {
+        if (player == null || kind == LAPIS_SILENT) {
+            return;
+        }
+        if (kind == LAPIS_CANCEL) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.lapis_shield_cancel", "You cancel Lapis Shield."));
+            return;
+        }
+        if (kind == LAPIS_BROKE) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.lapis_shield_broke", "Lapis Shield ends. Not enough lapis lazuli."));
+            return;
+        }
+        player.sendSystemMessage(Component.translatableWithFallback(
+                "tougher.message.lapis_shield_end", "Lapis Shield ends."));
+    }
+
     public static boolean diamondSkinActive(ServerPlayer player) {
         return remainingDiamondSkin(player) > 0;
     }
@@ -813,7 +1456,7 @@ public final class ManaAbilities implements FeatureModule {
             markHandled(player);
             return true;
         }
-        int bonus = withRedstoneBonus(player, AbilityRules.catalystBonus(player.getMainHandItem().getCount()));
+        int bonus = AbilityRules.catalystBonus(player.getMainHandItem().getCount());
         double power = AbilityRules.diamondSkinLevel(abilityPower(player, AbilityRules.DIAMOND_SKIN, bonus));
         int duration = AbilityRules.diamondSkinDurationTicks(power);
         if (duration <= 0) {
@@ -1034,30 +1677,6 @@ public final class ManaAbilities implements FeatureModule {
                 0.0);
     }
 
-    static boolean tryFireBolt(ServerPlayer player, LivingEntity clicked) {
-        if (!player.getMainHandItem().is(Items.CHARCOAL) || Achievements.skipPlayer(player)) {
-            return false;
-        }
-        if (alreadyHandled(player, (ServerLevel) player.level())) {
-            return true;
-        }
-        int bonus = withRedstoneBonus(player, AbilityRules.catalystBonus(player.getMainHandItem().getCount()));
-        double power = abilityPower(player, AbilityRules.FIRE_BOLT, bonus);
-        double range = AbilityRules.fireRange(power);
-        LivingEntity target = fireTarget(player, clicked, range);
-        if (target == null) {
-            return false;
-        }
-        if (blockedByCooldownOrMana(player, AbilityRules.FIRE_BOLT, "tougher.ability.fire_bolt", "Fire bolt")) {
-            return true;
-        }
-        hurlFireBolt(player, power, target);
-        castEffect(player, SoundEvents.BLAZE_SHOOT, ParticleTypes.FLAME, ParticleTypes.LAVA);
-        spend(player, Items.CHARCOAL, AbilityRules.FIRE_BOLT);
-        tellAbilityUse(player, "tougher.ability.fire_bolt", "Fire bolt", power);
-        return true;
-    }
-
     static boolean tryMagicArrow(ServerPlayer player, LivingEntity clicked) {
         if (!player.getMainHandItem().is(Items.ARROW) || Achievements.skipPlayer(player)) {
             return false;
@@ -1065,7 +1684,9 @@ public final class ManaAbilities implements FeatureModule {
         if (alreadyHandled(player, (ServerLevel) player.level())) {
             return true;
         }
-        int bonus = withRedstoneBonus(player, AbilityRules.catalystBonus(player.getMainHandItem().getCount()));
+        boolean charcoal = InventorySearch.hasOneMain(player, Items.CHARCOAL);
+        int bonus = AbilityRules.catalystBonus(player.getMainHandItem().getCount())
+                + AbilityRules.charcoalArrowBonus(charcoal);
         double power = abilityPower(player, AbilityRules.MAGIC_ARROW, bonus);
         double range = AbilityRules.fireRange(power);
         LivingEntity target = fireTarget(player, clicked, range);
@@ -1076,9 +1697,12 @@ public final class ManaAbilities implements FeatureModule {
                 player, AbilityRules.MAGIC_ARROW, "tougher.ability.magic_arrow", "Magic arrow")) {
             return true;
         }
-        hurlMagicArrow(player, power, target);
+        hurlArrowVolley(player, power, range, target, charcoal);
         castEffect(player, SoundEvents.ARROW_SHOOT, ParticleTypes.CRIT, ParticleTypes.ENCHANTED_HIT);
         spend(player, Items.ARROW, AbilityRules.MAGIC_ARROW);
+        if (charcoal) {
+            InventorySearch.consumeOneMain(player, Items.CHARCOAL);
+        }
         tellAbilityUse(player, "tougher.ability.magic_arrow", "Magic arrow", power);
         return true;
     }
@@ -1090,7 +1714,7 @@ public final class ManaAbilities implements FeatureModule {
         if (alreadyHandled(player, (ServerLevel) player.level())) {
             return true;
         }
-        int bonus = withRedstoneBonus(player, 0);
+        int bonus = 0;
         double power = abilityPower(player, AbilityRules.SMITE_EVIL, bonus);
         double range = AbilityRules.smiteRange(power);
         LivingEntity target = fireTarget(player, clicked, range);
@@ -1142,7 +1766,7 @@ public final class ManaAbilities implements FeatureModule {
         if (blockedByCooldownOrMana(player, AbilityRules.GROW, "tougher.ability.grow", "Let it grow")) {
             return true;
         }
-        int hoeBonus = withRedstoneBonus(player, AbilityRules.growHoeBonus(heldItemId(held)));
+        int hoeBonus = AbilityRules.growHoeBonus(heldItemId(held));
         double power = abilityPower(player, AbilityRules.GROW, hoeBonus);
         int times = Math.max(1, (int) Math.round(power));
         if (GrowPlants.apply(level, origin, AbilityRules.GROW_RANGE, times) <= 0) {
@@ -1172,7 +1796,7 @@ public final class ManaAbilities implements FeatureModule {
         if (blockedByCooldownOrMana(player, AbilityRules.GROW, "tougher.ability.grow", "Let it grow")) {
             return true;
         }
-        int hoeBonus = withRedstoneBonus(player, AbilityRules.growHoeBonus(heldItemId(held)));
+        int hoeBonus = AbilityRules.growHoeBonus(heldItemId(held));
         double power = abilityPower(player, AbilityRules.GROW, hoeBonus);
         int times = Math.max(1, (int) Math.round(power));
         Set<BlockPos> focused = new HashSet<>();
@@ -1241,7 +1865,7 @@ public final class ManaAbilities implements FeatureModule {
                 player, AbilityRules.POWER_MINE, "tougher.ability.power_mine", "Power mining")) {
             return true;
         }
-        int bonus = withRedstoneBonus(player, AbilityRules.pickaxeBonus(heldItemId(held)));
+        int bonus = AbilityRules.pickaxeBonus(heldItemId(held));
         double power = abilityPower(player, AbilityRules.POWER_MINE, bonus);
         int duration = AbilityRules.powerMineDurationTicks(power);
         spend(player, null, AbilityRules.POWER_MINE);
@@ -1302,19 +1926,13 @@ public final class ManaAbilities implements FeatureModule {
                 player, AbilityRules.DETECT_ORE, "tougher.ability.detect_ore", "Detect ore")) {
             return true;
         }
-        int quartz = InventorySearch.count(player, Items.QUARTZ);
-        if (quartz < 1) {
-            player.sendSystemMessage(Component.translatableWithFallback(
-                    "tougher.message.detect_ore_quartz",
-                    "Detect ore needs a nether quartz."));
-            markHandled(player);
-            return true;
-        }
-        int bonus = AbilityRules.detectOreItemBonus(quartz, hasRedstoneDust(player));
+        int quartzStack = InventorySearch.largestMainStack(player, Items.QUARTZ);
+        int bonus = AbilityRules.detectOreQuartzBonus(quartzStack);
         double power = abilityPower(player, AbilityRules.DETECT_ORE, bonus);
         int range = AbilityRules.detectOreScanRange(power);
         AbilityRules.OreDeposit best = DetectOre.findBest(player, range, power);
-        InventorySearch.consume(player, Items.QUARTZ, AbilityRules.detectOreQuartzConsumeCount(quartz));
+        InventorySearch.consumeLargestMainStack(
+                player, Items.QUARTZ, AbilityRules.detectOreQuartzConsumeCount(quartzStack));
         spend(player, null, AbilityRules.DETECT_ORE);
         castEffect(player, SoundEvents.AMETHYST_BLOCK_RESONATE, ParticleTypes.ENCHANT, ParticleTypes.END_ROD);
         tellAbilityUse(player, "tougher.ability.detect_ore", "Detect ore", power);
@@ -1344,7 +1962,7 @@ public final class ManaAbilities implements FeatureModule {
         if (blockedByCooldownOrMana(player, AbilityRules.SLOW, "tougher.ability.slow", "Slow")) {
             return true;
         }
-        int bonus = withRedstoneBonus(player, AbilityRules.catalystBonus(player.getMainHandItem().getCount()));
+        int bonus = AbilityRules.catalystBonus(player.getMainHandItem().getCount());
         double power = abilityPower(player, AbilityRules.SLOW, bonus);
         ServerLevel level = (ServerLevel) player.level();
         double range = AbilityRules.slowRange(power);
@@ -1372,7 +1990,7 @@ public final class ManaAbilities implements FeatureModule {
                 player, AbilityRules.SENSE_EVIL, "tougher.ability.sense_evil", "Sense Evil")) {
             return true;
         }
-        int bonus = withRedstoneBonus(player, AbilityRules.catalystBonus(player.getMainHandItem().getCount()));
+        int bonus = AbilityRules.catalystBonus(player.getMainHandItem().getCount());
         double power = abilityPower(player, AbilityRules.SENSE_EVIL, bonus);
         spend(player, Items.SPIDER_EYE, AbilityRules.SENSE_EVIL);
         tellAbilityUse(player, "tougher.ability.sense_evil", "Sense Evil", power);
@@ -1470,7 +2088,7 @@ public final class ManaAbilities implements FeatureModule {
                 player, AbilityRules.LIGHT, "tougher.ability.light", "Let there be light")) {
             return true;
         }
-        int bonus = withRedstoneBonus(player, AbilityRules.catalystBonus(held.getCount()));
+        int bonus = AbilityRules.catalystBonus(held.getCount());
         double power = abilityPower(player, AbilityRules.LIGHT, bonus);
         spend(player, held.getItem(), AbilityRules.LIGHT);
         startPlayerLight(player, power);
@@ -1686,18 +2304,15 @@ public final class ManaAbilities implements FeatureModule {
         }
     }
 
-    static int withRedstoneBonus(ServerPlayer player, int itemBonus) {
-        return Math.max(0, itemBonus) + AbilityRules.redstoneDustBonus(hasRedstoneDust(player));
-    }
-
     public static int supplyBonus(ServerPlayer player, String ability) {
         ItemStack held = player.getMainHandItem();
         return AbilityRules.supplyBonus(
                 ability,
                 heldItemId(held),
                 held.getCount(),
-                hasRedstoneDust(player),
-                InventorySearch.count(player, Items.QUARTZ) >= 2);
+                false,
+                InventorySearch.largestMainStack(player, Items.QUARTZ),
+                InventorySearch.hasOneMain(player, Items.CHARCOAL));
     }
 
     public static String meLineValue(ServerPlayer player, AbilityRules.AbilitySkill skill) {
@@ -1741,14 +2356,6 @@ public final class ManaAbilities implements FeatureModule {
                 mana,
                 list));
         return skills.size();
-    }
-
-    static void consumeRedstoneDustBooster(ServerPlayer player) {
-        InventorySearch.consumeOneIgnoringBundles(player, Items.REDSTONE);
-    }
-
-    static boolean hasRedstoneDust(ServerPlayer player) {
-        return InventorySearch.hasIgnoringBundles(player, Items.REDSTONE);
     }
 
     static boolean hasItem(ServerPlayer player, net.minecraft.world.item.Item item) {
@@ -1795,8 +2402,12 @@ public final class ManaAbilities implements FeatureModule {
             clearIronHeartBuff(player, false);
             clearMasterBuilder(player, false);
             clearDiamondSkin(player, false);
+            clearEmpower(player, false);
+            clearBattery(player, false);
+            endOutgoingLapisShield(player, LAPIS_SILENT);
             sendAbilityDurations(player);
         }
+        endLapisShieldOn(entity, LAPIS_SILENT);
         if (SLOWED.containsKey(entity.getUUID())) {
             clearSlow(entity);
         }
@@ -1828,7 +2439,7 @@ public final class ManaAbilities implements FeatureModule {
             return;
         }
         if (Achievements.currentMana(player) >= AbilityRules.MANA_COST) {
-            int bonus = withRedstoneBonus(player, renewCatalystBonus(player, Items.FEATHER));
+            int bonus = renewCatalystBonus(player, Items.FEATHER);
             double power = abilityPower(player, AbilityRules.FLIGHT, bonus);
             consumeRenewCatalyst(player, Items.FEATHER);
             consumeManaAndHeld(player, null);
@@ -1936,10 +2547,31 @@ public final class ManaAbilities implements FeatureModule {
                     abilityName(ability)));
             return;
         }
+        if (held.is(Items.REDSTONE) && empowerActive(player)) {
+            player.sendOverlayMessage(Component.translatableWithFallback(
+                    "tougher.message.ability_hint_iron_heart_off",
+                    "Right click to cancel %s...",
+                    abilityName(ability)));
+            return;
+        }
+        if (held.is(Items.QUARTZ_BLOCK) && batteryActive(player)) {
+            player.sendOverlayMessage(Component.translatableWithFallback(
+                    "tougher.message.ability_hint_iron_heart_off",
+                    "Right click to cancel %s...",
+                    abilityName(ability)));
+            return;
+        }
+        if (held.is(Items.LAPIS_LAZULI) && outgoingLapisTicks(player) > 0) {
+            player.sendOverlayMessage(Component.translatableWithFallback(
+                    "tougher.message.ability_hint_iron_heart_off",
+                    "Right click to cancel %s...",
+                    abilityName(ability)));
+            return;
+        }
         if (!AbilityRules.hasManaToUse(ability, Achievements.currentMana(player))) {
             return;
         }
-        int hoeBonus = AbilityRules.redstoneDustBonus(hasRedstoneDust(player));
+        int hoeBonus = 0;
         if (held.is(ItemTags.HOES)) {
             hoeBonus += AbilityRules.growHoeBonus(heldItemId(held));
         } else if (held.is(ItemTags.PICKAXES)) {
@@ -1948,13 +2580,18 @@ public final class ManaAbilities implements FeatureModule {
             }
             hoeBonus += AbilityRules.pickaxeBonus(heldItemId(held));
         } else if (held.is(Items.COMPASS)) {
-            hoeBonus += AbilityRules.detectOreQuartzBonus(InventorySearch.count(player, Items.QUARTZ));
+            hoeBonus += AbilityRules.detectOreQuartzBonus(
+                    InventorySearch.largestMainStack(player, Items.QUARTZ));
+        } else if (held.is(Items.ARROW)) {
+            hoeBonus += AbilityRules.catalystBonus(held.getCount());
+            hoeBonus += AbilityRules.charcoalArrowBonus(InventorySearch.hasOneMain(player, Items.CHARCOAL));
         } else if (held.is(Items.STRING)
-                || held.is(Items.ARROW)
-                || held.is(Items.CHARCOAL)
                 || held.is(Items.IRON_INGOT)
                 || held.is(Items.STONE_BRICKS)
                 || held.is(Items.DIAMOND)
+                || held.is(Items.REDSTONE)
+                || held.is(Items.QUARTZ_BLOCK)
+                || held.is(Items.LAPIS_LAZULI)
                 || held.is(Items.PAPER)
                 || held.is(Items.FEATHER)
                 || held.is(Items.SPIDER_EYE)) {
@@ -1991,11 +2628,13 @@ public final class ManaAbilities implements FeatureModule {
                 || held.is(Items.IRON_INGOT)
                 || held.is(Items.FEATHER)
                 || held.is(Items.ARROW)
-                || held.is(Items.CHARCOAL)
                 || held.is(Items.STRING)
                 || held.is(Items.GOLDEN_SWORD)
                 || held.is(Items.STONE_BRICKS)
                 || held.is(Items.DIAMOND)
+                || held.is(Items.REDSTONE)
+                || held.is(Items.QUARTZ_BLOCK)
+                || held.is(Items.LAPIS_LAZULI)
                 || isLightCoal(held)) {
             if (hoeBonus > 0) {
                 player.sendOverlayMessage(Component.translatableWithFallback(
@@ -2057,7 +2696,6 @@ public final class ManaAbilities implements FeatureModule {
 
     static void consumeManaAndHeld(ServerPlayer player, net.minecraft.world.item.Item consumed) {
         tryConsumeHeld(player, consumed);
-        consumeRedstoneDustBooster(player);
         player.setAttached(
                 EhmAttachments.EHM_MANA_CURRENT,
                 Math.max(0.0, Achievements.currentMana(player) - AbilityRules.MANA_COST));
@@ -2132,13 +2770,19 @@ public final class ManaAbilities implements FeatureModule {
         int heart = remainingIronHeartBuff(player);
         int builder = remainingMasterBuilder(player);
         int skin = remainingDiamondSkin(player);
+        int empower = remainingEmpower(player);
+        int battery = remainingBattery(player);
+        int lapis = lapisHudTicks(player);
         int warn = AbilityDurationRules.WARN_TICKS;
         return inDurationWindow(flight, warn)
                 || inDurationWindow(mine, warn)
                 || inDurationWindow(light, warn)
                 || inDurationWindow(heart, warn)
                 || inDurationWindow(builder, warn)
-                || inDurationWindow(skin, warn);
+                || inDurationWindow(skin, warn)
+                || inDurationWindow(empower, warn)
+                || inDurationWindow(battery, warn)
+                || inDurationWindow(lapis, warn);
     }
 
     static boolean inDurationWindow(int remaining, int warn) {
@@ -2195,6 +2839,27 @@ public final class ManaAbilities implements FeatureModule {
                 AbilityRules.autoRenews(AbilityRules.DIAMOND_SKIN)
                         && AbilityRules.hasManaToUse(
                                 AbilityRules.DIAMOND_SKIN, Achievements.currentMana(player)));
+        addDuration(
+                effects,
+                AbilityRules.EMPOWER,
+                remainingEmpower(player),
+                player.getAttachedOrElse(EhmAttachments.EHM_EMPOWER_BAR_MAX, 0),
+                AbilityRules.autoRenews(AbilityRules.EMPOWER)
+                        && AbilityRules.hasManaToUse(AbilityRules.EMPOWER, Achievements.currentMana(player)));
+        addDuration(
+                effects,
+                AbilityRules.BATTERY,
+                remainingBattery(player),
+                player.getAttachedOrElse(EhmAttachments.EHM_BATTERY_BAR_MAX, 0),
+                AbilityRules.autoRenews(AbilityRules.BATTERY)
+                        && !batteryReachedLevel(player)
+                        && player.getMainHandItem().is(Items.QUARTZ_BLOCK));
+        addDuration(
+                effects,
+                AbilityRules.LAPIS_SHIELD,
+                lapisHudTicks(player),
+                player.getAttachedOrElse(EhmAttachments.EHM_LAPIS_SHIELD_BAR_MAX, 0),
+                false);
         ServerPlayNetworking.send(
                 player,
                 effects.isEmpty()
@@ -2266,14 +2931,15 @@ public final class ManaAbilities implements FeatureModule {
                     Achievements.manaLevel(player),
                     usesMap(player),
                     learnedSet(player),
-                    goldAbilityBonus(player),
+                    0, // manaLevel already includes ready gold
                     supplyStacks(player),
                     InventorySearch.hasOneMain(player, Items.HONEY_BOTTLE),
                     now,
                     lastUse == null ? Map.of() : lastUse,
                     holdingBook(player),
                     abilityForHeld(player.getMainHandItem()),
-                    activeAbilities(player));
+                    activeAbilities(player),
+                    empowerActive(player) ? AbilityRules.empowerCastBonus(empowerLevel(player)) : 0.0);
         }
         String key = hudIconKey(casts);
         if (!force && key.equals(STRONG_CAST_SENT.get(player.getUUID()))) {
@@ -2288,7 +2954,7 @@ public final class ManaAbilities implements FeatureModule {
                 continue;
             }
             entries.add(new ClientboundAbilityReadyPayload.Entry(
-                    icon.ability(), size, level, icon.learned(), icon.cooldownSeconds()));
+                    icon.ability(), size, level, icon.learned(), icon.cooldownSeconds(), (float) icon.level()));
         }
         ServerPlayNetworking.send(
                 player,
@@ -2320,6 +2986,15 @@ public final class ManaAbilities implements FeatureModule {
         if (remainingDiamondSkin(player) > 0) {
             active.add(AbilityRules.DIAMOND_SKIN);
         }
+        if (remainingEmpower(player) > 0) {
+            active.add(AbilityRules.EMPOWER);
+        }
+        if (remainingBattery(player) > 0) {
+            active.add(AbilityRules.BATTERY);
+        }
+        if (lapisHudTicks(player) > 0) {
+            active.add(AbilityRules.LAPIS_SHIELD);
+        }
         return active;
     }
 
@@ -2332,6 +3007,8 @@ public final class ManaAbilities implements FeatureModule {
                     .append(':')
                     .append(AbilityReadyRules.hudLevelNumber(icon.level()))
                     .append(':')
+                    .append(Math.round(icon.level() * 1000.0))
+                    .append(':')
                     .append(icon.learned())
                     .append(':')
                     .append(icon.cooldownSeconds())
@@ -2343,25 +3020,31 @@ public final class ManaAbilities implements FeatureModule {
     static List<AbilityReadyRules.SupplyStack> supplyStacks(ServerPlayer player) {
         List<AbilityReadyRules.SupplyStack> stacks = new ArrayList<>();
         var inventory = player.getInventory();
+        int main = Math.min(AbilityRules.MAIN_INVENTORY_SLOTS, inventory.getContainerSize());
         for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
-            collectSupply(inventory.getItem(slot), stacks);
+            collectSupply(inventory.getItem(slot), stacks, false, slot < main);
         }
         return stacks;
     }
 
-    static void collectSupply(ItemStack stack, List<AbilityReadyRules.SupplyStack> out) {
-        if (stack == null || stack.isEmpty()) {
-            return;
-        }
-        collectSupply(stack, out, false);
-    }
-
-    static void collectSupply(ItemStack stack, List<AbilityReadyRules.SupplyStack> out, boolean insideBundle) {
+    /**
+     * Nether quartz and charcoal count only as their own stacks in the hotbar or backpack.
+     * Either one in a bundle, worn as armor, or held in the offhand is left out.
+     * Other supplies still count from the whole inventory, including bundles.
+     */
+    static void collectSupply(
+            ItemStack stack,
+            List<AbilityReadyRules.SupplyStack> out,
+            boolean insideBundle,
+            boolean mainInventory) {
         if (stack == null || stack.isEmpty()) {
             return;
         }
         String id = heldItemId(stack);
-        if (!id.isEmpty() && AbilityReadyRules.countsForAbilitySupply(id, insideBundle)) {
+        boolean mainOnly = AbilityReadyRules.QUARTZ_ID.equals(id) || AbilityRules.CHARCOAL_ID.equals(id);
+        if (!id.isEmpty()
+                && AbilityReadyRules.countsForAbilitySupply(id, insideBundle)
+                && (!mainOnly || (mainInventory && !insideBundle))) {
             out.add(new AbilityReadyRules.SupplyStack(id, stack.getCount()));
         }
         BundleContents contents = stack.get(DataComponents.BUNDLE_CONTENTS);
@@ -2369,7 +3052,7 @@ public final class ManaAbilities implements FeatureModule {
             return;
         }
         for (ItemStackTemplate template : contents.items()) {
-            collectSupply(template.create(), out, true);
+            collectSupply(template.create(), out, true, mainInventory);
         }
     }
 
@@ -2394,9 +3077,6 @@ public final class ManaAbilities implements FeatureModule {
         }
         if (held.is(Items.IRON_INGOT)) {
             return AbilityRules.IRON_HEART;
-        }
-        if (held.is(Items.CHARCOAL)) {
-            return AbilityRules.FIRE_BOLT;
         }
         if (held.is(Items.ARROW)) {
             return AbilityRules.MAGIC_ARROW;
@@ -2428,6 +3108,15 @@ public final class ManaAbilities implements FeatureModule {
         if (held.is(Items.DIAMOND)) {
             return AbilityRules.DIAMOND_SKIN;
         }
+        if (held.is(Items.REDSTONE)) {
+            return AbilityRules.EMPOWER;
+        }
+        if (held.is(Items.QUARTZ_BLOCK)) {
+            return AbilityRules.BATTERY;
+        }
+        if (held.is(Items.LAPIS_LAZULI)) {
+            return AbilityRules.LAPIS_SHIELD;
+        }
         return null;
     }
 
@@ -2441,6 +3130,7 @@ public final class ManaAbilities implements FeatureModule {
 
     static boolean blockedByCooldownOrMana(
             ServerPlayer player, String ability, String nameKey, String fallback, boolean honeyHeal) {
+        tickGoldWear(player);
         ServerLevel overworld = player.level().getServer().overworld();
         long now = overworld.getGameTime();
         int remaining = AbilityRules.remainingCooldownTicks(
@@ -2471,7 +3161,6 @@ public final class ManaAbilities implements FeatureModule {
 
     static void spend(ServerPlayer player, net.minecraft.world.item.Item consumed, String ability) {
         tryConsumeHeld(player, consumed);
-        consumeRedstoneDustBooster(player);
         double current = Math.max(0.0, Achievements.currentMana(player) - AbilityRules.manaCost(ability));
         player.setAttached(EhmAttachments.EHM_MANA_CURRENT, current);
         Achievements.sendMana(player);
@@ -2484,41 +3173,97 @@ public final class ManaAbilities implements FeatureModule {
         markHandled(player);
     }
 
-    static void hurlFireBolt(ServerPlayer player, double power, LivingEntity target) {
-        ServerLevel level = (ServerLevel) player.level();
-        Vec3 direction = player.getLookAngle().normalize();
-        SmallFireball bolt = new SmallFireball(level, player, direction.scale(AbilityRules.FIRE_BOLT_SPEED));
-        bolt.setPos(player.getX(), player.getEyeY() - 0.1, player.getZ());
-        tagSeeker(bolt, power, target);
-        level.addFreshEntity(bolt);
+    static void hurlArrowVolley(
+            ServerPlayer player, double power, double range, LivingEntity primary, boolean burn) {
+        int burnSeconds = burn ? AbilityRules.projectileBurnSeconds(power) : 0;
+        hurlMagicArrow(player, power, primary, player.getLookAngle(), burnSeconds);
+        for (LivingEntity extra : extraFireTargets(player, range, primary, AbilityRules.extraProjectileCount(power))) {
+            hurlMagicArrow(player, power, extra, aimAt(player, extra), burnSeconds);
+        }
     }
 
-    static void hurlMagicArrow(ServerPlayer player, double power, LivingEntity target) {
+    static void hurlMagicArrow(
+            ServerPlayer player, double power, LivingEntity target, Vec3 direction, int burnSeconds) {
         ServerLevel level = (ServerLevel) player.level();
-        Vec3 direction = player.getLookAngle().normalize();
+        Vec3 dir = direction == null || direction.lengthSqr() < 1.0e-6 ? player.getLookAngle() : direction.normalize();
         Arrow arrow = new Arrow(level, player, new ItemStack(Items.ARROW), null);
         arrow.setPos(player.getX(), player.getEyeY() - 0.1, player.getZ());
-        arrow.setDeltaMovement(direction.scale(AbilityRules.FIRE_BOLT_SPEED));
+        arrow.setDeltaMovement(dir.scale(AbilityRules.FIRE_BOLT_SPEED));
         arrow.setNoGravity(true);
         arrow.pickup = AbstractArrow.Pickup.DISALLOWED;
-        tagSeeker(arrow, power, target);
+        tagSeeker(arrow, power, target, burnSeconds);
         level.addFreshEntity(arrow);
     }
 
-    static void tagSeeker(Entity bolt, double power, LivingEntity target) {
-        bolt.setAttached(EhmAttachments.EHM_FIREBOLT_POWER, Math.max(1, (int) Math.round(power)));
+    static Vec3 aimAt(ServerPlayer player, LivingEntity target) {
+        Vec3 aim = target.getEyePosition().subtract(player.getEyePosition());
+        return aim.lengthSqr() < 1.0e-6 ? player.getLookAngle() : aim;
+    }
+
+    /**
+     * Other living creatures within range, nearest the aim first.
+     * Fewer creatures means fewer extra shots. The primary target is skipped.
+     */
+    static List<LivingEntity> extraFireTargets(ServerPlayer caster, double range, LivingEntity primary, int count) {
+        if (count <= 0 || range <= 0.0) {
+            return List.of();
+        }
+        ServerLevel level = (ServerLevel) caster.level();
+        Vec3 eye = caster.getEyePosition();
+        AABB box = caster.getBoundingBox().inflate(range);
+        List<LivingEntity> found = new ArrayList<>(level.getEntitiesOfClass(
+                LivingEntity.class,
+                box,
+                living -> isFireable(caster, living)
+                        && living != primary
+                        && eye.distanceTo(living.getEyePosition()) <= range));
+        if (found.isEmpty()) {
+            return List.of();
+        }
+        Vec3 look = caster.getLookAngle();
+        found.sort((a, b) -> {
+            int aim = Double.compare(aimScore(eye, look, a), aimScore(eye, look, b));
+            if (aim != 0) {
+                return aim;
+            }
+            return Double.compare(eye.distanceTo(a.getEyePosition()), eye.distanceTo(b.getEyePosition()));
+        });
+        int n = Math.min(count, found.size());
+        return new ArrayList<>(found.subList(0, n));
+    }
+
+    /** Perpendicular distance from the look ray. Creatures behind the caster sort last. */
+    static double aimScore(Vec3 start, Vec3 look, LivingEntity target) {
+        Vec3 eye = target.getEyePosition();
+        double dx = eye.x - start.x;
+        double dy = eye.y - start.y;
+        double dz = eye.z - start.z;
+        double lookLen = look.length();
+        if (lookLen < 1.0e-6) {
+            return dx * dx + dy * dy + dz * dz;
+        }
+        double lx = look.x / lookLen;
+        double ly = look.y / lookLen;
+        double lz = look.z / lookLen;
+        double t = dx * lx + dy * ly + dz * lz;
+        double offx = dx - lx * t;
+        double offy = dy - ly * t;
+        double offz = dz - lz * t;
+        double off = offx * offx + offy * offy + offz * offz;
+        return t < 0.0 ? off + 1_000_000.0 : off;
+    }
+
+    static void tagSeeker(Entity bolt, double power, LivingEntity target, int burnSeconds) {
+        bolt.setAttached(EhmAttachments.EHM_FIREBOLT_POWER, AbilityRules.projectileDamage(power));
+        bolt.setAttached(EhmAttachments.EHM_FIREBOLT_BURN, Math.max(0, burnSeconds));
         if (target != null) {
             bolt.setAttached(EhmAttachments.EHM_FIREBOLT_TARGET, target.getUUID());
         }
     }
 
-    public static void steerFireBolt(SmallFireball bolt) {
-        steerSeeker(bolt);
-    }
-
     public static void steerSeeker(Entity bolt) {
         Integer power = bolt.getAttached(EhmAttachments.EHM_FIREBOLT_POWER);
-        if (power == null || power <= 0 || !(bolt.level() instanceof ServerLevel level)) {
+        if (power == null || !(bolt.level() instanceof ServerLevel level)) {
             return;
         }
         UUID id = bolt.getAttached(EhmAttachments.EHM_FIREBOLT_TARGET);
@@ -2652,7 +3397,8 @@ public final class ManaAbilities implements FeatureModule {
         return true;
     }
 
-    static EntityHitResult raycast(ServerPlayer player, double range) {
+    /** First living creature the look hits before a block, within {@code range}. */
+    public static EntityHitResult raycast(Entity player, double range) {
         Vec3 start = player.getEyePosition();
         Vec3 look = player.getViewVector(1.0F);
         Vec3 end = start.add(look.scale(range));
@@ -2709,26 +3455,53 @@ public final class ManaAbilities implements FeatureModule {
     }
 
     static Map<String, Integer> usesMap(ServerPlayer player) {
+        foldRetiredFireBolt(player);
         return player.getAttachedOrElse(EhmAttachments.EHM_ABILITY_USES, Map.of());
     }
 
+    /** Moves a saved Fire bolt record onto Magic Arrow. Does nothing once that id is gone. */
+    static void foldRetiredFireBolt(ServerPlayer player) {
+        if (player == null) {
+            return;
+        }
+        Map<String, Integer> uses = player.getAttachedOrElse(EhmAttachments.EHM_ABILITY_USES, Map.of());
+        List<String> learned = player.getAttachedOrElse(EhmAttachments.EHM_ABILITY_LEARNED, List.of());
+        List<String> taught = player.getAttachedOrElse(EhmAttachments.EHM_ABILITY_TAUGHT, List.of());
+        Map<String, Long> lastUse = player.getAttachedOrElse(EhmAttachments.EHM_ABILITY_LAST_USE, Map.of());
+        boolean usesHit = uses != null && uses.containsKey(AbilityRules.FIRE_BOLT);
+        boolean learnedHit = learned != null && learned.contains(AbilityRules.FIRE_BOLT);
+        boolean taughtHit = taught != null && taught.contains(AbilityRules.FIRE_BOLT);
+        boolean lastHit = lastUse != null && lastUse.containsKey(AbilityRules.FIRE_BOLT);
+        if (!usesHit && !learnedHit && !taughtHit && !lastHit) {
+            return;
+        }
+        if (usesHit) {
+            player.setAttached(EhmAttachments.EHM_ABILITY_USES, AbilityRules.foldFireBoltUses(uses));
+        }
+        if (learnedHit) {
+            player.setAttached(EhmAttachments.EHM_ABILITY_LEARNED, AbilityRules.foldFireBoltList(learned));
+        }
+        if (taughtHit) {
+            player.setAttached(EhmAttachments.EHM_ABILITY_TAUGHT, AbilityRules.foldFireBoltList(taught));
+        }
+        if (lastHit) {
+            player.setAttached(EhmAttachments.EHM_ABILITY_LAST_USE, AbilityRules.foldFireBoltLastUse(lastUse));
+        }
+    }
+
     static double abilityPower(ServerPlayer player, String ability, int itemBonus) {
-        int manaLevel = Achievements.manaLevel(player);
         tickGoldWear(player);
-        return AbilityRules.power(
+        int manaLevel = Achievements.manaLevel(player);
+        double power = AbilityRules.power(
                 ability,
                 manaLevel,
                 uses(player, ability),
-                Math.max(0, itemBonus) + goldAbilityBonus(player),
+                Math.max(0, itemBonus),
                 AbilityRules.isTrained(manaLevel, learnedSet(player), ability));
-    }
-
-    static int goldAbilityBonus(ServerPlayer player) {
-        if (!(player.level() instanceof ServerLevel level)) {
-            return 0;
+        if (empowerActive(player)) {
+            power += AbilityRules.empowerCastBonus(empowerLevel(player));
         }
-        return AbilityRules.readyGoldBonus(
-                player.getAttachedOrElse(EhmAttachments.EHM_GOLD_WEAR, Map.of()), level.getGameTime());
+        return power;
     }
 
     static void tickGoldWear(ServerPlayer player) {
@@ -2754,6 +3527,7 @@ public final class ManaAbilities implements FeatureModule {
             return;
         }
         player.setAttached(EhmAttachments.EHM_GOLD_BONUS_SHOWN, ready);
+        Achievements.sendMana(player);
         List<String> messages = AbilityRules.goldBonusMessages(shown, ready);
         if (messages.isEmpty()) {
             return;
@@ -2862,6 +3636,7 @@ public final class ManaAbilities implements FeatureModule {
     }
 
     static Set<String> taughtSet(ServerPlayer player) {
+        foldRetiredFireBolt(player);
         List<String> taught = player.getAttachedOrElse(EhmAttachments.EHM_ABILITY_TAUGHT, List.of());
         if (taught == null || taught.isEmpty()) {
             return Set.of();
@@ -2870,6 +3645,7 @@ public final class ManaAbilities implements FeatureModule {
     }
 
     static Set<String> learnedSet(ServerPlayer player) {
+        foldRetiredFireBolt(player);
         ensureLearnedMigrated(player);
         List<String> learned = player.getAttachedOrElse(EhmAttachments.EHM_ABILITY_LEARNED, List.of());
         if (learned == null || learned.isEmpty()) {
@@ -2879,6 +3655,7 @@ public final class ManaAbilities implements FeatureModule {
     }
 
     static long lastUse(ServerPlayer player, String ability) {
+        foldRetiredFireBolt(player);
         return player.getAttachedOrElse(EhmAttachments.EHM_ABILITY_LAST_USE, Map.of()).getOrDefault(ability, -1L);
     }
 

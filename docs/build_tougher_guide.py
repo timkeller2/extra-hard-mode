@@ -131,6 +131,7 @@ def build():
                 "Breaking a block that is on fire sets you on fire, the same as putting the fire out by hand. Water still works.",
                 "Sneak with a compass to point it at your bed or respawn anchor. With none set, it still points at world spawn.",
                 "A bed placed in the Nether or the End vanishes. It does not explode. A bed already there is removed instead of exploding if you use it.",
+                "A lodestone is crafted with an iron block in the middle, surrounded by chiseled stone bricks.",
             ],
             s["bullet"],
         ),
@@ -199,6 +200,7 @@ def build():
                 "A one-block cane that would grow a second segment may become a weed, using the current crop-loss rate plus the soil under it.",
                 "Pumpkins and melons fruit at one-tenth speed. After each fruit the vine may become a weed, starting at 0% and rising 5% per fruit. Broken vines drop no seeds.",
                 "Shearing a full hive gives 1 honeycomb.",
+                "A bee that returns with nectar fills a hive or nest at 25% of the usual rate. That is farming.beeHoneyPercent. 100 is the usual rate and 0 never fills.",
             ],
             s["bullet"],
         ),
@@ -242,6 +244,7 @@ def build():
         bullets(
             [
                 "Mobs hit harder. Skeletons ignore arrows. Zombies vary about 20% in speed: faster ones hit softer and look smaller.",
+                "Below Y=48, a cave you have walked may spawn an extra hostile. The light may be 11, and every 20 blocks you are below Y=48 adds 1, so Y=28 allows 12 and Y=8 allows 13. The chance falls by 5% times the light of the chosen block.",
                 "Skeleton and bogged special shots are 1% per 10 blocks from world spawn, and certain at 1,000 blocks or farther.",
                 "Zombies can rise again. Shields absorb the whole blocked hit and last one-third as long.",
                 "Creepers may drop live TNT. TNT sets fire to 20% of the blocks it hits, rounded. Set explosions.tnt.firePercent to 0 to turn that off.",
@@ -254,6 +257,7 @@ def build():
             Paragraph(
             "A strong boss can appear far from spawn, once per biome family. After it is defeated it does not return in that game. "
             "Bosses do not spawn within 80 blocks of a player or a chest. "
+            "Within 64 blocks, a biome boss shows a health bar with its name. "
             "A brood mother keeps chasing when hit, and every few seconds spits for half her bite damage and a brief blindness. "
             "If a boss cannot walk to you, it breaks blocks in the way at iron-pickaxe speed. "
             "Each defeat makes the next boss 30% harder and richer. The third is a world event. "
@@ -272,34 +276,36 @@ def build():
         Paragraph(
             "Mana is shown as cyan crystals. Two mana points fill one crystal. "
             "You regenerate (mana level + current mana) / 200 per minute. "
-            "Nether quartz in your inventory makes that 3 times faster until you reach your mana level, using 1 quartz per mana. "
-            "A quartz block in your main inventory makes it 7 times the base rate until you reach your mana level, using 1 block per mana. "
-            "Both together are 10 times, and each is consumed only for its own share. "
-            "Saturation of 18 or more doubles that regen and is not consumed. Below 18 the bonus stops. The doubled regen spends nether quartz and quartz blocks. "
-            "Past your level, regeneration is one-quarter speed. The old ceiling of 20 mana rises when Well Fed pushes your level past 20. "
-            "Achievements and wise teachers can raise the permanent mana level. Well Fed adds levels on top, and those extra levels leave when Well Fed drops.",
+            "Saturation of 18 or more doubles that regen and is not consumed. Below 18 the bonus stops. "
+            "A quartz block right-clicked in the air casts Battery. It costs no mana. "
+            "Battery lasts 2 minutes per ability level, at least 2 minutes, and multiplies mana regeneration by 1 plus the square root of its level. It renews until your mana reaches your mana level. "
+            "Past your level, regeneration is one-quarter speed. The old ceiling of 40 mana rises when Well Fed or ready gold pushes your level past 40. "
+            "Achievements and wise teachers can raise the permanent mana level. Well Fed adds levels on top, and those extra levels leave when Well Fed drops. "
+            "Ready gold adds mana levels too, and those leave when the gold comes off.",
             s["body"],
         ),
         Paragraph("Abilities", s["h"]),
         Paragraph(
-            "Hold the catalyst and right-click. Power starts as the square root of how many times you have used that ability. "
+            "Hold the catalyst and right-click. Power starts as the square root of how many times you have used that ability. The effective level is at least 1. "
             "A cast consumes one catalyst. Two in hand consume both and add 2. One consumed catalyst adds nothing. "
             "Swords, hoes, and pickaxes are not consumed. "
             "A renew spends no catalyst unless you are holding it, which spends one and adds 2. "
-            "Loose redstone dust still adds 2 and is consumed. Dust inside a bundle does not count and is not spent. "
-            "Fire bolt and Magic arrow also add your mana level. "
-            "Gold armor adds 1 after 30 seconds, then 60, 120, and 240 seconds more. Four pieces put on together reach +4 in 450 seconds. "
-            "A golden item in either hand, such as a golden hoe, adds 1 more after 30 seconds. "
+            "Redstone dust right-clicked in the air casts Empower. It lasts 30 seconds per ability level, at least 30 seconds, and does not renew on its own. "
+            "While Empower lasts, each later mana ability cast gains extra level equal to the square root of Empower's level. "
+            "Gold armor adds 1 mana level after 90 seconds, then 180, 360, and 720 seconds more. Four pieces put on together reach +4 in 1350 seconds. "
+            "A golden item in either hand, such as a golden hoe, adds 1 more mana level after 30 seconds. "
             "Gold ingots, nuggets, blocks, and ore do not. The bonus ends the moment that item comes off, and a half-second golden shimmer plus "
-            "\"Ability level +1 (+total)\" plays when a piece starts counting. "
+            "\"Mana level +1 (+total)\" plays when a piece starts counting. "
             "A golden hoe still keeps its usual Let it grow material bonus on top of that.",
             s["body"],
         ),
         bullets(
             [
-                "Paper: Healing. The health is spread across the 6-second blue sparkle. Iron ingot: Iron Heart. Feather: Flight. Sneak on a block to stop; sneaking in the air descends. Charcoal: Fire bolt. Arrow: Magic arrow.",
-                "Any hoe: Let it grow, on a plant. Coal: Let there be light. Any pickaxe: Power mining. Compass: Detect ore. The compass is kept. One nether quartz is required and consumed, and a second quartz is consumed for +2. Reach is 4 + ability level minus that ore's difficulty.",
-                "String: Slow. Spider eye: Sense Evil. Golden sword: Smite Evil. Stone bricks in the air: Master Builder. Diamond: Diamond Skin.",
+                "Paper: Healing. The health is spread across the 6-second blue sparkle. Iron ingot: Iron Heart. Feather: Flight. Sneak on a block to stop; sneaking in the air descends. Arrow: Magic arrow. It deals 3 times ability level. Cooldown is 10 seconds minus skill. Every 2 levels, rounded down, another shot goes to a different creature for no extra cost. Charcoal in the hotbar or inventory, not a bundle, adds +2. One charcoal is consumed, and the arrows burn.",
+                "Any hoe: Let it grow, on a plant. Coal: Let there be light. Any pickaxe: Power mining. Compass: Detect ore. The compass is kept. Nether quartz is not required. The largest nether quartz stack in the hotbar or inventory, not a bundle, adds the square root of its count, rounded, and that many quartz are consumed from that stack. Reach is 4 + ability level minus that ore's difficulty.",
+                "String: Slow. Spider eye: Sense Evil. Golden sword: Smite Evil. It costs 1/4 mana. With at least 1 mana, the crosshair turns gold on a creature in reach. Stone bricks in the air: Master Builder. Diamond: Diamond Skin. Redstone dust in the air: Empower. Quartz block in the air: Battery. Lapis lazuli: Lapis Shield.",
+                "Battery costs no mana. It lasts 2 minutes per ability level, at least 2 minutes, and multiplies mana regen by 1 plus the square root of its level. It renews until mana reaches your mana level, and ends when it does. A renew consumes one quartz block. Two in hand consume both and add +2.",
+                "Lapis lazuli casts Lapis Shield for 1 mana. It lasts 1 minute per ability level. A force field surrounds the targeted character, or you if none is targeted. Damage up to that level is absorbed before armor or health. Every 3 points blocked costs 1 lapis lazuli, rounded up. If you cannot pay, the shield ends and the hit is not absorbed. One lapis lazuli is consumed to cast. Two in hand consume both and add +2.",
                 "Master Builder lasts 30 seconds times ability level, renews while you have mana, and cancels on another air click. One brick is consumed. Two in hand consume both and add +2. A renew spends a brick only when you are holding one, and that adds +2.",
                 "Diamond Skin costs 2 mana and lasts 30 seconds times ability level. Its effective level is at least 2, so a bare cast still halves health damage. It renews while you have 2 mana, and cancels on another right-click. One diamond is consumed. Two in hand consume both and add +2. A renew spends a diamond only when you are holding one, and that adds +2.",
                 "While Diamond Skin lasts, damage that would reach your health is divided by the ability level. Armor still applies first. Each point prevented shortens the effect by 3 seconds. Poison, drowning, and suffocation are not reduced. A quarter-second cyan sparkle plays when a hit is reduced.",
@@ -317,7 +323,6 @@ def build():
                     "Place many of one block, or defeat many of one monster that drops loot. Each claim gives 50 experience and 4 to 7 emeralds. Everyone can earn every achievement.",
                     "The first player on the server to claim one gets 25 extra experience and 3 more emeralds by default.",
                     "You have your experience level as a percent chance to gain a mana level.",
-                    "A diamond block plus lapis lazuli blocks buys an extra mana level and a 6-second blue shimmer. The lapis cost starts at 1 block and rises by 1 each time.",
                     "The first visit to a biome is 50 experience, and 100 more if you are first on the server. The first habitable home in a biome is house points times 3. The first trip 300 blocks from spawn is 100 experience.",
                     "A small brown number shows how many placements or kills remain. It drifts down and left for 3 seconds, and stays hidden when that track is finished.",
                 ],

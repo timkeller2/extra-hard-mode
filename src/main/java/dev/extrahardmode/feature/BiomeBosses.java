@@ -10,12 +10,16 @@ import dev.extrahardmode.world.BiomeBossData;
 import dev.extrahardmode.world.WorldGate;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
@@ -28,6 +32,7 @@ import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
@@ -36,6 +41,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.BossEvent;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -91,6 +97,8 @@ public final class BiomeBosses implements FeatureModule {
     private static final Identifier DEFEAT_MOD = ExtraHardModeMod.id("biome_boss_defeats");
     private static final Identifier BROOD_SPEED_MOD = ExtraHardModeMod.id("biome_boss_brood_speed");
     private static long creditsAtTick = -1L;
+    /** Loaded bosses only. An unloaded boss drops its bar and gets a new one when the chunk loads. */
+    private static final Map<UUID, TrackedBar> BARS = new HashMap<>();
     private static final EquipmentSlot[] ARMOR_SLOTS = {
         EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET
     };
@@ -121,6 +129,13 @@ public final class BiomeBosses implements FeatureModule {
     public void bootstrap(FeatureBus bus) {
         bus.listen(ServerLivingEntityEvents.AFTER_DEATH, ID, BiomeBosses::onDeath);
         bus.listen(ServerLivingEntityEvents.AFTER_DAMAGE, ID, BiomeBosses::onAttacked);
+        ServerTickEvents.END_LEVEL_TICK.register(BiomeBosses::tickBossBars);
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> dismissAllBars());
+    }
+
+    @Override
+    public void onWorldUnload(ServerLevel level) {
+        dismissDimension(level.dimension().identifier());
     }
 
     @Override
@@ -147,6 +162,7 @@ public final class BiomeBosses implements FeatureModule {
         if (!(entity.level() instanceof ServerLevel level) || !isBoss(entity)) {
             return;
         }
+        dismissBar(entity.getUUID());
         if (entity instanceof Mob mob) {
             BossMining.stop(mob);
         }
@@ -654,11 +670,117 @@ public final class BiomeBosses implements FeatureModule {
                 "A %s prowls nearby!",
                 Component.translatableWithFallback(family.translationKey(), family.fallbackName()));
         for (ServerPlayer player : level.players()) {
-            if (player.distanceToSqr(mob) <= 64.0 * 64.0) {
+            if (BiomeBossesRules.withinBarRange(player.distanceToSqr(mob))) {
                 player.sendSystemMessage(message);
             }
         }
     }
+
+    /**
+     * Shows one purple bar per loaded boss to players within {@link BiomeBossesRules#BAR_RANGE_BLOCKS}.
+     * Runs even when the module is off so a bar does not stay up after the feature is disabled.
+     */
+    static void tickBossBars(ServerLevel level) {
+        Identifier dimension = level.dimension().identifier();
+        if (!WorldGate.isModuleActive(level, ID)) {
+            dismissDimension(dimension);
+            return;
+        }
+        Set<UUID> present = new HashSet<>();
+        for (BiomeBossData.FamilyState state : BiomeBossData.of(level).families().values()) {
+            if (state.living().isEmpty()) {
+                continue;
+            }
+            UUID id = state.living().get();
+            Entity entity = level.getEntity(id);
+            if (!(entity instanceof LivingEntity boss) || !boss.isAlive() || !isBoss(boss)) {
+                continue;
+            }
+            present.add(id);
+            syncBar(level, dimension, boss);
+        }
+        List<UUID> stale = new ArrayList<>();
+        for (Map.Entry<UUID, TrackedBar> entry : BARS.entrySet()) {
+            if (dimension.equals(entry.getValue().dimension()) && !present.contains(entry.getKey())) {
+                stale.add(entry.getKey());
+            }
+        }
+        for (UUID id : stale) {
+            dismissBar(id);
+        }
+    }
+
+    private static void syncBar(ServerLevel level, Identifier dimension, LivingEntity boss) {
+        UUID id = boss.getUUID();
+        TrackedBar tracked = BARS.get(id);
+        if (tracked == null || !dimension.equals(tracked.dimension())) {
+            if (tracked != null) {
+                tracked.event().removeAllPlayers();
+            }
+            ServerBossEvent event = new ServerBossEvent(
+                    id, barName(boss), BossEvent.BossBarColor.PURPLE, BossEvent.BossBarOverlay.PROGRESS);
+            event.setDarkenScreen(false);
+            event.setPlayBossMusic(false);
+            event.setCreateWorldFog(false);
+            tracked = new TrackedBar(dimension, event);
+            BARS.put(id, tracked);
+        }
+        ServerBossEvent event = tracked.event();
+        event.setName(barName(boss));
+        event.setProgress(BiomeBossesRules.barProgress(boss.getHealth(), boss.getMaxHealth()));
+        Set<ServerPlayer> near = new HashSet<>();
+        for (ServerPlayer player : level.players()) {
+            if (BiomeBossesRules.withinBarRange(player.distanceToSqr(boss))) {
+                near.add(player);
+                event.addPlayer(player);
+            }
+        }
+        for (ServerPlayer player : List.copyOf(event.getPlayers())) {
+            if (!near.contains(player)) {
+                event.removePlayer(player);
+            }
+        }
+    }
+
+    private static Component barName(LivingEntity boss) {
+        Component custom = boss.getCustomName();
+        if (custom != null) {
+            return custom;
+        }
+        BossFamily family = familyOf(boss);
+        if (family != null) {
+            return Component.translatableWithFallback(family.translationKey(), family.fallbackName());
+        }
+        return boss.getName();
+    }
+
+    private static void dismissBar(UUID id) {
+        TrackedBar tracked = BARS.remove(id);
+        if (tracked != null) {
+            tracked.event().removeAllPlayers();
+        }
+    }
+
+    private static void dismissDimension(Identifier dimension) {
+        List<UUID> ids = new ArrayList<>();
+        for (Map.Entry<UUID, TrackedBar> entry : BARS.entrySet()) {
+            if (dimension.equals(entry.getValue().dimension())) {
+                ids.add(entry.getKey());
+            }
+        }
+        for (UUID id : ids) {
+            dismissBar(id);
+        }
+    }
+
+    private static void dismissAllBars() {
+        for (TrackedBar tracked : BARS.values()) {
+            tracked.event().removeAllPlayers();
+        }
+        BARS.clear();
+    }
+
+    private record TrackedBar(Identifier dimension, ServerBossEvent event) {}
 
     static void thunderAll(MinecraftServer server) {
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {

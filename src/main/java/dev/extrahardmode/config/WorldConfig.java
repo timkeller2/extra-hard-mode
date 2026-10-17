@@ -4,6 +4,7 @@ import com.electronwill.nightconfig.core.Config;
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.electronwill.nightconfig.toml.TomlFormat;
 import dev.extrahardmode.ExtraHardModeMod;
+import dev.extrahardmode.feature.BeeHoneyRules;
 import dev.extrahardmode.feature.GrassSpreadRules;
 import dev.extrahardmode.feature.HardenedBudget;
 import dev.extrahardmode.feature.HungerRules;
@@ -110,6 +111,7 @@ public final class WorldConfig {
     private int animalBreedCooldownMultiplier = 6;
     private int eggLayTimeMultiplier = 6;
     private int hiveHoneycombCount = 1;
+    private int beeHoneyPercent = BeeHoneyRules.DEFAULT_PERCENT;
     private float movingExhaustionPerSecond = HungerRules.DEFAULT_MOVING_EXHAUSTION_PER_SECOND;
     private int foodHistorySize = 7;
     private int slowRegenTicks = HungerRules.DEFAULT_SLOW_REGEN_TICKS;
@@ -501,6 +503,10 @@ public final class WorldConfig {
 
     public int hiveHoneycombCount() {
         return hiveHoneycombCount;
+    }
+
+    public int beeHoneyPercent() {
+        return beeHoneyPercent;
     }
 
     public float movingExhaustionPerSecond() {
@@ -1128,18 +1134,22 @@ public final class WorldConfig {
                 writeDefaultIfMissing(
                         file,
                         "monsters.spawnInLight.enable",
-                        "Spawn extra monsters in light<=maxLight below maxY. Disable with this boolean, not Y=0.",
+                        "Extra hostiles in visited caves below maxY. Light starts at maxLight and rises by 1 for every 20 blocks the player is below maxY. Chance is percent minus 5 times the chosen block's light. Disable with this boolean, not Y=0.",
                         true);
                 if (!file.contains("monsters.spawnInLight.maxY")) {
                     file.setComment("monsters.spawnInLight.maxY", "original RootNode 50; cave band");
                     file.set("monsters.spawnInLight.maxY", 48);
                 }
                 if (!file.contains("monsters.spawnInLight.maxLight")) {
-                    file.setComment("monsters.spawnInLight.maxLight", "0-3 bats, 0-7 vanilla, 8-11 hostile no burn, 12+ burn");
+                    file.setComment(
+                            "monsters.spawnInLight.maxLight",
+                            "Light allowed at maxY. Every 20 blocks the player is below maxY adds 1. Default 11, so Y=28 allows 12 and Y=8 allows 13.");
                     file.set("monsters.spawnInLight.maxLight", 11);
                 }
                 if (!file.contains("monsters.spawnInLight.percent")) {
-                    file.setComment("monsters.spawnInLight.percent", "Chance per attempt at previously visited cave sections.");
+                    file.setComment(
+                            "monsters.spawnInLight.percent",
+                            "Base chance per attempt. Each light level of the chosen block subtracts 5. Default 100.");
                     file.set("monsters.spawnInLight.percent", 100);
                 }
                 config.explosions.writeDefaults(file);
@@ -1345,6 +1355,8 @@ public final class WorldConfig {
                 file.set("farming.animalBreedCooldownMultiplier", animalBreedCooldownMultiplier);
                 file.set("farming.eggLayTimeMultiplier", eggLayTimeMultiplier);
                 file.set("farming.hiveHoneycombCount", hiveHoneycombCount);
+                file.set("farming.beeHoneyPercent", beeHoneyPercent);
+                file.setComment("farming.beeHoneyPercent", BeeHoneyRules.CONFIG_COMMENT);
                 file.set("hunger.movingExhaustionPerSecond", movingExhaustionPerSecond);
                 file.set("hunger.foodHistorySize", foodHistorySize);
                 file.set("hunger.slowRegenTicks", slowRegenTicks);
@@ -1389,7 +1401,13 @@ public final class WorldConfig {
                 file.set("monsters.spawnInLight.enable", spawnInLightEnable);
                 file.set("monsters.spawnInLight.maxY", spawnInLightMaxY);
                 file.set("monsters.spawnInLight.maxLight", spawnInLightMaxLight);
+                file.setComment(
+                        "monsters.spawnInLight.maxLight",
+                        "Light allowed at maxY. Every 20 blocks the player is below maxY adds 1. Default 11, so Y=28 allows 12 and Y=8 allows 13.");
                 file.set("monsters.spawnInLight.percent", spawnInLightPercent);
+                file.setComment(
+                        "monsters.spawnInLight.percent",
+                        "Base chance per attempt. Each light level of the chosen block subtracts 5. Default 100.");
                 file.set("sounds.creeperTntWarning", creeperTntWarning);
                 file.set("villagerNerf.blockDiamondGearTrades", villagerNerfBlockDiamondGear);
                 file.set("villagerNerf.nerfNoviceMending", villagerNerfNoviceMending);
@@ -1535,6 +1553,8 @@ public final class WorldConfig {
         animalBreedCooldownMultiplier = Math.max(1, getInt(file, "farming.animalBreedCooldownMultiplier", 6));
         eggLayTimeMultiplier = Math.max(1, getInt(file, "farming.eggLayTimeMultiplier", 6));
         hiveHoneycombCount = Math.clamp(getInt(file, "farming.hiveHoneycombCount", 1), 0, 64);
+        beeHoneyPercent = clampPercent(
+                getInt(file, "farming.beeHoneyPercent", BeeHoneyRules.DEFAULT_PERCENT));
         movingExhaustionPerSecond = (float) getDouble(
                 file, "hunger.movingExhaustionPerSecond", HungerRules.DEFAULT_MOVING_EXHAUSTION_PER_SECOND);
         foodHistorySize = Math.max(1, getInt(file, "hunger.foodHistorySize", 7));
@@ -1717,6 +1737,8 @@ public final class WorldConfig {
                 "farming.hiveHoneycombCount",
                 "Honeycombs dropped when shearing a full hive or nest. Vanilla is 3; default 1.",
                 1);
+        writeDefaultIfMissing(
+                file, "farming.beeHoneyPercent", BeeHoneyRules.CONFIG_COMMENT, BeeHoneyRules.DEFAULT_PERCENT);
         writeDefaultIfMissing(
                 file,
                 "hunger.movingExhaustionPerSecond",

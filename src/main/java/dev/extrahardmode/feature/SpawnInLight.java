@@ -29,8 +29,10 @@ import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.material.FluidState;
 
 /**
- * Extra cave spawns on previously visited sections below Y=48, allowing light up
- * to 10. Deep Dark / trial chambers / ancient cities are skipped.
+ * Extra cave spawns on previously visited sections below Y=48. The light cap
+ * starts at the configured max and rises by 1 for every 20 blocks the player
+ * is below that band. The chance then falls by 5% times the chosen block's
+ * light. Deep Dark / trial chambers / ancient cities are skipped.
  */
 public final class SpawnInLight implements FeatureModule {
     public static final Identifier ID = ExtraHardModeMod.id("spawn_in_light");
@@ -109,9 +111,6 @@ public final class SpawnInLight implements FeatureModule {
             return;
         }
         RandomSource random = level.getRandom();
-        if (random.nextInt(100) >= config.spawnInLightPercent()) {
-            return;
-        }
         long packed = pick(visited, random);
         SectionPos section = SectionPos.of(packed);
         BlockPos pos = new BlockPos(
@@ -131,7 +130,13 @@ public final class SpawnInLight implements FeatureModule {
             return;
         }
         int light = Math.max(level.getBrightness(LightLayer.BLOCK, pos), level.getBrightness(LightLayer.SKY, pos));
-        if (light > config.spawnInLightMaxLight()) {
+        int allowed = SpawnInLightRules.allowedLight(
+                config.spawnInLightMaxLight(), config.spawnInLightMaxY(), player.getBlockY());
+        if (light > allowed) {
+            return;
+        }
+        int chance = SpawnInLightRules.spawnChancePercent(config.spawnInLightPercent(), light);
+        if (!SpawnInLightRules.allow(chance, random.nextInt(100))) {
             return;
         }
         EntityType<? extends Monster> type = rollType(random);

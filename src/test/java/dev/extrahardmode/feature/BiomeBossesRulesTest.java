@@ -131,6 +131,23 @@ class BiomeBossesRulesTest {
     }
 
     @Test
+    void healthBarShowsWithinSixtyFourBlocks() {
+        assertEquals(64.0, BiomeBossesRules.BAR_RANGE_BLOCKS, 0.0);
+        assertTrue(BiomeBossesRules.withinBarRange(0.0));
+        assertTrue(BiomeBossesRules.withinBarRange(64.0 * 64.0));
+        assertFalse(BiomeBossesRules.withinBarRange(64.0 * 64.0 + 0.01));
+        assertFalse(BiomeBossesRules.withinBarRange(Double.NaN));
+        assertEquals(0.0F, BiomeBossesRules.barProgress(0.0F, 100.0F), 0.0F);
+        assertEquals(0.5F, BiomeBossesRules.barProgress(50.0F, 100.0F), 0.0001F);
+        assertEquals(1.0F, BiomeBossesRules.barProgress(100.0F, 100.0F), 0.0F);
+        assertEquals(1.0F, BiomeBossesRules.barProgress(150.0F, 100.0F), 0.0F);
+        assertEquals(0.0F, BiomeBossesRules.barProgress(-5.0F, 100.0F), 0.0F);
+        assertEquals(0.0F, BiomeBossesRules.barProgress(10.0F, 0.0F), 0.0F);
+        assertEquals(0.0F, BiomeBossesRules.barProgress(10.0F, -1.0F), 0.0F);
+        assertEquals(0.0F, BiomeBossesRules.barProgress(Float.NaN, 100.0F), 0.0F);
+    }
+
+    @Test
     void spawnClearsEightyBlocksAndSearchesPastThat() {
         assertEquals(80, BiomeBossesRules.SPAWN_CLEARANCE_BLOCKS);
         assertTrue(BiomeBossesRules.tooClose(79.9, 0, 0, 80));

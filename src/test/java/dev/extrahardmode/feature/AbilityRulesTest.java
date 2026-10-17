@@ -35,7 +35,7 @@ class AbilityRulesTest {
         assertEquals(AbilityRules.IRON_HEART, AbilityRules.abilityForItem("minecraft:iron_ingot"));
         assertEquals(AbilityRules.FLIGHT, AbilityRules.abilityForItem("minecraft:feather"));
         assertEquals(AbilityRules.MAGIC_ARROW, AbilityRules.abilityForItem("minecraft:arrow"));
-        assertEquals(AbilityRules.FIRE_BOLT, AbilityRules.abilityForItem("minecraft:charcoal"));
+        assertEquals(null, AbilityRules.abilityForItem("minecraft:charcoal"));
         assertEquals(AbilityRules.GROW, AbilityRules.abilityForItem("minecraft:wooden_hoe"));
         assertEquals(AbilityRules.GROW, AbilityRules.abilityForItem("minecraft:stone_hoe"));
         assertEquals(AbilityRules.GROW, AbilityRules.abilityForItem("minecraft:copper_hoe"));
@@ -56,7 +56,11 @@ class AbilityRulesTest {
         assertEquals(null, AbilityRules.abilityForItem("minecraft:torch"));
         assertEquals(null, AbilityRules.abilityForItem("minecraft:soul_torch"));
         assertEquals(null, AbilityRules.abilityForItem("minecraft:redstone_torch"));
-        assertEquals(null, AbilityRules.abilityForItem("minecraft:redstone"));
+        assertEquals(AbilityRules.EMPOWER, AbilityRules.abilityForItem("minecraft:redstone"));
+        assertEquals(null, AbilityRules.abilityForItem("minecraft:quartz"));
+        assertEquals(AbilityRules.BATTERY, AbilityRules.abilityForItem("minecraft:quartz_block"));
+        assertEquals(AbilityRules.LAPIS_SHIELD, AbilityRules.abilityForItem("minecraft:lapis_lazuli"));
+        assertEquals(null, AbilityRules.abilityForItem("minecraft:lapis_block"));
         assertEquals(null, AbilityRules.abilityForItem(null));
         assertEquals(null, AbilityRules.abilityForItem(""));
         assertEquals(null, AbilityRules.abilityForItem("minecraft:air"));
@@ -67,7 +71,7 @@ class AbilityRulesTest {
         assertEquals(null, AbilityRules.abilityForItem("minecraft:spectral_arrow"));
         assertEquals(null, AbilityRules.abilityForItem("minecraft:tipped_arrow"));
         assertEquals(AbilityRules.MAGIC_ARROW, AbilityRules.abilityForItem("minecraft:arrow"));
-        assertEquals(AbilityRules.FIRE_BOLT, AbilityRules.abilityForItem("minecraft:charcoal"));
+        assertEquals(null, AbilityRules.abilityForItem("minecraft:charcoal"));
         assertEquals(null, AbilityRules.abilityForItem("minecraft:coal_block"));
     }
 
@@ -79,7 +83,6 @@ class AbilityRulesTest {
             "minecraft:iron_ingot",
             "minecraft:feather",
             "minecraft:arrow",
-            "minecraft:charcoal",
             "minecraft:wooden_hoe",
             "minecraft:golden_hoe",
             "minecraft:iron_pickaxe",
@@ -87,7 +90,10 @@ class AbilityRulesTest {
             "minecraft:string",
             "minecraft:spider_eye",
             "minecraft:golden_sword",
-            "minecraft:coal"
+            "minecraft:coal",
+            "minecraft:redstone",
+            "minecraft:quartz_block",
+            "minecraft:lapis_lazuli"
         }) {
             String ability = AbilityRules.abilityForItem(item);
             String help = AbilityRules.helpFallback(ability);
@@ -127,18 +133,20 @@ class AbilityRulesTest {
         assertEquals(60, AbilityRules.IRON_HEART_SPARKLE_TICKS);
         assertTrue(AbilityRules.helpFallback(AbilityRules.GROW).contains("Right-click a plant"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.GROW).contains("improves that soil"));
-        String fireHelp = AbilityRules.helpFallback(AbilityRules.FIRE_BOLT);
-        assertTrue(fireHelp.contains("Right-click"));
-        assertTrue(fireHelp.contains("charcoal"));
-        assertTrue(fireHelp.contains("10 seconds"));
-        assertTrue(fireHelp.contains("mana level"));
-        assertTrue(fireHelp.contains("seeks the nearest"));
         String magicHelp = AbilityRules.helpFallback(AbilityRules.MAGIC_ARROW);
         assertTrue(magicHelp.contains("Right-click"));
         assertTrue(magicHelp.contains("arrow"));
-        assertTrue(magicHelp.contains("does not ignite"));
+        assertTrue(magicHelp.contains("charcoal"));
+        assertTrue(magicHelp.contains("not a bundle"));
+        assertTrue(magicHelp.contains("adds +2"));
+        assertTrue(magicHelp.contains("arrows burn"));
         assertTrue(magicHelp.contains("10 seconds"));
-        assertTrue(magicHelp.contains("mana level"));
+        assertTrue(magicHelp.contains("3 times"));
+        assertTrue(magicHelp.contains("minus skill"));
+        assertTrue(magicHelp.contains("another arrow"));
+        assertTrue(magicHelp.contains("seeks the nearest"));
+        assertFalse(magicHelp.contains("mana level"));
+        assertFalse(magicHelp.contains("Fire bolt"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.FLIGHT).contains("sneak on a block"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.FLIGHT).contains("Right-click"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.FLIGHT).contains("gain skill"));
@@ -148,11 +156,19 @@ class AbilityRulesTest {
         assertTrue(AbilityRules.autoRenews(AbilityRules.IRON_HEART));
         assertTrue(AbilityRules.autoRenews(AbilityRules.MASTER_BUILDER));
         assertTrue(AbilityRules.autoRenews(AbilityRules.DIAMOND_SKIN));
+        assertFalse(AbilityRules.autoRenews(AbilityRules.EMPOWER));
+        assertTrue(AbilityRules.autoRenews(AbilityRules.BATTERY));
+        assertFalse(AbilityRules.autoRenews(AbilityRules.LAPIS_SHIELD));
         assertFalse(AbilityRules.autoRenews(AbilityRules.POWER_MINE));
         assertFalse(AbilityRules.autoRenews(AbilityRules.HEAL));
         assertTrue(AbilityRules.helpFallback(AbilityRules.POWER_MINE).contains("pickaxe"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.DETECT_ORE).contains("compass"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.DETECT_ORE).contains("nether quartz"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.DETECT_ORE).contains("not required"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.DETECT_ORE).contains("square root"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.DETECT_ORE).contains("not a bundle"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.DETECT_ORE).contains("from that stack"));
+        assertFalse(AbilityRules.helpFallback(AbilityRules.DETECT_ORE).contains("1 nether quartz"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.DETECT_ORE).contains("Costs 1 mana"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.DETECT_ORE).contains("approximate distance"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.DETECT_ORE).contains("coal 1"));
@@ -169,6 +185,9 @@ class AbilityRulesTest {
         String smiteHelp = AbilityRules.helpFallback(AbilityRules.SMITE_EVIL);
         assertTrue(smiteHelp.contains("golden sword"));
         assertTrue(smiteHelp.contains("Right-click"));
+        assertTrue(smiteHelp.contains("1/4 mana"));
+        assertTrue(smiteHelp.contains("at least 1 mana"));
+        assertTrue(smiteHelp.contains("crosshair turns gold"));
         assertTrue(smiteHelp.contains("Undead"));
         assertTrue(smiteHelp.contains("flash of light"));
         assertEquals(5.0, AbilityRules.smiteRange(5), 1e-9);
@@ -182,11 +201,13 @@ class AbilityRulesTest {
         String powerHelp = AbilityRules.powerHelpFallback();
         assertTrue(powerHelp.contains("skill"));
         assertTrue(powerHelp.contains("square root"));
+        assertTrue(powerHelp.contains("Effective level is at least 1."));
         assertFalse(powerHelp.contains("1/3 mana level"));
         assertFalse(powerHelp.contains("used more times than your mana level"));
-        assertTrue(powerHelp.contains("Fire bolt and Magic arrow also add your mana level"));
+        assertFalse(powerHelp.contains("also add your mana level"));
         assertTrue(powerHelp.contains("−3 power"));
-        assertTrue(AbilityRules.indexHelpFallback().contains("Charcoal: Fire bolt"));
+        assertFalse(AbilityRules.indexHelpFallback().contains("Charcoal: Fire bolt"));
+        assertFalse(AbilityRules.indexHelpFallback().contains("Fire bolt"));
         assertTrue(AbilityRules.indexHelpFallback().contains("Arrow: Magic arrow"));
         assertTrue(AbilityRules.indexHelpFallback().contains("Iron ingot: Iron Heart"));
         assertTrue(AbilityRules.indexHelpFallback().contains("Redstone dust"));
@@ -197,8 +218,22 @@ class AbilityRulesTest {
         assertTrue(AbilityRules.indexHelpLines().size() > 15);
         assertEquals(AbilityRules.HEAL, AbilityRules.abilityByTopic("healing"));
         assertEquals(AbilityRules.IRON_HEART, AbilityRules.abilityByTopic("Iron Heart"));
-        assertEquals(AbilityRules.FIRE_BOLT, AbilityRules.abilityByTopic("fire-bolt"));
+        assertEquals(AbilityRules.MAGIC_ARROW, AbilityRules.abilityByTopic("fire-bolt"));
+        assertEquals(AbilityRules.MAGIC_ARROW, AbilityRules.abilityByTopic("firebolt"));
         assertEquals(AbilityRules.LIGHT, AbilityRules.abilityByTopic("let there be light"));
+        assertEquals(AbilityRules.EMPOWER, AbilityRules.abilityByTopic("empower"));
+        assertEquals(AbilityRules.BATTERY, AbilityRules.abilityByTopic("battery"));
+        assertEquals(AbilityRules.LAPIS_SHIELD, AbilityRules.abilityByTopic("lapis shield"));
+        assertEquals(AbilityRules.LAPIS_SHIELD, AbilityRules.abilityByTopic("lapus"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.LAPIS_SHIELD).contains("before armor"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.LAPIS_SHIELD).contains("Every 3 points blocked"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.LAPIS_SHIELD).contains("rounded up"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.LAPIS_SHIELD).contains("not a bundle"));
+        assertEquals(1200, AbilityRules.lapisShieldDurationTicks(1));
+        assertEquals(2400, AbilityRules.lapisShieldDurationTicks(2));
+        assertEquals(3000, AbilityRules.lapisShieldDurationTicks(2.5));
+        assertEquals(0, AbilityRules.lapisShieldDurationTicks(0));
+        assertEquals(1.0, AbilityRules.manaCost(AbilityRules.LAPIS_SHIELD), 1e-9);
         assertEquals(null, AbilityRules.abilityByTopic("mining"));
         for (String line : AbilityRules.indexHelpLines()) {
             assertTrue(line.length() <= EhmHelp.MAX_LINE_CHARS, line);
@@ -220,11 +255,12 @@ class AbilityRulesTest {
         assertTrue(AbilityRules.indexHelpFallback().contains("Spider eye: Sense Evil"));
         assertTrue(AbilityRules.indexHelpFallback().contains("Golden sword: Smite Evil"));
         assertTrue(AbilityRules.indexHelpFallback().contains("Stone bricks: Master Builder"));
-        assertTrue(AbilityRules.indexHelpFallback().contains("Redstone dust in your inventory"));
+        assertTrue(AbilityRules.indexHelpFallback().contains("Redstone dust: Empower"));
+        assertTrue(AbilityRules.indexHelpFallback().contains("Quartz block: Battery"));
         assertTrue(AbilityRules.indexHelpFallback().contains("half your mana level"));
         assertEquals("Healing", AbilityRules.nameFallback(AbilityRules.HEAL));
         assertEquals("Iron Heart", AbilityRules.nameFallback(AbilityRules.IRON_HEART));
-        assertEquals("Fire bolt", AbilityRules.nameFallback(AbilityRules.FIRE_BOLT));
+        assertEquals("this ability", AbilityRules.nameFallback(AbilityRules.FIRE_BOLT));
         assertEquals("Magic arrow", AbilityRules.nameFallback(AbilityRules.MAGIC_ARROW));
         assertEquals("Flight", AbilityRules.nameFallback(AbilityRules.FLIGHT));
         assertEquals("Let it grow", AbilityRules.nameFallback(AbilityRules.GROW));
@@ -235,6 +271,8 @@ class AbilityRulesTest {
         assertEquals("Smite Evil", AbilityRules.nameFallback(AbilityRules.SMITE_EVIL));
         assertEquals("Master Builder", AbilityRules.nameFallback(AbilityRules.MASTER_BUILDER));
         assertEquals("Diamond Skin", AbilityRules.nameFallback(AbilityRules.DIAMOND_SKIN));
+        assertEquals("Empower", AbilityRules.nameFallback(AbilityRules.EMPOWER));
+        assertEquals("Battery", AbilityRules.nameFallback(AbilityRules.BATTERY));
         assertEquals("Let there be light", AbilityRules.nameFallback(AbilityRules.LIGHT));
         assertEquals("tougher.ability.detect_ore", AbilityRules.nameKey(AbilityRules.DETECT_ORE));
         assertTrue(AbilityRules.lockedFallback(AbilityRules.HEAL).contains("Healing"));
@@ -295,37 +333,48 @@ class AbilityRulesTest {
     }
 
     @Test
-    void supplyBonusAddsRedstoneHeldCatalystAndTools() {
-        assertEquals(0, AbilityRules.supplyBonus(AbilityRules.HEAL, "minecraft:stick", 1, false, false));
-        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.HEAL, "minecraft:stick", 1, true, false));
-        assertEquals(0, AbilityRules.supplyBonus(AbilityRules.HEAL, "minecraft:paper", 1, false, false));
-        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.HEAL, "minecraft:paper", 8, false, false));
-        assertEquals(4, AbilityRules.supplyBonus(AbilityRules.HEAL, "minecraft:paper", 8, true, false));
-        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.HEAL, "minecraft:paper", 1, true, true));
-        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.GROW, "minecraft:iron_hoe", 1, false, false));
-        assertEquals(4, AbilityRules.supplyBonus(AbilityRules.GROW, "minecraft:iron_hoe", 1, true, false));
-        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.GROW, "minecraft:paper", 8, true, false));
-        assertEquals(5, AbilityRules.supplyBonus(AbilityRules.POWER_MINE, "minecraft:netherite_pickaxe", 1, false, false));
-        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.DETECT_ORE, "minecraft:compass", 1, false, true));
-        assertEquals(4, AbilityRules.supplyBonus(AbilityRules.DETECT_ORE, "minecraft:compass", 1, true, true));
-        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.DETECT_ORE, "minecraft:stick", 1, false, true));
-        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.LIGHT, "minecraft:coal", 4, false, false));
-        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.IRON_HEART, "minecraft:iron_ingot", 2, false, false));
-        assertEquals(4, AbilityRules.supplyBonus(AbilityRules.IRON_HEART, "minecraft:iron_ingot", 2, true, false));
-        assertEquals(0, AbilityRules.supplyBonus(AbilityRules.IRON_HEART, "minecraft:iron_ingot", 1, false, false));
-        assertEquals(0, AbilityRules.supplyBonus(AbilityRules.FIRE_BOLT, "minecraft:charcoal", 1, false, false));
-        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.FIRE_BOLT, "minecraft:charcoal", 2, false, false));
-        assertEquals(4, AbilityRules.supplyBonus(AbilityRules.FIRE_BOLT, "minecraft:charcoal", 2, true, false));
-        assertEquals(0, AbilityRules.supplyBonus(AbilityRules.FIRE_BOLT, "minecraft:stick", 8, false, false));
-        assertEquals(0, AbilityRules.supplyBonus(AbilityRules.SMITE_EVIL, "minecraft:golden_sword", 1, false, false));
-        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.SMITE_EVIL, "minecraft:golden_sword", 1, true, false));
-        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.MAGIC_ARROW, "minecraft:arrow", 2, false, false));
-        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.MASTER_BUILDER, "minecraft:stone_bricks", 2, false, false));
-        assertEquals(0, AbilityRules.supplyBonus(AbilityRules.MASTER_BUILDER, "minecraft:stone_bricks", 1, false, false));
-        assertEquals(4, AbilityRules.supplyBonus(AbilityRules.MASTER_BUILDER, "minecraft:stone_bricks", 3, true, false));
-        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.DIAMOND_SKIN, "minecraft:diamond", 2, false, false));
-        assertEquals(0, AbilityRules.supplyBonus(AbilityRules.DIAMOND_SKIN, "minecraft:diamond", 1, false, false));
-        assertEquals(0, AbilityRules.supplyBonus(null, "minecraft:coal", 4, true, true));
+    void supplyBonusAddsHeldCatalystAndTools() {
+        assertEquals(0, AbilityRules.supplyBonus(AbilityRules.HEAL, "minecraft:stick", 1, false, 0));
+        assertEquals(0, AbilityRules.supplyBonus(AbilityRules.HEAL, "minecraft:stick", 1, true, 0));
+        assertEquals(0, AbilityRules.supplyBonus(AbilityRules.HEAL, "minecraft:paper", 1, false, 0));
+        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.HEAL, "minecraft:paper", 8, false, 0));
+        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.HEAL, "minecraft:paper", 8, true, 0));
+        assertEquals(0, AbilityRules.supplyBonus(AbilityRules.HEAL, "minecraft:paper", 1, true, 9));
+        assertEquals(0, AbilityRules.supplyBonus(AbilityRules.HEAL, "minecraft:redstone", 8, true, 0));
+        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.GROW, "minecraft:iron_hoe", 1, false, 0));
+        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.GROW, "minecraft:iron_hoe", 1, true, 0));
+        assertEquals(0, AbilityRules.supplyBonus(AbilityRules.GROW, "minecraft:paper", 8, true, 0));
+        assertEquals(5, AbilityRules.supplyBonus(AbilityRules.POWER_MINE, "minecraft:netherite_pickaxe", 1, false, 0));
+        assertEquals(0, AbilityRules.supplyBonus(AbilityRules.DETECT_ORE, "minecraft:compass", 1, false, 0));
+        assertEquals(1, AbilityRules.supplyBonus(AbilityRules.DETECT_ORE, "minecraft:compass", 1, false, 1));
+        assertEquals(1, AbilityRules.supplyBonus(AbilityRules.DETECT_ORE, "minecraft:compass", 1, false, 2));
+        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.DETECT_ORE, "minecraft:compass", 1, true, 3));
+        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.DETECT_ORE, "minecraft:stick", 1, false, 4));
+        assertEquals(3, AbilityRules.supplyBonus(AbilityRules.DETECT_ORE, "minecraft:compass", 1, false, 8));
+        assertEquals(8, AbilityRules.supplyBonus(AbilityRules.DETECT_ORE, "minecraft:compass", 1, false, 64));
+        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.LIGHT, "minecraft:coal", 4, false, 0));
+        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.IRON_HEART, "minecraft:iron_ingot", 2, false, 0));
+        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.IRON_HEART, "minecraft:iron_ingot", 2, true, 0));
+        assertEquals(0, AbilityRules.supplyBonus(AbilityRules.IRON_HEART, "minecraft:iron_ingot", 1, false, 0));
+        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.MAGIC_ARROW, "minecraft:arrow", 1, false, 0, true));
+        assertEquals(4, AbilityRules.supplyBonus(AbilityRules.MAGIC_ARROW, "minecraft:arrow", 2, false, 0, true));
+        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.MAGIC_ARROW, "minecraft:stick", 1, false, 0, true));
+        assertEquals(0, AbilityRules.supplyBonus(AbilityRules.MAGIC_ARROW, "minecraft:arrow", 1, false, 0, false));
+        assertEquals(0, AbilityRules.charcoalArrowBonus(false));
+        assertEquals(2, AbilityRules.charcoalArrowBonus(true));
+        assertEquals(0, AbilityRules.supplyBonus(AbilityRules.SMITE_EVIL, "minecraft:golden_sword", 1, false, 0));
+        assertEquals(0, AbilityRules.supplyBonus(AbilityRules.SMITE_EVIL, "minecraft:golden_sword", 1, true, 0));
+        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.MAGIC_ARROW, "minecraft:arrow", 2, false, 0));
+        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.MASTER_BUILDER, "minecraft:stone_bricks", 2, false, 0));
+        assertEquals(0, AbilityRules.supplyBonus(AbilityRules.MASTER_BUILDER, "minecraft:stone_bricks", 1, false, 0));
+        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.MASTER_BUILDER, "minecraft:stone_bricks", 3, true, 0));
+        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.DIAMOND_SKIN, "minecraft:diamond", 2, false, 0));
+        assertEquals(0, AbilityRules.supplyBonus(AbilityRules.DIAMOND_SKIN, "minecraft:diamond", 1, false, 0));
+        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.EMPOWER, "minecraft:redstone", 2, false, 0));
+        assertEquals(0, AbilityRules.supplyBonus(AbilityRules.EMPOWER, "minecraft:redstone", 1, true, 0));
+        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.BATTERY, "minecraft:quartz_block", 2, false, 0));
+        assertEquals(0, AbilityRules.supplyBonus(AbilityRules.BATTERY, "minecraft:quartz_block", 1, false, 0));
+        assertEquals(0, AbilityRules.supplyBonus(null, "minecraft:coal", 4, true, 9));
         assertFalse(AbilityRules.isHeldGoldenItem("minecraft:gold_ingot"));
         assertFalse(AbilityRules.isHeldGoldenItem("minecraft:gold_block"));
         assertFalse(AbilityRules.isHeldGoldenItem("minecraft:gold_nugget"));
@@ -340,18 +389,21 @@ class AbilityRulesTest {
         Map<String, String> worn = AbilityRules.updateGoldWear(
                 Map.of(), Map.of("head", "minecraft:golden_helmet", "main", "minecraft:golden_hoe"), 0L);
         assertEquals(0, AbilityRules.readyGoldBonus(worn, 599L));
-        assertEquals(2, AbilityRules.readyGoldBonus(worn, 600L));
+        assertEquals(1, AbilityRules.readyGoldBonus(worn, 600L));
+        assertEquals(1, AbilityRules.readyGoldBonus(worn, 1799L));
+        assertEquals(2, AbilityRules.readyGoldBonus(worn, 1800L));
         Map<String, String> removed = AbilityRules.updateGoldWear(worn, Map.of("head", "minecraft:golden_helmet"), 700L);
-        assertEquals(1, AbilityRules.readyGoldBonus(removed, 700L));
+        assertEquals(0, AbilityRules.readyGoldBonus(removed, 700L));
         Map<String, String> swapped = AbilityRules.updateGoldWear(
                 worn, Map.of("head", "minecraft:golden_helmet", "main", "minecraft:golden_sword"), 700L);
-        assertEquals(1, AbilityRules.readyGoldBonus(swapped, 700L));
-        assertEquals(2, AbilityRules.readyGoldBonus(swapped, 1300L));
-        assertEquals(600, AbilityRules.goldArmorStepTicks(1));
-        assertEquals(1200, AbilityRules.goldArmorStepTicks(2));
-        assertEquals(2400, AbilityRules.goldArmorStepTicks(3));
-        assertEquals(4800, AbilityRules.goldArmorStepTicks(4));
-        assertEquals(9000, AbilityRules.goldArmorDelayTicks(4));
+        assertEquals(0, AbilityRules.readyGoldBonus(swapped, 700L));
+        assertEquals(1, AbilityRules.readyGoldBonus(swapped, 1300L));
+        assertEquals(2, AbilityRules.readyGoldBonus(swapped, 1800L));
+        assertEquals(1800, AbilityRules.goldArmorStepTicks(1));
+        assertEquals(3600, AbilityRules.goldArmorStepTicks(2));
+        assertEquals(7200, AbilityRules.goldArmorStepTicks(3));
+        assertEquals(14400, AbilityRules.goldArmorStepTicks(4));
+        assertEquals(27000, AbilityRules.goldArmorDelayTicks(4));
         Map<String, String> fullSet = AbilityRules.updateGoldWear(
                 Map.of(),
                 Map.of(
@@ -360,14 +412,14 @@ class AbilityRulesTest {
                         "legs", "minecraft:golden_leggings",
                         "feet", "minecraft:golden_boots"),
                 0L);
-        assertEquals(0, AbilityRules.readyGoldBonus(fullSet, 599L));
-        assertEquals(1, AbilityRules.readyGoldBonus(fullSet, 600L));
-        assertEquals(1, AbilityRules.readyGoldBonus(fullSet, 1799L));
-        assertEquals(2, AbilityRules.readyGoldBonus(fullSet, 1800L));
-        assertEquals(2, AbilityRules.readyGoldBonus(fullSet, 4199L));
-        assertEquals(3, AbilityRules.readyGoldBonus(fullSet, 4200L));
-        assertEquals(3, AbilityRules.readyGoldBonus(fullSet, 8999L));
-        assertEquals(4, AbilityRules.readyGoldBonus(fullSet, 9000L));
+        assertEquals(0, AbilityRules.readyGoldBonus(fullSet, 1799L));
+        assertEquals(1, AbilityRules.readyGoldBonus(fullSet, 1800L));
+        assertEquals(1, AbilityRules.readyGoldBonus(fullSet, 5399L));
+        assertEquals(2, AbilityRules.readyGoldBonus(fullSet, 5400L));
+        assertEquals(2, AbilityRules.readyGoldBonus(fullSet, 12599L));
+        assertEquals(3, AbilityRules.readyGoldBonus(fullSet, 12600L));
+        assertEquals(3, AbilityRules.readyGoldBonus(fullSet, 26999L));
+        assertEquals(4, AbilityRules.readyGoldBonus(fullSet, 27000L));
         Map<String, String> three = AbilityRules.updateGoldWear(
                 Map.of(),
                 Map.of(
@@ -381,15 +433,15 @@ class AbilityRulesTest {
                         "chest", "minecraft:golden_chestplate",
                         "legs", "minecraft:golden_leggings",
                         "feet", "minecraft:golden_boots"),
-                10_000L);
-        assertEquals(3, AbilityRules.readyGoldBonus(fourthLater, 10_000L));
-        assertEquals(3, AbilityRules.readyGoldBonus(fourthLater, 14_799L));
-        assertEquals(4, AbilityRules.readyGoldBonus(fourthLater, 14_800L));
+                13_000L);
+        assertEquals(3, AbilityRules.readyGoldBonus(fourthLater, 13_000L));
+        assertEquals(3, AbilityRules.readyGoldBonus(fourthLater, 27_399L));
+        assertEquals(4, AbilityRules.readyGoldBonus(fourthLater, 27_400L));
         assertEquals(List.of(), AbilityRules.goldBonusMessages(2, 2));
         assertEquals(List.of(), AbilityRules.goldBonusMessages(3, 1));
-        assertEquals(List.of("Ability level +1 (+1)"), AbilityRules.goldBonusMessages(0, 1));
+        assertEquals(List.of("Mana level +1 (+1)"), AbilityRules.goldBonusMessages(0, 1));
         assertEquals(
-                List.of("Ability level +1 (+2)", "Ability level +1 (+3)"),
+                List.of("Mana level +1 (+2)", "Mana level +1 (+3)"),
                 AbilityRules.goldBonusMessages(1, 3));
         assertEquals(10, AbilityRules.GOLD_SHIMMER_TICKS);
     }
@@ -400,9 +452,13 @@ class AbilityRulesTest {
         assertFalse(AbilityRules.hasManaToUse(0.9));
         assertTrue(AbilityRules.hasManaToUse(1.0));
         assertTrue(AbilityRules.hasManaToUse(3.0));
-        assertEquals(1, AbilityRules.manaCost(AbilityRules.HEAL));
-        assertEquals(1, AbilityRules.manaCost(AbilityRules.DETECT_ORE));
-        assertEquals(2, AbilityRules.manaCost(AbilityRules.DIAMOND_SKIN));
+        assertEquals(1.0, AbilityRules.manaCost(AbilityRules.HEAL), 1e-9);
+        assertEquals(1.0, AbilityRules.manaCost(AbilityRules.DETECT_ORE), 1e-9);
+        assertEquals(2.0, AbilityRules.manaCost(AbilityRules.DIAMOND_SKIN), 1e-9);
+        assertEquals(0.0, AbilityRules.manaCost(AbilityRules.BATTERY), 1e-9);
+        assertEquals(0.25, AbilityRules.manaCost(AbilityRules.SMITE_EVIL), 1e-9);
+        assertTrue(AbilityRules.hasManaToUse(AbilityRules.SMITE_EVIL, 0.25));
+        assertFalse(AbilityRules.hasManaToUse(AbilityRules.SMITE_EVIL, 0.24));
         assertFalse(AbilityRules.hasManaToUse(AbilityRules.DIAMOND_SKIN, 1.0));
         assertTrue(AbilityRules.hasManaToUse(AbilityRules.DIAMOND_SKIN, 2.0));
         assertTrue(AbilityRules.hasManaToUse(AbilityRules.DETECT_ORE, 1.0));
@@ -621,37 +677,67 @@ class AbilityRulesTest {
     }
 
     @Test
-    void fireBoltCooldownIsTenSecondsMinusManaAndSkill() {
+    void fireBoltCooldownIsTenSecondsMinusSkill() {
         assertEquals(200, AbilityRules.fireBoltCooldownTicks(0, 0));
-        assertEquals(180, AbilityRules.fireBoltCooldownTicks(1, 0));
-        assertEquals(140, AbilityRules.fireBoltCooldownTicks(1, 4));
-        assertEquals(0, AbilityRules.fireBoltCooldownTicks(10, 0));
-        assertEquals(0, AbilityRules.fireBoltCooldownTicks(20, 0));
-        assertEquals(200, AbilityRules.cooldownTicks(AbilityRules.FIRE_BOLT, 0, 0));
-        assertEquals(140, AbilityRules.cooldownTicks(AbilityRules.FIRE_BOLT, 1, 4));
-        assertEquals(200, AbilityRules.cooldownTicks(AbilityRules.MAGIC_ARROW, 0, 0));
-        assertEquals(140, AbilityRules.cooldownTicks(AbilityRules.MAGIC_ARROW, 1, 4));
+        assertEquals(200, AbilityRules.fireBoltCooldownTicks(1, 0));
+        assertEquals(160, AbilityRules.fireBoltCooldownTicks(1, 4));
+        assertEquals(200, AbilityRules.fireBoltCooldownTicks(10, 0));
+        assertEquals(200, AbilityRules.fireBoltCooldownTicks(20, 0));
+        assertEquals(0, AbilityRules.fireBoltCooldownTicks(0, 100));
+        assertEquals(0, AbilityRules.fireBoltCooldownTicks(0, 121));
+        assertEquals(200, AbilityRules.cooldownTicks(AbilityRules.MAGIC_ARROW, 20, 0));
+        assertEquals(160, AbilityRules.cooldownTicks(AbilityRules.MAGIC_ARROW, 1, 4));
+        assertEquals(0, AbilityRules.projectileDamage(0));
+        assertEquals(0, AbilityRules.projectileDamage(-2));
+        assertEquals(3, AbilityRules.projectileDamage(1));
+        assertEquals(6, AbilityRules.projectileDamage(2));
+        assertEquals(8, AbilityRules.projectileDamage(2.5));
+        assertEquals(15, AbilityRules.projectileDamage(5));
+        assertEquals(0, AbilityRules.projectileBurnSeconds(0));
+        assertEquals(1, AbilityRules.projectileBurnSeconds(0.6));
+        assertEquals(2, AbilityRules.projectileBurnSeconds(1.6));
+        assertEquals(3, AbilityRules.projectileBurnSeconds(2.5));
+        assertEquals(0, AbilityRules.extraProjectileCount(0));
+        assertEquals(0, AbilityRules.extraProjectileCount(1.9));
+        assertEquals(1, AbilityRules.extraProjectileCount(2));
+        assertEquals(1, AbilityRules.extraProjectileCount(3.9));
+        assertEquals(2, AbilityRules.extraProjectileCount(4));
+        assertEquals(4, AbilityRules.extraProjectileCount(8.2));
     }
 
     @Test
-    void fireBoltEffectiveLevelAddsManaLevel() {
-        assertEquals(0.0, AbilityRules.power(AbilityRules.HEAL, 0, 0, 0), 1e-9);
-        assertEquals(0.0, AbilityRules.power(AbilityRules.FIRE_BOLT, 0, 0, 0), 1e-9);
-        assertEquals(0.0, AbilityRules.power(AbilityRules.HEAL, 1, 0, 0), 1e-9);
-        assertEquals(1.0, AbilityRules.power(AbilityRules.FIRE_BOLT, 1, 0, 0), 1e-9);
-        assertEquals(0.0, AbilityRules.power(AbilityRules.HEAL, 4, 0, 0), 1e-9);
-        assertEquals(4.0, AbilityRules.power(AbilityRules.FIRE_BOLT, 4, 0, 0), 1e-9);
-        assertEquals(4.0, AbilityRules.power(AbilityRules.FIRE_BOLT, 1, 4, 1), 1e-9);
-        assertEquals(4.0, AbilityRules.power(AbilityRules.FIRE_BOLT, 4, 0, 0), 1e-9);
+    void fireBoltEffectiveLevelIgnoresManaLevel() {
+        assertEquals(1.0, AbilityRules.power(AbilityRules.HEAL, 0, 0, 0), 1e-9);
+        assertEquals(1.0, AbilityRules.power(AbilityRules.MAGIC_ARROW, 0, 0, 0), 1e-9);
+        assertEquals(1.0, AbilityRules.power(AbilityRules.HEAL, 1, 0, 0), 1e-9);
         assertEquals(1.0, AbilityRules.power(AbilityRules.MAGIC_ARROW, 1, 0, 0), 1e-9);
-        assertEquals(4.0, AbilityRules.power(AbilityRules.MAGIC_ARROW, 4, 0, 0), 1e-9);
+        assertEquals(1.0, AbilityRules.power(AbilityRules.HEAL, 4, 0, 0), 1e-9);
+        assertEquals(1.0, AbilityRules.power(AbilityRules.MAGIC_ARROW, 4, 0, 0), 1e-9);
+        assertEquals(1.0, AbilityRules.power(AbilityRules.SMITE_EVIL, 20, 0, 0), 1e-9);
+        assertEquals(2.0, AbilityRules.power(AbilityRules.HEAL, 0, 0, 2), 1e-9);
+        assertEquals(3.0, AbilityRules.power(AbilityRules.MAGIC_ARROW, 1, 4, 1), 1e-9);
+        assertEquals(1.0, AbilityRules.power(AbilityRules.MAGIC_ARROW, 1, 0, 0), 1e-9);
+        assertEquals(1.0, AbilityRules.power(AbilityRules.MAGIC_ARROW, 4, 0, 0), 1e-9);
+        assertEquals(2.0, AbilityRules.power(AbilityRules.MAGIC_ARROW, 9, 4, 0), 1e-9);
         assertEquals(1.0, AbilityRules.untrainedPower(0.0), 1e-9);
         assertEquals(1.0, AbilityRules.untrainedPower(2.0), 1e-9);
         assertEquals(1.0, AbilityRules.untrainedPower(3.0), 1e-9);
         assertEquals(2.0, AbilityRules.untrainedPower(5.0), 1e-9);
         assertEquals(1.0, AbilityRules.power(AbilityRules.HEAL, 0, 0, 0, false), 1e-9);
-        assertEquals(1.0, AbilityRules.power(AbilityRules.FIRE_BOLT, 2, 0, 0, false), 1e-9);
-        assertEquals(3.0, AbilityRules.power(AbilityRules.FIRE_BOLT, 4, 0, 2, false), 1e-9);
+        assertEquals(1.0, AbilityRules.power(AbilityRules.MAGIC_ARROW, 2, 0, 0, false), 1e-9);
+        assertEquals(1.0, AbilityRules.power(AbilityRules.MAGIC_ARROW, 4, 0, 2, false), 1e-9);
+        assertEquals(Map.of(AbilityRules.MAGIC_ARROW, 16), AbilityRules.foldFireBoltUses(
+                Map.of(AbilityRules.FIRE_BOLT, 9, AbilityRules.MAGIC_ARROW, 7)));
+        assertEquals(Map.of(AbilityRules.MAGIC_ARROW, 4), AbilityRules.foldFireBoltUses(Map.of(AbilityRules.FIRE_BOLT, 4)));
+        assertEquals(Map.of(AbilityRules.HEAL, 1), AbilityRules.foldFireBoltUses(Map.of(AbilityRules.HEAL, 1)));
+        assertEquals(List.of(AbilityRules.HEAL, AbilityRules.MAGIC_ARROW), AbilityRules.foldFireBoltList(
+                List.of(AbilityRules.HEAL, AbilityRules.FIRE_BOLT, AbilityRules.MAGIC_ARROW)));
+        assertEquals(List.of(AbilityRules.MAGIC_ARROW), AbilityRules.foldFireBoltList(List.of(AbilityRules.FIRE_BOLT)));
+        assertEquals(Map.of(AbilityRules.MAGIC_ARROW, 80L), AbilityRules.foldFireBoltLastUse(
+                Map.of(AbilityRules.FIRE_BOLT, 80L, AbilityRules.MAGIC_ARROW, 20L)));
+        assertEquals(AbilityRules.MAGIC_ARROW, AbilityRules.storedWiseAbility(AbilityRules.FIRE_BOLT));
+        assertEquals(AbilityRules.HEAL, AbilityRules.storedWiseAbility(AbilityRules.HEAL));
+        assertFalse(AbilityRules.ABILITY_IDS.contains(AbilityRules.FIRE_BOLT));
         assertEquals(3, AbilityRules.UNKNOWN_ABILITY_PENALTY);
         assertEquals(1.0, AbilityRules.MIN_POWER, 1e-9);
     }
@@ -675,21 +761,46 @@ class AbilityRulesTest {
         assertEquals(8, AbilityRules.detectOreScanRange(5));
         assertTrue(AbilityRules.withinDetectOreReach(0, 0, 0, 4, 0, 0, 4));
         assertFalse(AbilityRules.withinDetectOreReach(0, 0, 0, 5, 0, 0, 4));
-        assertEquals(0, AbilityRules.redstoneDustBonus(false));
-        assertEquals(2, AbilityRules.redstoneDustBonus(true));
+        assertEquals(600, AbilityRules.empowerDurationTicks(0));
+        assertEquals(600, AbilityRules.empowerDurationTicks(0.5));
+        assertEquals(600, AbilityRules.empowerDurationTicks(1));
+        assertEquals(1200, AbilityRules.empowerDurationTicks(2));
+        assertEquals(0.0, AbilityRules.empowerCastBonus(0), 1e-9);
+        assertEquals(0.0, AbilityRules.empowerCastBonus(-1), 1e-9);
+        assertEquals(1.0, AbilityRules.empowerCastBonus(1), 1e-9);
+        assertEquals(2.0, AbilityRules.empowerCastBonus(4), 1e-9);
+        assertEquals(3.0, AbilityRules.empowerCastBonus(9), 1e-9);
+        assertEquals(2400, AbilityRules.batteryDurationTicks(0));
+        assertEquals(2400, AbilityRules.batteryDurationTicks(0.5));
+        assertEquals(2400, AbilityRules.batteryDurationTicks(1));
+        assertEquals(4800, AbilityRules.batteryDurationTicks(2));
+        assertEquals(2.0, AbilityRules.batteryRegenMultiplier(0), 1e-9);
+        assertEquals(2.0, AbilityRules.batteryRegenMultiplier(1), 1e-9);
+        assertEquals(2.0, AbilityRules.batteryRegenMultiplier(-1), 1e-9);
+        assertEquals(1.0 + Math.sqrt(2.0), AbilityRules.batteryRegenMultiplier(2), 1e-9);
+        assertEquals(3.0, AbilityRules.batteryRegenMultiplier(4), 1e-9);
+        assertEquals(1.0 + Math.sqrt(4.5), AbilityRules.batteryRegenMultiplier(4.5), 1e-9);
+        assertEquals(4.0, AbilityRules.batteryRegenMultiplier(9), 1e-9);
+        assertEquals(0, AbilityRules.detectOreQuartzBonus(0));
+        assertEquals(0, AbilityRules.detectOreQuartzBonus(-1));
+        assertEquals(1, AbilityRules.detectOreQuartzBonus(1));
+        assertEquals(1, AbilityRules.detectOreQuartzBonus(2));
+        assertEquals(2, AbilityRules.detectOreQuartzBonus(3));
+        assertEquals(2, AbilityRules.detectOreQuartzBonus(4));
+        assertEquals(2, AbilityRules.detectOreQuartzBonus(6));
+        assertEquals(3, AbilityRules.detectOreQuartzBonus(8));
+        assertEquals(3, AbilityRules.detectOreQuartzBonus(9));
+        assertEquals(8, AbilityRules.detectOreQuartzBonus(64));
         assertEquals(0, AbilityRules.detectOreQuartzConsumeCount(0));
         assertEquals(1, AbilityRules.detectOreQuartzConsumeCount(1));
-        assertEquals(2, AbilityRules.detectOreQuartzConsumeCount(2));
-        assertEquals(2, AbilityRules.detectOreQuartzConsumeCount(6));
-        assertEquals(0, AbilityRules.detectOreQuartzBonus(0));
-        assertEquals(0, AbilityRules.detectOreQuartzBonus(1));
-        assertEquals(2, AbilityRules.detectOreQuartzBonus(2));
-        assertEquals(0, AbilityRules.detectOreItemBonus(0, false));
-        assertEquals(0, AbilityRules.detectOreItemBonus(1, false));
-        assertEquals(2, AbilityRules.detectOreItemBonus(2, false));
-        assertEquals(2, AbilityRules.detectOreItemBonus(0, true));
-        assertEquals(2, AbilityRules.detectOreItemBonus(1, true));
-        assertEquals(4, AbilityRules.detectOreItemBonus(2, true));
+        assertEquals(1, AbilityRules.detectOreQuartzConsumeCount(2));
+        assertEquals(2, AbilityRules.detectOreQuartzConsumeCount(3));
+        assertEquals(8, AbilityRules.detectOreQuartzConsumeCount(64));
+        assertEquals(AbilityRules.detectOreQuartzBonus(9), AbilityRules.detectOreQuartzConsumeCount(9));
+        assertEquals(0, AbilityRules.detectOreItemBonus(0));
+        assertEquals(1, AbilityRules.detectOreItemBonus(1));
+        assertEquals(1, AbilityRules.detectOreItemBonus(2));
+        assertEquals(3, AbilityRules.detectOreItemBonus(9));
         assertEquals(0.0, AbilityRules.lookYaw(0, 1), 1e-4);
         assertEquals(90.0, AbilityRules.lookYaw(-1, 0), 1e-4);
         assertEquals(-90.0, AbilityRules.lookYaw(1, 0), 1e-4);

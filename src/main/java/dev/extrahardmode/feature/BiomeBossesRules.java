@@ -32,6 +32,8 @@ public final class BiomeBossesRules {
     public static final int CREDITS_DELAY_TICKS = 140;
     /** Euclidean blocks. A boss must spawn strictly farther than this from every player and chest. */
     public static final int SPAWN_CLEARANCE_BLOCKS = 80;
+    /** Euclidean blocks. A loaded boss shows its named health bar to players this close. */
+    public static final double BAR_RANGE_BLOCKS = 64.0;
     /** Added to clearance so block-center vs player feet still clears the radius. */
     public static final int SPAWN_RING_SLACK = 4;
     /** Random extra blocks past the slack, so the search is a ring rather than one circle. */
@@ -177,6 +179,32 @@ public final class BiomeBossesRules {
      */
     public static boolean familyAlreadyUsed(long lastSpawnEpochMs, boolean recordedOnCampaign) {
         return recordedOnCampaign || lastSpawnEpochMs > 0L;
+    }
+
+    /** True when {@code distanceSquared} is within {@link #BAR_RANGE_BLOCKS}. */
+    public static boolean withinBarRange(double distanceSquared) {
+        if (Double.isNaN(distanceSquared)) {
+            return false;
+        }
+        double range = BAR_RANGE_BLOCKS;
+        return distanceSquared <= range * range;
+    }
+
+    /**
+     * Boss-bar fill, 0 to 1. A non-positive or non-finite max health is an empty bar.
+     */
+    public static float barProgress(float health, float maxHealth) {
+        if (!(maxHealth > 0.0F) || Float.isNaN(health) || Float.isInfinite(health)) {
+            return 0.0F;
+        }
+        float ratio = health / maxHealth;
+        if (Float.isNaN(ratio) || ratio <= 0.0F) {
+            return 0.0F;
+        }
+        if (ratio >= 1.0F) {
+            return 1.0F;
+        }
+        return ratio;
     }
 
     /** True when the distance is {@code blocks} or closer. */

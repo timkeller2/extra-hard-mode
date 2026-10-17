@@ -227,7 +227,8 @@ public final class EhmHelp {
                         "Building: Torches and campfires have their own topic. Type /tougher help torches.",
                         "Building: Breaking a block that is on fire sets you on fire, the same as putting that fire out by hand.",
                         "Building: Sneak with a compass to point it at your bed or respawn anchor. With none set, it still points at world spawn.",
-                        "Building: A bed placed in the Nether or the End vanishes. It does not explode."));
+                        "Building: A bed placed in the Nether or the End vanishes. It does not explode.",
+                        "Building: A lodestone is crafted with an iron block in the middle, surrounded by chiseled stone bricks."));
     }
 
     private static Page torches() {
@@ -272,7 +273,8 @@ public final class EhmHelp {
                         "Crops: When a one-block cane would grow a second segment, it may become a weed at the current crop loss rate plus the soil under the cane.",
                         "Crops: Trees take 10 times as long to grow. Leaves drop half as many saplings.",
                         "Crops: Pumpkins and melons fruit at 1/10 vanilla rate. After each fruit the vine may become a weed, starting at 0% and rising 5% per fruit.",
-                        "Crops: Broken pumpkin and melon vines drop no seeds. Shearing a full hive gives 1 honeycomb."));
+                        "Crops: Broken pumpkin and melon vines drop no seeds. Shearing a full hive gives 1 honeycomb.",
+                        "Crops: A bee that returns with nectar fills a hive or nest at 25% of the usual rate. farming.beeHoneyPercent of 100 is the usual rate. 0 never fills."));
     }
 
     private static Page animals() {
@@ -348,7 +350,9 @@ public final class EhmHelp {
                         "Combat: Brood mothers chase when hit. Every few seconds they spit for half damage and a brief blind.",
                         "Combat: A biome boss breaks blocks in its way at iron pickaxe speed when that is how it reaches you.",
                         "Combat: Each defeated boss makes the next 30% harder and richer. The third is a world event.",
-                        "Combat: The seventh rolls the Minecraft credits, and you can keep playing."));
+                        "Combat: The seventh rolls the Minecraft credits, and you can keep playing.",
+                        "Combat: Below Y=48, a visited cave may spawn an extra hostile in light 11. Every 20 blocks you are deeper adds 1. Chance falls by 5% times that block's light.",
+                        "Combat: Within 64 blocks, a biome boss shows a health bar with its name."));
     }
 
     private static Page armor() {
@@ -365,12 +369,9 @@ public final class EhmHelp {
                 "tougher.help.mana.",
                 List.of(
                         "Mana: Cyan crystals. You regen (mana level + current mana) / 200 per minute.",
-                        "Mana: Nether quartz in your inventory triples regen until you reach your mana level, consuming 1 quartz per mana (one crystal).",
-                        "Mana: A quartz block in your main inventory makes regen 7 times the base rate until you reach your mana level, consuming 1 block per mana.",
-                        "Mana: Nether quartz and a quartz block together make regen 10 times the base rate. Each is consumed for its own share, 1 per mana.",
                         "Mana: Saturation of 18 or more doubles your mana regen. Below 18 that bonus stops.",
-                        "Mana: That doubled regen does not consume saturation. It does spend nether quartz and quartz blocks.",
-                        "Mana: Past your level you regen at 1/4 speed. The ceiling of 20 mana rises when Well Fed pushes your level past 20. Achievements can raise your mana level."));
+                        "Mana: That doubled regen does not consume saturation.",
+                        "Mana: Past your level you regen at 1/4 speed. The ceiling of 40 mana rises when Well Fed or ready gold pushes your level past 40. Achievements can raise your mana level."));
     }
 
     private static Page abilities() {
@@ -378,14 +379,21 @@ public final class EhmHelp {
                 "tougher.help.abilities.",
                 List.of(
                         "Abilities: Hold the catalyst and right-click. Let it grow on a plant; coal for Let there be light.",
-                        "Abilities: Use charcoal for Fire bolt, an arrow for Magic arrow, an iron ingot for Iron Heart, or a golden sword for Smite Evil.",
+                        "Abilities: An arrow casts Magic arrow. Charcoal in your inventory adds +2 and the burn, and one is consumed. Iron ingot: Iron Heart. Golden sword: Smite Evil.",
+                        "Abilities: Smite Evil costs 1/4 mana. With at least 1 mana, the crosshair turns gold on a creature in reach.",
                         "Abilities: Stone bricks right-clicked in the air cast Master Builder. It renews like Iron Heart until you run out of mana.",
                         "Abilities: Diamonds right-clicked cast Diamond Skin. It costs 2 mana, divides health damage by its level, and renews while you have mana.",
                         "Abilities: Diamond Skin's level is at least 2. Each point of health damage it prevents shortens it by 3 seconds.",
                         "Abilities: A cast consumes one catalyst. Two in hand consume both and add +2. Swords, hoes, and pickaxes are not consumed.",
                         "Abilities: A renew spends no catalyst unless you are holding it. Holding it spends one and adds +2.",
-                        "Abilities: Redstone dust in your inventory is consumed for +2 on any ability. Dust inside a bundle is ignored.",
+                        "Abilities: Redstone dust right-clicked in the air casts Empower. It does not renew on its own.",
+                        "Abilities: Empower lasts 30 seconds per ability level, at least 30 seconds. Later casts gain the square root of that level.",
+                        "Abilities: A quartz block right-clicked in the air casts Battery. It costs no mana.",
+                        "Abilities: Battery lasts 2 minutes per level. Regen is 1 plus the square root of that level. It stops at your mana level. A renew spends 1 block, or 2 from a stack.",
+                        "Abilities: Lapis lazuli casts Lapis Shield for 1 mana. It lasts 1 minute per level and absorbs that much damage before armor.",
+                        "Abilities: Every 3 points blocked costs 1 lapis lazuli, rounded up. If you cannot pay, the hit is not blocked and Lapis Shield ends.",
                         "Abilities: You can learn up to half your mana level in abilities, rounded up.",
+                        "Abilities: Every ability's effective level is at least 1.",
                         "Abilities: Unlearned abilities can be used and still gain skill, at −3 power (floored at 1), until you have a free slot to learn them.",
                         "Abilities: A wise teacher in a 24-point home teaches one ability for 30 emeralds, ignoring the ability limit.",
                         "Abilities: Each house point above 24 lowers that price by 2 emeralds, down to free.",
@@ -406,9 +414,6 @@ public final class EhmHelp {
                         "Achievements: Each achievement gives 50 experience and 4 to 7 emeralds. Everyone can earn every achievement.",
                         "Achievements: By default the first player to claim one server-wide gets 25 extra experience and 3 more emeralds.",
                         "Achievements: You have (your experience level)% chance to gain a mana level.",
-                        "Achievements: A diamond block plus enough lapis lazuli blocks buys an extra mana level and sparkles you blue for 6 seconds.",
-                        "Achievements: That cost is 1 diamond block plus lapis, starting at 1, then 1 more each time you pay this way.",
-                        "Achievements: If you have a diamond block but not enough lapis, you are told how many lapis blocks you currently need.",
                         "Achievements: /tougher achieve lists the 5 closest builder tracks and at most 3 slayer tracks, plus the last block you placed.",
                         "Achievements: The first time you visit a biome you gain 50 experience, and 100 more if you are the first player to visit it.",
                         "Achievements: The first time you build a habitable home in a biome you gain (house points × 3) experience.",

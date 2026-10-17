@@ -98,16 +98,171 @@ class AbilityReadyRulesTest {
                 0L,
                 Map.of());
         assertEquals(AbilityRules.HEAL, casts.get(0).ability());
-        assertEquals(1.0 + 2.0 + 4.0 + 2.0 + 1.0, casts.get(0).level(), 1e-9);
-        assertEquals(AbilityRules.FIRE_BOLT, casts.get(1).ability());
-        assertEquals(3.0 + 2.0 + 1.0, casts.get(1).level(), 1e-9);
-        assertEquals(AbilityRules.FLIGHT, casts.get(2).ability());
-        assertEquals(1.0 + 2.0 + 1.0, casts.get(2).level(), 1e-9);
-        assertEquals(AbilityRules.GROW, casts.get(3).ability());
-        assertEquals(1.0 + 5.0 + 2.0 + 1.0, casts.get(3).level(), 1e-9);
-        assertEquals(5, casts.size());
-        assertEquals(AbilityRules.DIAMOND_SKIN, casts.get(4).ability());
-        assertEquals(2.0 + 1.0, casts.get(4).level(), 1e-9);
+        assertEquals(1.0 + 2.0 + 4.0, casts.get(0).level(), 1e-9);
+        assertEquals(AbilityRules.GROW, casts.get(1).ability());
+        assertEquals(1.0 + 5.0, casts.get(1).level(), 1e-9);
+        assertEquals(2, casts.size());
+        assertTrue(casts.stream().noneMatch(cast -> AbilityRules.FIRE_BOLT.equals(cast.ability())));
+        assertTrue(casts.stream().noneMatch(cast -> AbilityRules.FLIGHT.equals(cast.ability())));
+        assertTrue(casts.stream().noneMatch(cast -> AbilityRules.DIAMOND_SKIN.equals(cast.ability())));
+
+        List<AbilityReadyRules.StrongCast> boosted = AbilityReadyRules.strongCasts(
+                3,
+                5.0,
+                Map.of(
+                        AbilityRules.HEAL, 1,
+                        AbilityRules.FLIGHT, 1,
+                        AbilityRules.GROW, 1,
+                        AbilityRules.FIRE_BOLT, 0,
+                        AbilityRules.DIAMOND_SKIN, 0),
+                Set.of(
+                        AbilityRules.HEAL,
+                        AbilityRules.FLIGHT,
+                        AbilityRules.GROW,
+                        AbilityRules.FIRE_BOLT,
+                        AbilityRules.DIAMOND_SKIN),
+                1,
+                supplies,
+                true,
+                0L,
+                Map.of(),
+                2.0);
+        assertEquals(1.0 + 2.0 + 4.0 + 2.0, boosted.get(0).level(), 1e-9);
+        assertEquals(AbilityRules.FLIGHT, boosted.get(1).ability());
+        assertEquals(1.0 + 2.0, boosted.get(1).level(), 1e-9);
+        assertEquals(AbilityRules.GROW, boosted.get(2).ability());
+        assertEquals(1.0 + 5.0 + 2.0, boosted.get(2).level(), 1e-9);
+        assertEquals(AbilityRules.DIAMOND_SKIN, boosted.get(3).ability());
+        assertEquals(3.0, boosted.get(3).level(), 1e-9);
+        assertEquals(AbilityRules.EMPOWER, boosted.get(4).ability());
+        assertEquals(3.0, boosted.get(4).level(), 1e-9);
+        assertEquals(5, boosted.size());
+        assertTrue(boosted.stream().noneMatch(cast -> AbilityRules.FIRE_BOLT.equals(cast.ability())));
+    }
+
+    @Test
+    void batteryCastsWithNoManaWhenItsLevelIsAboveTwo() {
+        List<AbilityReadyRules.SupplyStack> block =
+                List.of(new AbilityReadyRules.SupplyStack(AbilityRules.QUARTZ_BLOCK_ID, 1));
+        List<AbilityReadyRules.StrongCast> casts = AbilityReadyRules.strongCasts(
+                0,
+                0.0,
+                Map.of(AbilityRules.BATTERY, 9),
+                Set.of(AbilityRules.BATTERY),
+                0,
+                block,
+                false,
+                0L,
+                Map.of());
+        assertEquals(List.of(AbilityRules.BATTERY), casts.stream().map(AbilityReadyRules.StrongCast::ability).toList());
+        assertEquals(3.0, casts.get(0).level(), 1e-9);
+    }
+
+    @Test
+    void detectOreCastsWithoutQuartzAndUsesTheLargestStack() {
+        Map<String, Integer> uses = Map.of(AbilityRules.DETECT_ORE, 16);
+        Set<String> learned = Set.of(AbilityRules.DETECT_ORE);
+        List<AbilityReadyRules.StrongCast> bare = AbilityReadyRules.strongCasts(
+                1,
+                5.0,
+                uses,
+                learned,
+                0,
+                List.of(new AbilityReadyRules.SupplyStack(AbilityRules.COMPASS_ID, 1)),
+                false,
+                0L,
+                Map.of());
+        assertEquals(List.of(AbilityRules.DETECT_ORE), bare.stream().map(AbilityReadyRules.StrongCast::ability).toList());
+        assertEquals(4.0, bare.get(0).level(), 1e-9);
+
+        List<AbilityReadyRules.StrongCast> stacked = AbilityReadyRules.strongCasts(
+                1,
+                5.0,
+                uses,
+                learned,
+                0,
+                List.of(
+                        new AbilityReadyRules.SupplyStack(AbilityRules.COMPASS_ID, 1),
+                        new AbilityReadyRules.SupplyStack(AbilityReadyRules.QUARTZ_ID, 1),
+                        new AbilityReadyRules.SupplyStack(AbilityReadyRules.QUARTZ_ID, 2)),
+                false,
+                0L,
+                Map.of());
+        assertEquals(4.0 + 1.0, stacked.get(0).level(), 1e-9);
+
+        List<AbilityReadyRules.StrongCast> full = AbilityReadyRules.strongCasts(
+                1,
+                5.0,
+                uses,
+                learned,
+                0,
+                List.of(
+                        new AbilityReadyRules.SupplyStack(AbilityRules.COMPASS_ID, 1),
+                        new AbilityReadyRules.SupplyStack(AbilityReadyRules.QUARTZ_ID, 64)),
+                false,
+                0L,
+                Map.of());
+        assertEquals(4.0 + 8.0, full.get(0).level(), 1e-9);
+    }
+
+    @Test
+    void magicArrowGainsTwoLevelsFromCharcoalInTheSupplyList() {
+        Map<String, Integer> uses = Map.of(AbilityRules.MAGIC_ARROW, 4);
+        Set<String> learned = Set.of(AbilityRules.MAGIC_ARROW);
+        List<AbilityReadyRules.StrongCast> bare = AbilityReadyRules.strongCasts(
+                4,
+                5.0,
+                uses,
+                learned,
+                0,
+                List.of(new AbilityReadyRules.SupplyStack(AbilityRules.ARROW_ID, 1)),
+                false,
+                0L,
+                Map.of());
+        assertTrue(bare.isEmpty());
+
+        List<AbilityReadyRules.StrongCast> fed = AbilityReadyRules.strongCasts(
+                4,
+                5.0,
+                uses,
+                learned,
+                0,
+                List.of(
+                        new AbilityReadyRules.SupplyStack(AbilityRules.ARROW_ID, 1),
+                        new AbilityReadyRules.SupplyStack(AbilityRules.CHARCOAL_ID, 3)),
+                false,
+                0L,
+                Map.of());
+        assertEquals(List.of(AbilityRules.MAGIC_ARROW), fed.stream().map(AbilityReadyRules.StrongCast::ability).toList());
+        assertEquals(4.0, fed.get(0).level(), 1e-9);
+
+        List<AbilityReadyRules.StrongCast> doubled = AbilityReadyRules.strongCasts(
+                4,
+                5.0,
+                uses,
+                learned,
+                0,
+                List.of(
+                        new AbilityReadyRules.SupplyStack(AbilityRules.ARROW_ID, 2),
+                        new AbilityReadyRules.SupplyStack(AbilityRules.CHARCOAL_ID, 1)),
+                false,
+                0L,
+                Map.of());
+        assertEquals(6.0, doubled.get(0).level(), 1e-9);
+    }
+
+    @Test
+    void goldBonusShortensCooldownWithoutRaisingOtherAbilityPower() {
+        List<AbilityReadyRules.SupplyStack> feather =
+                List.of(new AbilityReadyRules.SupplyStack(AbilityRules.FEATHER_ID, 1));
+        Map<String, Integer> uses = Map.of(AbilityRules.FLIGHT, 16);
+        Map<String, Long> lastUse = Map.of(AbilityRules.FLIGHT, 0L);
+        assertTrue(AbilityReadyRules.strongCasts(0, 5.0, uses, Set.of(AbilityRules.FLIGHT), 0, feather, false, 1950L, lastUse)
+                .isEmpty());
+        List<AbilityReadyRules.StrongCast> ready = AbilityReadyRules.strongCasts(
+                0, 5.0, uses, Set.of(AbilityRules.FLIGHT), 1, feather, false, 1950L, lastUse);
+        assertEquals(List.of(AbilityRules.FLIGHT), ready.stream().map(AbilityReadyRules.StrongCast::ability).toList());
+        assertEquals(4.0, ready.get(0).level(), 1e-9);
     }
 
     @Test
@@ -160,7 +315,7 @@ class AbilityReadyRulesTest {
     @Test
     void hudIconsSortByLevelAndFilterUnlessHoldingABook() {
         assertTrue(AbilityReadyRules.countsForAbilitySupply(AbilityReadyRules.REDSTONE_ID, false));
-        assertFalse(AbilityReadyRules.countsForAbilitySupply(AbilityReadyRules.REDSTONE_ID, true));
+        assertTrue(AbilityReadyRules.countsForAbilitySupply(AbilityReadyRules.REDSTONE_ID, true));
         assertTrue(AbilityReadyRules.countsForAbilitySupply(AbilityRules.FEATHER_ID, true));
         assertFalse(AbilityReadyRules.countsForAbilitySupply("", true));
         assertTrue(AbilityReadyRules.isBook("minecraft:book"));
@@ -196,17 +351,15 @@ class AbilityReadyRulesTest {
                 true,
                 null,
                 Set.of());
-        assertEquals(4, withBook.size());
+        assertEquals(2, withBook.size());
         assertEquals(AbilityRules.HEAL, withBook.get(0).ability());
         assertEquals(10.0, withBook.get(0).level(), 1e-9);
         assertTrue(withBook.get(0).learned());
         assertEquals(AbilityRules.FLIGHT, withBook.get(1).ability());
         assertEquals(4.0, withBook.get(1).level(), 1e-9);
         assertFalse(withBook.get(1).learned());
-        assertEquals(AbilityRules.FIRE_BOLT, withBook.get(2).ability());
-        assertEquals(3.0, withBook.get(2).level(), 1e-9);
-        assertEquals(AbilityRules.MAGIC_ARROW, withBook.get(3).ability());
-        assertEquals(3.0, withBook.get(3).level(), 1e-9);
+        assertTrue(withBook.stream().noneMatch(icon -> AbilityRules.FIRE_BOLT.equals(icon.ability())));
+        assertTrue(withBook.stream().noneMatch(icon -> AbilityRules.MAGIC_ARROW.equals(icon.ability())));
 
         List<AbilityReadyRules.HudIcon> hidden = AbilityReadyRules.hudIcons(
                 3, uses, Set.of(AbilityRules.HEAL), 0, supplies, false, 0L, Map.of(), false, null, Set.of());

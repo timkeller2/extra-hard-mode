@@ -28,9 +28,9 @@ public final class AbilityReadyRules {
     public static final int COOLDOWN_COLOR = 0xFFFFFF00;
     public static final String REDSTONE_ID = "minecraft:redstone";
 
-    /** Redstone dust stored in a bundle does not add the ability bonus and is not spent for it. */
+    /** A non-empty item id can be brought into hand for a cast. Bundle contents count. */
     public static boolean countsForAbilitySupply(String itemId, boolean insideBundle) {
-        return itemId != null && !itemId.isEmpty() && !(insideBundle && REDSTONE_ID.equals(itemId));
+        return itemId != null && !itemId.isEmpty() && (insideBundle || !itemId.isEmpty());
     }
     public static final String QUARTZ_ID = "minecraft:quartz";
 
@@ -195,8 +195,9 @@ public final class AbilityReadyRules {
 
     /**
      * Abilities the player can cast right now at an effective level above {@link #MIN_LEVEL}.
-     * The level matches a real cast: skill, gold, mana level for Fire bolt and Magic arrow,
-     * the best catalyst they are carrying, redstone, detect-ore quartz, and a honey bottle for Healing.
+     * The level matches a real cast: skill, the best catalyst they are carrying, the largest nether quartz stack
+     * in the supply list, charcoal in that list for Magic Arrow, a honey bottle for Healing, and Empower's bonus.
+     * Mana level is not added.
      * Cooldown or missing mana leaves the ability off the list. Healing with honey does not need mana.
      */
     public static List<StrongCast> strongCasts(
@@ -209,9 +210,23 @@ public final class AbilityReadyRules {
             boolean honey,
             long now,
             Map<String, Long> lastUse) {
+        return strongCasts(
+                manaLevel, currentMana, uses, learned, goldBonus, stacks, honey, now, lastUse, 0.0);
+    }
+
+    public static List<StrongCast> strongCasts(
+            int manaLevel,
+            double currentMana,
+            Map<String, Integer> uses,
+            Collection<String> learned,
+            int goldBonus,
+            List<SupplyStack> stacks,
+            boolean honey,
+            long now,
+            Map<String, Long> lastUse,
+            double empowerBonus) {
         Map<String, Integer> bestCount = new HashMap<>();
-        boolean redstone = false;
-        int quartzCount = 0;
+        int quartzStack = largestQuartzStack(stacks);
         int bestHoe = -1;
         int bestPick = -1;
         if (stacks != null) {
@@ -221,12 +236,6 @@ public final class AbilityReadyRules {
                 }
                 String id = stack.itemId();
                 bestCount.merge(id, stack.count(), Math::max);
-                if (REDSTONE_ID.equals(id)) {
-                    redstone = true;
-                }
-                if (QUARTZ_ID.equals(id)) {
-                    quartzCount += stack.count();
-                }
                 if (AbilityRules.isGrowHoe(id)) {
                     bestHoe = Math.max(bestHoe, AbilityRules.materialBonus(id));
                 }
@@ -237,13 +246,10 @@ public final class AbilityReadyRules {
         }
         Map<String, Integer> useCounts = uses == null ? Map.of() : uses;
         Map<String, Long> usedAt = lastUse == null ? Map.of() : lastUse;
-        int gold = Math.max(0, goldBonus);
+        int mana = effectiveManaLevel(manaLevel, goldBonus);
         List<StrongCast> ready = new ArrayList<>();
         for (String ability : AbilityRules.ABILITY_IDS) {
             if (!hasCatalyst(ability, bestCount, bestHoe, bestPick)) {
-                continue;
-            }
-            if (AbilityRules.DETECT_ORE.equals(ability) && quartzCount < 1) {
                 continue;
             }
             boolean enoughMana = AbilityRules.HEAL.equals(ability)
@@ -253,18 +259,19 @@ public final class AbilityReadyRules {
                 continue;
             }
             int useCount = useCounts.getOrDefault(ability, 0);
-            int cooldown = AbilityRules.cooldownTicks(ability, manaLevel, useCount);
+            int cooldown = AbilityRules.cooldownTicks(ability, mana, useCount);
             int remaining = AbilityRules.remainingCooldownTicks(now, usedAt.getOrDefault(ability, -1L), cooldown);
             if (remaining > 0) {
                 continue;
             }
-            int itemBonus = itemBonus(ability, bestCount, redstone, quartzCount, honey, bestHoe, bestPick);
+            int itemBonus = itemBonus(ability, bestCount, quartzStack, honey, bestHoe, bestPick);
             double level = AbilityRules.power(
                     ability,
-                    manaLevel,
+                    mana,
                     useCount,
-                    itemBonus + gold,
-                    AbilityRules.isTrained(manaLevel, learned, ability));
+                    itemBonus,
+                    AbilityRules.isTrained(mana, learned, ability));
+            level += Math.max(0.0, empowerBonus);
             if (AbilityRules.DIAMOND_SKIN.equals(ability)) {
                 level = AbilityRules.diamondSkinLevel(level);
             }
@@ -293,9 +300,36 @@ public final class AbilityReadyRules {
             boolean holdingBook,
             String heldAbility,
             Collection<String> active) {
+        return hudIcons(
+                manaLevel,
+                uses,
+                learned,
+                goldBonus,
+                stacks,
+                honey,
+                now,
+                lastUse,
+                holdingBook,
+                heldAbility,
+                active,
+                0.0);
+    }
+
+    public static List<HudIcon> hudIcons(
+            int manaLevel,
+            Map<String, Integer> uses,
+            Collection<String> learned,
+            int goldBonus,
+            List<SupplyStack> stacks,
+            boolean honey,
+            long now,
+            Map<String, Long> lastUse,
+            boolean holdingBook,
+            String heldAbility,
+            Collection<String> active,
+            double empowerBonus) {
         Map<String, Integer> bestCount = new HashMap<>();
-        boolean redstone = false;
-        int quartzCount = 0;
+        int quartzStack = largestQuartzStack(stacks);
         int bestHoe = -1;
         int bestPick = -1;
         if (stacks != null) {
@@ -305,12 +339,6 @@ public final class AbilityReadyRules {
                 }
                 String id = stack.itemId();
                 bestCount.merge(id, stack.count(), Math::max);
-                if (REDSTONE_ID.equals(id)) {
-                    redstone = true;
-                }
-                if (QUARTZ_ID.equals(id)) {
-                    quartzCount += stack.count();
-                }
                 if (AbilityRules.isGrowHoe(id)) {
                     bestHoe = Math.max(bestHoe, AbilityRules.materialBonus(id));
                 }
@@ -321,22 +349,23 @@ public final class AbilityReadyRules {
         }
         Map<String, Integer> useCounts = uses == null ? Map.of() : uses;
         Map<String, Long> usedAt = lastUse == null ? Map.of() : lastUse;
-        int gold = Math.max(0, goldBonus);
+        int mana = effectiveManaLevel(manaLevel, goldBonus);
         List<HudIcon> icons = new ArrayList<>();
         for (String ability : AbilityRules.ABILITY_IDS) {
             int useCount = useCounts.getOrDefault(ability, 0);
-            int cooldown = AbilityRules.cooldownTicks(ability, manaLevel, useCount);
+            int cooldown = AbilityRules.cooldownTicks(ability, mana, useCount);
             int remaining = AbilityRules.remainingCooldownTicks(now, usedAt.getOrDefault(ability, -1L), cooldown);
             int seconds = cooldownSeconds(remaining);
             boolean running = active != null && active.contains(ability);
             boolean held = ability.equals(heldAbility);
-            int itemBonus = itemBonus(ability, bestCount, redstone, quartzCount, honey, bestHoe, bestPick);
+            int itemBonus = itemBonus(ability, bestCount, quartzStack, honey, bestHoe, bestPick);
             double level = AbilityRules.power(
                     ability,
-                    manaLevel,
+                    mana,
                     useCount,
-                    itemBonus + gold,
-                    AbilityRules.isTrained(manaLevel, learned, ability));
+                    itemBonus,
+                    AbilityRules.isTrained(mana, learned, ability));
+            level += Math.max(0.0, empowerBonus);
             if (AbilityRules.DIAMOND_SKIN.equals(ability)) {
                 level = AbilityRules.diamondSkinLevel(level);
             }
@@ -358,6 +387,11 @@ public final class AbilityReadyRules {
         return icons;
     }
 
+    /** Passed mana level plus a separate ready-gold count. Production mana already includes gold, so it passes 0. */
+    static int effectiveManaLevel(int manaLevel, int goldBonus) {
+        return Math.max(0, manaLevel) + Math.max(0, goldBonus);
+    }
+
     static boolean hasCatalyst(String ability, Map<String, Integer> bestCount, int bestHoe, int bestPick) {
         if (AbilityRules.GROW.equals(ability)) {
             return bestHoe >= 0;
@@ -369,17 +403,29 @@ public final class AbilityReadyRules {
         return catalyst != null && bestCount.getOrDefault(catalyst, 0) > 0;
     }
 
+    /** Largest nether quartz stack in {@code stacks}. Callers leave out bundles, armor, and the offhand. */
+    static int largestQuartzStack(List<SupplyStack> stacks) {
+        int largest = 0;
+        if (stacks == null) {
+            return 0;
+        }
+        for (SupplyStack stack : stacks) {
+            if (stack == null || !QUARTZ_ID.equals(stack.itemId()) || stack.count() <= 0) {
+                continue;
+            }
+            largest = Math.max(largest, stack.count());
+        }
+        return largest;
+    }
+
     static int itemBonus(
             String ability,
             Map<String, Integer> bestCount,
-            boolean redstone,
-            int quartzCount,
+            int quartzStack,
             boolean honey,
             int bestHoe,
             int bestPick) {
-        int bonus = AbilityRules.DETECT_ORE.equals(ability)
-                ? AbilityRules.detectOreItemBonus(quartzCount, redstone)
-                : AbilityRules.redstoneDustBonus(redstone);
+        int bonus = AbilityRules.DETECT_ORE.equals(ability) ? AbilityRules.detectOreQuartzBonus(quartzStack) : 0;
         if (AbilityRules.HEAL.equals(ability) && honey) {
             bonus += AbilityRules.HONEY_HEAL_BONUS;
         }
@@ -396,6 +442,10 @@ public final class AbilityReadyRules {
         if (catalyst != null) {
             bonus += AbilityRules.catalystBonus(bestCount.getOrDefault(catalyst, 0));
         }
+        if (AbilityRules.MAGIC_ARROW.equals(ability)
+                && bestCount.getOrDefault(AbilityRules.CHARCOAL_ID, 0) > 0) {
+            bonus += AbilityRules.CHARCOAL_ARROW_BONUS;
+        }
         return bonus;
     }
 
@@ -405,9 +455,6 @@ public final class AbilityReadyRules {
         }
         if (AbilityRules.IRON_HEART.equals(ability)) {
             return AbilityRules.IRON_INGOT_ID;
-        }
-        if (AbilityRules.FIRE_BOLT.equals(ability)) {
-            return AbilityRules.CHARCOAL_ID;
         }
         if (AbilityRules.MAGIC_ARROW.equals(ability)) {
             return AbilityRules.ARROW_ID;
@@ -435,6 +482,15 @@ public final class AbilityReadyRules {
         }
         if (AbilityRules.DIAMOND_SKIN.equals(ability)) {
             return AbilityRules.DIAMOND_ID;
+        }
+        if (AbilityRules.EMPOWER.equals(ability)) {
+            return AbilityRules.REDSTONE_ID;
+        }
+        if (AbilityRules.BATTERY.equals(ability)) {
+            return AbilityRules.QUARTZ_BLOCK_ID;
+        }
+        if (AbilityRules.LAPIS_SHIELD.equals(ability)) {
+            return AbilityRules.LAPIS_LAZULI_ID;
         }
         return null;
     }

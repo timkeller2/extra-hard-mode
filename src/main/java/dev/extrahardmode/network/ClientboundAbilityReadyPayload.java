@@ -14,9 +14,10 @@ public record ClientboundAbilityReadyPayload(List<Entry> abilities) implements C
 
     /**
      * {@code size} is the icon edge in GUI pixels. {@code level} is the effective level as an integer.
-     * {@code cooldownSeconds} is 0 when the ability is ready. {@code learned} colors that level gold.
+     * {@code power} is that same level before rounding, used for reach. {@code cooldownSeconds} is 0
+     * when the ability is ready. {@code learned} colors that level gold.
      */
-    public record Entry(String ability, int size, int level, boolean learned, int cooldownSeconds) {
+    public record Entry(String ability, int size, int level, boolean learned, int cooldownSeconds, float power) {
         static final StreamCodec<ByteBuf, Entry> STREAM_CODEC = StreamCodec.composite(
                 ByteBufCodecs.STRING_UTF8,
                 Entry::ability,
@@ -28,6 +29,8 @@ public record ClientboundAbilityReadyPayload(List<Entry> abilities) implements C
                 Entry::learned,
                 ByteBufCodecs.VAR_INT,
                 Entry::cooldownSeconds,
+                ByteBufCodecs.FLOAT,
+                Entry::power,
                 Entry::new);
     }
 

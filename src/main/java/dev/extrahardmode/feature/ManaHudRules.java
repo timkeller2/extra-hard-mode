@@ -25,7 +25,7 @@ public final class ManaHudRules {
 
     private ManaHudRules() {}
 
-    /** Two mana points make one crystal, like two HP make one heart. Capped at 10. */
+    /** Two mana points make one crystal, like two HP make one heart. The hard cap is 20 crystals. */
     public static int crystalCount(int manaLevel) {
         return crystalCount(manaLevel, manaLevel);
     }

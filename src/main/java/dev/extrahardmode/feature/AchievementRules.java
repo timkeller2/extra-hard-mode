@@ -20,16 +20,10 @@ public final class AchievementRules {
     /** Saturation at or above this doubles the regen rate for that minute and is not spent. */
     public static final double SATURATION_REGEN_MINIMUM = 18.0;
     public static final double SATURATION_REGEN_MULTIPLIER = 2.0;
-    public static final double QUARTZ_REGEN_MULTIPLIER = 3.0;
-    /** A quartz block in the main inventory. Added to the nether-quartz multiplier, not multiplied by it. */
-    public static final double QUARTZ_BLOCK_REGEN_MULTIPLIER = 7.0;
-    /** One nether quartz is consumed per this much quartz-boosted mana (one crystal). */
-    /** One nether quartz, or one quartz block, is consumed per this much boosted mana. */
-    public static final double QUARTZ_MANA_PER_ITEM = 1.0;
     /** Regen multiplier once current mana is at or above mana level. */
     public static final double OVERFLOW_REGEN_MULTIPLIER = 0.25;
-    /** Stored mana cannot exceed this (10 crystals). */
-    public static final double MANA_HARD_CAP = 20.0;
+    /** Stored mana cannot exceed this (20 crystals), unless mana level is higher. */
+    public static final double MANA_HARD_CAP = 40.0;
     public static final int REWARD_EXPERIENCE_POINTS = 50;
     /** Extra XP for the first player to claim a given achievement server-wide. */
     public static final int FIRST_CLAIM_BONUS_EXPERIENCE = 25;
@@ -39,8 +33,6 @@ public final class AchievementRules {
     public static final int REWARD_EMERALD_FLAT = 3;
     /** Extra emeralds for the first server-wide claim of that achievement. */
     public static final int FIRST_CLAIM_EMERALD_BONUS = 3;
-    public static final int MANA_DIAMOND_COST = 1;
-    public static final int MANA_LAPIS_COST_START = 1;
 
     public static final int CLOSEST_LIST_LIMIT = 15;
     public static final int SLAYER_LIST_LIMIT = 3;
@@ -89,61 +81,23 @@ public final class AchievementRules {
         return count;
     }
 
-    /**
-     * Nether quartz is 3×, a quartz block is 7×, and both together are 10×.
-     * Neither present stays at 1×. The bonuses add; they do not multiply each other.
-     */
-    public static double regenMultiplier(boolean netherQuartz, boolean quartzBlock) {
-        double multiplier = 0.0;
-        if (netherQuartz) {
-            multiplier += QUARTZ_REGEN_MULTIPLIER;
-        }
-        if (quartzBlock) {
-            multiplier += QUARTZ_BLOCK_REGEN_MULTIPLIER;
-        }
-        return multiplier > 0.0 ? multiplier : 1.0;
-    }
-
-    /**
-     * Share of a boosted regen tick that spends nether quartz.
-     * With a quartz block as well, only the 3× portion spends quartz. 0 when quartz is not boosting.
-     */
-    public static double quartzConsumptionShare(boolean netherQuartz, boolean quartzBlock) {
-        if (!netherQuartz) {
-            return 0.0;
-        }
-        return QUARTZ_REGEN_MULTIPLIER / regenMultiplier(true, quartzBlock);
-    }
-
-    /**
-     * Share of a boosted regen tick that spends a quartz block.
-     * With nether quartz as well, only the 7× portion spends blocks. 0 when the block is not boosting.
-     */
-    public static double quartzBlockConsumptionShare(boolean netherQuartz, boolean quartzBlock) {
-        if (!quartzBlock) {
-            return 0.0;
-        }
-        return QUARTZ_BLOCK_REGEN_MULTIPLIER / regenMultiplier(netherQuartz, true);
-    }
-
     /** {@code (manaLevel + currentMana) / 200} mana per Minecraft minute. */
-    public static double regenPerMinute(int manaLevel, double currentMana, boolean quartz) {
-        return regenPerMinute(manaLevel, currentMana, quartz, false);
+    public static double regenPerMinute(int manaLevel, double currentMana) {
+        return regenPerMinute(manaLevel, currentMana, 1.0);
     }
 
-    /** {@code (manaLevel + currentMana) / 200}, then {@link #regenMultiplier}. */
-    public static double regenPerMinute(
-            int manaLevel, double currentMana, boolean netherQuartz, boolean quartzBlock) {
+    /** Base regen times {@code multiplier}. Battery passes its multiplier. Inactive regen passes 1. */
+    public static double regenPerMinute(int manaLevel, double currentMana, double multiplier) {
         if (manaLevel <= 0) {
             return 0.0;
         }
         double base = (manaLevel + Math.max(0.0, currentMana)) / REGEN_DIVISOR;
-        return base * regenMultiplier(netherQuartz, quartzBlock);
+        return base * Math.max(0.0, multiplier);
     }
 
     /**
      * Apply one regen tick. Full rate while below mana level, 1/4 rate above it,
-     * never more than {@link #MANA_HARD_CAP}.
+     * never more than {@link #manaCap(int)}.
      */
     public static double addMana(double current, int manaLevel, double regen) {
         if (manaLevel <= 0) {
@@ -163,9 +117,19 @@ public final class AchievementRules {
         return Math.min(manaCap(manaLevel), next);
     }
 
-    /** Stored mana stops at {@link #MANA_HARD_CAP}. Well Fed can raise the ceiling with its levels. */
+    /** Stored mana stops at {@link #MANA_HARD_CAP}. A higher mana level raises that ceiling. */
     public static double manaCap(int manaLevel) {
         return Math.max(MANA_HARD_CAP, Math.max(0, manaLevel));
+    }
+
+    /** True when stored mana has reached {@link #manaCap(int)}. */
+    public static boolean manaFull(double current, int manaLevel) {
+        return current >= manaCap(manaLevel);
+    }
+
+    /** True when stored mana has reached the player's mana level. The storage cap can be higher. */
+    public static boolean manaReachedLevel(double current, int manaLevel) {
+        return current >= Math.max(0, manaLevel);
     }
 
     public static double clampMana(double current) {
@@ -179,10 +143,6 @@ public final class AchievementRules {
         return Math.min(Math.max(0.0, cap), current);
     }
 
-    public static boolean shouldBoostWithQuartz(int manaLevel, double current) {
-        return manaLevel > 0 && current < manaLevel;
-    }
-
     /** True when saturation is high enough to double this minute's regen rate. */
     public static boolean saturationDoublesRegen(double saturation) {
         return saturation >= SATURATION_REGEN_MINIMUM;
@@ -190,28 +150,13 @@ public final class AchievementRules {
 
     /**
      * Double {@code regenPerMinute} while saturation is at least {@link #SATURATION_REGEN_MINIMUM}.
-     * Saturation itself is not spent. Quartz and quartz blocks are charged on the doubled gain.
+     * Saturation itself is not spent.
      */
     public static double withSaturationRegen(double regenPerMinute, double saturation) {
         if (!saturationDoublesRegen(saturation)) {
             return regenPerMinute;
         }
         return regenPerMinute * SATURATION_REGEN_MULTIPLIER;
-    }
-
-    public static double addQuartzCredit(double credit, double gained) {
-        return Math.max(0.0, credit) + Math.max(0.0, gained);
-    }
-
-    public static int quartzItemsForCredit(double credit) {
-        if (credit < QUARTZ_MANA_PER_ITEM) {
-            return 0;
-        }
-        return (int) Math.floor(credit / QUARTZ_MANA_PER_ITEM);
-    }
-
-    public static double remainingQuartzCredit(double credit, int consumed) {
-        return Math.max(0.0, credit - Math.max(0, consumed) * QUARTZ_MANA_PER_ITEM);
     }
 
     /** Base 50 XP, plus 25 when this player is first server-wide. */
@@ -243,24 +188,6 @@ public final class AchievementRules {
             return true;
         }
         return roll < chance;
-    }
-
-    /** Lapis blocks required after {@code paymentsMade} successful diamond+lapis grants. */
-    public static int lapisCost(int paymentsMade) {
-        return MANA_LAPIS_COST_START + Math.max(0, paymentsMade);
-    }
-
-    public static boolean canPayManaBlocks(int diamondBlocks, int lapisBlocks) {
-        return canPayManaBlocks(diamondBlocks, lapisBlocks, MANA_LAPIS_COST_START);
-    }
-
-    public static boolean canPayManaBlocks(int diamondBlocks, int lapisBlocks, int requiredLapis) {
-        return diamondBlocks >= MANA_DIAMOND_COST && lapisBlocks >= Math.max(1, requiredLapis);
-    }
-
-    /** Diamond is present but lapis is short of the current requirement. */
-    public static boolean shouldHintLapis(int diamondBlocks, int lapisBlocks, int requiredLapis) {
-        return diamondBlocks >= MANA_DIAMOND_COST && lapisBlocks < Math.max(1, requiredLapis);
     }
 
     /** {@code b:minecraft:oak_planks:0} / {@code s:minecraft:zombie:1}. */

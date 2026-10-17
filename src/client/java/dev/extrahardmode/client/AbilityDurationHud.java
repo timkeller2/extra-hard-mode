@@ -11,7 +11,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
-/** Bottom-left duration icons with a short bar under each for flight, light, Iron Heart, power mining, and Master Builder. */
+/** Bottom-left duration icons with a short bar under each active timed ability. */
 public final class AbilityDurationHud {
     public static final net.minecraft.resources.Identifier ELEMENT_ID = ExtraHardModeMod.id("ability_durations");
 
@@ -98,6 +98,15 @@ public final class AbilityDurationHud {
         if (AbilityRules.DIAMOND_SKIN.equals(ability)) {
             return 0x12343A;
         }
+        if (AbilityRules.EMPOWER.equals(ability)) {
+            return 0x2A1214;
+        }
+        if (AbilityRules.BATTERY.equals(ability)) {
+            return 0x24282C;
+        }
+        if (AbilityRules.LAPIS_SHIELD.equals(ability)) {
+            return 0x10182E;
+        }
         return 0x2A2418;
     }
 
@@ -117,6 +126,15 @@ public final class AbilityDurationHud {
         if (AbilityRules.DIAMOND_SKIN.equals(ability)) {
             return 0x5CFFF0;
         }
+        if (AbilityRules.EMPOWER.equals(ability)) {
+            return 0xE23B3B;
+        }
+        if (AbilityRules.BATTERY.equals(ability)) {
+            return 0xF2F0EA;
+        }
+        if (AbilityRules.LAPIS_SHIELD.equals(ability)) {
+            return 0x3B5BDB;
+        }
         return 0xE8D56A;
     }
 
@@ -135,6 +153,15 @@ public final class AbilityDurationHud {
         }
         if (AbilityRules.DIAMOND_SKIN.equals(ability)) {
             return new ItemStack(Items.DIAMOND);
+        }
+        if (AbilityRules.EMPOWER.equals(ability)) {
+            return new ItemStack(Items.REDSTONE);
+        }
+        if (AbilityRules.BATTERY.equals(ability)) {
+            return new ItemStack(Items.QUARTZ_BLOCK);
+        }
+        if (AbilityRules.LAPIS_SHIELD.equals(ability)) {
+            return new ItemStack(Items.LAPIS_LAZULI);
         }
         return new ItemStack(Items.FEATHER);
     }

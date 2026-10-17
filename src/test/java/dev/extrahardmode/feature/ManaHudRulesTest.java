@@ -42,8 +42,11 @@ class ManaHudRulesTest {
         assertEquals(6, ManaHudRules.crystalCount(12));
         assertEquals(10, ManaHudRules.crystalCount(20));
         assertEquals(15, ManaHudRules.crystalCount(30));
+        assertEquals(20, ManaHudRules.crystalCount(40));
         assertEquals(4, ManaHudRules.crystalCount(2, 8.0));
         assertEquals(10, ManaHudRules.crystalCount(2, 20.0));
+        assertEquals(20, ManaHudRules.crystalCount(2, 40.0));
+        assertEquals(20, ManaHudRules.crystalCount(2, 50.0));
         assertEquals(1, ManaHudRules.crystalCount(2, 2.0));
     }
 

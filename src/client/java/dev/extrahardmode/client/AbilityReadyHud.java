@@ -123,9 +123,6 @@ public final class AbilityReadyHud {
         if (AbilityRules.IRON_HEART.equals(ability)) {
             return new ItemStack(Items.IRON_INGOT);
         }
-        if (AbilityRules.FIRE_BOLT.equals(ability)) {
-            return new ItemStack(Items.CHARCOAL);
-        }
         if (AbilityRules.MAGIC_ARROW.equals(ability)) {
             return new ItemStack(Items.ARROW);
         }
@@ -155,6 +152,15 @@ public final class AbilityReadyHud {
         }
         if (AbilityRules.DIAMOND_SKIN.equals(ability)) {
             return new ItemStack(Items.DIAMOND);
+        }
+        if (AbilityRules.EMPOWER.equals(ability)) {
+            return new ItemStack(Items.REDSTONE);
+        }
+        if (AbilityRules.BATTERY.equals(ability)) {
+            return new ItemStack(Items.QUARTZ_BLOCK);
+        }
+        if (AbilityRules.LAPIS_SHIELD.equals(ability)) {
+            return new ItemStack(Items.LAPIS_LAZULI);
         }
         return new ItemStack(Items.FEATHER);
     }

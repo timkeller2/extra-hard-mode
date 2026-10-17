@@ -16,6 +16,7 @@ import java.util.function.IntUnaryOperator;
 public final class AbilityRules {
     public static final String HEAL = "heal";
     public static final String IRON_HEART = "iron_heart";
+    /** Retired. Saved uses, lessons, and cooldowns fold into {@link #MAGIC_ARROW}. */
     public static final String FIRE_BOLT = "fire_bolt";
     public static final String MAGIC_ARROW = "magic_arrow";
     public static final String FLIGHT = "flight";
@@ -28,9 +29,14 @@ public final class AbilityRules {
     public static final String SMITE_EVIL = "smite_evil";
     public static final String MASTER_BUILDER = "master_builder";
     public static final String DIAMOND_SKIN = "diamond_skin";
+    public static final String EMPOWER = "empower";
+    public static final String BATTERY = "battery";
+    public static final String LAPIS_SHIELD = "lapis_shield";
     public static final int MANA_COST = 1;
     public static final int DIAMOND_SKIN_MANA_COST = 2;
     public static final int DETECT_ORE_MANA_COST = 1;
+    /** Smite Evil spends a quarter mana. Four casts spend one. */
+    public static final double SMITE_EVIL_MANA_COST = 0.25;
     public static final double HEAL_BASE_RANGE = 2.0;
     /** Blue sparkle on the heal recipient. */
     public static final int HEAL_SPARKLE_TICKS = 120;
@@ -45,7 +51,7 @@ public final class AbilityRules {
     /** Duration HUDs warn this many ticks before expiry unless the ability can auto-renew. */
     public static final int DURATION_WARN_TICKS = 15 * 20;
     public static final double FIRE_BASE_RANGE = 16.0;
-    /** How strongly a fire bolt steers toward its target each tick (0–1). */
+    /** How strongly a magic arrow steers toward its target each tick (0–1). */
     public static final double FIRE_BOLT_HOMING = 0.4;
     public static final double FIRE_BOLT_SPEED = 1.5;
     public static final int FLIGHT_SECONDS_PER_POWER = 6;
@@ -60,12 +66,12 @@ public final class AbilityRules {
     public static final int COOLDOWN_BASE_TICKS = 2400;
     public static final int COOLDOWN_REDUCE_PER_POINT_TICKS = 100;
     public static final int COOLDOWN_MIN_TICKS = 20;
-    /** Fire bolt / magic arrow cooldown starts at this many seconds, then subtracts mana level + skill. */
+    /** Magic arrow cooldown starts at this many seconds, then subtracts skill. */
     public static final int FIRE_BOLT_COOLDOWN_SECONDS = 10;
-    /** Extra catalyst in hand, or redstone / quartz from inventory. */
+    /** Extra catalyst in hand when two are consumed. */
     public static final int CATALYST_BONUS = 2;
-    public static final int REDSTONE_BONUS = 2;
-    public static final int QUARTZ_BONUS = 2;
+    /** Charcoal in the hotbar or backpack adds this to Magic Arrow and is spent one at a time. */
+    public static final int CHARCOAL_ARROW_BONUS = 2;
     /** Unlearned abilities (over the slot cap) subtract this, then floor at {@link #MIN_POWER}. */
     public static final int UNKNOWN_ABILITY_PENALTY = 3;
     public static final double MIN_POWER = 1.0;
@@ -90,6 +96,17 @@ public final class AbilityRules {
     /** Master Builder lasts this many seconds per point of effective ability level. */
     public static final int MASTER_BUILDER_SECONDS_PER_POWER = 30;
     public static final String DIAMOND_ID = "minecraft:diamond";
+    public static final String REDSTONE_ID = "minecraft:redstone";
+    /** Empower lasts this many seconds per point of effective ability level, and at least {@link #EMPOWER_MIN_SECONDS}. */
+    public static final int EMPOWER_SECONDS_PER_POWER = 30;
+    public static final int EMPOWER_MIN_SECONDS = 30;
+    public static final String QUARTZ_BLOCK_ID = "minecraft:quartz_block";
+    /** Battery lasts this many seconds per point of effective ability level, and at least {@link #BATTERY_MIN_SECONDS}. */
+    public static final int BATTERY_SECONDS_PER_POWER = 120;
+    public static final int BATTERY_MIN_SECONDS = 120;
+    public static final String LAPIS_LAZULI_ID = "minecraft:lapis_lazuli";
+    /** Lapis Shield lasts this many seconds per point of effective ability level. */
+    public static final int LAPIS_SHIELD_SECONDS_PER_POWER = 60;
     /** Diamond Skin lasts this many seconds per point of effective ability level. */
     public static final int DIAMOND_SKIN_SECONDS_PER_POWER = 30;
     /** A cast with no skill and no item bonus still counts as this level. */
@@ -127,7 +144,6 @@ public final class AbilityRules {
             List.of(
                     HEAL,
                     IRON_HEART,
-                    FIRE_BOLT,
                     MAGIC_ARROW,
                     FLIGHT,
                     GROW,
@@ -138,7 +154,10 @@ public final class AbilityRules {
                     SENSE_EVIL,
                     SMITE_EVIL,
                     MASTER_BUILDER,
-                    DIAMOND_SKIN);
+                    DIAMOND_SKIN,
+                    EMPOWER,
+                    BATTERY,
+                    LAPIS_SHIELD);
 
     private AbilityRules() {}
 
@@ -152,9 +171,6 @@ public final class AbilityRules {
         }
         if (FEATHER_ID.equals(itemId)) {
             return FLIGHT;
-        }
-        if (CHARCOAL_ID.equals(itemId)) {
-            return FIRE_BOLT;
         }
         if (ARROW_ID.equals(itemId)) {
             return MAGIC_ARROW;
@@ -185,6 +201,15 @@ public final class AbilityRules {
         }
         if (DIAMOND_ID.equals(itemId)) {
             return DIAMOND_SKIN;
+        }
+        if (REDSTONE_ID.equals(itemId)) {
+            return EMPOWER;
+        }
+        if (QUARTZ_BLOCK_ID.equals(itemId)) {
+            return BATTERY;
+        }
+        if (LAPIS_LAZULI_ID.equals(itemId)) {
+            return LAPIS_SHIELD;
         }
         return null;
     }
@@ -233,8 +258,10 @@ public final class AbilityRules {
         return materialBonus(itemId);
     }
 
-    /** Thirty seconds. A held golden item counts after this long. The first gold armor piece does too. */
+    /** Thirty seconds. A held golden item counts as one mana level after this long. */
     public static final int GOLD_BONUS_TICKS = 600;
+    /** Armor waits are this many times the held-item wait: 90 seconds, then 180, 360, and 720. */
+    public static final int GOLD_ARMOR_TIME_FACTOR = 3;
     /** Half a second of golden shimmer when a gold bonus starts. */
     public static final int GOLD_SHIMMER_TICKS = 10;
 
@@ -264,17 +291,18 @@ public final class AbilityRules {
                 || path.equals("golden_boots");
     }
 
+    /** Ready gold points. Each point is one mana level, not ability power. */
     public static int goldAbilityBonus(int readyArmorPieces, boolean readyHeldItem) {
         return Math.max(0, readyArmorPieces) + (readyHeldItem ? 1 : 0);
     }
 
-    /** One line per newly active point: {@code Ability level +1 (+total)}. */
+    /** One line per newly active point: {@code Mana level +1 (+total)}. */
     public static List<String> goldBonusMessages(int previousShown, int readyNow) {
         List<String> messages = new ArrayList<>();
         int from = Math.max(0, previousShown);
         int to = Math.max(0, readyNow);
         for (int total = from + 1; total <= to; total++) {
-            messages.add("Ability level +1 (+" + total + ")");
+            messages.add("Mana level +1 (+" + total + ")");
         }
         return messages;
     }
@@ -284,15 +312,15 @@ public final class AbilityRules {
     }
 
     /**
-     * Extra wait before the next gold-armor point, in ticks. The first piece is
-     * 30 seconds, then 60, 120, and 240. Four pieces put on together take 450 seconds.
+     * Extra wait before the next gold-armor mana level, in ticks. The first piece is
+     * 90 seconds, then 180, 360, and 720. Four pieces put on together take 1350 seconds.
      */
     public static int goldArmorStepTicks(int pieceNumber) {
         if (pieceNumber <= 0) {
             return 0;
         }
         int n = Math.min(pieceNumber, 4);
-        return GOLD_BONUS_TICKS << (n - 1);
+        return GOLD_BONUS_TICKS * GOLD_ARMOR_TIME_FACTOR << (n - 1);
     }
 
     /** Wear time, in ticks, before that many gold armor pieces all count. */
@@ -334,7 +362,7 @@ public final class AbilityRules {
 
     /**
      * Armor pieces and one hand bonus that have been worn or held long enough.
-     * Armor points arrive one at a time: 30 seconds, then 60, 120, and 240 more.
+     * Armor points arrive one at a time: 90 seconds, then 180, 360, and 720 more.
      * The next wait starts once the previous point is in and that many pieces are on.
      */
     public static int readyGoldBonus(Map<String, String> state, long now) {
@@ -436,7 +464,6 @@ public final class AbilityRules {
         return switch (ability) {
             case HEAL -> "Healing";
             case IRON_HEART -> "Iron Heart";
-            case FIRE_BOLT -> "Fire bolt";
             case MAGIC_ARROW -> "Magic arrow";
             case FLIGHT -> "Flight";
             case GROW -> "Let it grow";
@@ -448,6 +475,9 @@ public final class AbilityRules {
             case SMITE_EVIL -> "Smite Evil";
             case MASTER_BUILDER -> "Master Builder";
             case DIAMOND_SKIN -> "Diamond Skin";
+            case EMPOWER -> "Empower";
+            case BATTERY -> "Battery";
+            case LAPIS_SHIELD -> "Lapis Shield";
             default -> "this ability";
         };
     }
@@ -460,8 +490,7 @@ public final class AbilityRules {
         return switch (ability) {
             case HEAL -> "Mercy is a craft. I can put it in your hands.";
             case IRON_HEART -> "There is a second heart, if you ask the iron to remember you.";
-            case FIRE_BOLT -> "Charcoal still remembers the fire.";
-            case MAGIC_ARROW -> "An arrow can be taught to want a target.";
+            case MAGIC_ARROW -> "An arrow can be taught to want a target, and charcoal still remembers the fire.";
             case FLIGHT -> "The sky is only heavy if you agree that it is.";
             case GROW -> "Green things listen, if you speak with a hoe.";
             case LIGHT -> "Carry a coal, and the dark will negotiate.";
@@ -472,6 +501,9 @@ public final class AbilityRules {
             case SMITE_EVIL -> "A golden sword is a polite way to end a monster.";
             case MASTER_BUILDER -> "Stone will hold for a while, even where the ground does not agree.";
             case DIAMOND_SKIN -> "A diamond can be asked to stand between you and the blow.";
+            case EMPOWER -> "Redstone will lend its strength to the next working.";
+            case BATTERY -> "A block of quartz will hold a charge for your mana.";
+            case LAPIS_SHIELD -> "Lapis can stand in the air between a body and the blow.";
             default -> "There is a lesson here, if you can pay for it.";
         };
     }
@@ -486,9 +518,8 @@ public final class AbilityRules {
                 "Hold paper and right-click an injured person, or yourself if you are hurt. It costs 1 mana.";
             case IRON_HEART ->
                 "Hold an iron ingot and right-click. Right-click again with an ingot to cancel your own.";
-            case FIRE_BOLT -> "Hold charcoal and right-click. The bolt seeks a creature along your aim.";
             case MAGIC_ARROW ->
-                "Hold an arrow and right-click. It seeks a creature along your aim and does not ignite.";
+                "Hold an arrow and right-click. It seeks a creature along your aim. Charcoal in your inventory adds +2 and makes it burn. It costs 1 mana.";
             case FLIGHT -> "Hold a feather and right-click. Jump to rise, sneak in the air to descend, and sneak on a block to stop.";
             case GROW -> "Hold any hoe and right-click a plant. It costs 1 mana and some hoe durability.";
             case LIGHT -> "Hold coal and right-click to shine. Right-click again with coal to snuff it.";
@@ -498,11 +529,17 @@ public final class AbilityRules {
             case SLOW -> "Hold string and right-click. Nearby enemies slow down.";
             case SENSE_EVIL -> "Hold a spider eye and right-click. You turn toward a living biome boss, if one is out.";
             case SMITE_EVIL ->
-                "Hold a golden sword and right-click. It strikes a creature along your aim. Undead take extra damage.";
+                "Hold a golden sword and right-click. It strikes a creature along your aim. With at least 1 mana the crosshair turns gold on one in reach. It costs 1/4 mana.";
             case MASTER_BUILDER ->
                 "Hold stone bricks and right-click in the air. Right-click in the air again to cancel. It costs 1 mana.";
             case DIAMOND_SKIN ->
                 "Hold diamonds and right-click. Right-click again to cancel. It costs 2 mana.";
+            case EMPOWER ->
+                "Hold redstone dust and right-click in the air. Right-click in the air again to cancel. It costs 1 mana.";
+            case BATTERY ->
+                "Hold a quartz block and right-click in the air. Right-click again to cancel. It costs no mana. It renews until mana reaches your level and spends a quartz block.";
+            case LAPIS_SHIELD ->
+                "Hold lapis lazuli and right-click a creature, or yourself if none is targeted. It costs 1 mana. Right-click again to cancel.";
             default -> "";
         };
     }
@@ -523,7 +560,6 @@ public final class AbilityRules {
         return List.of(
                 "healing",
                 "iron heart",
-                "fire bolt",
                 "magic arrow",
                 "flight",
                 "grow",
@@ -534,7 +570,10 @@ public final class AbilityRules {
                 "sense evil",
                 "smite evil",
                 "master builder",
-                "diamond skin");
+                "diamond skin",
+                "empower",
+                "battery",
+                "lapis shield");
     }
 
     public static String abilityByTopic(String topic) {
@@ -548,8 +587,7 @@ public final class AbilityRules {
         return switch (key) {
             case "heal", "healing" -> HEAL;
             case "iron heart", "ironheart" -> IRON_HEART;
-            case "fire bolt", "firebolt" -> FIRE_BOLT;
-            case "magic arrow", "magicarrow" -> MAGIC_ARROW;
+            case "fire bolt", "firebolt", "magic arrow", "magicarrow" -> MAGIC_ARROW;
             case "flight" -> FLIGHT;
             case "grow", "let it grow", "letitgrow" -> GROW;
             case "light", "let there be light" -> LIGHT;
@@ -560,6 +598,9 @@ public final class AbilityRules {
             case "smite", "smite evil", "smiteevil" -> SMITE_EVIL;
             case "master builder", "masterbuilder" -> MASTER_BUILDER;
             case "diamond skin", "diamondskin" -> DIAMOND_SKIN;
+            case "empower" -> EMPOWER;
+            case "battery" -> BATTERY;
+            case "lapis shield", "lapisshield", "lapus shield", "lapusshield", "lapus" -> LAPIS_SHIELD;
             default -> null;
         };
     }
@@ -586,14 +627,12 @@ public final class AbilityRules {
                     "Iron Heart: The recipient sparkles silver for 3 seconds. One ingot is consumed. Two in hand consume both and add +2.",
                     "Iron Heart: If it ends and you still have mana, another mana is spent and it continues, and you gain skill as if you cast it again.",
                     "Iron Heart: A renew spends an ingot only when you are holding one, and that one adds +2.");
-            case FIRE_BOLT -> List.of(
-                    "Fire bolt: Right-click while holding charcoal. Costs 1 mana. The bolt seeks the nearest creature along your aim.",
-                    "Fire bolt: Range scales with ability level. Ability level includes your mana level. Cooldown is 10 seconds minus (mana level + skill).",
-                    "Fire bolt: One charcoal is consumed. Two in hand consume both and add +2.");
             case MAGIC_ARROW -> List.of(
                     "Magic arrow: Right-click while holding an arrow. Costs 1 mana. The arrow seeks the nearest creature along your aim.",
-                    "Magic arrow: It deals arrow damage; it does not ignite. Range scales with ability level. Ability level includes your mana level.",
-                    "Magic arrow: Cooldown is 10 seconds minus (mana level + skill). One arrow is consumed. Two in hand consume both and add +2.");
+                    "Magic arrow: Damage is 3 times your ability level. Range scales with ability level. Cooldown is 10 seconds minus skill.",
+                    "Magic arrow: Every 2 ability levels, rounded down, launches another arrow at a different creature. That costs nothing more.",
+                    "Magic arrow: Charcoal in your hotbar or inventory, not a bundle, adds +2. One charcoal is consumed, and the arrows burn.",
+                    "Magic arrow: One arrow is consumed. Two in hand consume both and add +2.");
             case FLIGHT -> List.of(
                     "Flight: Right-click while holding a feather. Costs 1 mana. Jump to rise, sneak in the air to descend, and sneak on a block to stop.",
                     "Flight: Speed scales with ability level and reaches 70% of walking speed at 10.",
@@ -618,8 +657,9 @@ public final class AbilityRules {
                     "Power mining: For (ability level × 12) seconds, Tougher extra pickaxe wear on hardened stone is suspended. Ends when the timer expires.",
                     "Power mining: Pickaxe bonus: wood/stone 0, copper +1, iron +2, diamond +3, gold +4, netherite +5.");
             case DETECT_ORE -> List.of(
-                    "Detect ore: Right-click while holding a compass. The compass is kept. Costs 1 mana and 1 nether quartz. A second quartz is consumed for +2.",
-                    "Detect ore: Redstone dust still adds +2. Ores within 2 blocks of your height come first, then farther up or down, out to 4 + ability level minus the ore difficulty, through walls.",
+                    "Detect ore: Right-click while holding a compass. The compass is kept. Costs 1 mana. Nether quartz is not required.",
+                    "Detect ore: The largest nether quartz stack in your hotbar or inventory, not a bundle, adds the square root of its count, rounded. That many quartz are consumed from that stack.",
+                    "Detect ore: Ores within 2 blocks of your height come first, then farther up or down, out to 4 + ability level minus the ore difficulty, through walls.",
                     "Detect ore: It tells you the ore and approximate distance. You only sense ores at or below your ability level.",
                     "Detect ore: coal 1, quartz 2, copper 3, iron 4, redstone 5, lapis 6, gold 7, emerald 8, diamond 9, ancient debris 10.");
             case SLOW -> List.of(
@@ -632,8 +672,9 @@ public final class AbilityRules {
                     "Sense Evil: If it is within 250 × ability level blocks, you also learn the rough distance.",
                     "Sense Evil: If none are spawned, you sparkle as with Healing. One spider eye is consumed. Two in hand consume both and add +2.");
             case SMITE_EVIL -> List.of(
-                    "Smite Evil: Right-click while holding a golden sword. Costs 1 mana.",
+                    "Smite Evil: Right-click while holding a golden sword. Costs 1/4 mana.",
                     "Smite Evil: Strikes a creature along your aim up to your ability level in blocks with a normal melee attack from that sword.",
+                    "Smite Evil: With at least 1 mana, the crosshair turns gold on a creature within that reach.",
                     "Smite Evil: The strike includes enchantments, durability, and attack cooldown. Undead take extra damage equal to your ability level.",
                     "Smite Evil: A small flash of light appears on the creature hit.");
             case MASTER_BUILDER -> List.of(
@@ -650,6 +691,23 @@ public final class AbilityRules {
                     "Diamond Skin: Right-click again with a diamond to cancel. If it ends and you still have 2 mana, it spends that and continues.",
                     "Diamond Skin: One diamond is consumed. Two in hand consume both and add +2. Continuing gains skill as if you cast it again.",
                     "Diamond Skin: A renew spends a diamond only when you are holding one, and that one adds +2.");
+            case EMPOWER -> List.of(
+                    "Empower: Right-click in the air while holding redstone dust. Costs 1 mana. Lasts 30 seconds per ability level, and at least 30 seconds.",
+                    "Empower: While it lasts, each later mana ability cast gains extra level equal to the square root of Empower's level.",
+                    "Empower: Right-click in the air again with redstone dust to cancel.",
+                    "Empower: One dust is consumed. Two in hand consume both and add +2.");
+            case BATTERY -> List.of(
+                    "Battery: Right-click in the air while holding a quartz block. Costs no mana. Lasts 2 minutes per ability level, and at least 2 minutes.",
+                    "Battery: While it lasts, mana regeneration is multiplied by 1 plus the square root of your ability level.",
+                    "Battery: Right-click in the air again with a quartz block to cancel. It ends when your mana reaches your mana level.",
+                    "Battery: It continues only while mana is below your level and a quartz block is in hand. One block is consumed. Two in hand consume both and add +2.",
+                    "Battery: Continuing gains skill as if you cast it again.");
+            case LAPIS_SHIELD -> List.of(
+                    "Lapis Shield: Right-click while holding lapis lazuli. A targeted character gets the shield. Otherwise it shields you. Costs 1 mana.",
+                    "Lapis Shield: It lasts 1 minute times your ability level. A force field stays around that character until it ends.",
+                    "Lapis Shield: Damage up to that level is absorbed before armor or health. Every 3 points blocked costs 1 lapis lazuli, rounded up.",
+                    "Lapis Shield: That lapis comes from your hotbar or inventory, not a bundle, armor, or the offhand. If you cannot pay, the hit lands and the shield ends.",
+                    "Lapis Shield: Right-click again with lapis lazuli to cancel. One is consumed to cast. Two in hand consume both and add +2.");
             default -> null;
         };
     }
@@ -680,12 +738,11 @@ public final class AbilityRules {
 
     public static List<String> powerHelpLines() {
         return List.of(
-                "Base power: skill, the square root of times you have used that ability.",
+                "Base power: skill, the square root of times you have used that ability. Effective level is at least 1.",
                 "A cast consumes one catalyst. Two in hand consume both for +2. One consumed catalyst adds nothing. Swords, hoes, and pickaxes are kept.",
-                "A renew spends no catalyst unless you are holding it. Holding it spends one and adds +2. Loose redstone dust is still +2, not dust in a bundle.",
-                "Fire bolt and Magic arrow also add your mana level.",
-                "Gold armor adds 1 power after 30 seconds, then 60, 120, and 240 seconds more. Four pieces put on together reach +4 in 450 seconds. A piece that comes off loses its bonus.",
-                "A golden item held for 30 seconds, such as a golden hoe, adds 1 more. Gold ingots, nuggets, and blocks do not.",
+                "A renew spends no catalyst unless you are holding it. Holding it spends one and adds +2.",
+                "Gold armor adds 1 mana level after 90 seconds, then 180, 360, and 720 seconds more. Four pieces put on together reach +4 in 1350 seconds. A piece that comes off loses its bonus.",
+                "A golden item held for 30 seconds, such as a golden hoe, adds 1 more mana level. Gold ingots, nuggets, and blocks do not.",
                 "Using an ability you have not learned still gains skill, at −3 power (floored at 1), until you have a free slot to learn them.");
     }
 
@@ -696,8 +753,7 @@ public final class AbilityRules {
                 "tougher.ability.power.help.3",
                 "tougher.ability.power.help.4",
                 "tougher.ability.power.help.5",
-                "tougher.ability.power.help.6",
-                "tougher.ability.power.help.7");
+                "tougher.ability.power.help.6");
     }
 
     public static String powerHelpFallback() {
@@ -714,7 +770,6 @@ public final class AbilityRules {
                 "tougher.ability.index.heal",
                 "tougher.ability.index.iron_heart",
                 "tougher.ability.index.flight",
-                "tougher.ability.index.fire_bolt",
                 "tougher.ability.index.magic_arrow",
                 "tougher.ability.index.grow",
                 "tougher.ability.index.light",
@@ -726,6 +781,8 @@ public final class AbilityRules {
                 "tougher.ability.index.master_builder",
                 "tougher.ability.index.diamond_skin",
                 "tougher.ability.index.redstone",
+                "tougher.ability.index.battery",
+                "tougher.ability.index.lapis_shield",
                 "tougher.ability.index.unlock",
                 "tougher.ability.index.unlock.2",
                 "tougher.ability.index.wise",
@@ -740,7 +797,6 @@ public final class AbilityRules {
                 "Paper: Healing",
                 "Iron ingot: Iron Heart",
                 "Feather: Flight",
-                "Charcoal: Fire bolt",
                 "Arrow: Magic arrow",
                 "Any hoe: Let it grow",
                 "Coal: Let there be light",
@@ -751,7 +807,9 @@ public final class AbilityRules {
                 "Golden sword: Smite Evil",
                 "Stone bricks: Master Builder",
                 "Diamond: Diamond Skin",
-                "Redstone dust in your inventory, not inside a bundle: +2 to any ability (1 is consumed)",
+                "Redstone dust: Empower",
+                "Quartz block: Battery",
+                "Lapis lazuli: Lapis Shield",
                 "You can learn up to half your mana level in abilities, rounded up.",
                 "Unlearned abilities can be used and still gain skill, at −3 power (floored at 1), until you have a free slot to learn them.",
                 "A wise teacher teaches one ability. A 24-point home charges 30 emeralds; each point above that takes 2 off, down to free.",
@@ -825,12 +883,18 @@ public final class AbilityRules {
         return best;
     }
 
-    public static int manaCost(String ability) {
+    public static double manaCost(String ability) {
+        if (SMITE_EVIL.equals(ability)) {
+            return SMITE_EVIL_MANA_COST;
+        }
         if (DETECT_ORE.equals(ability)) {
             return DETECT_ORE_MANA_COST;
         }
         if (DIAMOND_SKIN.equals(ability)) {
             return DIAMOND_SKIN_MANA_COST;
+        }
+        if (BATTERY.equals(ability)) {
+            return 0;
         }
         return MANA_COST;
     }
@@ -926,17 +990,30 @@ public final class AbilityRules {
     }
 
     /**
-     * Extra ability level from inventory/held supplies: redstone dust, extra
-     * catalyst in hand, hoe/pickaxe material, and detect-ore quartz.
+     * Extra ability level from held supplies: extra catalyst in hand, hoe/pickaxe
+     * material, the largest hotbar or backpack nether quartz stack for Detect ore,
+     * and charcoal in that same inventory for Magic Arrow.
+     * {@code quartzStack} is that one stack's count, not a sum and not a bundle.
      */
     public static int supplyBonus(
-            String ability, String heldItemId, int heldCount, boolean redstone, boolean quartz) {
+            String ability, String heldItemId, int heldCount, boolean redstone, int quartzStack) {
+        return supplyBonus(ability, heldItemId, heldCount, redstone, quartzStack, false);
+    }
+
+    public static int supplyBonus(
+            String ability,
+            String heldItemId,
+            int heldCount,
+            boolean redstone,
+            int quartzStack,
+            boolean charcoal) {
         if (ability == null) {
             return 0;
         }
-        int bonus = DETECT_ORE.equals(ability)
-                ? detectOreItemBonus(quartz ? 2 : 0, redstone)
-                : redstoneDustBonus(redstone);
+        int bonus = DETECT_ORE.equals(ability) ? detectOreQuartzBonus(quartzStack) : 0;
+        if (MAGIC_ARROW.equals(ability)) {
+            bonus += charcoalArrowBonus(charcoal);
+        }
         if (!ability.equals(abilityForItem(heldItemId))) {
             return bonus;
         }
@@ -995,13 +1072,70 @@ public final class AbilityRules {
         return Math.max(0.0, basePower(uses)) + Math.max(0, itemBonus);
     }
 
-    public static boolean addsManaLevel(String ability) {
-        return FIRE_BOLT.equals(ability) || MAGIC_ARROW.equals(ability);
+    /** Magic arrow uses a 10-second cooldown that shrinks with skill. Mana level does not change it or its power. */
+    public static boolean usesShortCooldown(String ability) {
+        return MAGIC_ARROW.equals(ability);
+    }
+
+    /** +2 when the hotbar or backpack holds charcoal. Bundles, armor, and the offhand do not count. */
+    public static int charcoalArrowBonus(boolean hasCharcoal) {
+        return hasCharcoal ? CHARCOAL_ARROW_BONUS : 0;
+    }
+
+    /** Saved Fire bolt practice becomes Magic Arrow practice. */
+    public static Map<String, Integer> foldFireBoltUses(Map<String, Integer> uses) {
+        if (uses == null || !uses.containsKey(FIRE_BOLT)) {
+            return uses == null ? Map.of() : uses;
+        }
+        Map<String, Integer> next = new HashMap<>(uses);
+        int moved = Math.max(0, next.remove(FIRE_BOLT));
+        if (moved > 0) {
+            next.merge(MAGIC_ARROW, moved, Integer::sum);
+        }
+        return next;
+    }
+
+    /** Replaces a saved Fire bolt lesson with Magic Arrow and drops the duplicate. */
+    public static List<String> foldFireBoltList(List<String> ids) {
+        if (ids == null || !ids.contains(FIRE_BOLT)) {
+            return ids == null ? List.of() : ids;
+        }
+        List<String> next = new ArrayList<>();
+        for (String id : ids) {
+            String ability = FIRE_BOLT.equals(id) ? MAGIC_ARROW : id;
+            if (!next.contains(ability)) {
+                next.add(ability);
+            }
+        }
+        return next;
+    }
+
+    /** The later of the two cooldowns remains. */
+    public static Map<String, Long> foldFireBoltLastUse(Map<String, Long> lastUse) {
+        if (lastUse == null || !lastUse.containsKey(FIRE_BOLT)) {
+            return lastUse == null ? Map.of() : lastUse;
+        }
+        Map<String, Long> next = new HashMap<>(lastUse);
+        long fire = next.remove(FIRE_BOLT);
+        long arrow = next.getOrDefault(MAGIC_ARROW, -1L);
+        long kept = Math.max(arrow, fire);
+        if (kept >= 0L) {
+            next.put(MAGIC_ARROW, kept);
+        }
+        return next;
+    }
+
+    /** A wise teacher who offered Fire bolt now offers Magic Arrow. */
+    public static String storedWiseAbility(String stored) {
+        if (FIRE_BOLT.equals(stored)) {
+            return MAGIC_ARROW;
+        }
+        return stored;
     }
 
     /**
-     * Effective ability level, including Fire bolt / Magic arrow's extra mana-level
-     * bonus. Pass {@code trained} false for an unlearned ability over the slot cap.
+     * Effective ability level from skill and item bonuses, at least {@link #MIN_POWER}.
+     * Mana level is not added. Pass {@code trained} false for an unlearned ability over the slot cap.
      */
     public static double power(String ability, int manaLevel, int uses, int itemBonus) {
         return power(ability, manaLevel, uses, itemBonus, true);
@@ -1009,13 +1143,10 @@ public final class AbilityRules {
 
     public static double power(String ability, int manaLevel, int uses, int itemBonus, boolean trained) {
         double p = power(manaLevel, uses, itemBonus);
-        if (addsManaLevel(ability)) {
-            p += Math.max(0, manaLevel);
-        }
         if (!trained) {
             p = untrainedPower(p);
         }
-        return p;
+        return Math.max(MIN_POWER, p);
     }
 
     public static double untrainedPower(double power) {
@@ -1047,7 +1178,8 @@ public final class AbilityRules {
                 || LIGHT.equals(ability)
                 || IRON_HEART.equals(ability)
                 || MASTER_BUILDER.equals(ability)
-                || DIAMOND_SKIN.equals(ability);
+                || DIAMOND_SKIN.equals(ability)
+                || BATTERY.equals(ability);
     }
 
     public static double healRange(double power) {
@@ -1084,8 +1216,59 @@ public final class AbilityRules {
         return Math.max(0, (int) Math.round(Math.max(0.0, power) * DIAMOND_SKIN_SECONDS_PER_POWER * 20.0));
     }
 
+    /** Duration in ticks: 30 seconds per ability level, and at least 30 seconds. */
+    public static int empowerDurationTicks(double power) {
+        int ticks = (int) Math.round(Math.max(0.0, power) * EMPOWER_SECONDS_PER_POWER * 20.0);
+        return Math.max(EMPOWER_MIN_SECONDS * 20, ticks);
+    }
+
+    /** Extra effective level on later casts while Empower is active. */
+    public static double empowerCastBonus(double empowerLevel) {
+        if (empowerLevel <= 0.0) {
+            return 0.0;
+        }
+        return Math.sqrt(empowerLevel);
+    }
+
+    /** Duration in ticks: 2 minutes per ability level, and at least 2 minutes. */
+    public static int batteryDurationTicks(double power) {
+        int ticks = (int) Math.round(Math.max(0.0, power) * BATTERY_SECONDS_PER_POWER * 20.0);
+        return Math.max(BATTERY_MIN_SECONDS * 20, ticks);
+    }
+
+    /** Duration in ticks: 1 minute per ability level. */
+    public static int lapisShieldDurationTicks(double power) {
+        return Math.max(0, (int) Math.round(Math.max(0.0, power) * LAPIS_SHIELD_SECONDS_PER_POWER * 20.0));
+    }
+
+    /**
+     * Mana regen multiplier while Battery lasts: {@code 1 + sqrt(level)}.
+     * Effective level is at least 1, so a non-positive level still multiplies by 2.
+     */
+    public static double batteryRegenMultiplier(double power) {
+        return 1.0 + Math.sqrt(Math.max(1.0, power));
+    }
+
     public static double fireRange(double power) {
         return FIRE_BASE_RANGE + Math.max(0.0, power) * 2.0;
+    }
+
+    /** Hit damage for Magic arrow: ability level times 3, rounded. */
+    public static int projectileDamage(double power) {
+        return (int) Math.round(Math.max(0.0, power) * 3.0);
+    }
+
+    /** Seconds a charcoal-fed Magic arrow burns its target. This stays the rounded ability level. */
+    public static int projectileBurnSeconds(double power) {
+        return Math.max(0, (int) Math.round(Math.max(0.0, power)));
+    }
+
+    /** Extra shots besides the first: one per 2 ability levels, rounded down. */
+    public static int extraProjectileCount(double power) {
+        if (power <= 0.0) {
+            return 0;
+        }
+        return (int) Math.floor(power / 2.0);
     }
 
     /**
@@ -1269,26 +1452,26 @@ public final class AbilityRules {
         return amount;
     }
 
-    /** +{@link #REDSTONE_BONUS} when loose redstone dust is consumed. Dust inside a bundle does not count. */
-    public static int redstoneDustBonus(boolean hasRedstoneDust) {
-        return hasRedstoneDust ? REDSTONE_BONUS : 0;
-    }
-
-    /** First nether quartz pays for the cast. A second one, if you have it, is the +2. */
-    public static int detectOreQuartzConsumeCount(int quartzCount) {
-        if (quartzCount <= 0) {
+    /**
+     * Rounded square root of one nether quartz stack. The cast consumes this many
+     * from that stack. Zero when there is no stack. {@code stackCount} is the largest
+     * hotbar or backpack stack, not a sum and not items inside a bundle.
+     */
+    public static int detectOreQuartzBonus(int stackCount) {
+        if (stackCount <= 0) {
             return 0;
         }
-        return quartzCount == 1 ? 1 : 2;
+        return (int) Math.round(Math.sqrt(stackCount));
     }
 
-    public static int detectOreQuartzBonus(int quartzCount) {
-        return quartzCount >= 2 ? QUARTZ_BONUS : 0;
+    /** Same count as {@link #detectOreQuartzBonus(int)}. */
+    public static int detectOreQuartzConsumeCount(int stackCount) {
+        return detectOreQuartzBonus(stackCount);
     }
 
-    /** {@code quartzCount} is nether quartz on hand. Only the second one adds {@link #QUARTZ_BONUS}. */
-    public static int detectOreItemBonus(int quartzCount, boolean redstoneDust) {
-        return detectOreQuartzBonus(quartzCount) + redstoneDustBonus(redstoneDust);
+    /** {@code stackCount} is the largest main-inventory nether quartz stack. */
+    public static int detectOreItemBonus(int stackCount) {
+        return detectOreQuartzBonus(stackCount);
     }
 
     public static double senseEvilRange(double power) {
@@ -1591,8 +1774,8 @@ public final class AbilityRules {
     /**
      * 2 minutes minus 5 seconds per (mana level + skill), minimum 1 second.
      * Hits the 1-second floor around combined rating 24 (for example 12 crystals
-     * at 2 mana each with no skill). Fire bolt and Magic arrow use
-     * {@link #FIRE_BOLT_COOLDOWN_SECONDS} minus (mana level + skill) instead.
+     * at 2 mana each with no skill). Magic arrow uses
+     * {@link #FIRE_BOLT_COOLDOWN_SECONDS} minus skill instead. Mana level does not change that cooldown.
      */
     public static int cooldownTicks(int manaLevel, int uses) {
         double points = Math.max(0, manaLevel) + skill(uses);
@@ -1604,15 +1787,15 @@ public final class AbilityRules {
         if (SMITE_EVIL.equals(ability)) {
             return 0;
         }
-        if (addsManaLevel(ability)) {
+        if (usesShortCooldown(ability)) {
             return fireBoltCooldownTicks(manaLevel, uses);
         }
         return cooldownTicks(manaLevel, uses);
     }
 
-    /** 10 seconds minus (mana level + skill), not below 0. */
+    /** 10 seconds minus skill, not below 0. {@code manaLevel} does not change this cooldown. */
     public static int fireBoltCooldownTicks(int manaLevel, int uses) {
-        double seconds = FIRE_BOLT_COOLDOWN_SECONDS - (Math.max(0, manaLevel) + skill(uses));
+        double seconds = FIRE_BOLT_COOLDOWN_SECONDS - skill(uses);
         return Math.max(0, (int) Math.round(seconds * 20.0));
     }
 

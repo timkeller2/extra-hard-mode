@@ -1,8 +1,10 @@
 package dev.extrahardmode.mixin.client;
 
 import dev.extrahardmode.client.ExtraHardModeClient;
+import dev.extrahardmode.client.SmiteCrosshair;
 import dev.extrahardmode.feature.HudCapacityRules;
 import dev.extrahardmode.feature.WellFedRules;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.Hud;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -30,6 +32,23 @@ public abstract class HudMixin {
     private int tougher$heartIndex;
     private int tougher$maxPoints;
     private boolean tougher$clipContainer;
+
+    @Redirect(
+            method = "extractCrosshair",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blitSprite(Lcom/mojang/renderpearl/api/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIII)V",
+                    ordinal = 0))
+    private void tougher$goldSmiteCrosshair(
+            GuiGraphicsExtractor graphics,
+            RenderPipeline pipeline,
+            Identifier sprite,
+            int x,
+            int y,
+            int width,
+            int height) {
+        graphics.blitSprite(pipeline, sprite, x, y, width, height, SmiteCrosshair.color(Minecraft.getInstance()));
+    }
 
     @Inject(method = "extractHearts", at = @At("HEAD"))
     private void tougher$startHearts(

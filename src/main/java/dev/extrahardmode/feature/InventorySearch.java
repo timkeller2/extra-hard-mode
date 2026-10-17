@@ -94,6 +94,109 @@ public final class InventorySearch {
         return false;
     }
 
+    /**
+     * Count of the largest matching stack in the hotbar and backpack.
+     * Does not open bundles, and does not look at armor or the offhand. Ties keep the earlier slot.
+     */
+    public static int largestMainStack(Player player, Item item) {
+        int slot = largestMainSlot(player, item);
+        if (slot < 0) {
+            return 0;
+        }
+        ItemStack stack = player.getInventory().getItem(slot);
+        return stack == null || stack.isEmpty() ? 0 : stack.getCount();
+    }
+
+    /** Slot of {@link #largestMainStack}, or -1 when the player has no such stack. */
+    public static int largestMainSlot(Player player, Item item) {
+        if (player == null || item == null) {
+            return -1;
+        }
+        Inventory inventory = player.getInventory();
+        int n = Math.min(AbilityRules.MAIN_INVENTORY_SLOTS, inventory.getContainerSize());
+        int bestSlot = -1;
+        int bestCount = 0;
+        for (int slot = 0; slot < n; slot++) {
+            ItemStack stack = inventory.getItem(slot);
+            if (stack == null || stack.isEmpty() || !stack.is(item) || stack.getCount() <= bestCount) {
+                continue;
+            }
+            bestCount = stack.getCount();
+            bestSlot = slot;
+        }
+        return bestSlot;
+    }
+
+    /**
+     * Shrinks the largest hotbar or backpack stack by {@code amount}.
+     * Does not open bundles. An amount of 0 succeeds without changing the inventory.
+     */
+    public static boolean consumeLargestMainStack(Player player, Item item, int amount) {
+        if (amount <= 0) {
+            return true;
+        }
+        int slot = largestMainSlot(player, item);
+        if (slot < 0) {
+            return false;
+        }
+        Inventory inventory = player.getInventory();
+        ItemStack stack = inventory.getItem(slot);
+        if (stack.getCount() < amount) {
+            return false;
+        }
+        stack.shrink(amount);
+        if (stack.isEmpty()) {
+            inventory.setItem(slot, ItemStack.EMPTY);
+        }
+        return true;
+    }
+
+    /** Total in the hotbar and backpack. Does not open bundles, armor, or the offhand. */
+    public static int countMain(Player player, Item item) {
+        if (player == null || item == null) {
+            return 0;
+        }
+        Inventory inventory = player.getInventory();
+        int n = Math.min(AbilityRules.MAIN_INVENTORY_SLOTS, inventory.getContainerSize());
+        int total = 0;
+        for (int slot = 0; slot < n; slot++) {
+            ItemStack stack = inventory.getItem(slot);
+            if (stack != null && !stack.isEmpty() && stack.is(item)) {
+                total += stack.getCount();
+            }
+        }
+        return total;
+    }
+
+    /**
+     * Removes {@code amount} across hotbar and backpack stacks, earliest slot first.
+     * Does not open bundles. A short total changes nothing.
+     */
+    public static boolean consumeMain(Player player, Item item, int amount) {
+        if (amount <= 0) {
+            return true;
+        }
+        if (countMain(player, item) < amount) {
+            return false;
+        }
+        Inventory inventory = player.getInventory();
+        int n = Math.min(AbilityRules.MAIN_INVENTORY_SLOTS, inventory.getContainerSize());
+        int left = amount;
+        for (int slot = 0; slot < n && left > 0; slot++) {
+            ItemStack stack = inventory.getItem(slot);
+            if (stack == null || stack.isEmpty() || !stack.is(item)) {
+                continue;
+            }
+            int take = Math.min(left, stack.getCount());
+            stack.shrink(take);
+            left -= take;
+            if (stack.isEmpty()) {
+                inventory.setItem(slot, ItemStack.EMPTY);
+            }
+        }
+        return left == 0;
+    }
+
     /** Hotbar and backpack only. Does not search bundles, armor, or offhand. */
     public static boolean consumeOneMain(Player player, Item item) {
         if (player == null || item == null) {

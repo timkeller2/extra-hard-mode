@@ -29,12 +29,18 @@ public abstract class AbstractArrowMixin {
         if (!(self.level() instanceof ServerLevel level)) {
             return;
         }
-        Integer power = self.getAttached(EhmAttachments.EHM_FIREBOLT_POWER);
-        if (power != null && power > 0) {
+        Integer damage = self.getAttached(EhmAttachments.EHM_FIREBOLT_POWER);
+        if (damage != null) {
             Entity target = hit.getEntity();
             Entity owner = self.getOwner();
             if (target instanceof LivingEntity living && target != owner) {
-                living.hurtServer(level, level.damageSources().arrow(self, owner), power.floatValue());
+                if (damage > 0) {
+                    living.hurtServer(level, level.damageSources().arrow(self, owner), damage.floatValue());
+                }
+                Integer burn = self.getAttached(EhmAttachments.EHM_FIREBOLT_BURN);
+                if (burn != null && burn > 0) {
+                    living.igniteForSeconds(burn.floatValue());
+                }
             }
             self.discard();
             ci.cancel();
@@ -57,8 +63,8 @@ public abstract class AbstractArrowMixin {
     @Inject(method = "onHitBlock", at = @At("HEAD"), cancellable = true)
     private void tougher$magicArrowNoStick(BlockHitResult hit, CallbackInfo ci) {
         AbstractArrow self = (AbstractArrow) (Object) this;
-        Integer power = self.getAttached(EhmAttachments.EHM_FIREBOLT_POWER);
-        if (power == null || power <= 0) {
+        Integer damage = self.getAttached(EhmAttachments.EHM_FIREBOLT_POWER);
+        if (damage == null) {
             return;
         }
         self.discard();

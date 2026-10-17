@@ -249,20 +249,8 @@ public final class EhmAttachments {
     public static final AttachmentType<Integer> EHM_MANA_LEVEL = AttachmentRegistry.create(
             ExtraHardModeMod.id("mana_level"),
             builder -> builder.persistent(Codec.INT).copyOnDeath().initializer(() -> 0));
-    /** Successful diamond+lapis mana payments; next lapis cost is 1 plus this. */
-    public static final AttachmentType<Integer> EHM_MANA_LAPIS_PAYMENTS = AttachmentRegistry.create(
-            ExtraHardModeMod.id("mana_lapis_payments"),
-            builder -> builder.persistent(Codec.INT).copyOnDeath().initializer(() -> 0));
     public static final AttachmentType<Double> EHM_MANA_CURRENT = AttachmentRegistry.create(
             ExtraHardModeMod.id("mana_current"),
-            builder -> builder.persistent(Codec.DOUBLE).copyOnDeath().initializer(() -> 0.0));
-    /** Quartz-boosted mana regained toward the next quartz consumed. */
-    public static final AttachmentType<Double> EHM_QUARTZ_MANA_CREDIT = AttachmentRegistry.create(
-            ExtraHardModeMod.id("quartz_mana_credit"),
-            builder -> builder.persistent(Codec.DOUBLE).copyOnDeath().initializer(() -> 0.0));
-    /** Quartz-block-boosted mana regained toward the next quartz block consumed. */
-    public static final AttachmentType<Double> EHM_QUARTZ_BLOCK_MANA_CREDIT = AttachmentRegistry.create(
-            ExtraHardModeMod.id("quartz_block_mana_credit"),
             builder -> builder.persistent(Codec.DOUBLE).copyOnDeath().initializer(() -> 0.0));
     /** Gold ability bonus already announced, so the shimmer only plays when it increases. */
     public static final AttachmentType<Integer> EHM_GOLD_BONUS_SHOWN = AttachmentRegistry.create(
@@ -301,6 +289,9 @@ public final class EhmAttachments {
                     .initializer(HashMap::new));
     public static final AttachmentType<Integer> EHM_FIREBOLT_POWER = AttachmentRegistry.create(
             ExtraHardModeMod.id("firebolt_power"), builder -> builder.persistent(Codec.INT).initializer(() -> 0));
+    /** Burn time in seconds for a charcoal-fed magic arrow. Separate from the damage stored in {@link #EHM_FIREBOLT_POWER}. */
+    public static final AttachmentType<Integer> EHM_FIREBOLT_BURN = AttachmentRegistry.create(
+            ExtraHardModeMod.id("firebolt_burn"), builder -> builder.persistent(Codec.INT).initializer(() -> 0));
     public static final AttachmentType<UUID> EHM_FIREBOLT_TARGET = AttachmentRegistry.create(
             ExtraHardModeMod.id("firebolt_target"));
     public static final AttachmentType<Long> EHM_ABILITY_HANDLED_TICK = AttachmentRegistry.create(
@@ -370,6 +361,44 @@ public final class EhmAttachments {
     public static final AttachmentType<Float> EHM_DIAMOND_SKIN_POWER = AttachmentRegistry.create(
             ExtraHardModeMod.id("diamond_skin_power"),
             builder -> builder.persistent(Codec.FLOAT).initializer(() -> 0.0F));
+    public static final AttachmentType<Integer> EHM_EMPOWER_REMAINING = AttachmentRegistry.create(
+            ExtraHardModeMod.id("empower_remaining"),
+            builder -> builder.persistent(Codec.INT).initializer(() -> 0));
+    public static final AttachmentType<Integer> EHM_EMPOWER_BAR_MAX = AttachmentRegistry.create(
+            ExtraHardModeMod.id("empower_bar_max"),
+            builder -> builder.persistent(Codec.INT).initializer(() -> 0));
+    public static final AttachmentType<Float> EHM_EMPOWER_POWER = AttachmentRegistry.create(
+            ExtraHardModeMod.id("empower_power"),
+            builder -> builder.persistent(Codec.FLOAT).initializer(() -> 0.0F));
+    public static final AttachmentType<Integer> EHM_BATTERY_REMAINING = AttachmentRegistry.create(
+            ExtraHardModeMod.id("battery_remaining"),
+            builder -> builder.persistent(Codec.INT).initializer(() -> 0));
+    public static final AttachmentType<Integer> EHM_BATTERY_BAR_MAX = AttachmentRegistry.create(
+            ExtraHardModeMod.id("battery_bar_max"),
+            builder -> builder.persistent(Codec.INT).initializer(() -> 0));
+    public static final AttachmentType<Float> EHM_BATTERY_POWER = AttachmentRegistry.create(
+            ExtraHardModeMod.id("battery_power"),
+            builder -> builder.persistent(Codec.FLOAT).initializer(() -> 0.0F));
+    /** Overworld game time when Lapis Shield expires. Shared by the caster and the shielded character. */
+    public static final AttachmentType<Long> EHM_LAPIS_SHIELD_UNTIL = AttachmentRegistry.create(
+            ExtraHardModeMod.id("lapis_shield_until"),
+            builder -> builder.persistent(Codec.LONG).initializer(() -> -1L));
+    public static final AttachmentType<Integer> EHM_LAPIS_SHIELD_BAR_MAX = AttachmentRegistry.create(
+            ExtraHardModeMod.id("lapis_shield_bar_max"),
+            builder -> builder.persistent(Codec.INT).initializer(() -> 0));
+    public static final AttachmentType<Float> EHM_LAPIS_SHIELD_POWER = AttachmentRegistry.create(
+            ExtraHardModeMod.id("lapis_shield_power"),
+            builder -> builder.persistent(Codec.FLOAT).initializer(() -> 0.0F));
+    /** Who pays the lapis when this character's shield blocks a hit. */
+    public static final AttachmentType<UUID> EHM_LAPIS_SHIELD_CASTER = AttachmentRegistry.create(
+            ExtraHardModeMod.id("lapis_shield_caster"), builder -> builder.persistent(UUIDUtil.CODEC));
+    /** Character currently carrying this player's Lapis Shield. */
+    public static final AttachmentType<UUID> EHM_LAPIS_SHIELD_TARGET = AttachmentRegistry.create(
+            ExtraHardModeMod.id("lapis_shield_target"), builder -> builder.persistent(UUIDUtil.CODEC));
+    /** True when {@link #EHM_LAPIS_SHIELD_TARGET} is a player, so a missing entity means they logged off. */
+    public static final AttachmentType<Boolean> EHM_LAPIS_SHIELD_TARGET_PLAYER = AttachmentRegistry.create(
+            ExtraHardModeMod.id("lapis_shield_target_player"),
+            builder -> builder.persistent(Codec.BOOL).initializer(() -> Boolean.FALSE));
     public static final AttachmentType<Long> EHM_DIAMOND_SKIN_SPARKLE_UNTIL = AttachmentRegistry.create(
             ExtraHardModeMod.id("diamond_skin_sparkle_until"), builder -> builder.initializer(() -> -1L));
     public static final AttachmentType<Long> EHM_SENSE_SPARKLE_UNTIL = AttachmentRegistry.create(

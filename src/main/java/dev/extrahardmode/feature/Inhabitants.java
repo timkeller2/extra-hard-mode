@@ -207,9 +207,12 @@ public final class Inhabitants implements FeatureModule {
     }
 
     static String ensureWiseAbility(Villager villager, ServerLevel level) {
-        String ability = villager.getAttached(EhmAttachments.EHM_WISE_ABILITY);
+        String stored = villager.getAttached(EhmAttachments.EHM_WISE_ABILITY);
+        String ability = AbilityRules.storedWiseAbility(stored);
         if (ability == null || ability.isEmpty() || !AbilityRules.ABILITY_IDS.contains(ability)) {
             ability = InhabitantRules.pickWiseAbility(level.getRandom().nextInt());
+        }
+        if (!ability.equals(stored)) {
             villager.setAttached(EhmAttachments.EHM_WISE_ABILITY, ability);
         }
         return ability;
