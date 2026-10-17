@@ -11,12 +11,17 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.HolderSet;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.tags.EnchantmentTags;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -39,6 +44,10 @@ import net.minecraft.world.entity.npc.villager.VillagerType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.alchemy.Potion;
+import net.minecraft.world.item.alchemy.PotionContents;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.trading.ItemCost;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
@@ -594,7 +603,7 @@ public final class Inhabitants implements FeatureModule {
             double score) {
         MerchantOffers offers = villager.getOffers();
         offers.clear();
-        offers.addAll(offersFor(specialty, amenities, blight, random, score));
+        offers.addAll(offersFor(specialty, amenities, blight, random, score, villager.level().registryAccess()));
     }
 
     static List<MerchantOffer> offersFor(
@@ -602,13 +611,15 @@ public final class Inhabitants implements FeatureModule {
             InhabitantRules.AmenityCounts amenities,
             boolean blight,
             RandomSource random,
-            double score) {
+            double score,
+            RegistryAccess registries) {
         int storage = amenities == null ? 0 : amenities.storage();
-        java.util.Random rng = new java.util.Random(random == null ? 0L : random.nextLong());
+        RandomSource rng = random == null ? RandomSource.create(0L) : random;
+        java.util.Random listingRng = new java.util.Random(rng.nextLong());
         List<MerchantOffer> offers = new ArrayList<>();
         for (InhabitantRules.TradeListing listing :
-                InhabitantRules.scaledListings(specialty, score, storage, blight, rng)) {
-            MerchantOffer offer = offerFrom(listing);
+                InhabitantRules.scaledListings(specialty, score, storage, blight, listingRng)) {
+            MerchantOffer offer = offerFrom(listing, rng, registries);
             if (offer != null) {
                 offers.add(offer);
             }
@@ -616,9 +627,20 @@ public final class Inhabitants implements FeatureModule {
         return offers;
     }
 
-    static MerchantOffer offerFrom(InhabitantRules.TradeListing listing) {
+    static MerchantOffer offerFrom(
+            InhabitantRules.TradeListing listing, RandomSource random, RegistryAccess registries) {
         if (listing == null) {
             return null;
+        }
+        if (!listing.potionId().isEmpty()) {
+            if (registries == null) {
+                return null;
+            }
+            ItemStack brewed = potionStack(listing.potionId(), registries);
+            if (brewed == null) {
+                return null;
+            }
+            return sell(brewed, listing.emeralds(), listing.maxUses());
         }
         net.minecraft.world.item.Item item = itemFromId(listing.itemId());
         if (item == null || item == Items.AIR) {
@@ -628,7 +650,41 @@ public final class Inhabitants implements FeatureModule {
         if (listing.buy()) {
             return buy(item, count, listing.maxUses());
         }
-        return sell(item, count, listing.emeralds(), listing.maxUses());
+        ItemStack result = new ItemStack(item, count);
+        if (listing.enchantLevel() > 0 && random != null && registries != null) {
+            result = enchantTrade(random, result, listing.enchantLevel(), registries);
+        }
+        return sell(result, listing.emeralds(), listing.maxUses());
+    }
+
+    /** A drinkable potion for this registry id, or null when the id is not a potion. */
+    static ItemStack potionStack(String potionId, RegistryAccess registries) {
+        Identifier id = Identifier.tryParse(potionId);
+        if (id == null) {
+            return null;
+        }
+        ResourceKey<Potion> key = ResourceKey.create(Registries.POTION, id);
+        Optional<Holder.Reference<Potion>> holder = registries.lookupOrThrow(Registries.POTION).get(key);
+        if (holder.isEmpty()) {
+            return null;
+        }
+        return PotionContents.createItemStack(Items.POTION, holder.get());
+    }
+
+    /** Traded-equipment enchantments only, retried so the piece is not sold plain. */
+    static ItemStack enchantTrade(RandomSource random, ItemStack stack, int level, RegistryAccess registries) {
+        Optional<HolderSet.Named<Enchantment>> traded = registries
+                .lookupOrThrow(Registries.ENCHANTMENT)
+                .get(EnchantmentTags.ON_TRADED_EQUIPMENT);
+        ItemStack result = stack;
+        for (int attempt = 0; attempt < 8; attempt++) {
+            Stream<Holder<Enchantment>> allowed = traded.map(HolderSet::stream).orElseGet(Stream::empty);
+            result = EnchantmentHelper.enchantItem(random, stack.copy(), level, allowed);
+            if (EnchantmentHelper.hasAnyEnchantments(result)) {
+                return result;
+            }
+        }
+        return result;
     }
 
     /** A trade slot cannot hold more than the item's stack. */
@@ -658,17 +714,21 @@ public final class Inhabitants implements FeatureModule {
                 0.0F);
     }
 
-    static MerchantOffer sell(net.minecraft.world.item.Item item, int count, int emeralds, int maxUses) {
+    static MerchantOffer sell(ItemStack result, int emeralds, int maxUses) {
         int total = Math.max(1, emeralds);
         int first = Math.min(64, total);
         Optional<ItemCost> extra = Optional.empty();
         if (total > 64) {
             extra = Optional.of(new ItemCost(Items.EMERALD, Math.min(64, total - 64)));
         }
+        ItemStack sold = result == null || result.isEmpty() ? new ItemStack(Items.AIR) : result.copy();
+        if (sold.getCount() < 1) {
+            sold.setCount(1);
+        }
         return new MerchantOffer(
                 new ItemCost(Items.EMERALD, first),
                 extra,
-                new ItemStack(item, Math.max(1, count)),
+                sold,
                 Math.max(1, maxUses),
                 0,
                 0.0F);

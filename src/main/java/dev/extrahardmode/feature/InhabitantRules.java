@@ -37,7 +37,7 @@ public final class InhabitantRules {
     public static final int ARMOR_TRADE_USES = 1;
     public static final int WEALTHY_OFFER_COUNT = 8;
     public static final int WEALTHY_TRADE_USES = 4;
-    /** One diamond. Matches a wealthy trader and a master armorsmith. */
+    /** One diamond. Matches a wealthy trader. */
     public static final int JEWELER_DIAMOND_EMERALDS = 8;
     /** Four gold ingots, matching a wealthy trader. */
     public static final int JEWELER_GOLD_INGOT_COUNT = 4;
@@ -71,6 +71,32 @@ public final class InhabitantRules {
     public static final int IRON_HELMET_EMERALDS = 15;
     public static final int IRON_LEGGINGS_EMERALDS = 21;
     public static final int IRON_CHESTPLATE_EMERALDS = 24;
+    /** Enchanted iron sits under heavy iron. Half of 12, 15, 21, and 24, with the halves rounded. */
+    public static final int ENCHANTED_IRON_BOOTS_EMERALDS = 6;
+    public static final int ENCHANTED_IRON_HELMET_EMERALDS = 8;
+    public static final int ENCHANTED_IRON_LEGGINGS_EMERALDS = 11;
+    public static final int ENCHANTED_IRON_CHESTPLATE_EMERALDS = 12;
+    /** Enchanting-table power applied to an armorsmith's iron armor. */
+    public static final int ARMOR_ENCHANT_LEVEL = 20;
+    /** Enchanting-table power applied to a master armorsmith's diamond armor. */
+    public static final int MASTER_ARMOR_ENCHANT_LEVEL = 30;
+    /** Iron ingots an armorsmith buys for one emerald. */
+    public static final int ARMOR_IRON_BUY_COUNT = 4;
+    /** Diamonds a master armorsmith buys for one emerald. */
+    public static final int ARMOR_DIAMOND_BUY_COUNT = 1;
+    /** Uses on the metal buy. Armor sales stay at {@link #ARMOR_TRADE_USES}. */
+    public static final int ARMOR_METAL_BUY_USES = 4;
+    /** Drinkable potions, including the level 2 bottle, cost one emerald. */
+    public static final int BREWER_POTION_EMERALDS = 1;
+    public static final int BREWER_POTION_USES = 4;
+    /** Other potion effects kept in the usual shop, besides the level 2 bottle. */
+    public static final int BREWER_USUAL_OTHERS = 3;
+    /** Brewing ingredients are one emerald. The count on each listing is the bargain. */
+    public static final int BREWER_INGREDIENT_EMERALDS = 1;
+    public static final int BREWER_INGREDIENT_USES = 8;
+    /** Copies in the arrival bag when the home has a cauldron. */
+    public static final int BREWER_BAG_COPIES = 3;
+    private static final List<String> ARMOR_SLOTS = List.of("boots", "helmet", "leggings", "chestplate");
     public static final int WANDER_RANGE = 16;
     public static final int SNAP_HOME_RANGE = 32;
 
@@ -103,6 +129,7 @@ public final class InhabitantRules {
 
     public static final String HAULER = "hauler";
     public static final String COOK = "cook";
+    public static final String BREWER = "brewer";
     public static final String FARM = "farm";
     public static final String BOUNTY = "bounty";
     public static final String TRADER = "trader";
@@ -127,23 +154,74 @@ public final class InhabitantRules {
             MASTER_ARMORSMITH,
             WISE_TEACHER,
             JEWELER,
-            COUNCIL);
+            COUNCIL,
+            BREWER);
 
     public record WealthyListing(String itemId, int count, int emeralds) {}
 
     /**
      * One inhabitant listing. {@code buy} true: the player sells {@code count} of the
      * item for one emerald. False: the player pays {@code emeralds} for {@code count}.
+     * {@code enchantLevel} above 0 asks for a traded-equipment enchantment at that power.
+     * {@code potionId} is a potion registry id, such as {@code minecraft:strong_healing}.
      */
-    public record TradeListing(String itemId, int count, int emeralds, int maxUses, boolean buy) {
+    public record TradeListing(
+            String itemId, int count, int emeralds, int maxUses, boolean buy, int enchantLevel, String potionId) {
+        public TradeListing {
+            if (potionId == null) {
+                potionId = "";
+            }
+        }
+
+        /** Potions share one item id, so the potion id keeps those listings apart. */
+        public String tradeKey() {
+            return potionId.isEmpty() ? itemId : "potion:" + potionId;
+        }
+
         public TradeListing withUses(int uses) {
-            return new TradeListing(itemId, count, emeralds, Math.max(1, uses), buy);
+            return new TradeListing(itemId, count, emeralds, Math.max(1, uses), buy, enchantLevel, potionId);
         }
 
         public TradeListing withCount(int nextCount) {
-            return new TradeListing(itemId, Math.max(0, nextCount), emeralds, maxUses, buy);
+            return new TradeListing(itemId, Math.max(0, nextCount), emeralds, maxUses, buy, enchantLevel, potionId);
         }
     }
+
+    /** One brewed effect. {@code family} keeps a shop from selling two strengths of the same potion. */
+    public record BrewPotion(String potionId, String family) {}
+
+    /** Level 2 potions. A restock keeps one rolled bottle from this list. */
+    public static final List<BrewPotion> BREWER_LEVEL_TWO = List.of(
+            new BrewPotion("minecraft:strong_healing", "healing"),
+            new BrewPotion("minecraft:strong_swiftness", "swiftness"),
+            new BrewPotion("minecraft:strong_strength", "strength"),
+            new BrewPotion("minecraft:strong_leaping", "leaping"),
+            new BrewPotion("minecraft:strong_regeneration", "regeneration"),
+            new BrewPotion("minecraft:strong_harming", "harming"),
+            new BrewPotion("minecraft:strong_poison", "poison"),
+            new BrewPotion("minecraft:strong_turtle_master", "turtle_master"),
+            new BrewPotion("minecraft:strong_slowness", "slowness"));
+
+    /**
+     * One other strength from each family, plus effects that have no level 2 bottle.
+     * The usual shop keeps up to {@link #BREWER_USUAL_OTHERS} of these, never the featured family.
+     */
+    public static final List<BrewPotion> BREWER_OTHER_POTIONS = List.of(
+            new BrewPotion("minecraft:healing", "healing"),
+            new BrewPotion("minecraft:long_swiftness", "swiftness"),
+            new BrewPotion("minecraft:long_strength", "strength"),
+            new BrewPotion("minecraft:long_leaping", "leaping"),
+            new BrewPotion("minecraft:long_regeneration", "regeneration"),
+            new BrewPotion("minecraft:harming", "harming"),
+            new BrewPotion("minecraft:long_poison", "poison"),
+            new BrewPotion("minecraft:long_turtle_master", "turtle_master"),
+            new BrewPotion("minecraft:long_slowness", "slowness"),
+            new BrewPotion("minecraft:long_fire_resistance", "fire_resistance"),
+            new BrewPotion("minecraft:long_night_vision", "night_vision"),
+            new BrewPotion("minecraft:long_invisibility", "invisibility"),
+            new BrewPotion("minecraft:long_water_breathing", "water_breathing"),
+            new BrewPotion("minecraft:long_slow_falling", "slow_falling"),
+            new BrewPotion("minecraft:long_weakness", "weakness"));
 
     public static final List<WealthyListing> WEALTHY_POOL = List.of(
             new WealthyListing("minecraft:iron_ingot", 8, 2),
@@ -236,7 +314,8 @@ public final class InhabitantRules {
             int plants,
             int books,
             int extraBeds,
-            boolean kitchen) {}
+            boolean kitchen,
+            boolean cauldron) {}
 
     public record GateResult(
             boolean enclosed,
@@ -453,6 +532,7 @@ public final class InhabitantRules {
                 "Residents: When you visit later, each missed day is rolled once (same chances as dawn), then the timestamp is set to today.",
                 "Residents: Houses in unloaded chunks can still fill. Chance starts at 8% at 12 points and rises with extra points (halved in blight).",
                 "Residents: Chests bias a hauler, a kitchen biases a cook, and plants or workstations bias a farm neighbor.",
+                "Residents: A cauldron favors a brewer, and a brewer can come to a 12-point home.",
                 "Residents: 18 points can attract a drop collector, a wealthy trader, or a jeweler, 24 an armorsmith or a wise teacher, and 30 a master armorsmith.",
                 "Residents: A council member can appear in any eligible home. New residents prefer a type that has not appeared yet.",
                 "Residents: The house must be able to host that type. Once every type has spawned, the usual furnishing biases apply.",
@@ -477,7 +557,13 @@ public final class InhabitantRules {
                 "Shops: That total adds items when you buy and subtracts the items required when you sell to the resident. Emerald prices stay the same.",
                 "Shops: A farm neighbor may sell one seed or plantable vegetable for 6 to 16 emeralds.",
                 "Shops: A jeweler sells a diamond for 8 emeralds, 4 gold ingots for 2, an iron block for 6, and a copper or redstone block for 2.",
-                "Shops: Larger jewelers also sell lapis, amethyst, quartz, gold nuggets, and blocks of gold, lapis, amethyst, quartz, and diamond. A diamond block is 72 emeralds.");
+                "Shops: Larger jewelers also sell lapis, amethyst, quartz, gold nuggets, and blocks of gold, lapis, amethyst, quartz, and diamond. A diamond block is 72 emeralds.",
+                "Shops: An armorsmith sells one heavy iron piece each restock, and the piece can change. Other sales are enchanted iron armor, each a different slot.",
+                "Shops: A larger iron shop may buy iron. A master armorsmith sells one heavy diamond piece the same way, plus enchanted diamond armor, and may buy diamonds.",
+                "Shops: Heavy iron costs 12, 15, 21, or 24 emeralds for boots, a helmet, leggings, or a chestplate. Heavy diamond costs four times that.",
+                "Shops: Enchanted iron armor costs 6, 8, 11, or 12 emeralds for those slots. Enchanted diamond armor costs the same as heavy iron.",
+                "Shops: A brewer sells one level 2 potion each restock, and that potion can change. Up to 3 other potions cost 1 emerald.",
+                "Shops: A larger brewer sells brewing ingredients for 1 emerald, such as nether wart, blaze powder, glowstone, and ghast tears.");
     }
 
     public static List<String> homesBountyLines() {
@@ -604,6 +690,11 @@ public final class InhabitantRules {
             bag.add(COOK);
             bag.add(COOK);
             bag.add(COOK);
+        }
+        if (counts != null && counts.cauldron()) {
+            for (int i = 0; i < BREWER_BAG_COPIES; i++) {
+                bag.add(BREWER);
+            }
         }
         if (counts != null && (counts.plants() >= 1 || counts.workstations() >= 1)) {
             bag.add(FARM);
@@ -797,6 +888,7 @@ public final class InhabitantRules {
         return switch (specialty) {
             case HAULER -> "hauler";
             case COOK -> "cook";
+            case BREWER -> "brewer";
             case FARM -> "farm neighbor";
             case BOUNTY -> "drop collector";
             case TRADER -> "trader";
@@ -896,6 +988,24 @@ public final class InhabitantRules {
             default -> 0;
         };
         return master ? iron * MASTER_ARMOR_PRICE_FACTOR : iron;
+    }
+
+    /** Enchanted diamond armor uses the heavy iron price for that slot. */
+    public static int enchantedArmorEmeralds(boolean master, String slot) {
+        if (master) {
+            return armorEmeralds(false, slot);
+        }
+        return switch (slot == null ? "" : slot) {
+            case "boots" -> ENCHANTED_IRON_BOOTS_EMERALDS;
+            case "helmet" -> ENCHANTED_IRON_HELMET_EMERALDS;
+            case "leggings" -> ENCHANTED_IRON_LEGGINGS_EMERALDS;
+            case "chestplate" -> ENCHANTED_IRON_CHESTPLATE_EMERALDS;
+            default -> 0;
+        };
+    }
+
+    public static int armorEnchantLevel(boolean master) {
+        return master ? MASTER_ARMOR_ENCHANT_LEVEL : ARMOR_ENCHANT_LEVEL;
     }
 
     /** Unique listings from {@link #WEALTHY_POOL}; {@code seed} picks which eight. */
@@ -1046,12 +1156,13 @@ public final class InhabitantRules {
                     buyOf("minecraft:baked_potato", 8, 4),
                     sellOf("minecraft:rabbit_stew", 1, 4, 4));
             case FARM -> farmUsualListings(blight);
+            case BREWER -> brewerUsualListings();
             case BOUNTY -> List.of(
                     buyOf("minecraft:spider_eye", 8, 6),
                     buyOf("minecraft:gunpowder", 8, 6),
                     buyOf("minecraft:bone", 16, 6));
-            case ARMORSMITH -> armorListings(false);
-            case MASTER_ARMORSMITH -> armorListings(true);
+            case ARMORSMITH -> armorUsualListings(false);
+            case MASTER_ARMORSMITH -> armorUsualListings(true);
             case WISE_TEACHER -> List.of();
             case COUNCIL -> List.of(
                     sellOf("minecraft:paper", 12, 1, 8),
@@ -1099,6 +1210,7 @@ public final class InhabitantRules {
                     sellOf("minecraft:pumpkin_pie", 1, 3, 4),
                     sellOf("minecraft:honey_bottle", 1, 4, 4));
             case FARM -> farmExtraListings(blight);
+            case BREWER -> brewerIngredientListings();
             case BOUNTY -> List.of(
                     buyOf("minecraft:rotten_flesh", 16, 6),
                     buyOf("minecraft:string", 16, 6),
@@ -1110,19 +1222,9 @@ public final class InhabitantRules {
                     buyOf("minecraft:ender_pearl", 4, 6),
                     buyOf("minecraft:blaze_rod", 4, 6),
                     buyOf("minecraft:ghast_tear", 2, 6));
-            case ARMORSMITH -> List.of(
-                    sellOf("minecraft:iron_ingot", 8, 2, ARMOR_TRADE_USES),
-                    sellOf("minecraft:shield", 1, 5, ARMOR_TRADE_USES),
-                    sellOf("minecraft:iron_nugget", 16, 1, ARMOR_TRADE_USES),
-                    sellOf("minecraft:lava_bucket", 1, 3, ARMOR_TRADE_USES),
-                    sellOf("minecraft:chainmail_helmet", 1, 8, ARMOR_TRADE_USES),
-                    sellOf("minecraft:chainmail_boots", 1, 6, ARMOR_TRADE_USES));
+            case ARMORSMITH -> List.of(armorMetalBuy(false));
             case WISE_TEACHER -> List.of();
-            case MASTER_ARMORSMITH -> List.of(
-                    sellOf("minecraft:diamond", 1, 8, ARMOR_TRADE_USES),
-                    sellOf("minecraft:diamond_horse_armor", 1, 14, ARMOR_TRADE_USES),
-                    sellOf("minecraft:netherite_scrap", 1, 16, ARMOR_TRADE_USES),
-                    sellOf("minecraft:shield", 1, 8, ARMOR_TRADE_USES));
+            case MASTER_ARMORSMITH -> List.of(armorMetalBuy(true));
             case COUNCIL -> List.of(
                     sellOf("minecraft:map", 1, 4, 4),
                     sellOf("minecraft:name_tag", 1, 8, 4),
@@ -1175,6 +1277,10 @@ public final class InhabitantRules {
      * House-score shop: type count and per-listing uses roll from half the top
      * percent up to that top. The top is 50% at 14 points and 175% at 38.
      * Extra types beyond the usual shop are random leftover listings.
+     * An armorsmith keeps one rolled heavy piece, then enchanted armor of that metal.
+     * A larger roll may add a buy of iron or diamonds. Generic goods are not added.
+     * A brewer keeps one rolled level 2 potion, then up to three other potions.
+     * A larger roll may add brewing ingredients. Generic goods are not added.
      * Item amounts share one roll from -25% to +25%, plus 0 to 25 from the score.
      * Purchases gain that percent; sales to the resident require that percent fewer.
      */
@@ -1187,6 +1293,7 @@ public final class InhabitantRules {
         }
         List<TradeListing> defaults;
         List<TradeListing> extras;
+        boolean addGeneric = true;
         if (WEALTHY.equals(type)) {
             List<TradeListing> pool = new ArrayList<>(wealthyTradeListings());
             Collections.shuffle(pool, rng);
@@ -1203,12 +1310,44 @@ public final class InhabitantRules {
             Collections.shuffle(defaults, rng);
             extras = new ArrayList<>(plants.subList(usualSells, plants.size()));
             extras.addAll(farmSideListings(blight));
+        } else if (ARMORSMITH.equals(type) || MASTER_ARMORSMITH.equals(type)) {
+            boolean master = MASTER_ARMORSMITH.equals(type);
+            List<TradeListing> heavy = new ArrayList<>(armorListings(master));
+            Collections.shuffle(heavy, rng);
+            List<TradeListing> enchanted = new ArrayList<>(enchantedArmorListings(master));
+            Collections.shuffle(enchanted, rng);
+            defaults = new ArrayList<>();
+            defaults.add(heavy.getFirst());
+            defaults.addAll(enchanted);
+            extras = new ArrayList<>(extraListings(type, storage, blight));
+            addGeneric = false;
+        } else if (BREWER.equals(type)) {
+            List<BrewPotion> levelTwo = new ArrayList<>(BREWER_LEVEL_TWO);
+            Collections.shuffle(levelTwo, rng);
+            BrewPotion featured = levelTwo.getFirst();
+            List<BrewPotion> others = new ArrayList<>();
+            for (BrewPotion potion : BREWER_OTHER_POTIONS) {
+                if (!potion.family().equals(featured.family())) {
+                    others.add(potion);
+                }
+            }
+            Collections.shuffle(others, rng);
+            defaults = new ArrayList<>();
+            defaults.add(potionSell(featured));
+            int usual = Math.min(BREWER_USUAL_OTHERS, others.size());
+            for (int i = 0; i < usual; i++) {
+                defaults.add(potionSell(others.get(i)));
+            }
+            extras = new ArrayList<>(extraListings(type, storage, blight));
+            addGeneric = false;
         } else {
             defaults = new ArrayList<>(defaultListings(type, storage, blight));
             extras = new ArrayList<>(extraListings(type, storage, blight));
             Collections.shuffle(defaults, rng);
         }
-        extras.addAll(genericExtraListings());
+        if (addGeneric) {
+            extras.addAll(genericExtraListings());
+        }
         Collections.shuffle(extras, rng);
         int minPercent = tradeMinPercent(score);
         int maxPercent = tradeMaxPercent(score);
@@ -1219,13 +1358,13 @@ public final class InhabitantRules {
         int takeDefaults = Math.min(want, defaults.size());
         for (int i = 0; i < takeDefaults; i++) {
             TradeListing listing = defaults.get(i);
-            if (used.add(listing.itemId())) {
+            if (used.add(listing.tradeKey())) {
                 chosen.add(listing);
             }
         }
         for (int i = 0; i < extras.size() && chosen.size() < want; i++) {
             TradeListing listing = extras.get(i);
-            if (used.add(listing.itemId())) {
+            if (used.add(listing.tradeKey())) {
                 chosen.add(listing);
             }
         }
@@ -1268,14 +1407,44 @@ public final class InhabitantRules {
                 buyOf("minecraft:apple", 8, 6));
     }
 
+    /** One heavy piece of each slot. A restock keeps a single rolled piece from this list. */
     static List<TradeListing> armorListings(boolean master) {
-        int uses = ARMOR_TRADE_USES;
         String prefix = master ? "tougher:heavy_diamond_" : "tougher:heavy_iron_";
-        return List.of(
-                sellOf(prefix + "boots", 1, armorEmeralds(master, "boots"), uses),
-                sellOf(prefix + "helmet", 1, armorEmeralds(master, "helmet"), uses),
-                sellOf(prefix + "leggings", 1, armorEmeralds(master, "leggings"), uses),
-                sellOf(prefix + "chestplate", 1, armorEmeralds(master, "chestplate"), uses));
+        List<TradeListing> listings = new ArrayList<>();
+        for (String slot : ARMOR_SLOTS) {
+            listings.add(sellOf(prefix + slot, 1, armorEmeralds(master, slot), ARMOR_TRADE_USES));
+        }
+        return List.copyOf(listings);
+    }
+
+    /** Enchanted vanilla armor, one listing per slot, of the metal this smith works. */
+    static List<TradeListing> enchantedArmorListings(boolean master) {
+        String prefix = master ? "minecraft:diamond_" : "minecraft:iron_";
+        int level = armorEnchantLevel(master);
+        List<TradeListing> listings = new ArrayList<>();
+        for (String slot : ARMOR_SLOTS) {
+            listings.add(sellEnchantedOf(
+                    prefix + slot, 1, enchantedArmorEmeralds(master, slot), ARMOR_TRADE_USES, level));
+        }
+        return List.copyOf(listings);
+    }
+
+    /**
+     * Usual catalog size: one heavy piece plus enchanted armor of every slot.
+     * Boots stand in for the heavy piece. The live shop rolls that piece.
+     */
+    static List<TradeListing> armorUsualListings(boolean master) {
+        List<TradeListing> listings = new ArrayList<>();
+        listings.add(armorListings(master).getFirst());
+        listings.addAll(enchantedArmorListings(master));
+        return List.copyOf(listings);
+    }
+
+    static TradeListing armorMetalBuy(boolean master) {
+        if (master) {
+            return buyOf("minecraft:diamond", ARMOR_DIAMOND_BUY_COUNT, ARMOR_METAL_BUY_USES);
+        }
+        return buyOf("minecraft:iron_ingot", ARMOR_IRON_BUY_COUNT, ARMOR_METAL_BUY_USES);
     }
 
     static List<TradeListing> wealthyTradeListings() {
@@ -1287,11 +1456,80 @@ public final class InhabitantRules {
     }
 
     static TradeListing buyOf(String itemId, int count, int uses) {
-        return new TradeListing(itemId, count, 1, uses, true);
+        return new TradeListing(itemId, count, 1, uses, true, 0, "");
     }
 
     static TradeListing sellOf(String itemId, int count, int emeralds, int uses) {
-        return new TradeListing(itemId, count, emeralds, uses, false);
+        return new TradeListing(itemId, count, emeralds, uses, false, 0, "");
+    }
+
+    static TradeListing sellEnchantedOf(String itemId, int count, int emeralds, int uses, int enchantLevel) {
+        return new TradeListing(itemId, count, emeralds, uses, false, Math.max(1, enchantLevel), "");
+    }
+
+    static TradeListing potionSell(BrewPotion potion) {
+        return new TradeListing(
+                "minecraft:potion", 1, BREWER_POTION_EMERALDS, BREWER_POTION_USES, false, 0, potion.potionId());
+    }
+
+    /** First level 2 potion, then other effects whose family differs. The live shop rolls both. */
+    static List<TradeListing> brewerUsualListings() {
+        List<TradeListing> listings = new ArrayList<>();
+        BrewPotion featured = BREWER_LEVEL_TWO.getFirst();
+        listings.add(potionSell(featured));
+        int added = 0;
+        for (BrewPotion potion : BREWER_OTHER_POTIONS) {
+            if (potion.family().equals(featured.family())) {
+                continue;
+            }
+            listings.add(potionSell(potion));
+            added++;
+            if (added >= BREWER_USUAL_OTHERS) {
+                break;
+            }
+        }
+        return List.copyOf(listings);
+    }
+
+    /** Brewing ingredients a larger brewer sells after the potion listings. */
+    static List<TradeListing> brewerIngredientListings() {
+        return List.of(
+                sellOf("minecraft:nether_wart", 4, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
+                sellOf("minecraft:blaze_powder", 2, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
+                sellOf("minecraft:glowstone_dust", 4, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
+                sellOf("minecraft:redstone", 4, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
+                sellOf("minecraft:sugar", 4, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
+                sellOf("minecraft:glass_bottle", 4, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
+                sellOf("minecraft:spider_eye", 4, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
+                sellOf("minecraft:gunpowder", 2, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
+                sellOf("minecraft:magma_cream", 2, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
+                sellOf("minecraft:fermented_spider_eye", 2, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
+                sellOf("minecraft:glistering_melon_slice", 1, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
+                sellOf("minecraft:golden_carrot", 1, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
+                sellOf("minecraft:pufferfish", 1, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
+                sellOf("minecraft:ghast_tear", 1, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
+                sellOf("minecraft:rabbit_foot", 1, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
+                sellOf("minecraft:phantom_membrane", 1, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
+                sellOf("minecraft:turtle_scute", 1, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
+                sellOf("minecraft:dragon_breath", 1, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES));
+    }
+
+    /** Family of a catalogued potion, or empty when the id is not one a brewer sells. */
+    public static String potionFamily(String potionId) {
+        if (potionId == null || potionId.isEmpty()) {
+            return "";
+        }
+        for (BrewPotion potion : BREWER_LEVEL_TWO) {
+            if (potion.potionId().equals(potionId)) {
+                return potion.family();
+            }
+        }
+        for (BrewPotion potion : BREWER_OTHER_POTIONS) {
+            if (potion.potionId().equals(potionId)) {
+                return potion.family();
+            }
+        }
+        return "";
     }
 
     private static final String[] COMPASS_DIRECTIONS = {

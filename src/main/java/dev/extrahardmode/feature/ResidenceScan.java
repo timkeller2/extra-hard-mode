@@ -363,7 +363,8 @@ public final class ResidenceScan {
         }
         int art = artCount(level, interior);
         return new InhabitantRules.AmenityCounts(
-                windows, art, carpets, seating, storage, workstations, extraLights, plants, books, extraBeds, heat && water);
+                windows, art, carpets, seating, storage, workstations, extraLights, plants, books, extraBeds,
+                heat && water, water);
     }
 
     static int artCount(ServerLevel level, LongOpenHashSet interior) {
