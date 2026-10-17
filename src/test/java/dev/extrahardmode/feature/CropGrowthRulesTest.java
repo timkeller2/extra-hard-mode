@@ -97,6 +97,26 @@ class CropGrowthRulesTest {
     }
 
     @Test
+    void saplingsFailAtTwiceTheCropLossRate() {
+        assertEquals(2, CropGrowthRules.SAPLING_WITHHOLD_PER_LOSS);
+        assertEquals(0, CropGrowthRules.saplingWithholdPercent(0.0));
+        assertEquals(0, CropGrowthRules.saplingWithholdPercent(-4.0));
+        assertEquals(50, CropGrowthRules.saplingWithholdPercent(25.0));
+        assertEquals(25, CropGrowthRules.saplingWithholdPercent(12.5));
+        assertEquals(100, CropGrowthRules.saplingWithholdPercent(50.0));
+        assertEquals(100, CropGrowthRules.saplingWithholdPercent(75.0));
+        assertEquals(4, CropGrowthRules.saplingsAfterCropLoss(4, 0.0, new Random(1L)));
+        assertEquals(0, CropGrowthRules.saplingsAfterCropLoss(5, 50.0, new Random(1L)));
+        assertEquals(0, CropGrowthRules.saplingsAfterCropLoss(3, 80.0, new Random(1L)));
+        Random random = new Random(11L);
+        int kept = 0;
+        for (int i = 0; i < 10_000; i++) {
+            kept += CropGrowthRules.saplingsAfterCropLoss(1, 25.0, random);
+        }
+        assertTrue(kept > 4500 && kept < 5500, "got " + kept);
+    }
+
+    @Test
     void stemFruitDurationIsTenTimesVanilla() {
         assertEquals(1000, CropGrowthRules.STEM_FRUIT_DURATION_PERCENT);
         Random random = new Random(6L);

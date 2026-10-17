@@ -483,7 +483,7 @@ public final class InhabitantRules {
     public static List<String> homesBountyLines() {
         return List.of(
                 "Bounties: Council members give each player a personal kill bounty when you check in.",
-                "Bounties: The first hunt from a resident is 6-18 common mobs. Each success with that resident makes their next hunt 20% larger and rarer.",
+                "Bounties: The first hunt from a resident is 6-18 common mobs. Each success with that resident makes the next 20% larger. Every 3 successes, their next hunt is rarer.",
                 "Bounties: You have 14 Minecraft days. A bounty that runs out is not replaced in that conversation.",
                 "Bounties: The next bounty from that resident waits 7 Minecraft days after the last one was given, and only after you finish the previous one.",
                 "Bounties: Each council member can give you one. You can hold 5 at a time, counting hunts and unpaid emerald turn-ins.",

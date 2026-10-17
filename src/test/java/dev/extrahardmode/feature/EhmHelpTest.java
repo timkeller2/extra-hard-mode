@@ -86,6 +86,8 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("Trees take 10 times"));
         assertTrue(String.join(" ", lines).contains("Nether wart grows at 1/20"));
         assertTrue(String.join(" ", lines).contains("half as many saplings"));
+        assertTrue(String.join(" ", lines).contains("twice the crop loss rate"));
+        assertTrue(String.join(" ", lines).contains("At 50% loss or higher, none drop"));
         assertTrue(String.join(" ", lines).contains("clock"));
         assertTrue(String.join(" ", lines).contains("falls 1% per day"));
         assertTrue(String.join(" ", lines).contains("changing seasons off"));
@@ -257,6 +259,7 @@ class EhmHelpTest {
         assertTrue(all.contains("hold 5 at a time"));
         assertTrue(all.contains("unpaid emerald turn-ins"));
         assertTrue(all.contains("20% larger"));
+        assertTrue(all.contains("Every 3 successes"));
         assertTrue(all.contains("with that resident"));
         assertTrue(all.contains("A kill counts for every open bounty"));
         assertTrue(all.contains("not replaced in that conversation"));

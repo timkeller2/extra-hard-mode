@@ -268,6 +268,8 @@ public final class AntiFarming implements FeatureModule {
                     }
                     int keep = CropGrowthRules.scaledDropCount(
                             stack.getCount(), CropGrowthRules.SAPLING_DROP_KEEP_PERCENT, rng);
+                    keep = CropGrowthRules.saplingsAfterCropLoss(
+                            keep, currentSeasonalLossRate(level), rng);
                     if (keep <= 0) {
                         return true;
                     }

@@ -35,9 +35,11 @@ class CouncilMissionRulesTest {
         assertEquals(7, CouncilMissionRules.nextCount(6));
         assertEquals(12, CouncilMissionRules.nextCount(10));
         assertEquals(22, CouncilMissionRules.nextCount(18));
-        assertEquals(1, CouncilMissionRules.unlockedTier(2));
-        assertEquals(2, CouncilMissionRules.unlockedTier(4));
-        assertEquals(3, CouncilMissionRules.unlockedTier(6));
+        assertEquals(0, CouncilMissionRules.unlockedTier(2));
+        assertEquals(1, CouncilMissionRules.unlockedTier(3));
+        assertEquals(1, CouncilMissionRules.unlockedTier(5));
+        assertEquals(2, CouncilMissionRules.unlockedTier(6));
+        assertEquals(3, CouncilMissionRules.unlockedTier(9));
         assertEquals(3, CouncilMissionRules.unlockedTier(99));
         assertTrue(CouncilMissionRules.mobsAtTier(1).stream()
                 .anyMatch(mob -> "minecraft:witch".equals(mob.id())));
@@ -45,7 +47,7 @@ class CouncilMissionRulesTest {
                 .anyMatch(mob -> "minecraft:ravager".equals(mob.id())));
         CouncilMissionRules.Mob first = CouncilMissionRules.pickMob(0, 0);
         assertEquals(0, first.tier());
-        CouncilMissionRules.Mob rare = CouncilMissionRules.pickMob(6, 0);
+        CouncilMissionRules.Mob rare = CouncilMissionRules.pickMob(9, 0);
         assertEquals(3, rare.tier());
     }
 

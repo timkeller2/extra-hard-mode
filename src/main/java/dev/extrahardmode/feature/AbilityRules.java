@@ -66,7 +66,8 @@ public final class AbilityRules {
     /** Small hop on takeoff. */
     public static final double FLIGHT_LAUNCH_Y = 0.35;
     public static final int COOLDOWN_BASE_TICKS = 2400;
-    public static final int COOLDOWN_REDUCE_PER_POINT_TICKS = 100;
+    /** 3 seconds, in ticks, removed per point of mana level plus skill. */
+    public static final int COOLDOWN_REDUCE_PER_POINT_TICKS = 60;
     public static final int COOLDOWN_MIN_TICKS = 20;
     /** Magic arrow cooldown starts at this many seconds, then subtracts skill. */
     public static final int FIRE_BOLT_COOLDOWN_SECONDS = 10;
@@ -1804,9 +1805,8 @@ public final class AbilityRules {
     }
 
     /**
-     * 2 minutes minus 5 seconds per (mana level + skill), minimum 1 second.
-     * Hits the 1-second floor around combined rating 24 (for example 12 crystals
-     * at 2 mana each with no skill). Magic arrow uses
+     * 2 minutes minus 3 seconds per (mana level + skill), minimum 1 second.
+     * Hits the 1-second floor at combined rating 40. Magic arrow uses
      * {@link #FIRE_BOLT_COOLDOWN_SECONDS} minus skill instead. Mana level does not change that cooldown.
      */
     public static int cooldownTicks(int manaLevel, int uses) {

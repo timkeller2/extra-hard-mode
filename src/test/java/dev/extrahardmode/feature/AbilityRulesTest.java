@@ -666,12 +666,13 @@ class AbilityRulesTest {
     @Test
     void cooldownShrinksWithLevelAndSkill() {
         assertEquals(2400, AbilityRules.cooldownTicks(0, 0));
-        assertEquals(2300, AbilityRules.cooldownTicks(1, 0));
-        assertEquals(20, AbilityRules.cooldownTicks(24, 0));
+        assertEquals(2340, AbilityRules.cooldownTicks(1, 0));
+        assertEquals(60, AbilityRules.cooldownTicks(39, 0));
+        assertEquals(20, AbilityRules.cooldownTicks(40, 0));
         assertEquals(20, AbilityRules.cooldownTicks(100, 0));
-        assertEquals(2100, AbilityRules.cooldownTicks(1, 4));
+        assertEquals(2220, AbilityRules.cooldownTicks(1, 4));
         assertEquals(2400, AbilityRules.cooldownTicks(AbilityRules.HEAL, 0, 0));
-        assertEquals(2100, AbilityRules.cooldownTicks(AbilityRules.FLIGHT, 1, 4));
+        assertEquals(2220, AbilityRules.cooldownTicks(AbilityRules.FLIGHT, 1, 4));
     }
 
     @Test

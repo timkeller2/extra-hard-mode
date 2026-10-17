@@ -197,7 +197,7 @@ def build():
         Paragraph("Crops, trees, and hives", s["h"]),
         bullets(
             [
-                "Crops grow slowly. Sugar cane is one-tenth speed. Nether wart is one-twentieth. Trees take 10 times as long, and leaves drop half as many saplings.",
+                "Crops grow slowly. Sugar cane is one-tenth speed. Nether wart is one-twentieth. Trees take 10 times as long, and leaves drop half as many saplings. Each sapling that would still drop has twice the crop loss rate as a percent chance not to, so at 50% loss or higher none drop.",
                 "A one-block cane that would grow a second segment may become a weed, using the current crop-loss rate plus the soil under it.",
                 "Pumpkins and melons fruit at one-tenth speed. After each fruit the vine may become a weed, starting at 0% and rising 5% per fruit. Broken vines drop no seeds.",
                 "Shearing a full hive gives 1 honeycomb.",
@@ -356,7 +356,7 @@ def build():
                 "A zombie cannot turn a resident unless the hit that kills them starts while they are already below 5 health.",
                 "A home stops listing a resident who has died or is no longer around the bed.",
                 "A drop collector warns you when a biome boss is out, and names the compass direction from that resident. East is where the sun rises.",
-                "Council members each give a personal kill bounty: 6 to 18 common mobs at first, with 14 Minecraft days to finish. Each success with that resident makes their next hunt 20% larger and rarer. Another council member keeps a separate ladder, so one can stay easier. You can hold 5 at a time, including ones waiting for emeralds. The next bounty from that resident waits 7 Minecraft days after the last one was given, and only after you finish it.",
+                "Council members each give a personal kill bounty: 6 to 18 common mobs at first, with 14 Minecraft days to finish. Each success with that resident makes their next hunt 20% larger. Every 3 successes, that resident's next hunt is rarer. Another council member keeps a separate ladder, so one can stay easier. You can hold 5 at a time, including ones waiting for emeralds. The next bounty from that resident waits 7 Minecraft days after the last one was given, and only after you finish it.",
                 "A kill counts toward every open bounty on that mob. One bounty shows Zombie Bounty 3/12 above the ability icons. Two or more name the resident and stack upward. A bounty that runs out is not replaced in that conversation. The reward is experience from the slain health, plus emeralds when you return to that resident.",
             ],
             s["bullet"],

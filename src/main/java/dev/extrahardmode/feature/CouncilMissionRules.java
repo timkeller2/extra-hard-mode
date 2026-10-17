@@ -17,7 +17,7 @@ public final class CouncilMissionRules {
     public static final int MAX_OPEN_MISSIONS = 5;
     public static final int XP_FLAT = 25;
     public static final double XP_PER_EXTRA_POINT = 0.10;
-    public static final int TIER_EVERY_COMPLETED = 2;
+    public static final int TIER_EVERY_COMPLETED = 3;
     public static final int MAX_TIER = 3;
     public static final int SPAWN_WEIGHT_FACTOR = 3;
     public static final int HUD_GAP = 2;

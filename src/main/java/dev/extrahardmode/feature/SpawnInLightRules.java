@@ -11,6 +11,8 @@ package dev.extrahardmode.feature;
 public final class SpawnInLightRules {
     public static final int DEPTH_STEP = 20;
     public static final int CHANCE_LOSS_PER_LIGHT = 5;
+    /** Ticks between extra-spawn tries. Four times the original 200-tick cadence. */
+    public static final int ATTEMPT_INTERVAL_TICKS = 50;
 
     private SpawnInLightRules() {}
 

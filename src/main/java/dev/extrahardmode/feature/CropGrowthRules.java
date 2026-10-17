@@ -22,6 +22,11 @@ public final class CropGrowthRules {
     public static final int TREE_DURATION_PERCENT = 1000;
     /** Leaf loot keeps this percent of sapling counts (50 = half). */
     public static final int SAPLING_DROP_KEEP_PERCENT = 50;
+    /**
+     * A sapling that would still drop then fails this many percent per point of
+     * crop loss. Loss 50 is 100%, so none drop.
+     */
+    public static final int SAPLING_WITHHOLD_PER_LOSS = 2;
     /** Pumpkin and melon fruit attempts fire 1/10 as often as vanilla. */
     public static final int STEM_FRUIT_DURATION_PERCENT = 1000;
     /** Extra chance the vine becomes a weed after each fruit, starting at 0%. */
@@ -145,6 +150,43 @@ public final class CropGrowthRules {
             whole++;
         }
         return whole;
+    }
+
+    /**
+     * Percent chance a sapling that would drop does not. Twice the crop loss
+     * rate, and 100 once that rate reaches 50.
+     */
+    public static int saplingWithholdPercent(double cropLoss) {
+        if (!(cropLoss > 0.0)) {
+            return 0;
+        }
+        long percent = Math.round(cropLoss * SAPLING_WITHHOLD_PER_LOSS);
+        if (percent >= 100L) {
+            return 100;
+        }
+        return (int) percent;
+    }
+
+    /**
+     * Each sapling in {@code count} is kept unless it fails
+     * {@link #saplingWithholdPercent(double)}.
+     */
+    public static int saplingsAfterCropLoss(int count, double cropLoss, Random random) {
+        int n = Math.max(0, count);
+        int fail = saplingWithholdPercent(cropLoss);
+        if (n == 0 || fail <= 0) {
+            return n;
+        }
+        if (fail >= 100) {
+            return 0;
+        }
+        int kept = 0;
+        for (int i = 0; i < n; i++) {
+            if (random.nextInt(100) >= fail) {
+                kept++;
+            }
+        }
+        return kept;
     }
 
     public static final long TICKS_PER_DAY = 24000L;

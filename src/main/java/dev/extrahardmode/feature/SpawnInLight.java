@@ -39,7 +39,6 @@ public final class SpawnInLight implements FeatureModule {
     public static final SpawnInLight INSTANCE = new SpawnInLight();
 
     public static final int VISITED_CAP = 4096;
-    public static final int ATTEMPT_INTERVAL_TICKS = 200;
     private static final int MIN_PLAYER_DISTANCE_SQ = 24 * 24;
 
     private SpawnInLight() {}
@@ -60,7 +59,7 @@ public final class SpawnInLight implements FeatureModule {
                 || !level.getGameRules().get(GameRules.SPAWN_MONSTERS)) {
             return;
         }
-        boolean attempt = level.getGameTime() % ATTEMPT_INTERVAL_TICKS == 0;
+        boolean attempt = level.getGameTime() % SpawnInLightRules.ATTEMPT_INTERVAL_TICKS == 0;
         for (ServerPlayer player : level.players()) {
             recordVisit(player, config);
             if (attempt) {

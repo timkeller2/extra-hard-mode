@@ -273,6 +273,7 @@ public final class EhmHelp {
                         "Crops: Crops grow slowly. Sugar cane is 1/10 vanilla speed. Nether wart grows at 1/20 vanilla speed.",
                         "Crops: When a one-block cane would grow a second segment, it may become a weed at the current crop loss rate plus the soil under the cane.",
                         "Crops: Trees take 10 times as long to grow. Leaves drop half as many saplings.",
+                        "Crops: Each sapling that would drop has twice the crop loss rate as a percent chance not to. At 50% loss or higher, none drop.",
                         "Crops: Pumpkins and melons fruit at 1/10 vanilla rate. After each fruit the vine may become a weed, starting at 0% and rising 5% per fruit.",
                         "Crops: Broken pumpkin and melon vines drop no seeds. Shearing a full hive gives 1 honeycomb.",
                         "Crops: A bee that returns with nectar fills a hive or nest at 25% of the usual rate. farming.beeHoneyPercent of 100 is the usual rate. 0 never fills."));

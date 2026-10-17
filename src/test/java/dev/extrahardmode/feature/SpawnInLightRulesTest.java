@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 class SpawnInLightRulesTest {
     @Test
     void eachTwentyBlocksBelowTheBandAddsOneLight() {
+        assertEquals(50, SpawnInLightRules.ATTEMPT_INTERVAL_TICKS);
         assertEquals(11, SpawnInLightRules.allowedLight(11, 48, 48));
         assertEquals(11, SpawnInLightRules.allowedLight(11, 48, 64));
         assertEquals(11, SpawnInLightRules.allowedLight(11, 48, 29));
