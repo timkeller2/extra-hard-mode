@@ -123,7 +123,7 @@ def build():
         Paragraph("Building", s["h"]),
         bullets(
             [
-                "You cannot place a solid block while in the air, including while standing on the very edge of a block, or with no support.",
+                "You cannot place a solid block while in the air, including while standing on the very edge of a block, or with no support. A solid block up to 6 below counts as support. A one-block bridge over a deep chasm still does not.",
                 "Master Builder suspends those two limits while it runs. Right-click stone bricks in the air to cast it. Torch rules stay.",
                 "Torches, lanterns, and glowstone cannot be carried in the off hand.",
                 "Bucketed water and lava are not sources, except in a sealed 1x1x1 hole or receptacle that does not touch a source.",
@@ -154,6 +154,7 @@ def build():
             "Seven different foods in the last 7 meals gives another +1 hunger, +1 saturation, and 3 experience, "
             "and it can happen again on later meals that keep that streak. "
             "The same food 5 times in the last 7 meals restores less; 7 of the last 7 restores even less. "
+            "A meal still gives at least 1 hunger, and saturation does not fall. "
             "The locator bar is off until you eat a golden carrot. It stays on until your saturation is gone. "
             "Another player sees you only while their own bar is on too.",
             s["body"],
@@ -301,11 +302,12 @@ def build():
         ),
         bullets(
             [
-                "Paper: Healing. The health is spread across the 6-second blue sparkle. Iron ingot: Iron Heart. Feather: Flight. Sneak on a block to stop; sneaking in the air descends. Arrow: Magic arrow. It deals 3 times ability level. Cooldown is 10 seconds minus skill. Every 2 levels, rounded down, another shot goes to a different creature for no extra cost. Charcoal in the hotbar or inventory, not a bundle, adds +2. One charcoal is consumed, and the arrows burn.",
+                "Paper: Healing. The health is spread across the 6-second blue sparkle. A honey bottle adds +4 and is consumed, including the bottle. Iron ingot: Iron Heart. Feather: Flight. Sneak on a block to stop; sneaking in the air descends. Arrow: Magic arrow. It deals 3 times ability level. Cooldown is 10 seconds minus skill. Every 2 levels, rounded down, another shot goes to a different creature for no extra cost. Charcoal in the hotbar or inventory, not a bundle, adds +2. One charcoal is consumed, and the arrows burn.",
                 "Any hoe: Let it grow, on a plant. Coal: Let there be light. Any pickaxe: Power mining. Compass: Detect ore. The compass is kept. Nether quartz is not required. The largest nether quartz stack in the hotbar or inventory, not a bundle, adds the square root of its count, rounded, and that many quartz are consumed from that stack. Reach is 4 + ability level minus that ore's difficulty.",
                 "String: Slow. Spider eye: Sense Evil. Golden sword: Smite Evil. It costs 1/4 mana. With at least 1 mana, the crosshair turns gold on a creature in reach. Stone bricks in the air: Master Builder. Diamond: Diamond Skin. Redstone dust in the air: Empower. Quartz block in the air: Battery. Lapis lazuli: Lapis Shield.",
                 "Battery costs no mana. It lasts 2 minutes per ability level, at least 2 minutes, and multiplies mana regen by 1 plus the square root of its level. It renews until mana reaches your mana level, and ends when it does. A renew consumes one quartz block. Two in hand consume both and add +2.",
                 "Lapis lazuli casts Lapis Shield for 1 mana. It lasts 1 minute per ability level. A force field surrounds the targeted character, or you if none is targeted. Damage up to that level is absorbed before armor or health. Every 3 points blocked costs 1 lapis lazuli, rounded up. If you cannot pay, the shield ends and the hit is not absorbed. One lapis lazuli is consumed to cast. Two in hand consume both and add +2.",
+                "A book above experience level 30 writes a Tome of the Wise for 1 mana. It saves 100% of the experience above level 30, plus 5% per ability level, names you in the tome, and sets you back to level 30. Two books in hand consume both and add +2. Reading that tome costs 1 mana and the tome, and grants 100% of the saved experience, plus 5% per ability level.",
                 "Master Builder lasts 30 seconds times ability level, renews while you have mana, and cancels on another air click. One brick is consumed. Two in hand consume both and add +2. A renew spends a brick only when you are holding one, and that adds +2.",
                 "Diamond Skin costs 2 mana and lasts 30 seconds times ability level. Its effective level is at least 2, so a bare cast still halves health damage. It renews while you have 2 mana, and cancels on another right-click. One diamond is consumed. Two in hand consume both and add +2. A renew spends a diamond only when you are holding one, and that adds +2.",
                 "While Diamond Skin lasts, damage that would reach your health is divided by the ability level. Armor still applies first. Each point prevented shortens the effect by 3 seconds. Poison, drowning, and suffocation are not reduced. A quarter-second cyan sparkle plays when a hit is reduced.",

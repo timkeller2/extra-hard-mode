@@ -15,6 +15,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(FoodProperties.class)
 public abstract class FoodPropertiesMixin {
+    @Inject(method = "onConsume", at = @At("HEAD"))
+    private void ehm$rememberMeal(Level level, LivingEntity entity, ItemStack stack, Consumable consumable, CallbackInfo ci) {
+        if (entity instanceof Player player) {
+            Hunger.rememberMeal(player);
+        }
+    }
+
     @Inject(method = "onConsume", at = @At("RETURN"))
     private void ehm$varietyBonus(Level level, LivingEntity entity, ItemStack stack, Consumable consumable, CallbackInfo ci) {
         if (entity instanceof Player player) {

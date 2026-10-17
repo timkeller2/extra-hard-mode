@@ -91,9 +91,13 @@ public final class PlacementRules {
         return !shape.isEmpty();
     }
 
+    /** How many blocks straight down can support a placement. The block just below is 1. */
+    public static final int SUPPORT_BELOW = 6;
+
     /**
-     * Unsupported sky bridge: no solid support within 1 below, and no solid neighbor
-     * except the clicked face / the block the player is standing on.
+     * Unsupported sky bridge: nothing solid in the {@link #SUPPORT_BELOW} blocks straight
+     * down, no solid beside the cell just below, and no solid neighbor except the clicked
+     * face or the block the player is standing on.
      */
     public static boolean denySkyBridge(
             boolean enable,
@@ -104,7 +108,7 @@ public final class PlacementRules {
         if (!enable) {
             return false;
         }
-        if (hasSupportWithinOneBelow(level, place)) {
+        if (hasSupportBelow(level, place)) {
             return false;
         }
         for (Direction direction : Direction.values()) {
@@ -119,13 +123,37 @@ public final class PlacementRules {
         return true;
     }
 
-    public static boolean hasSupportWithinOneBelow(BlockGetter level, BlockPos place) {
-        BlockPos below = place.below();
-        if (isSolidSupport(level, below)) {
+    /**
+     * A solid block directly underneath, up to {@link #SUPPORT_BELOW} down, supports the
+     * placement. A solid block beside the cell just below still does too.
+     */
+    public static boolean hasSupportBelow(BlockGetter level, BlockPos place) {
+        BlockPos cursor = place;
+        boolean[] column = new boolean[SUPPORT_BELOW];
+        for (int depth = 0; depth < SUPPORT_BELOW; depth++) {
+            cursor = cursor.below();
+            column[depth] = isSolidSupport(level, cursor);
+        }
+        if (columnSupports(column)) {
             return true;
         }
+        BlockPos justBelow = place.below();
         for (Direction direction : Direction.Plane.HORIZONTAL) {
-            if (isSolidSupport(level, below.relative(direction))) {
+            if (isSolidSupport(level, justBelow.relative(direction))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** {@code solidStraightDown[0]} is one block below. Entries past {@link #SUPPORT_BELOW} are ignored. */
+    public static boolean columnSupports(boolean[] solidStraightDown) {
+        if (solidStraightDown == null) {
+            return false;
+        }
+        int limit = Math.min(SUPPORT_BELOW, solidStraightDown.length);
+        for (int depth = 0; depth < limit; depth++) {
+            if (solidStraightDown[depth]) {
                 return true;
             }
         }

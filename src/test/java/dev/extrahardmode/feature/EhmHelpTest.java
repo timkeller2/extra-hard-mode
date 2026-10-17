@@ -25,6 +25,8 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("/ 200 per minute"));
         assertTrue(String.join(" ", lines).contains("saturation"));
         assertTrue(String.join(" ", lines).contains("Well Fed"));
+        assertTrue(String.join(" ", lines).contains("at least 1 hunger"));
+        assertTrue(String.join(" ", lines).contains("saturation does not fall"));
         assertTrue(String.join(" ", lines).contains("Below 18"));
         assertTrue(String.join(" ", lines).contains("does not consume saturation"));
         assertTrue(String.join(" ", lines).contains("casts Battery"));
@@ -152,6 +154,8 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("12 blocks"));
         assertTrue(String.join(" ", lines).contains("7 more days"));
         assertTrue(String.join(" ", lines).contains("off hand"));
+        assertTrue(String.join(" ", lines).contains("up to 6 below"));
+        assertTrue(String.join(" ", lines).contains("one-block bridge over a deep chasm"));
         assertTrue(String.join(" ", lines).contains("falls more than 3 blocks"));
         assertTrue(String.join(" ", lines).contains("drops nothing"));
         assertTrue(String.join(" ", lines).contains("Breaking a block that is on fire"));
@@ -303,6 +307,9 @@ class EhmHelpTest {
         assertTrue(EhmHelp.resolve("empower").lines().stream().anyMatch(line -> line.startsWith("Empower:")));
         assertTrue(EhmHelp.resolve("battery").lines().stream().anyMatch(line -> line.startsWith("Battery:")));
         assertTrue(EhmHelp.resolve("lapis shield").lines().stream().anyMatch(line -> line.startsWith("Lapis Shield:")));
+        assertTrue(EhmHelp.resolve("write tome").lines().stream().anyMatch(line -> line.startsWith("Write Tome of the Wise:")));
+        assertTrue(EhmHelp.resolve("read tome").lines().stream().anyMatch(line -> line.startsWith("Read Tome of the Wise:")));
+        assertTrue(String.join(" ", EhmHelp.resolve("abilities").lines()).contains("Tome of the Wise"));
         assertTrue(EhmHelp.resolve("lapus").lines().stream().anyMatch(line -> line.startsWith("Lapis Shield:")));
         assertTrue(EhmHelp.resolve("ability fire bolt").lines().stream().anyMatch(line -> line.contains("arrows burn")));
     }

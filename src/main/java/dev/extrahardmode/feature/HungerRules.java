@@ -136,6 +136,9 @@ public final class HungerRules {
         return Math.max(0, Math.min(20, foodLevel));
     }
 
+    /** A penalized meal still restores at least this much hunger. */
+    public static final int MIN_HUNGER_RESTORED = 1;
+
     /**
      * Same food in the last {@link #DEFAULT_FOOD_HISTORY} meals: 5–6 times −1
      * hunger and saturation, 7 times −2 each. Applied after vanilla restoration.
@@ -158,8 +161,30 @@ public final class HungerRules {
         return Math.clamp(foodLevel - Math.max(0, penalty), 0, Math.max(0, maxFood));
     }
 
+    /**
+     * Hunger after the calculated penalty. The meal still ends at least
+     * {@link #MIN_HUNGER_RESTORED} above {@code hungerBeforeMeal}, and never above the cap.
+     */
+    public static int foodAfterRepeatPenalty(int foodLevel, int penalty, int maxFood, int hungerBeforeMeal) {
+        int penalized = foodAfterRepeatPenalty(foodLevel, penalty, maxFood);
+        int max = Math.max(0, maxFood);
+        int floor = Math.min(max, Math.max(0, hungerBeforeMeal) + MIN_HUNGER_RESTORED);
+        return Math.max(penalized, floor);
+    }
+
     public static float saturationAfterRepeatPenalty(int foodLevel, float saturation, int penalty) {
         return clampSaturation(saturation - Math.max(0, penalty), foodLevel);
+    }
+
+    /**
+     * Saturation after the calculated penalty. The meal does not leave saturation
+     * below {@code saturationBeforeMeal}. It still cannot exceed hunger.
+     */
+    public static float saturationAfterRepeatPenalty(
+            int foodLevel, float saturation, int penalty, float saturationBeforeMeal) {
+        float penalized = saturationAfterRepeatPenalty(foodLevel, saturation, penalty);
+        float floor = Math.max(0.0F, saturationBeforeMeal);
+        return clampSaturation(Math.max(penalized, floor), foodLevel);
     }
 
     public static float clampSaturation(float saturation, int foodLevel) {

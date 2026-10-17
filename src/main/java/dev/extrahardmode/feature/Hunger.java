@@ -47,8 +47,12 @@ public final class Hunger implements FeatureModule {
     private static final Map<UUID, Pose> LAST_POSE = new ConcurrentHashMap<>();
 
     private static final Map<UUID, Long> LAST_ACTIVITY_TICK = new ConcurrentHashMap<>();
+    /** Hunger and saturation from just before this meal, captured before vanilla adds the food. */
+    private static final Map<UUID, MealStart> MEAL_START = new ConcurrentHashMap<>();
 
     private record Pose(double x, double y, double z, float yaw, float pitch) {}
+
+    private record MealStart(int hunger, float saturation) {}
 
     @Override
     public Identifier id() {
@@ -144,6 +148,16 @@ public final class Hunger implements FeatureModule {
     private static void clear(UUID id) {
         LAST_POSE.remove(id);
         LAST_ACTIVITY_TICK.remove(id);
+        MEAL_START.remove(id);
+    }
+
+    /** Call at the start of eating, before hunger and saturation change. */
+    public static void rememberMeal(Player player) {
+        if (!(player instanceof ServerPlayer serverPlayer)) {
+            return;
+        }
+        FoodData food = serverPlayer.getFoodData();
+        MEAL_START.put(serverPlayer.getUUID(), new MealStart(food.getFoodLevel(), food.getSaturationLevel()));
     }
 
     public static boolean overridesRegen(Player player) {
@@ -182,6 +196,7 @@ public final class Hunger implements FeatureModule {
         if (!(player instanceof ServerPlayer serverPlayer)) {
             return;
         }
+        MealStart mealStart = MEAL_START.remove(serverPlayer.getUUID());
         if (!(serverPlayer.level() instanceof ServerLevel level) || !WorldGate.isModuleActive(level, ID)) {
             return;
         }
@@ -212,7 +227,7 @@ public final class Hunger implements FeatureModule {
         int count = FoodHistory.countInLast(updated, foodId, WellFedRules.penaltyWindow(wellFed));
         int penalty = WellFedRules.repeatPenalty(count, wellFed);
         if (penalty > 0) {
-            applyRepeatPenalty(serverPlayer.getFoodData(), penalty, maxFood);
+            applyRepeatPenalty(serverPlayer.getFoodData(), penalty, maxFood, mealStart);
             warnRepeatFood(serverPlayer, level, stack, foodId, count);
         }
         WellFed.clampFood(serverPlayer, maxFood);
@@ -243,9 +258,18 @@ public final class Hunger implements FeatureModule {
                 1.6F);
     }
 
-    static void applyRepeatPenalty(FoodData food, int penalty, int maxFood) {
-        int level = HungerRules.foodAfterRepeatPenalty(food.getFoodLevel(), penalty, maxFood);
-        float saturation = HungerRules.saturationAfterRepeatPenalty(level, food.getSaturationLevel(), penalty);
+    static void applyRepeatPenalty(FoodData food, int penalty, int maxFood, MealStart mealStart) {
+        int level;
+        float saturation;
+        if (mealStart == null) {
+            level = HungerRules.foodAfterRepeatPenalty(food.getFoodLevel(), penalty, maxFood);
+            saturation = HungerRules.saturationAfterRepeatPenalty(level, food.getSaturationLevel(), penalty);
+        } else {
+            level = HungerRules.foodAfterRepeatPenalty(
+                    food.getFoodLevel(), penalty, maxFood, mealStart.hunger());
+            saturation = HungerRules.saturationAfterRepeatPenalty(
+                    level, food.getSaturationLevel(), penalty, mealStart.saturation());
+        }
         food.setFoodLevel(level);
         food.setSaturation(saturation);
     }

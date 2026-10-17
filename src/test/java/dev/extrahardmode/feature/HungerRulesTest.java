@@ -103,6 +103,13 @@ class HungerRulesTest {
         assertEquals(0, HungerRules.foodAfterRepeatPenalty(1, 2));
         assertEquals(4.0F, HungerRules.saturationAfterRepeatPenalty(9, 5.0F, 1), 0.001F);
         assertEquals(8.0F, HungerRules.saturationAfterRepeatPenalty(8, 10.0F, 2), 0.001F);
+        assertEquals(11, HungerRules.foodAfterRepeatPenalty(11, 2, 20, 10));
+        assertEquals(12, HungerRules.foodAfterRepeatPenalty(14, 2, 20, 10));
+        assertEquals(20, HungerRules.foodAfterRepeatPenalty(20, 2, 20, 19));
+        assertEquals(20, HungerRules.foodAfterRepeatPenalty(20, 2, 20, 20));
+        assertEquals(5.0F, HungerRules.saturationAfterRepeatPenalty(11, 5.2F, 2, 5.0F), 0.001F);
+        assertEquals(12.0F, HungerRules.saturationAfterRepeatPenalty(16, 14.0F, 2, 8.0F), 0.001F);
+        assertEquals(11.0F, HungerRules.saturationAfterRepeatPenalty(11, 15.0F, 2, 15.0F), 0.001F);
     }
 
     @Test

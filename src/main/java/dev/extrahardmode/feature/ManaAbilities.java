@@ -29,6 +29,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.advancements.triggers.CriteriaTriggers;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.particles.ColorParticleOption;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -40,9 +41,11 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.network.Filterable;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -64,6 +67,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.BundleContents;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.component.ItemLore;
+import net.minecraft.world.item.component.WrittenBookContent;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
@@ -77,7 +83,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
 
-/** Mana abilities: heal, iron heart, magic arrow, flight, let it grow, let there be light, power mining, detect ore, slow, sense evil, smite evil, master builder, diamond skin, empower, battery, lapis shield. */
+/** Mana abilities: heal, iron heart, magic arrow, flight, let it grow, let there be light, power mining, detect ore, slow, sense evil, smite evil, master builder, diamond skin, empower, battery, lapis shield, write tome, read tome. */
 public final class ManaAbilities implements FeatureModule {
     public static final Identifier ID = ExtraHardModeMod.id("mana_abilities");
     private static final float MINING_REACH = 5.0F;
@@ -203,6 +209,12 @@ public final class ManaAbilities implements FeatureModule {
             if (serverPlayer.getMainHandItem().is(Items.LAPIS_LAZULI) && tryLapisShield(serverPlayer, null)) {
                 return InteractionResult.FAIL;
             }
+            if (tryReadTome(serverPlayer)) {
+                return InteractionResult.FAIL;
+            }
+            if (serverPlayer.getMainHandItem().is(Items.BOOK) && tryWriteTome(serverPlayer)) {
+                return InteractionResult.FAIL;
+            }
         }
         skipGrowAfterUse(player, level, hand);
         return InteractionResult.PASS;
@@ -323,6 +335,21 @@ public final class ManaAbilities implements FeatureModule {
                 && tryLapisShield(serverPlayer, null)) {
             return InteractionResult.FAIL;
         }
+        if (hand == InteractionHand.MAIN_HAND
+                && player instanceof ServerPlayer serverPlayer
+                && level instanceof ServerLevel serverLevel
+                && WorldGate.isModuleActive(serverLevel, ID)
+                && tryReadTome(serverPlayer)) {
+            return InteractionResult.FAIL;
+        }
+        if (hand == InteractionHand.MAIN_HAND
+                && player instanceof ServerPlayer serverPlayer
+                && level instanceof ServerLevel serverLevel
+                && WorldGate.isModuleActive(serverLevel, ID)
+                && serverPlayer.getMainHandItem().is(Items.BOOK)
+                && tryWriteTome(serverPlayer)) {
+            return InteractionResult.FAIL;
+        }
         skipGrowAfterUse(player, level, hand);
         return InteractionResult.PASS;
     }
@@ -368,6 +395,21 @@ public final class ManaAbilities implements FeatureModule {
                 && WorldGate.isModuleActive(serverLevel, ID)
                 && serverPlayer.getMainHandItem().is(Items.LAPIS_LAZULI)
                 && tryLapisShield(serverPlayer, entity instanceof LivingEntity living ? living : null)) {
+            return InteractionResult.FAIL;
+        }
+        if (hand == InteractionHand.MAIN_HAND
+                && player instanceof ServerPlayer serverPlayer
+                && level instanceof ServerLevel serverLevel
+                && WorldGate.isModuleActive(serverLevel, ID)
+                && tryReadTome(serverPlayer)) {
+            return InteractionResult.FAIL;
+        }
+        if (hand == InteractionHand.MAIN_HAND
+                && player instanceof ServerPlayer serverPlayer
+                && level instanceof ServerLevel serverLevel
+                && WorldGate.isModuleActive(serverLevel, ID)
+                && serverPlayer.getMainHandItem().is(Items.BOOK)
+                && tryWriteTome(serverPlayer)) {
             return InteractionResult.FAIL;
         }
         return InteractionResult.PASS;
@@ -432,8 +474,8 @@ public final class ManaAbilities implements FeatureModule {
                 player, AbilityRules.HEAL, "tougher.ability.heal", "Healing", honey)) {
             return true;
         }
-        if (honey && InventorySearch.consumeOneMain(player, Items.HONEY_BOTTLE)) {
-            player.getInventory().placeItemBackInInventory(new ItemStack(Items.GLASS_BOTTLE), net.minecraft.util.Prediction.SERVER_ONLY);
+        if (honey) {
+            InventorySearch.consumeOneMain(player, Items.HONEY_BOTTLE);
         }
         spend(player, Items.PAPER, AbilityRules.HEAL);
         startHealSparkle(target, (float) power);
@@ -2594,7 +2636,8 @@ public final class ManaAbilities implements FeatureModule {
                 || held.is(Items.LAPIS_LAZULI)
                 || held.is(Items.PAPER)
                 || held.is(Items.FEATHER)
-                || held.is(Items.SPIDER_EYE)) {
+                || held.is(Items.SPIDER_EYE)
+                || held.is(Items.BOOK)) {
             hoeBonus += AbilityRules.catalystBonus(held.getCount());
         } else if (isLightCoal(held)) {
             hoeBonus += AbilityRules.catalystBonus(held.getCount());
@@ -2635,6 +2678,8 @@ public final class ManaAbilities implements FeatureModule {
                 || held.is(Items.REDSTONE)
                 || held.is(Items.QUARTZ_BLOCK)
                 || held.is(Items.LAPIS_LAZULI)
+                || held.is(Items.BOOK)
+                || tomeXp(held) > 0
                 || isLightCoal(held)) {
             if (hoeBonus > 0) {
                 player.sendOverlayMessage(Component.translatableWithFallback(
@@ -3065,6 +3110,153 @@ public final class ManaAbilities implements FeatureModule {
         return value == null ? 0 : Math.max(0, value);
     }
 
+    /**
+     * A plain book above experience level 30. One book is spent, or two from a stack,
+     * and that second book adds +2. The tome stores 100% of the experience above level
+     * 30, plus 5% per ability level, then the player is set back to exactly level 30.
+     */
+    static boolean tryWriteTome(ServerPlayer player) {
+        if (!player.getMainHandItem().is(Items.BOOK) || Achievements.skipPlayer(player)) {
+            return false;
+        }
+        if (alreadyHandled(player, (ServerLevel) player.level())) {
+            return true;
+        }
+        if (!TomeRules.canWrite(player.experienceLevel)) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.tome_level", "You must be above experience level 30."));
+            markHandled(player);
+            return true;
+        }
+        int bonus = AbilityRules.catalystBonus(player.getMainHandItem().getCount());
+        double power = abilityPower(player, AbilityRules.WRITE_TOME, bonus);
+        int visible = TomeRules.totalXp(player.experienceLevel, player.experienceProgress);
+        int saved = TomeRules.share(TomeRules.excessAboveKeptLevel(visible), power);
+        if (saved <= 0) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.tome_empty", "That would save no experience."));
+            markHandled(player);
+            return true;
+        }
+        if (blockedByCooldownOrMana(
+                player, AbilityRules.WRITE_TOME, "tougher.ability.write_tome", "Write Tome of the Wise")) {
+            return true;
+        }
+        ItemStack tome = writtenTome(player.getScoreboardName(), saved);
+        spend(player, Items.BOOK, AbilityRules.WRITE_TOME);
+        giveTome(player, tome);
+        dropToKeptLevel(player);
+        castTome(player);
+        tellAbilityUse(player, "tougher.ability.write_tome", "Write Tome of the Wise", power);
+        player.sendSystemMessage(Component.translatableWithFallback(
+                "tougher.message.tome_write",
+                "The tome holds %s experience.",
+                Component.literal(Integer.toString(saved))));
+        return true;
+    }
+
+    /**
+     * A written book that stores experience. Costs 1 mana and that book, and grants
+     * 100% of the stored experience, plus 5% per ability level. Sneak opens the book instead.
+     */
+    static boolean tryReadTome(ServerPlayer player) {
+        ItemStack held = player.getMainHandItem();
+        int saved = tomeXp(held);
+        if (saved <= 0 || Achievements.skipPlayer(player) || player.isSecondaryUseActive()) {
+            return false;
+        }
+        if (alreadyHandled(player, (ServerLevel) player.level())) {
+            return true;
+        }
+        double power = abilityPower(player, AbilityRules.READ_TOME, 0);
+        int grant = TomeRules.share(saved, power);
+        if (grant <= 0) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.tome_small",
+                    "That tome's experience is too small to read at this level."));
+            markHandled(player);
+            return true;
+        }
+        if (blockedByCooldownOrMana(
+                player, AbilityRules.READ_TOME, "tougher.ability.read_tome", "Read Tome of the Wise")) {
+            return true;
+        }
+        held.shrink(1);
+        spend(player, null, AbilityRules.READ_TOME);
+        player.giveExperiencePoints(grant);
+        castTome(player);
+        tellAbilityUse(player, "tougher.ability.read_tome", "Read Tome of the Wise", power);
+        player.sendSystemMessage(Component.translatableWithFallback(
+                "tougher.message.tome_read",
+                "The tome grants %s experience.",
+                Component.literal(Integer.toString(grant))));
+        return true;
+    }
+
+    static ItemStack writtenTome(String author, int xp) {
+        String who = TomeRules.authorName(author);
+        ItemStack stack = new ItemStack(Items.WRITTEN_BOOK);
+        Component page = Component.literal(TomeRules.note(who, xp));
+        stack.set(
+                DataComponents.WRITTEN_BOOK_CONTENT,
+                new WrittenBookContent(
+                        Filterable.passThrough(TomeRules.TITLE),
+                        who,
+                        0,
+                        java.util.List.of(Filterable.passThrough(page)),
+                        true));
+        CompoundTag tag = new CompoundTag();
+        tag.putInt(TomeRules.XP_KEY, Math.max(0, xp));
+        CustomData.set(DataComponents.CUSTOM_DATA, stack, tag);
+        stack.set(DataComponents.LORE, new ItemLore(java.util.List.of(page)));
+        stack.set(DataComponents.CUSTOM_NAME, Component.literal(TomeRules.TITLE));
+        return stack;
+    }
+
+    static int tomeXp(ItemStack stack) {
+        if (stack == null || stack.isEmpty() || !stack.is(Items.WRITTEN_BOOK)) {
+            return 0;
+        }
+        CustomData data = stack.get(DataComponents.CUSTOM_DATA);
+        if (data == null) {
+            return 0;
+        }
+        return Math.max(0, data.copyTag().getIntOr(TomeRules.XP_KEY, 0));
+    }
+
+    /** Leaves the player at exactly level {@link TomeRules#KEPT_LEVEL} with an empty bar. */
+    static void dropToKeptLevel(ServerPlayer player) {
+        int kept = TomeRules.xpToReachLevel(TomeRules.KEPT_LEVEL);
+        int visible = TomeRules.totalXp(player.experienceLevel, player.experienceProgress);
+        int excess = Math.max(0, visible - kept);
+        if (excess > 0) {
+            player.giveExperiencePoints(-excess);
+        }
+        int after = TomeRules.totalXp(player.experienceLevel, player.experienceProgress);
+        if (player.experienceLevel != TomeRules.KEPT_LEVEL || player.experienceProgress != 0.0F || after != kept) {
+            player.totalExperience = Math.max(0, player.totalExperience - (after - kept));
+            player.setExperienceLevels(TomeRules.KEPT_LEVEL);
+            player.setExperiencePoints(0);
+        }
+    }
+
+    static void giveTome(ServerPlayer player, ItemStack stack) {
+        if (!player.addItem(stack)) {
+            ItemEntity dropped = player.drop(stack, false, net.minecraft.util.Prediction.SERVER_ONLY);
+            if (dropped != null) {
+                dropped.setNoPickUpDelay();
+            }
+        }
+    }
+
+    static void castTome(ServerPlayer player) {
+        castEffect(
+                player,
+                SoundEvents.ENCHANTMENT_TABLE_USE,
+                ParticleTypes.ENCHANT,
+                ColorParticleOption.create(ParticleTypes.ENTITY_EFFECT, 0.55F, 0.35F, 0.85F));
+    }
+
     static String abilityForHeld(ItemStack held) {
         if (held == null || held.isEmpty()) {
             return null;
@@ -3116,6 +3308,12 @@ public final class ManaAbilities implements FeatureModule {
         }
         if (held.is(Items.LAPIS_LAZULI)) {
             return AbilityRules.LAPIS_SHIELD;
+        }
+        if (held.is(Items.BOOK)) {
+            return AbilityRules.WRITE_TOME;
+        }
+        if (tomeXp(held) > 0) {
+            return AbilityRules.READ_TOME;
         }
         return null;
     }

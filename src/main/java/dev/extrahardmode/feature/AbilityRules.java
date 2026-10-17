@@ -32,6 +32,8 @@ public final class AbilityRules {
     public static final String EMPOWER = "empower";
     public static final String BATTERY = "battery";
     public static final String LAPIS_SHIELD = "lapis_shield";
+    public static final String WRITE_TOME = "write_tome";
+    public static final String READ_TOME = "read_tome";
     public static final int MANA_COST = 1;
     public static final int DIAMOND_SKIN_MANA_COST = 2;
     public static final int DETECT_ORE_MANA_COST = 1;
@@ -105,6 +107,7 @@ public final class AbilityRules {
     public static final int BATTERY_SECONDS_PER_POWER = 120;
     public static final int BATTERY_MIN_SECONDS = 120;
     public static final String LAPIS_LAZULI_ID = "minecraft:lapis_lazuli";
+    public static final String BOOK_ID = "minecraft:book";
     /** Lapis Shield lasts this many seconds per point of effective ability level. */
     public static final int LAPIS_SHIELD_SECONDS_PER_POWER = 60;
     /** Diamond Skin lasts this many seconds per point of effective ability level. */
@@ -157,7 +160,9 @@ public final class AbilityRules {
                     DIAMOND_SKIN,
                     EMPOWER,
                     BATTERY,
-                    LAPIS_SHIELD);
+                    LAPIS_SHIELD,
+                    WRITE_TOME,
+                    READ_TOME);
 
     private AbilityRules() {}
 
@@ -210,6 +215,9 @@ public final class AbilityRules {
         }
         if (LAPIS_LAZULI_ID.equals(itemId)) {
             return LAPIS_SHIELD;
+        }
+        if (BOOK_ID.equals(itemId)) {
+            return WRITE_TOME;
         }
         return null;
     }
@@ -478,6 +486,8 @@ public final class AbilityRules {
             case EMPOWER -> "Empower";
             case BATTERY -> "Battery";
             case LAPIS_SHIELD -> "Lapis Shield";
+            case WRITE_TOME -> "Write Tome of the Wise";
+            case READ_TOME -> "Read Tome of the Wise";
             default -> "this ability";
         };
     }
@@ -504,6 +514,8 @@ public final class AbilityRules {
             case EMPOWER -> "Redstone will lend its strength to the next working.";
             case BATTERY -> "A block of quartz will hold a charge for your mana.";
             case LAPIS_SHIELD -> "Lapis can stand in the air between a body and the blow.";
+            case WRITE_TOME -> "What you have learned past a certain height can be set down, and carried.";
+            case READ_TOME -> "A careful reading gives back only a share of what was written down.";
             default -> "There is a lesson here, if you can pay for it.";
         };
     }
@@ -540,6 +552,10 @@ public final class AbilityRules {
                 "Hold a quartz block and right-click in the air. Right-click again to cancel. It costs no mana. It renews until mana reaches your level and spends a quartz block.";
             case LAPIS_SHIELD ->
                 "Hold lapis lazuli and right-click a creature, or yourself if none is targeted. It costs 1 mana. Right-click again to cancel.";
+            case WRITE_TOME ->
+                "Hold a book above experience level 30 and right-click. It costs 1 mana. Two books add +2. You return to level 30.";
+            case READ_TOME ->
+                "Hold a tome that holds experience and right-click. It costs 1 mana and returns 100% of what was saved, plus 5% per ability level.";
             default -> "";
         };
     }
@@ -573,7 +589,9 @@ public final class AbilityRules {
                 "diamond skin",
                 "empower",
                 "battery",
-                "lapis shield");
+                "lapis shield",
+                "write tome",
+                "read tome");
     }
 
     public static String abilityByTopic(String topic) {
@@ -601,6 +619,8 @@ public final class AbilityRules {
             case "empower" -> EMPOWER;
             case "battery" -> BATTERY;
             case "lapis shield", "lapisshield", "lapus shield", "lapusshield", "lapus" -> LAPIS_SHIELD;
+            case "book", "write tome", "write tome of the wise", "writetome" -> WRITE_TOME;
+            case "read tome", "read tome of the wise", "readtome", "tome" -> READ_TOME;
             default -> null;
         };
     }
@@ -617,7 +637,7 @@ public final class AbilityRules {
             case HEAL -> List.of(
                     "Healing: Right-click an injured teammate within 2 + ability level blocks while holding paper.",
                     "Healing: If no teammate is targeted and you are injured, you heal yourself instead.",
-                    "Healing: Costs 1 mana. A honey bottle in your main inventory (not a bundle) is consumed for +4, with or without mana.",
+                    "Healing: Costs 1 mana. A honey bottle in your main inventory (not a bundle) is consumed for +4, bottle included, with or without mana.",
                     "Healing: If you have no mana, a honey bottle still lets you heal, even with no mana levels.",
                     "Healing: The recipient sparkles blue for 6 seconds, and the healing is spread across that sparkle. One paper is consumed. Two in hand consume both and add +2.");
             case IRON_HEART -> List.of(
@@ -708,6 +728,14 @@ public final class AbilityRules {
                     "Lapis Shield: Damage up to that level is absorbed before armor or health. Every 3 points blocked costs 1 lapis lazuli, rounded up.",
                     "Lapis Shield: That lapis comes from your hotbar or inventory, not a bundle, armor, or the offhand. If you cannot pay, the hit lands and the shield ends.",
                     "Lapis Shield: Right-click again with lapis lazuli to cancel. One is consumed to cast. Two in hand consume both and add +2.");
+            case WRITE_TOME -> List.of(
+                    "Write Tome of the Wise: Right-click while holding a book and above experience level 30. Costs 1 mana and the book.",
+                    "Write Tome of the Wise: It saves 100% of your experience above level 30, plus 5% per ability level, then sets you to exactly level 30.",
+                    "Write Tome of the Wise: The tome names you and the experience it holds. That amount is stored on the book.",
+                    "Write Tome of the Wise: One book is consumed. Two in hand consume both and add +2.");
+            case READ_TOME -> List.of(
+                    "Read Tome of the Wise: Right-click a tome that holds experience. Costs 1 mana and the tome.",
+                    "Read Tome of the Wise: You gain 100% of the saved experience, plus 5% per ability level. Sneak and right-click to open it instead.");
             default -> null;
         };
     }
@@ -783,6 +811,8 @@ public final class AbilityRules {
                 "tougher.ability.index.redstone",
                 "tougher.ability.index.battery",
                 "tougher.ability.index.lapis_shield",
+                "tougher.ability.index.write_tome",
+                "tougher.ability.index.read_tome",
                 "tougher.ability.index.unlock",
                 "tougher.ability.index.unlock.2",
                 "tougher.ability.index.wise",
@@ -810,6 +840,8 @@ public final class AbilityRules {
                 "Redstone dust: Empower",
                 "Quartz block: Battery",
                 "Lapis lazuli: Lapis Shield",
+                "Book: Write Tome of the Wise",
+                "Tome: Read Tome of the Wise",
                 "You can learn up to half your mana level in abilities, rounded up.",
                 "Unlearned abilities can be used and still gain skill, at −3 power (floored at 1), until you have a free slot to learn them.",
                 "A wise teacher teaches one ability. A 24-point home charges 30 emeralds; each point above that takes 2 off, down to free.",

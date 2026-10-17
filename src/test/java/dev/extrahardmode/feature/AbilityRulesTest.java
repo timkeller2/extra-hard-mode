@@ -60,6 +60,9 @@ class AbilityRulesTest {
         assertEquals(null, AbilityRules.abilityForItem("minecraft:quartz"));
         assertEquals(AbilityRules.BATTERY, AbilityRules.abilityForItem("minecraft:quartz_block"));
         assertEquals(AbilityRules.LAPIS_SHIELD, AbilityRules.abilityForItem("minecraft:lapis_lazuli"));
+        assertEquals(AbilityRules.WRITE_TOME, AbilityRules.abilityForItem("minecraft:book"));
+        assertEquals(null, AbilityRules.abilityForItem("minecraft:written_book"));
+        assertEquals(null, AbilityRules.abilityForItem("minecraft:enchanted_book"));
         assertEquals(null, AbilityRules.abilityForItem("minecraft:lapis_block"));
         assertEquals(null, AbilityRules.abilityForItem(null));
         assertEquals(null, AbilityRules.abilityForItem(""));
@@ -93,7 +96,8 @@ class AbilityRulesTest {
             "minecraft:coal",
             "minecraft:redstone",
             "minecraft:quartz_block",
-            "minecraft:lapis_lazuli"
+            "minecraft:lapis_lazuli",
+            "minecraft:book"
         }) {
             String ability = AbilityRules.abilityForItem(item);
             String help = AbilityRules.helpFallback(ability);
@@ -107,6 +111,7 @@ class AbilityRulesTest {
         assertTrue(healHelp.contains("spread across that sparkle"));
         assertTrue(healHelp.contains("2 + ability level"));
         assertTrue(healHelp.contains("honey bottle"));
+        assertTrue(healHelp.contains("bottle included"));
         assertTrue(healHelp.contains("+4"));
         assertTrue(healHelp.contains("no mana levels"));
         assertEquals(120, AbilityRules.HEAL_SPARKLE_TICKS);
@@ -159,6 +164,8 @@ class AbilityRulesTest {
         assertFalse(AbilityRules.autoRenews(AbilityRules.EMPOWER));
         assertTrue(AbilityRules.autoRenews(AbilityRules.BATTERY));
         assertFalse(AbilityRules.autoRenews(AbilityRules.LAPIS_SHIELD));
+        assertFalse(AbilityRules.autoRenews(AbilityRules.WRITE_TOME));
+        assertFalse(AbilityRules.autoRenews(AbilityRules.READ_TOME));
         assertFalse(AbilityRules.autoRenews(AbilityRules.POWER_MINE));
         assertFalse(AbilityRules.autoRenews(AbilityRules.HEAL));
         assertTrue(AbilityRules.helpFallback(AbilityRules.POWER_MINE).contains("pickaxe"));
@@ -234,6 +241,23 @@ class AbilityRulesTest {
         assertEquals(3000, AbilityRules.lapisShieldDurationTicks(2.5));
         assertEquals(0, AbilityRules.lapisShieldDurationTicks(0));
         assertEquals(1.0, AbilityRules.manaCost(AbilityRules.LAPIS_SHIELD), 1e-9);
+        assertEquals(AbilityRules.WRITE_TOME, AbilityRules.abilityByTopic("write tome"));
+        assertEquals(AbilityRules.WRITE_TOME, AbilityRules.abilityByTopic("book"));
+        assertEquals(AbilityRules.READ_TOME, AbilityRules.abilityByTopic("read tome"));
+        assertEquals(AbilityRules.READ_TOME, AbilityRules.abilityByTopic("tome"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.WRITE_TOME).contains("above experience level 30"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.WRITE_TOME).contains("100%"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.WRITE_TOME).contains("plus 5% per ability level"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.WRITE_TOME).contains("exactly level 30"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.WRITE_TOME).contains("stored on the book"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.WRITE_TOME).contains("Two in hand consume both and add +2"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.READ_TOME).contains("100% of the saved experience"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.READ_TOME).contains("plus 5% per ability level"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.READ_TOME).contains("Sneak and right-click"));
+        assertEquals(1.0, AbilityRules.manaCost(AbilityRules.WRITE_TOME), 1e-9);
+        assertEquals(1.0, AbilityRules.manaCost(AbilityRules.READ_TOME), 1e-9);
+        assertEquals(AbilityRules.WRITE_TOME, AbilityRules.ABILITY_IDS.get(AbilityRules.ABILITY_IDS.size() - 2));
+        assertEquals(AbilityRules.READ_TOME, AbilityRules.ABILITY_IDS.getLast());
         assertEquals(null, AbilityRules.abilityByTopic("mining"));
         for (String line : AbilityRules.indexHelpLines()) {
             assertTrue(line.length() <= EhmHelp.MAX_LINE_CHARS, line);
@@ -273,6 +297,8 @@ class AbilityRulesTest {
         assertEquals("Diamond Skin", AbilityRules.nameFallback(AbilityRules.DIAMOND_SKIN));
         assertEquals("Empower", AbilityRules.nameFallback(AbilityRules.EMPOWER));
         assertEquals("Battery", AbilityRules.nameFallback(AbilityRules.BATTERY));
+        assertEquals("Write Tome of the Wise", AbilityRules.nameFallback(AbilityRules.WRITE_TOME));
+        assertEquals("Read Tome of the Wise", AbilityRules.nameFallback(AbilityRules.READ_TOME));
         assertEquals("Let there be light", AbilityRules.nameFallback(AbilityRules.LIGHT));
         assertEquals("tougher.ability.detect_ore", AbilityRules.nameKey(AbilityRules.DETECT_ORE));
         assertTrue(AbilityRules.lockedFallback(AbilityRules.HEAL).contains("Healing"));

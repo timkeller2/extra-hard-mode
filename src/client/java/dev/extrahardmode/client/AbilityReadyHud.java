@@ -162,6 +162,12 @@ public final class AbilityReadyHud {
         if (AbilityRules.LAPIS_SHIELD.equals(ability)) {
             return new ItemStack(Items.LAPIS_LAZULI);
         }
+        if (AbilityRules.WRITE_TOME.equals(ability)) {
+            return new ItemStack(Items.BOOK);
+        }
+        if (AbilityRules.READ_TOME.equals(ability)) {
+            return new ItemStack(Items.WRITTEN_BOOK);
+        }
         return new ItemStack(Items.FEATHER);
     }
 }

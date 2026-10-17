@@ -492,6 +492,9 @@ public final class AbilityReadyRules {
         if (AbilityRules.LAPIS_SHIELD.equals(ability)) {
             return AbilityRules.LAPIS_LAZULI_ID;
         }
+        if (AbilityRules.WRITE_TOME.equals(ability)) {
+            return AbilityRules.BOOK_ID;
+        }
         return null;
     }
 }
