@@ -257,10 +257,12 @@ class AbilityReadyRulesTest {
                 List.of(new AbilityReadyRules.SupplyStack(AbilityRules.FEATHER_ID, 1));
         Map<String, Integer> uses = Map.of(AbilityRules.FLIGHT, 16);
         Map<String, Long> lastUse = Map.of(AbilityRules.FLIGHT, 0L);
-        assertTrue(AbilityReadyRules.strongCasts(0, 5.0, uses, Set.of(AbilityRules.FLIGHT), 0, feather, false, 1950L, lastUse)
+        long withGold = AbilityRules.cooldownTicks(1, 16);
+        assertTrue(withGold < AbilityRules.cooldownTicks(0, 16));
+        assertTrue(AbilityReadyRules.strongCasts(0, 5.0, uses, Set.of(AbilityRules.FLIGHT), 0, feather, false, withGold, lastUse)
                 .isEmpty());
         List<AbilityReadyRules.StrongCast> ready = AbilityReadyRules.strongCasts(
-                0, 5.0, uses, Set.of(AbilityRules.FLIGHT), 1, feather, false, 1950L, lastUse);
+                0, 5.0, uses, Set.of(AbilityRules.FLIGHT), 1, feather, false, withGold, lastUse);
         assertEquals(List.of(AbilityRules.FLIGHT), ready.stream().map(AbilityReadyRules.StrongCast::ability).toList());
         assertEquals(4.0, ready.get(0).level(), 1e-9);
     }
