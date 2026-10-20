@@ -2,7 +2,6 @@ package dev.extrahardmode.feature;
 
 import java.util.Collection;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
@@ -89,80 +88,6 @@ public final class PlacementRules {
         }
         VoxelShape shape = state.getCollisionShape(level, pos);
         return !shape.isEmpty();
-    }
-
-    /** How many blocks straight down can support a placement. The block just below is 1. */
-    public static final int SUPPORT_BELOW = 6;
-
-    /**
-     * Unsupported sky bridge: nothing solid in the {@link #SUPPORT_BELOW} blocks straight
-     * down, no solid beside the cell just below, and no solid neighbor except the clicked
-     * face or the block the player is standing on.
-     */
-    public static boolean denySkyBridge(
-            boolean enable,
-            BlockGetter level,
-            BlockPos place,
-            BlockPos clicked,
-            BlockPos standingOn) {
-        if (!enable) {
-            return false;
-        }
-        if (hasSupportBelow(level, place)) {
-            return false;
-        }
-        for (Direction direction : Direction.values()) {
-            BlockPos neighbor = place.relative(direction);
-            if (neighbor.equals(clicked) || neighbor.equals(standingOn)) {
-                continue;
-            }
-            if (isSolidSupport(level, neighbor)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * A solid block directly underneath, up to {@link #SUPPORT_BELOW} down, supports the
-     * placement. A solid block beside the cell just below still does too.
-     */
-    public static boolean hasSupportBelow(BlockGetter level, BlockPos place) {
-        BlockPos cursor = place;
-        boolean[] column = new boolean[SUPPORT_BELOW];
-        for (int depth = 0; depth < SUPPORT_BELOW; depth++) {
-            cursor = cursor.below();
-            column[depth] = isSolidSupport(level, cursor);
-        }
-        if (columnSupports(column)) {
-            return true;
-        }
-        BlockPos justBelow = place.below();
-        for (Direction direction : Direction.Plane.HORIZONTAL) {
-            if (isSolidSupport(level, justBelow.relative(direction))) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /** {@code solidStraightDown[0]} is one block below. Entries past {@link #SUPPORT_BELOW} are ignored. */
-    public static boolean columnSupports(boolean[] solidStraightDown) {
-        if (solidStraightDown == null) {
-            return false;
-        }
-        int limit = Math.min(SUPPORT_BELOW, solidStraightDown.length);
-        for (int depth = 0; depth < limit; depth++) {
-            if (solidStraightDown[depth]) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static boolean isSolidSupport(BlockGetter level, BlockPos pos) {
-        BlockState state = level.getBlockState(pos);
-        return !state.isAir() && state.isSolid();
     }
 
     /** The block the player clicked, not the placement cell. */

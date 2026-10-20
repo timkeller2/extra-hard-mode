@@ -95,7 +95,8 @@ public final class AbilityRules {
     public static final String COAL_ID = "minecraft:coal";
     public static final String SPIDER_EYE_ID = "minecraft:spider_eye";
     public static final String GOLDEN_SWORD_ID = "minecraft:golden_sword";
-    public static final String STONE_BRICKS_ID = "minecraft:stone_bricks";
+    /** Clay brick item, not the bricks block and not stone bricks. */
+    public static final String BRICK_ID = "minecraft:brick";
     /** Master Builder lasts this many seconds per point of effective ability level. */
     public static final int MASTER_BUILDER_SECONDS_PER_POWER = 30;
     public static final String DIAMOND_ID = "minecraft:diamond";
@@ -133,6 +134,8 @@ public final class AbilityRules {
     public static final double SLOW_MAX = 0.80;
     public static final double SLOW_TOUGH_HEALTH = 100.0;
     public static final int SLOW_SECONDS_PER_POWER = 6;
+    /** Blocks the web travels per tick. */
+    public static final double SLOW_WEB_SPEED = 1.0;
     /** Base glow duration, plus this many seconds per rounded ability level. */
     public static final int LIGHT_SECONDS_BASE = 30;
     public static final int LIGHT_SECONDS_PER_LEVEL = 30;
@@ -202,7 +205,7 @@ public final class AbilityRules {
         if (GOLDEN_SWORD_ID.equals(itemId)) {
             return SMITE_EVIL;
         }
-        if (STONE_BRICKS_ID.equals(itemId)) {
+        if (BRICK_ID.equals(itemId)) {
             return MASTER_BUILDER;
         }
         if (DIAMOND_ID.equals(itemId)) {
@@ -539,12 +542,12 @@ public final class AbilityRules {
             case POWER_MINE -> "Hold any pickaxe and right-click. Hardened stone stops eating extra durability for a while.";
             case DETECT_ORE ->
                 "Hold a compass and right-click. You turn toward the best ore you are skilled enough to sense, preferring ore within 2 blocks of your height.";
-            case SLOW -> "Hold string and right-click. Nearby enemies slow down.";
+            case SLOW -> "Hold string and right-click. A web flies out and bursts on a creature or a solid block.";
             case SENSE_EVIL -> "Hold a spider eye and right-click. You turn toward a living biome boss, if one is out.";
             case SMITE_EVIL ->
                 "Hold a golden sword and right-click. It strikes a creature along your aim. With at least 1 mana the crosshair turns gold on one in reach. It costs 1/4 mana.";
             case MASTER_BUILDER ->
-                "Hold stone bricks and right-click in the air. Right-click in the air again to cancel. It costs 1 mana.";
+                "Hold a clay brick and right-click. Right-click again to cancel. It costs 1 mana.";
             case DIAMOND_SKIN ->
                 "Hold diamonds and right-click. Right-click again to cancel. It costs 2 mana.";
             case EMPOWER ->
@@ -684,9 +687,11 @@ public final class AbilityRules {
                     "Detect ore: It tells you the ore and approximate distance. You only sense ores at or below your ability level.",
                     "Detect ore: coal 1, quartz 2, copper 3, iron 4, redstone 5, lapis 6, gold 7, emerald 8, diamond 9, ancient debris 10.");
             case SLOW -> List.of(
-                    "Slow: Right-click while holding string. Costs 1 mana. Slows enemy mobs within ability level blocks.",
+                    "Slow: Right-click while holding string. Costs 1 mana. Throws a web up to (ability level × 2 + 4) blocks.",
+                    "Slow: It bursts on a creature or a solid block and slows creatures within (ability level) blocks of the landing.",
                     "Slow: The slow is 20% + 5% per ability level (max 80%) for (ability level × 6) seconds.",
-                    "Slow: Mobs with more than 100 health are affected half as much. One string is consumed. Two in hand consume both and add +2.");
+                    "Slow: Above 100 health, both the slow and the duration are multiplied by 100 divided by that health.",
+                    "Slow: It does not affect you, or any player closer to you than the hit. One string is consumed. Two in hand consume both and add +2.");
             case SENSE_EVIL -> List.of(
                     "Sense Evil: Right-click while holding a spider eye. Costs 1 mana.",
                     "Sense Evil: If a biome boss is spawned, you turn toward the nearest one and sparkle with a creepy aura for 6 seconds.",
@@ -699,9 +704,9 @@ public final class AbilityRules {
                     "Smite Evil: The strike includes enchantments, durability, and attack cooldown. Undead take extra damage equal to your ability level.",
                     "Smite Evil: A small flash of light appears on the creature hit.");
             case MASTER_BUILDER -> List.of(
-                    "Master Builder: Right-click in the air while holding stone bricks. Costs 1 mana. Lasts 30 seconds times your ability level.",
-                    "Master Builder: While it lasts, you can place solid blocks in the air and without support. Torch rules still apply.",
-                    "Master Builder: Right-click in the air again with stone bricks to cancel. If it ends and you still have mana, it spends another and continues.",
+                    "Master Builder: Right-click while holding a clay brick. Costs 1 mana. Lasts 30 seconds times your ability level.",
+                    "Master Builder: While it lasts, you can place solid blocks in the air, and block reach increases by your ability level. Torch rules still apply.",
+                    "Master Builder: Right-click again with a clay brick to cancel. If it ends and you still have mana, it spends another and continues.",
                     "Master Builder: One brick is consumed. Two in hand consume both and add +2. Continuing gains skill as if you cast it again.",
                     "Master Builder: A renew spends a brick only when you are holding one, and that one adds +2.");
             case DIAMOND_SKIN -> List.of(
@@ -836,7 +841,7 @@ public final class AbilityRules {
                 "String: Slow",
                 "Spider eye: Sense Evil",
                 "Golden sword: Smite Evil",
-                "Stone bricks: Master Builder",
+                "Clay brick: Master Builder",
                 "Diamond: Diamond Skin",
                 "Redstone dust: Empower",
                 "Quartz block: Battery",
@@ -1450,12 +1455,50 @@ public final class AbilityRules {
         return Math.abs(oreY - playerY) <= DETECT_ORE_LEVEL_BAND;
     }
 
-    public static double slowRange(double power) {
+    /** How far the web flies: ability level × 2 + 4 blocks. */
+    public static double slowProjectileRange(double power) {
+        return Math.max(0.0, power) * 2.0 + 4.0;
+    }
+
+    /** Burst radius around the landing: the ability level, in blocks. */
+    public static double slowBlastRadius(double power) {
         return Math.max(0.0, power);
+    }
+
+    /**
+     * Full effect at {@link #SLOW_TOUGH_HEALTH} or below. Above that, both the
+     * speed penalty and the duration scale by {@code 100 / health}.
+     */
+    public static double slowHealthFactor(double maxHealth) {
+        if (!(maxHealth > SLOW_TOUGH_HEALTH)) {
+            return 1.0;
+        }
+        return SLOW_TOUGH_HEALTH / maxHealth;
+    }
+
+    /**
+     * Caster is never slowed. Another player is skipped when they are closer to
+     * the caster than the hit. Mobs are not skipped for distance.
+     */
+    public static boolean slowAffects(
+            boolean caster, boolean player, double distanceFromCaster, double targetDistanceFromCaster) {
+        if (caster) {
+            return false;
+        }
+        return !player || distanceFromCaster >= targetDistanceFromCaster;
     }
 
     public static int slowDurationTicks(double power) {
         return Math.max(0, (int) Math.round(Math.max(0.0, power) * SLOW_SECONDS_PER_POWER * 20.0));
+    }
+
+    /** Unscaled duration times {@link #slowHealthFactor}. */
+    public static int slowDurationTicks(double power, double maxHealth) {
+        int base = slowDurationTicks(power);
+        if (base <= 0) {
+            return 0;
+        }
+        return Math.max(0, (int) Math.round(base * slowHealthFactor(maxHealth)));
     }
 
     /** 30 seconds plus 30 seconds per rounded ability level. */
@@ -1471,18 +1514,15 @@ public final class AbilityRules {
     }
 
     /**
-     * Movement-speed reduction from 0 to {@link #SLOW_MAX}. Tough mobs
-     * ({@code maxHealth >} {@link #SLOW_TOUGH_HEALTH}) take half.
+     * Movement-speed reduction from 0 to {@link #SLOW_MAX}, then scaled by
+     * {@link #slowHealthFactor} when max health is above 100.
      */
     public static double slowAmount(double power, double maxHealth) {
         double amount = SLOW_BASE + SLOW_PER_POWER * Math.max(0.0, power);
         if (amount > SLOW_MAX) {
             amount = SLOW_MAX;
         }
-        if (maxHealth > SLOW_TOUGH_HEALTH) {
-            amount *= 0.5;
-        }
-        return amount;
+        return amount * slowHealthFactor(maxHealth);
     }
 
     /**

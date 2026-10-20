@@ -27,4 +27,9 @@ public final class WeightFormula {
         double extra = Math.max(0.0, weight - maxPoints);
         return (int) Math.min(100.0, drownRate + extra * overencumbranceAdds);
     }
+
+    /** A water cell one block deep: water here, and no water above or below. */
+    public static boolean oneBlockDeepWater(boolean waterHere, boolean waterAbove, boolean waterBelow) {
+        return waterHere && !waterAbove && !waterBelow;
+    }
 }

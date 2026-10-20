@@ -15,6 +15,10 @@ public abstract class EntityFloatTextMixin {
         Integer left = self.getAttached(EhmAttachments.EHM_FLOAT_TEXT);
         if (left != null && left > 0) {
             cir.setReturnValue(false);
+            return;
+        }
+        if (Boolean.TRUE.equals(self.getAttached(EhmAttachments.EHM_SLOW_WEB))) {
+            cir.setReturnValue(false);
         }
     }
 }

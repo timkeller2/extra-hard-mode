@@ -156,8 +156,8 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("12 blocks"));
         assertTrue(String.join(" ", lines).contains("7 more days"));
         assertTrue(String.join(" ", lines).contains("off hand"));
-        assertTrue(String.join(" ", lines).contains("up to 6 below"));
-        assertTrue(String.join(" ", lines).contains("one-block bridge over a deep chasm"));
+        assertTrue(String.join(" ", lines).contains("even from the edge of a block"));
+        assertTrue(String.join(" ", lines).contains("suspends that limit"));
         assertTrue(String.join(" ", lines).contains("falls more than 3 blocks"));
         assertTrue(String.join(" ", lines).contains("drops nothing"));
         assertTrue(String.join(" ", lines).contains("Breaking a block that is on fire"));
@@ -182,6 +182,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("300 blocks from spawn"));
         assertTrue(String.join(" ", lines).contains("Everyone can earn every achievement"));
         assertTrue(String.join(" ", lines).contains("small brown number"));
+        assertTrue(String.join(" ", lines).contains("placements remaining only while you sneak"));
         assertFalse(String.join(" ", lines).contains("your mana abilities"));
         assertTrue(String.join(" ", lines).contains("25 extra experience and 3 more emeralds"));
         assertTrue(String.join(" ", lines).contains("3 experience"));

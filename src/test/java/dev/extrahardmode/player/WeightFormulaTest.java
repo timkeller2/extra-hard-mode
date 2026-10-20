@@ -1,6 +1,8 @@
 package dev.extrahardmode.player;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -40,5 +42,14 @@ class WeightFormulaTest {
     @Test
     void drownRateCapsAtOneHundred() {
         assertEquals(100, WeightFormula.drownRatePercent(100.0, 18.0, 35, 2));
+    }
+
+    @Test
+    void oneBlockDeepWaterNeedsWaterWithNothingAboveOrBelow() {
+        assertTrue(WeightFormula.oneBlockDeepWater(true, false, false));
+        assertFalse(WeightFormula.oneBlockDeepWater(true, true, false));
+        assertFalse(WeightFormula.oneBlockDeepWater(true, false, true));
+        assertFalse(WeightFormula.oneBlockDeepWater(true, true, true));
+        assertFalse(WeightFormula.oneBlockDeepWater(false, false, false));
     }
 }

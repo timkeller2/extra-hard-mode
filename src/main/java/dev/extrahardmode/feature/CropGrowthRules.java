@@ -18,6 +18,8 @@ public final class CropGrowthRules {
     public static final int SUGAR_CANE_DURATION_PERCENT = 1000;
     /** Nether wart random ticks fire 1/20 as often as vanilla. */
     public static final int NETHER_WART_DURATION_PERCENT = 2000;
+    /** Cocoa random ticks fire 1/20 as often as vanilla. */
+    public static final int COCOA_DURATION_PERCENT = 2000;
     /** Sapling random ticks fire 1/10 as often as vanilla. */
     public static final int TREE_DURATION_PERCENT = 1000;
     /** Leaf loot keeps this percent of sapling counts (50 = half). */

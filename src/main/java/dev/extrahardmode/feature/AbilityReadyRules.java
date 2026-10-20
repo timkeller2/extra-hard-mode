@@ -478,7 +478,7 @@ public final class AbilityReadyRules {
             return AbilityRules.GOLDEN_SWORD_ID;
         }
         if (AbilityRules.MASTER_BUILDER.equals(ability)) {
-            return AbilityRules.STONE_BRICKS_ID;
+            return AbilityRules.BRICK_ID;
         }
         if (AbilityRules.DIAMOND_SKIN.equals(ability)) {
             return AbilityRules.DIAMOND_ID;

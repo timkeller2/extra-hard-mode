@@ -67,7 +67,9 @@ class AbilityRulesTest {
         assertEquals(null, AbilityRules.abilityForItem(null));
         assertEquals(null, AbilityRules.abilityForItem(""));
         assertEquals(null, AbilityRules.abilityForItem("minecraft:air"));
-        assertEquals(AbilityRules.MASTER_BUILDER, AbilityRules.abilityForItem("minecraft:stone_bricks"));
+        assertEquals(AbilityRules.MASTER_BUILDER, AbilityRules.abilityForItem("minecraft:brick"));
+        assertEquals(null, AbilityRules.abilityForItem("minecraft:stone_bricks"));
+        assertEquals(null, AbilityRules.abilityForItem("minecraft:bricks"));
         assertEquals(AbilityRules.DIAMOND_SKIN, AbilityRules.abilityForItem("minecraft:diamond"));
         assertEquals(null, AbilityRules.abilityForItem("minecraft:diamond_block"));
         assertEquals(null, AbilityRules.abilityForItem("minecraft:stick"));
@@ -278,7 +280,7 @@ class AbilityRulesTest {
         assertTrue(AbilityRules.indexHelpFallback().contains("String: Slow"));
         assertTrue(AbilityRules.indexHelpFallback().contains("Spider eye: Sense Evil"));
         assertTrue(AbilityRules.indexHelpFallback().contains("Golden sword: Smite Evil"));
-        assertTrue(AbilityRules.indexHelpFallback().contains("Stone bricks: Master Builder"));
+        assertTrue(AbilityRules.indexHelpFallback().contains("Clay brick: Master Builder"));
         assertTrue(AbilityRules.indexHelpFallback().contains("Redstone dust: Empower"));
         assertTrue(AbilityRules.indexHelpFallback().contains("Quartz block: Battery"));
         assertTrue(AbilityRules.indexHelpFallback().contains("half your mana level"));
@@ -391,9 +393,10 @@ class AbilityRulesTest {
         assertEquals(0, AbilityRules.supplyBonus(AbilityRules.SMITE_EVIL, "minecraft:golden_sword", 1, false, 0));
         assertEquals(0, AbilityRules.supplyBonus(AbilityRules.SMITE_EVIL, "minecraft:golden_sword", 1, true, 0));
         assertEquals(2, AbilityRules.supplyBonus(AbilityRules.MAGIC_ARROW, "minecraft:arrow", 2, false, 0));
-        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.MASTER_BUILDER, "minecraft:stone_bricks", 2, false, 0));
-        assertEquals(0, AbilityRules.supplyBonus(AbilityRules.MASTER_BUILDER, "minecraft:stone_bricks", 1, false, 0));
-        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.MASTER_BUILDER, "minecraft:stone_bricks", 3, true, 0));
+        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.MASTER_BUILDER, "minecraft:brick", 2, false, 0));
+        assertEquals(0, AbilityRules.supplyBonus(AbilityRules.MASTER_BUILDER, "minecraft:brick", 1, false, 0));
+        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.MASTER_BUILDER, "minecraft:brick", 3, true, 0));
+        assertEquals(0, AbilityRules.supplyBonus(AbilityRules.MASTER_BUILDER, "minecraft:stone_bricks", 2, false, 0));
         assertEquals(2, AbilityRules.supplyBonus(AbilityRules.DIAMOND_SKIN, "minecraft:diamond", 2, false, 0));
         assertEquals(0, AbilityRules.supplyBonus(AbilityRules.DIAMOND_SKIN, "minecraft:diamond", 1, false, 0));
         assertEquals(2, AbilityRules.supplyBonus(AbilityRules.EMPOWER, "minecraft:redstone", 2, false, 0));
@@ -634,10 +637,10 @@ class AbilityRulesTest {
         assertTrue(skinHelp.contains("3 seconds"));
         assertEquals(AbilityRules.MASTER_BUILDER, AbilityRules.abilityByTopic("master builder"));
         String builderHelp = AbilityRules.helpFallback(AbilityRules.MASTER_BUILDER);
-        assertTrue(builderHelp.contains("stone bricks"));
+        assertTrue(builderHelp.contains("clay brick"));
         assertTrue(builderHelp.contains("30 seconds"));
-        assertTrue(builderHelp.contains("without support"));
-        assertTrue(builderHelp.contains("in the air again"));
+        assertTrue(builderHelp.contains("solid blocks in the air"));
+        assertTrue(builderHelp.contains("block reach"));
     }
 
     @Test
@@ -839,18 +842,42 @@ class AbilityRulesTest {
 
     @Test
     void slowScalesRangeDurationAndAmount() {
-        assertEquals(0.0, AbilityRules.slowRange(0), 1e-9);
-        assertEquals(2.0, AbilityRules.slowRange(2), 1e-9);
+        assertEquals(4.0, AbilityRules.slowProjectileRange(0), 1e-9);
+        assertEquals(6.0, AbilityRules.slowProjectileRange(1), 1e-9);
+        assertEquals(8.0, AbilityRules.slowProjectileRange(2), 1e-9);
+        assertEquals(0.0, AbilityRules.slowBlastRadius(0), 1e-9);
+        assertEquals(1.0, AbilityRules.slowBlastRadius(1), 1e-9);
+        assertEquals(2.0, AbilityRules.slowBlastRadius(2), 1e-9);
+        assertEquals(1.0, AbilityRules.slowHealthFactor(20), 1e-9);
+        assertEquals(1.0, AbilityRules.slowHealthFactor(100), 1e-9);
+        assertEquals(0.5, AbilityRules.slowHealthFactor(200), 1e-9);
+        assertEquals(0.25, AbilityRules.slowHealthFactor(400), 1e-9);
         assertEquals(0, AbilityRules.slowDurationTicks(0));
         assertEquals(120, AbilityRules.slowDurationTicks(1));
         assertEquals(240, AbilityRules.slowDurationTicks(2));
+        assertEquals(120, AbilityRules.slowDurationTicks(1, 100));
+        assertEquals(60, AbilityRules.slowDurationTicks(1, 200));
+        assertEquals(30, AbilityRules.slowDurationTicks(1, 400));
         assertEquals(0.20, AbilityRules.slowAmount(0, 20), 1e-9);
         assertEquals(0.25, AbilityRules.slowAmount(1, 20), 1e-9);
+        assertEquals(0.25, AbilityRules.slowAmount(1, 100), 1e-9);
+        assertEquals(0.125, AbilityRules.slowAmount(1, 200), 1e-9);
+        assertEquals(0.0625, AbilityRules.slowAmount(1, 400), 1e-9);
+        assertEquals(0.25 * 100.0 / 101.0, AbilityRules.slowAmount(1, 101), 1e-9);
         assertEquals(0.80, AbilityRules.slowAmount(12, 20), 1e-9);
         assertEquals(0.80, AbilityRules.slowAmount(20, 20), 1e-9);
-        assertEquals(0.125, AbilityRules.slowAmount(1, 101), 1e-9);
         assertEquals(0.40, AbilityRules.slowAmount(12, 200), 1e-9);
-        assertEquals(0.25, AbilityRules.slowAmount(1, 100), 1e-9);
+        assertFalse(AbilityRules.slowAffects(true, false, 1.0, 5.0));
+        assertFalse(AbilityRules.slowAffects(true, true, 0.0, 0.0));
+        assertFalse(AbilityRules.slowAffects(false, true, 2.0, 5.0));
+        assertTrue(AbilityRules.slowAffects(false, true, 5.0, 5.0));
+        assertTrue(AbilityRules.slowAffects(false, true, 6.0, 5.0));
+        assertTrue(AbilityRules.slowAffects(false, false, 1.0, 5.0));
+        String slowHelp = AbilityRules.helpFallback(AbilityRules.SLOW);
+        assertTrue(slowHelp.contains("ability level × 2 + 4"));
+        assertTrue(slowHelp.contains("(ability level) blocks"));
+        assertTrue(slowHelp.contains("100 divided by that health"));
+        assertTrue(slowHelp.contains("closer to you than the hit"));
     }
 
     @Test

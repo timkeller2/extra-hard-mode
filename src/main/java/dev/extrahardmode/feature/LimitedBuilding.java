@@ -97,7 +97,6 @@ public final class LimitedBuilding implements FeatureModule {
         if (placement == null || placement.getCollisionShape(level, context.getClickedPos()).isEmpty()) {
             return false;
         }
-        BlockPos place = context.getClickedPos();
         BlockPos underFeet = player.blockPosition().below();
         boolean airborne = PlacementRules.airborneForPlacement(
                 player.onGround(),
@@ -105,9 +104,6 @@ public final class LimitedBuilding implements FeatureModule {
                 player.isInWater(),
                 player.onClimbable(),
                 player.isPassenger());
-        if (PlacementRules.denyAirPlacement(true, airborne)) {
-            return true;
-        }
-        return PlacementRules.denySkyBridge(true, level, place, PlacementRules.againstBlock(context), underFeet);
+        return PlacementRules.denyAirPlacement(true, airborne);
     }
 }

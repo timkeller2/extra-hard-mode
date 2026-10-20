@@ -1,6 +1,5 @@
 package dev.extrahardmode.feature;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -75,16 +74,5 @@ class PlacementRulesTest {
         assertTrue(PlacementRules.denyAirPlacement(true, true));
         assertFalse(PlacementRules.denyAirPlacement(true, false));
         assertFalse(PlacementRules.denyAirPlacement(false, true));
-    }
-
-    @Test
-    void supportReachesSixBlocksStraightDown() {
-        assertEquals(6, PlacementRules.SUPPORT_BELOW);
-        assertFalse(PlacementRules.columnSupports(null));
-        assertFalse(PlacementRules.columnSupports(new boolean[0]));
-        assertFalse(PlacementRules.columnSupports(new boolean[] {false, false, false, false, false, false, true}));
-        assertTrue(PlacementRules.columnSupports(new boolean[] {true}));
-        assertTrue(PlacementRules.columnSupports(new boolean[] {false, false, false, false, false, true}));
-        assertFalse(PlacementRules.columnSupports(new boolean[] {false, false, false, false, false, false}));
     }
 }

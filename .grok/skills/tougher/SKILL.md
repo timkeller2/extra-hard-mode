@@ -3,7 +3,7 @@ name: tougher
 description: >
   Build, test, deploy, and document the Tougher Minecraft mod (package
   dev.extrahardmode, mod id tougher). Use when working in this repo, changing
-  gameplay, running Gradle, copying the jar, restarting the Hostinger server,
+  gameplay, running Gradle, copying the jar, restarting a live Minecraft server,
   updating docs/Tougher.pdf, or pushing to origin main. Use when the user runs
   /tougher.
 ---
@@ -24,9 +24,10 @@ Local jar copy is in `Agents.md`. This skill is the rest of the standing setup.
 
 - `assemble` runs `deployJar`, which copies only `build/libs/tougher-*.jar` (never the sources jar) into the two local mods folders named in `Agents.md`, replacing older `tougher-*.jar` and `extrahardmode-*.jar` files.
 - Leave the local dedicated server stopped. Do not start it.
-- The live server is Hostinger, systemd unit `minecraft.service`, files in `/opt/minecraft/server`, mods in `/opt/minecraft/server/mods`, game port 57674. Copy and restart it only when nobody has joined since the current boot.
-- SSH: `ssh -o BatchMode=yes -o ConnectTimeout=20 -i $env:USERPROFILE\.ssh\id_rsa root@srv1977903.hstgr.cloud`
-- Install the jar as `minecraft:minecraft` mode `644`. PowerShell strips quotes inside the remote command, so remote `grep` patterns must not need spaces (`joined`, `Done`, `Tougher`, `For.help`).
+- Two live servers share that layout: systemd unit `minecraft.service`, files in `/opt/minecraft/server`, mods in `/opt/minecraft/server/mods`, jar owner `minecraft:minecraft` mode `644`. Restart each one on its own, and only when nobody has joined since that server's current boot.
+- Hostinger SSH: `ssh -o BatchMode=yes -o ConnectTimeout=20 -i $env:USERPROFILE\.ssh\id_rsa root@srv1977903.hstgr.cloud`. Game port 57674.
+- Witherfen SSH: `ssh -o BatchMode=yes -o ConnectTimeout=20 -p 28920 -i $env:USERPROFILE\.ssh\id_rsa root@partycentral.tplinkdns.com`. Hostname `mc-witherfen`. Game port on the box is 25565. Public SSH is 28920; do not assume 25565 is forwarded. Leave `Chunky-Fabric-*.jar` in `mods/`. RCON is `127.0.0.1:25575`. The unit reads `/etc/minecraft.env` and `${RCON_PASSWORD}`, and that file is missing. The file on disk is `/opt/minecraft/minecraft.env` with `MCRCON_PASS`. Do not print it. Source that file and call `mcrcon` yourself. `systemctl stop` will not authenticate, then SIGINT after 90s.
+- PowerShell strips quotes inside the remote command, so remote `grep` patterns must not need spaces (`joined`, `Done`, `Tougher`, `For.help`). A remote script that needs quotes goes through `base64 -d`.
 - `joined` count `0` in `logs/latest.log` means the boot is empty. `Tougher loaded` is printed before the server is ready. A new boot is confirmed by `systemctl show minecraft.service -p ActiveEnterTimestamp` plus a later `Done` line.
 - Never print the RCON password, the management secret, or anything from `server.properties`. A Lithium warning that the NaturalSpawner mixin did not apply is already known.
 

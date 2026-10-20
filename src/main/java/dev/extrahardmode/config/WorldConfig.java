@@ -946,7 +946,7 @@ public final class WorldConfig {
                 writeDefaultIfMissing(
                         file,
                         "worldRules.limitedBlockPlacement",
-                        "No placing solid blocks while in the air, including from the edge of a block. A solid block up to 6 below counts as support. A one-block bridge over a deep chasm is still blocked.",
+                        "No placing solid blocks while in the air, including from the edge of a block.",
                         true);
                 writeDefaultIfMissing(
                         file,

@@ -15,6 +15,11 @@ public final class AchievementFloatRules {
 
     private AchievementFloatRules() {}
 
+    /** Builder counts appear only while the player is sneaking. Slayer counts always appear. */
+    public static boolean showPlacementCount(boolean sneaking) {
+        return sneaking;
+    }
+
     /** Actions still needed. Zero when this track has no further tier. */
     public static int remaining(int nextTarget, int count) {
         if (nextTarget <= 0 || count < 0 || count >= nextTarget) {

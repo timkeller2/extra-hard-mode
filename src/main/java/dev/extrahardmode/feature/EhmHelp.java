@@ -219,9 +219,8 @@ public final class EhmHelp {
         return Page.of(
                 "tougher.help.building.",
                 List.of(
-                        "Building: You cannot place blocks while in the air, even from the edge of a block, or with no support.",
-                        "Building: A solid block up to 6 below counts as support. A one-block bridge over a deep chasm still does not.",
-                        "Building: Master Builder suspends those two limits while it runs. Right-click stone bricks in the air to cast it.",
+                        "Building: You cannot place a solid block while in the air, even from the edge of a block.",
+                        "Building: Master Builder suspends that limit while it runs and adds its level to your block reach. Right-click a clay brick to cast it.",
                         "Building: You cannot carry a torch, lantern, or glowstone in your off hand.",
                         "Building: Bucketed water and lava are not sources, except in a sealed 1x1x1 hole or receptacle that does not touch a source.",
                         "Building: A boat that falls more than 3 blocks with you in it breaks and drops nothing.",
@@ -270,7 +269,7 @@ public final class EhmHelp {
         return Page.of(
                 "tougher.help.crops.",
                 List.of(
-                        "Crops: Crops grow slowly. Sugar cane is 1/10 vanilla speed. Nether wart grows at 1/20 vanilla speed.",
+                        "Crops: Crops grow slowly. Sugar cane is 1/10 vanilla speed. Cocoa beans grow at 1/20 vanilla speed. Nether wart grows at 1/20 vanilla speed.",
                         "Crops: When a one-block cane would grow a second segment, it may become a weed at the current crop loss rate plus the soil under the cane.",
                         "Crops: Trees take 10 times as long to grow. Leaves drop half as many saplings.",
                         "Crops: Each sapling that would drop has twice the crop loss rate as a percent chance not to. At 50% loss or higher, none drop.",
@@ -383,7 +382,7 @@ public final class EhmHelp {
                         "Abilities: Hold the catalyst and right-click. Let it grow on a plant; coal for Let there be light.",
                         "Abilities: An arrow casts Magic arrow. Charcoal in your inventory adds +2 and the burn, and one is consumed. Iron ingot: Iron Heart. Golden sword: Smite Evil.",
                         "Abilities: Smite Evil costs 1/4 mana. With at least 1 mana, the crosshair turns gold on a creature in reach.",
-                        "Abilities: Stone bricks right-clicked in the air cast Master Builder. It renews like Iron Heart until you run out of mana.",
+                        "Abilities: A clay brick casts Master Builder. It renews like Iron Heart until you run out of mana.",
                         "Abilities: Diamonds right-clicked cast Diamond Skin. It costs 2 mana, divides health damage by its level, and renews while you have mana.",
                         "Abilities: Diamond Skin's level is at least 2. Each point of health damage it prevents shortens it by 3 seconds.",
                         "Abilities: A cast consumes one catalyst. Two in hand consume both and add +2. Swords, hoes, and pickaxes are not consumed.",
@@ -422,7 +421,7 @@ public final class EhmHelp {
                         "Achievements: The first time you visit a biome you gain 50 experience, and 100 more if you are the first player to visit it.",
                         "Achievements: The first time you build a habitable home in a biome you gain (house points × 3) experience.",
                         "Achievements: The first time you travel 300 blocks from spawn you gain 100 experience.",
-                        "Achievements: A small brown number shows how many placements or kills remain. It drifts down and left for 3 seconds, and stays hidden when that track is finished."));
+                        "Achievements: The small brown number shows kills remaining, and placements remaining only while you sneak. It drifts down and left for 3 seconds, and stays hidden when finished."));
     }
 
     private static Page homes() {

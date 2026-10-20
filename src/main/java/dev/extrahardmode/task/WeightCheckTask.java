@@ -22,6 +22,7 @@ import net.minecraft.world.phys.Vec3;
 /**
  * Every 20 ticks: if the player is in water and overencumbered (or in a 1-wide waterfall),
  * roll drownRate + extra*2 and apply bubble drain and downward velocity (no extra HP damage).
+ * Water only one block deep does not roll.
  */
 public final class WeightCheckTask {
     private static final EquipmentSlot[] ARMOR_SLOTS = {
@@ -57,6 +58,9 @@ public final class WeightCheckTask {
         }
         boolean over = weight > settings.maxPoints();
         if (!over && !waterfall) {
+            return;
+        }
+        if (onlyOneBlockDeep(level, player)) {
             return;
         }
         double effective = over ? weight : settings.maxPoints();
@@ -125,6 +129,36 @@ public final class WeightCheckTask {
                 || path.equals("clock")
                 || path.equals("compass")
                 || path.equals("flint_and_steel");
+    }
+
+    /** True when every water block the player touches is a single-block column. */
+    static boolean onlyOneBlockDeep(ServerLevel level, ServerPlayer player) {
+        net.minecraft.world.phys.AABB box = player.getBoundingBox();
+        int minX = net.minecraft.util.Mth.floor(box.minX);
+        int maxX = net.minecraft.util.Mth.floor(box.maxX);
+        int minY = net.minecraft.util.Mth.floor(box.minY);
+        int maxY = net.minecraft.util.Mth.floor(box.maxY);
+        int minZ = net.minecraft.util.Mth.floor(box.minZ);
+        int maxZ = net.minecraft.util.Mth.floor(box.maxZ);
+        boolean sawWater = false;
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        for (int y = minY; y <= maxY; y++) {
+            for (int x = minX; x <= maxX; x++) {
+                for (int z = minZ; z <= maxZ; z++) {
+                    pos.set(x, y, z);
+                    if (!level.getFluidState(pos).is(FluidTags.WATER)) {
+                        continue;
+                    }
+                    sawWater = true;
+                    boolean above = level.getFluidState(pos.set(x, y + 1, z)).is(FluidTags.WATER);
+                    boolean below = level.getFluidState(pos.set(x, y - 1, z)).is(FluidTags.WATER);
+                    if (!WeightFormula.oneBlockDeepWater(true, above, below)) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return sawWater;
     }
 
     static boolean isOneWideWaterColumn(ServerLevel level, BlockPos pos) {

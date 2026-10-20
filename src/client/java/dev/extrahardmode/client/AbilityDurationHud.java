@@ -149,7 +149,7 @@ public final class AbilityDurationHud {
             return new ItemStack(Items.IRON_INGOT);
         }
         if (AbilityRules.MASTER_BUILDER.equals(ability)) {
-            return new ItemStack(Items.STONE_BRICKS);
+            return new ItemStack(Items.BRICK);
         }
         if (AbilityRules.DIAMOND_SKIN.equals(ability)) {
             return new ItemStack(Items.DIAMOND);

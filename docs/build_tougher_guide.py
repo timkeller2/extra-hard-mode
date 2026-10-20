@@ -123,8 +123,8 @@ def build():
         Paragraph("Building", s["h"]),
         bullets(
             [
-                "You cannot place a solid block while in the air, including while standing on the very edge of a block, or with no support. A solid block up to 6 below counts as support. A one-block bridge over a deep chasm still does not.",
-                "Master Builder suspends those two limits while it runs. Right-click stone bricks in the air to cast it. Torch rules stay.",
+                "You cannot place a solid block while in the air, including while standing on the very edge of a block. On the ground, a bridge over a gap is allowed.",
+                "Master Builder suspends that limit while it runs and adds its level to your block reach. Right-click a clay brick to cast it. Torch rules stay.",
                 "Torches, lanterns, and glowstone cannot be carried in the off hand.",
                 "Bucketed water and lava are not sources, except in a sealed 1x1x1 hole or receptacle that does not touch a source.",
                 "A boat that falls more than 3 blocks with you in it breaks and drops nothing.",
@@ -197,7 +197,7 @@ def build():
         Paragraph("Crops, trees, and hives", s["h"]),
         bullets(
             [
-                "Crops grow slowly. Sugar cane is one-tenth speed. Nether wart is one-twentieth. Trees take 10 times as long, and leaves drop half as many saplings. Each sapling that would still drop has twice the crop loss rate as a percent chance not to, so at 50% loss or higher none drop.",
+                "Crops grow slowly. Sugar cane is one-tenth speed. Cocoa beans and nether wart are one-twentieth. Trees take 10 times as long, and leaves drop half as many saplings. Each sapling that would still drop has twice the crop loss rate as a percent chance not to, so at 50% loss or higher none drop.",
                 "A one-block cane that would grow a second segment may become a weed, using the current crop-loss rate plus the soil under it.",
                 "Pumpkins and melons fruit at one-tenth speed. After each fruit the vine may become a weed, starting at 0% and rising 5% per fruit. Broken vines drop no seeds.",
                 "Shearing a full hive gives 1 honeycomb.",
@@ -304,11 +304,12 @@ def build():
             [
                 "Paper: Healing. The health is spread across the 6-second blue sparkle. A honey bottle adds +4 and is consumed, including the bottle. Iron ingot: Iron Heart. Feather: Flight. Sneak on a block to stop; sneaking in the air descends. Arrow: Magic arrow. It deals 3 times ability level. Cooldown is 10 seconds minus skill. Every 2 levels, rounded down, another shot goes to a different creature for no extra cost. Charcoal in the hotbar or inventory, not a bundle, adds +2. One charcoal is consumed, and the arrows burn.",
                 "Any hoe: Let it grow, on a plant. Coal: Let there be light. Any pickaxe: Power mining. Compass: Detect ore. The compass is kept. Nether quartz is not required. The largest nether quartz stack in the hotbar or inventory, not a bundle, adds the square root of its count, rounded, and that many quartz are consumed from that stack. Reach is 4 + ability level minus that ore's difficulty.",
-                "String: Slow. Spider eye: Sense Evil. Golden sword: Smite Evil. It costs 1/4 mana. With at least 1 mana, the crosshair turns gold on a creature in reach. Stone bricks in the air: Master Builder. Diamond: Diamond Skin. Redstone dust in the air: Empower. Quartz block in the air: Battery. Lapis lazuli: Lapis Shield.",
+                "String: Slow. It throws a web that bursts on a creature or a solid block. Spider eye: Sense Evil. Golden sword: Smite Evil. It costs 1/4 mana. With at least 1 mana, the crosshair turns gold on a creature in reach. Clay brick: Master Builder. Diamond: Diamond Skin. Redstone dust in the air: Empower. Quartz block in the air: Battery. Lapis lazuli: Lapis Shield.",
+                "Slow flies up to ability level times 2 plus 4 blocks. The burst slows creatures within the ability level of the landing. The slow is 20% plus 5% per level, up to 80%, for 6 seconds per level. Above 100 health, both the slow and the duration are multiplied by 100 divided by that health. It does not affect you, or any player closer to you than the hit.",
                 "Battery costs no mana. It lasts 2 minutes per ability level, at least 2 minutes, and multiplies mana regen by 1 plus the square root of its level. It renews until mana reaches your mana level, and ends when it does. A renew consumes one quartz block. Two in hand consume both and add +2.",
                 "Lapis lazuli casts Lapis Shield for 1 mana. It lasts 1 minute per ability level. A force field surrounds the targeted character, or you if none is targeted. Damage up to that level is absorbed before armor or health. Every 3 points blocked costs 1 lapis lazuli, rounded up. If you cannot pay, the shield ends and the hit is not absorbed. One lapis lazuli is consumed to cast. Two in hand consume both and add +2.",
                 "A book above experience level 30 writes a Tome of the Wise for 1 mana. It saves 100% of the experience above level 30, plus 5% per ability level, names you in the tome, and sets you back to level 30. Two books in hand consume both and add +2. Reading that tome costs 1 mana and the tome, and grants 100% of the saved experience, plus 5% per ability level.",
-                "Master Builder lasts 30 seconds times ability level, renews while you have mana, and cancels on another air click. One brick is consumed. Two in hand consume both and add +2. A renew spends a brick only when you are holding one, and that adds +2.",
+                "Master Builder lasts 30 seconds times ability level, renews while you have mana, and cancels on another right-click with a clay brick. While it lasts, you can place solid blocks in the air, and block reach increases by the ability level. Torch rules still apply. One brick is consumed. Two in hand consume both and add +2. A renew spends a brick only when you are holding one, and that adds +2.",
                 "Diamond Skin costs 2 mana and lasts 30 seconds times ability level. Its effective level is at least 2, so a bare cast still halves health damage. It renews while you have 2 mana, and cancels on another right-click. One diamond is consumed. Two in hand consume both and add +2. A renew spends a diamond only when you are holding one, and that adds +2.",
                 "While Diamond Skin lasts, damage that would reach your health is divided by the ability level. Armor still applies first. Each point prevented shortens the effect by 3 seconds. Poison, drowning, and suffocation are not reduced. A quarter-second cyan sparkle plays when a hit is reduced.",
                 "You can learn up to half your mana level in abilities, rounded up, by using them. Unlearned use still gains skill, at -3 power, floored at 1, until a slot is free.",
@@ -326,7 +327,7 @@ def build():
                     "The first player on the server to claim one gets 25 extra experience and 3 more emeralds by default.",
                     "You have your experience level as a percent chance to gain a mana level.",
                     "The first visit to a biome is 50 experience, and 100 more if you are first on the server. The first habitable home in a biome is house points times 3. The first trip 300 blocks from spawn is 100 experience.",
-                    "A small brown number shows how many placements or kills remain. It drifts down and left for 3 seconds, and stays hidden when that track is finished.",
+                    "Sneak while placing a block to see how many placements remain. A kill always shows that number. It drifts down and left for 3 seconds, and stays hidden when that track is finished.",
                 ],
                 s["bullet"],
             ),

@@ -56,6 +56,19 @@ class CropGrowthRulesTest {
     }
 
     @Test
+    void cocoaDurationIsTwentyTimesVanilla() {
+        assertEquals(2000, CropGrowthRules.COCOA_DURATION_PERCENT);
+        Random random = new Random(7L);
+        int allowed = 0;
+        for (int i = 0; i < 20_000; i++) {
+            if (CropGrowthRules.allowVanillaRandomTick(CropGrowthRules.COCOA_DURATION_PERCENT, random)) {
+                allowed++;
+            }
+        }
+        assertTrue(allowed > 800 && allowed < 1200, "got " + allowed);
+    }
+
+    @Test
     void netherWartDurationIsTwentyTimesVanilla() {
         assertEquals(2000, CropGrowthRules.NETHER_WART_DURATION_PERCENT);
         Random random = new Random(6L);

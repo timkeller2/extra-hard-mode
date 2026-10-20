@@ -321,6 +321,9 @@ public final class EhmAttachments {
             builder -> builder.persistent(Codec.STRING).initializer(() -> ""));
     public static final AttachmentType<Long> EHM_SLOW_UNTIL = AttachmentRegistry.create(
             ExtraHardModeMod.id("slow_until"), builder -> builder.initializer(() -> -1L));
+    /** Marks a cobweb display spawned by Slow so a chunk save does not keep it. */
+    public static final AttachmentType<Boolean> EHM_SLOW_WEB = AttachmentRegistry.create(
+            ExtraHardModeMod.id("slow_web"), builder -> builder.initializer(() -> false));
     public static final AttachmentType<Long> EHM_HEAL_SPARKLE_UNTIL = AttachmentRegistry.create(
             ExtraHardModeMod.id("heal_sparkle_until"),
             builder -> builder.persistent(Codec.LONG).initializer(() -> -1L));
@@ -352,6 +355,10 @@ public final class EhmAttachments {
     public static final AttachmentType<Integer> EHM_MASTER_BUILDER_BAR_MAX = AttachmentRegistry.create(
             ExtraHardModeMod.id("master_builder_bar_max"),
             builder -> builder.persistent(Codec.INT).initializer(() -> 0));
+    /** Ability level of the running Master Builder cast, added to block reach. */
+    public static final AttachmentType<Float> EHM_MASTER_BUILDER_POWER = AttachmentRegistry.create(
+            ExtraHardModeMod.id("master_builder_power"),
+            builder -> builder.persistent(Codec.FLOAT).initializer(() -> 0.0F));
     public static final AttachmentType<Integer> EHM_DIAMOND_SKIN_REMAINING = AttachmentRegistry.create(
             ExtraHardModeMod.id("diamond_skin_remaining"),
             builder -> builder.persistent(Codec.INT).initializer(() -> 0));

@@ -8,6 +8,12 @@ import org.junit.jupiter.api.Test;
 
 class AchievementFloatRulesTest {
     @Test
+    void placementCountShowsOnlyWhileSneaking() {
+        assertTrue(AchievementFloatRules.showPlacementCount(true));
+        assertFalse(AchievementFloatRules.showPlacementCount(false));
+    }
+
+    @Test
     void remainingIsTheGapToTheNextTier() {
         assertEquals(255, AchievementFloatRules.remaining(256, 1));
         assertEquals(1, AchievementFloatRules.remaining(25, 24));

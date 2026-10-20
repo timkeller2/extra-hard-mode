@@ -95,6 +95,9 @@ public final class Achievements implements FeatureModule {
                 AchievementRules.BUILDER_THRESHOLDS,
                 true,
                 block.getName());
+        if (!AchievementFloatRules.showPlacementCount(player.isShiftKeyDown())) {
+            return;
+        }
         net.minecraft.core.BlockPos placed = context.getClickedPos();
         floatRemaining(
                 player,

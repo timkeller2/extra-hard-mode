@@ -86,7 +86,6 @@ import net.minecraft.world.scores.PlayerTeam;
 /** Mana abilities: heal, iron heart, magic arrow, flight, let it grow, let there be light, power mining, detect ore, slow, sense evil, smite evil, master builder, diamond skin, empower, battery, lapis shield, write tome, read tome. */
 public final class ManaAbilities implements FeatureModule {
     public static final Identifier ID = ExtraHardModeMod.id("mana_abilities");
-    private static final float MINING_REACH = 5.0F;
     /** Look range for Lapis Shield when the click itself did not land on a character. */
     private static final double LAPIS_SHIELD_LOOK_RANGE = 5.0;
     private static final int LAPIS_SILENT = 0;
@@ -117,6 +116,7 @@ public final class ManaAbilities implements FeatureModule {
 
     @Override
     public void onWorldUnload(ServerLevel level) {
+        SlowWeb.discardLevel(level);
         if (level.getServer() == null) {
             return;
         }
@@ -150,6 +150,7 @@ public final class ManaAbilities implements FeatureModule {
             maybeSendAbilityDurations(player);
             syncStrongCastHud(player, false);
         }
+        SlowWeb.tick(level);
         tickSlow(level);
     }
 
@@ -194,7 +195,7 @@ public final class ManaAbilities implements FeatureModule {
             if (isLightCoal(serverPlayer.getMainHandItem()) && tryLetThereBeLight(serverPlayer)) {
                 return InteractionResult.FAIL;
             }
-            if (serverPlayer.getMainHandItem().is(Items.STONE_BRICKS) && tryMasterBuilder(serverPlayer)) {
+            if (serverPlayer.getMainHandItem().is(Items.BRICK) && tryMasterBuilder(serverPlayer)) {
                 return InteractionResult.FAIL;
             }
             if (serverPlayer.getMainHandItem().is(Items.DIAMOND) && tryDiamondSkin(serverPlayer)) {
@@ -742,11 +743,11 @@ public final class ManaAbilities implements FeatureModule {
     }
 
     /**
-     * Air use of stone bricks. A click that can place the block never reaches this.
-     * A second air click cancels. Renewal spends mana, and one brick only while it is in hand.
+     * Right-click with a clay brick. A usable block such as a chest still skips the cast.
+     * A second click cancels. Renewal spends mana, and one brick only while it is in hand.
      */
     static boolean tryMasterBuilder(ServerPlayer player) {
-        if (!player.getMainHandItem().is(Items.STONE_BRICKS) || Achievements.skipPlayer(player)) {
+        if (!player.getMainHandItem().is(Items.BRICK) || Achievements.skipPlayer(player)) {
             return false;
         }
         if (alreadyHandled(player, (ServerLevel) player.level())) {
@@ -767,17 +768,44 @@ public final class ManaAbilities implements FeatureModule {
                 player, AbilityRules.MASTER_BUILDER, "tougher.ability.master_builder", "Master Builder")) {
             return true;
         }
-        spend(player, Items.STONE_BRICKS, AbilityRules.MASTER_BUILDER);
-        startMasterBuilder(player, duration);
+        spend(player, Items.BRICK, AbilityRules.MASTER_BUILDER);
+        startMasterBuilder(player, duration, power);
         castMasterBuilder(player);
         tellAbilityUse(player, "tougher.ability.master_builder", "Master Builder", power);
         return true;
     }
 
-    static void startMasterBuilder(ServerPlayer player, int duration) {
+    static void startMasterBuilder(ServerPlayer player, int duration, double power) {
         player.setAttached(EhmAttachments.EHM_MASTER_BUILDER_REMAINING, duration);
         player.setAttached(EhmAttachments.EHM_MASTER_BUILDER_BAR_MAX, duration);
+        player.setAttached(EhmAttachments.EHM_MASTER_BUILDER_POWER, (float) power);
+        applyMasterBuilderReach(player);
         sendAbilityDurations(player);
+    }
+
+    static void applyMasterBuilderReach(ServerPlayer player) {
+        net.minecraft.world.entity.ai.attributes.AttributeInstance reach =
+                player.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.BLOCK_INTERACTION_RANGE);
+        if (reach == null) {
+            return;
+        }
+        float power = player.getAttachedOrElse(EhmAttachments.EHM_MASTER_BUILDER_POWER, 0.0F);
+        if (power <= 0.0F) {
+            reach.removeModifier(ExtraHardModeMod.MASTER_BUILDER_REACH);
+            return;
+        }
+        reach.addOrUpdateTransientModifier(new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                ExtraHardModeMod.MASTER_BUILDER_REACH,
+                power,
+                net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE));
+    }
+
+    static void clearMasterBuilderReach(ServerPlayer player) {
+        net.minecraft.world.entity.ai.attributes.AttributeInstance reach =
+                player.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.BLOCK_INTERACTION_RANGE);
+        if (reach != null) {
+            reach.removeModifier(ExtraHardModeMod.MASTER_BUILDER_REACH);
+        }
     }
 
     static void cancelMasterBuilder(ServerPlayer player) {
@@ -794,6 +822,8 @@ public final class ManaAbilities implements FeatureModule {
         boolean had = masterBuilderActive(player);
         player.setAttached(EhmAttachments.EHM_MASTER_BUILDER_REMAINING, 0);
         player.setAttached(EhmAttachments.EHM_MASTER_BUILDER_BAR_MAX, 0);
+        player.setAttached(EhmAttachments.EHM_MASTER_BUILDER_POWER, 0.0F);
+        clearMasterBuilderReach(player);
         if (message && had) {
             player.sendSystemMessage(Component.translatableWithFallback(
                     "tougher.message.master_builder_end", "Master Builder ends."));
@@ -813,6 +843,7 @@ public final class ManaAbilities implements FeatureModule {
         remaining--;
         if (remaining > 0) {
             player.setAttached(EhmAttachments.EHM_MASTER_BUILDER_REMAINING, remaining);
+            applyMasterBuilderReach(player);
             return;
         }
         if (tryRenewMasterBuilder(player)) {
@@ -834,14 +865,14 @@ public final class ManaAbilities implements FeatureModule {
                 Math.max(0.0, Achievements.currentMana(player) - AbilityRules.manaCost(AbilityRules.MASTER_BUILDER)));
         Achievements.sendMana(player);
         recordAbilityUse(player, AbilityRules.MASTER_BUILDER);
-        int bonus = renewCatalystBonus(player, Items.STONE_BRICKS);
+        int bonus = renewCatalystBonus(player, Items.BRICK);
         double power = abilityPower(player, AbilityRules.MASTER_BUILDER, bonus);
         int duration = AbilityRules.masterBuilderDurationTicks(power);
         if (duration <= 0) {
             return false;
         }
-        consumeRenewCatalyst(player, Items.STONE_BRICKS);
-        startMasterBuilder(player, duration);
+        consumeRenewCatalyst(player, Items.BRICK);
+        startMasterBuilder(player, duration, power);
         castMasterBuilder(player);
         tellAbilityUse(player, "tougher.ability.master_builder", "Master Builder", power);
         return true;
@@ -2006,17 +2037,9 @@ public final class ManaAbilities implements FeatureModule {
         }
         int bonus = AbilityRules.catalystBonus(player.getMainHandItem().getCount());
         double power = abilityPower(player, AbilityRules.SLOW, bonus);
-        ServerLevel level = (ServerLevel) player.level();
-        double range = AbilityRules.slowRange(power);
-        int duration = AbilityRules.slowDurationTicks(power);
-        if (range > 0.0 && duration > 0) {
-            AABB box = player.getBoundingBox().inflate(range);
-            for (LivingEntity mob : level.getEntitiesOfClass(LivingEntity.class, box, target -> isSlowTarget(player, target, range))) {
-                applySlow(mob, power, duration, level);
-            }
-        }
         spend(player, Items.STRING, AbilityRules.SLOW);
-        castEffect(player, SoundEvents.BREWING_STAND_BREW, ParticleTypes.SNOWFLAKE, ParticleTypes.WHITE_ASH);
+        SlowWeb.launch(player, power);
+        castEffect(player, SoundEvents.COBWEB_PLACE, ParticleTypes.ITEM_COBWEB, ParticleTypes.WHITE_ASH);
         tellAbilityUse(player, "tougher.ability.slow", "Slow", power);
         return true;
     }
@@ -2287,13 +2310,6 @@ public final class ManaAbilities implements FeatureModule {
         }
     }
 
-    static boolean isSlowTarget(ServerPlayer caster, LivingEntity target, double range) {
-        if (target == caster || !target.isAlive() || !(target instanceof Enemy)) {
-            return false;
-        }
-        return caster.distanceTo(target) <= range;
-    }
-
     static void applySlow(LivingEntity target, double power, int durationTicks, ServerLevel level) {
         AttributeInstance speed = target.getAttribute(Attributes.MOVEMENT_SPEED);
         if (speed == null) {
@@ -2307,6 +2323,7 @@ public final class ManaAbilities implements FeatureModule {
                 ExtraHardModeMod.ABILITY_SLOW, -amount, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
         target.setAttached(EhmAttachments.EHM_SLOW_UNTIL, level.getGameTime() + durationTicks);
         SLOWED.put(target.getUUID(), level.dimension().identifier());
+        SlowWeb.showOn(target, level);
     }
 
     static void clearSlow(LivingEntity target) {
@@ -2316,6 +2333,7 @@ public final class ManaAbilities implements FeatureModule {
         }
         target.setAttached(EhmAttachments.EHM_SLOW_UNTIL, -1L);
         SLOWED.remove(target.getUUID());
+        SlowWeb.clearFrom(target);
     }
 
     static void tickSlow(ServerLevel level) {
@@ -2335,6 +2353,7 @@ public final class ManaAbilities implements FeatureModule {
                 if (entity instanceof LivingEntity dead) {
                     clearSlow(dead);
                 } else {
+                    SlowWeb.discard(entry.getKey(), level);
                     it.remove();
                 }
                 continue;
@@ -2342,7 +2361,9 @@ public final class ManaAbilities implements FeatureModule {
             Long until = living.getAttachedOrElse(EhmAttachments.EHM_SLOW_UNTIL, -1L);
             if (until == null || until < 0L || until <= now) {
                 clearSlow(living);
+                continue;
             }
+            SlowWeb.showOn(living, level);
         }
     }
 
@@ -2575,7 +2596,7 @@ public final class ManaAbilities implements FeatureModule {
                     abilityName(ability)));
             return;
         }
-        if (held.is(Items.STONE_BRICKS) && masterBuilderActive(player)) {
+        if (held.is(Items.BRICK) && masterBuilderActive(player)) {
             player.sendOverlayMessage(Component.translatableWithFallback(
                     "tougher.message.ability_hint_iron_heart_off",
                     "Right click to cancel %s...",
@@ -2629,7 +2650,7 @@ public final class ManaAbilities implements FeatureModule {
             hoeBonus += AbilityRules.charcoalArrowBonus(InventorySearch.hasOneMain(player, Items.CHARCOAL));
         } else if (held.is(Items.STRING)
                 || held.is(Items.IRON_INGOT)
-                || held.is(Items.STONE_BRICKS)
+                || held.is(Items.BRICK)
                 || held.is(Items.DIAMOND)
                 || held.is(Items.REDSTONE)
                 || held.is(Items.QUARTZ_BLOCK)
@@ -2673,7 +2694,7 @@ public final class ManaAbilities implements FeatureModule {
                 || held.is(Items.ARROW)
                 || held.is(Items.STRING)
                 || held.is(Items.GOLDEN_SWORD)
-                || held.is(Items.STONE_BRICKS)
+                || held.is(Items.BRICK)
                 || held.is(Items.DIAMOND)
                 || held.is(Items.REDSTONE)
                 || held.is(Items.QUARTZ_BLOCK)
@@ -3294,7 +3315,7 @@ public final class ManaAbilities implements FeatureModule {
         if (held.is(Items.GOLDEN_SWORD)) {
             return AbilityRules.SMITE_EVIL;
         }
-        if (held.is(Items.STONE_BRICKS)) {
+        if (held.is(Items.BRICK)) {
             return AbilityRules.MASTER_BUILDER;
         }
         if (held.is(Items.DIAMOND)) {
@@ -3618,7 +3639,7 @@ public final class ManaAbilities implements FeatureModule {
             return false;
         }
         Vec3 start = player.getEyePosition();
-        Vec3 end = start.add(player.getViewVector(1.0F).scale(MINING_REACH));
+        Vec3 end = start.add(player.getViewVector(1.0F).scale(player.blockInteractionRange()));
         BlockHitResult hit = player.level()
                 .clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
         return hit.getType() == HitResult.Type.BLOCK && skipsManaAbilityUse(player, hit.getBlockPos());
