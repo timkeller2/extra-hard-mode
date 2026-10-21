@@ -12,6 +12,7 @@
     "AnimalMixin",
     "BaseFireBlockMixin",
     "BeehiveBlockEntityMixin",
+    "BedPickupMixin",
     "BlockDisplayAccess",
     "BlockItemPlaceMixin",
     "BlockLightEngineMixin",

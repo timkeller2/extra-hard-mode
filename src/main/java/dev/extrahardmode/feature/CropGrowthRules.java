@@ -63,7 +63,7 @@ public final class CropGrowthRules {
     public static final int FIRST_TILL_DIE = 10;
     public static final int FIRST_TILL_WATER_RANGE = 2;
     /** Water sources add this much, then each source past it subtracts one, down to 0. */
-    public static final int FIRST_TILL_WATER_PEAK = 50;
+    public static final int FIRST_TILL_WATER_PEAK = 30;
     /** Shown first-till bonus per hoe quality point. Wood/stone 0 … netherite 10. */
     public static final int FIRST_TILL_HOE_BONUS_PER_QUALITY = 2;
     /** Vanilla sugar cane AGE when a new segment is placed. */

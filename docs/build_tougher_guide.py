@@ -131,6 +131,7 @@ def build():
                 "Breaking a block that is on fire sets you on fire, the same as putting the fire out by hand. Water still works.",
                 "Sneak with a compass to point it at your bed or respawn anchor. With none set, it still points at world spawn.",
                 "A bed placed in the Nether or the End vanishes. It does not explode. A bed already there is removed instead of exploding if you use it.",
+                "Breaking a bed destroys it and drops nothing: no bed, wool, or planks.",
                 "A lodestone is crafted with an iron block in the middle, surrounded by chiseled stone bricks.",
             ],
             s["bullet"],
@@ -209,7 +210,7 @@ def build():
         Paragraph(
             "Unworked soil shows 0. Look at farmland, a crop, or sugar cane to see the plot's modifier. "
             "Green and positive is good. Red and negative is bad. "
-            "The first till scores water sources within 2 blocks, up to 50. Past 50, each extra source subtracts 1, down to 0. "
+            "The first till scores water sources within 2 blocks, up to 30. Past 30, each extra source subtracts 1, down to 0. "
             "A roll of 1 to 10 is then subtracted, and twice the hoe quality is added: wood or stone 0, copper 2, iron 4, diamond 6, gold 8, netherite 10. "
             "A hoe that breaks on that till still counts. "
             "Later hoeing steps the plot toward the hoe's target (wood or stone -10, copper -5, iron 0, diamond +10, gold +20, netherite +30). "

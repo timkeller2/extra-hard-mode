@@ -228,6 +228,7 @@ public final class EhmHelp {
                         "Building: Breaking a block that is on fire sets you on fire, the same as putting that fire out by hand.",
                         "Building: Sneak with a compass to point it at your bed or respawn anchor. With none set, it still points at world spawn.",
                         "Building: A bed placed in the Nether or the End vanishes. It does not explode.",
+                        "Building: Breaking a bed destroys it and drops nothing: no bed, wool, or planks.",
                         "Building: A lodestone is crafted with an iron block in the middle, surrounded by chiseled stone bricks."));
     }
 
@@ -312,7 +313,7 @@ public final class EhmHelp {
                 List.of(
                         "Soil: Unworked soil starts at 0. Look at farmland, a crop, or sugar cane to see that plot's shown soil modifier.",
                         "Soil: It is a small percent, green when at or above 0, red when below 0; positive is good, for example 13%.",
-                        "Soil: The first till adds water sources within 2, up to 50. Past 50, each extra source subtracts 1 from 50, down to 0.",
+                        "Soil: The first till adds water sources within 2, up to 30. Past 30, each extra source subtracts 1 from 30, down to 0.",
                         "Soil: A 1d10 is then subtracted, and twice the hoe quality is added: wood/stone 0, copper 2, iron 4, diamond 6, gold 8, netherite 10.",
                         "Soil: Later tilling or harvesting with a hoe moves that shown value toward the hoe's target.",
                         "Soil: Hoe targets: wood/stone −10, copper −5, iron 0, diamond +10, gold +20, netherite +30.",

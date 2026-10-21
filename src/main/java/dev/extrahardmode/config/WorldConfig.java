@@ -32,6 +32,7 @@ public final class WorldConfig {
     private boolean creativeBypasses = true;
     private boolean operatorsBypass = false;
     private boolean limitedBuilding = true;
+    private boolean destroyBedOnPickup = true;
     private boolean betterTreeFelling = true;
     private boolean f3Enabled = false;
     private boolean competitiveAchievements = true;
@@ -203,6 +204,10 @@ public final class WorldConfig {
 
     public boolean limitedBuilding() {
         return limitedBuilding;
+    }
+
+    public boolean destroyBedOnPickup() {
+        return destroyBedOnPickup;
     }
 
     public boolean betterTreeFelling() {
@@ -950,6 +955,11 @@ public final class WorldConfig {
                         true);
                 writeDefaultIfMissing(
                         file,
+                        "worldRules.destroyBedOnPickup",
+                        "Breaking a bed destroys it and drops nothing: no bed, wool, or planks. Set false to drop the bed.",
+                        true);
+                writeDefaultIfMissing(
+                        file,
                         "worldRules.betterTreeFelling",
                         "Realistic chopping: BFS same-wood logs fall. Default on; upstream had commented it out.",
                         true);
@@ -1252,6 +1262,7 @@ public final class WorldConfig {
                 file.set("bypassing.creativeBypasses", creativeBypasses);
                 file.set("bypassing.operatorsBypass", operatorsBypass);
                 file.set("worldRules.limitedBlockPlacement", limitedBuilding);
+                file.set("worldRules.destroyBedOnPickup", destroyBedOnPickup);
                 file.set("worldRules.betterTreeFelling", betterTreeFelling);
                 file.set("client.f3Enabled", f3Enabled);
                 file.set("achievements.competitive", competitiveAchievements);
@@ -1440,6 +1451,7 @@ public final class WorldConfig {
         creativeBypasses = file.getOrElse("bypassing.creativeBypasses", true);
         operatorsBypass = file.getOrElse("bypassing.operatorsBypass", false);
         limitedBuilding = file.getOrElse("worldRules.limitedBlockPlacement", true);
+        destroyBedOnPickup = file.getOrElse("worldRules.destroyBedOnPickup", true);
         betterTreeFelling = file.getOrElse("worldRules.betterTreeFelling", true);
         f3Enabled = file.getOrElse("client.f3Enabled", false);
         competitiveAchievements = file.getOrElse("achievements.competitive", true);
