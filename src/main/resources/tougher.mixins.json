@@ -35,6 +35,7 @@
     "DisplayMixin",
     "EntityFloatTextMixin",
     "DragonFireballMixin",
+    "EatBlockGoalMixin",
     "EnderDragonFightAccess",
     "EntityHurtAccess",
     "EnderDragonFightMixin",

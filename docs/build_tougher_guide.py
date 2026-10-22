@@ -235,7 +235,7 @@ def build():
                 "Animals wait 6 times as long to breed. Chickens lay eggs 6 times as slowly.",
                 "Grass spreads onto dirt at a Grass Growth Rate of 25%. That is farming.grassGrowthPercent. 100 is the usual rate and 0 never spreads.",
                 "Livestock overgraze by eating grass they can walk to within 6 blocks and turning that block into dirt. About 9 grass blocks keep a large animal fed. About 4 keep a chicken or rabbit fed.",
-                "Sheep do this as well, and they still eat grass on their own to regrow their wool.",
+                "Sheep overgraze too, and wait 6 times as long to eat grass and regrow their wool. farming.sheepWoolGrazeMultiplier of 1 is the usual wool wait.",
                 "If no grass block is in reach, an animal has a 33% chance to eat from a chest or barrel it can reach within 20 blocks. It eats short grass, the item shears collect, before its breeding food. If neither is left, a second 33% chance starves it and it drops no meat.",
                 "Crowding damages villagers, not livestock. Eight or more in a 3x3x3 take damage. Residents and named villagers are spared. Set farming.overcrowd.villagersOnly false to crowd animals too.",
                 "Ordinary villagers take 8 times as long to restock. That is separate from residents.",

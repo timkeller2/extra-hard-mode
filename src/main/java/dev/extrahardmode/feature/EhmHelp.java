@@ -287,7 +287,7 @@ public final class EhmHelp {
                         "Animals: Grass Growth Rate: 25% of the usual spread onto dirt. farming.grassGrowthPercent of 100 is the usual rate. 0 never spreads.",
                         "Animals: Livestock overgraze by eating grass they can walk to within 6 blocks and turning that block into dirt.",
                         "Animals: About 9 grass blocks keep a cow, pig, sheep, or other large animal fed. About 4 keep a chicken or rabbit fed.",
-                        "Animals: Sheep do this as well, and they still eat grass on their own to regrow their wool.",
+                        "Animals: Sheep overgraze too, and wait 6 times as long to eat grass and regrow their wool. farming.sheepWoolGrazeMultiplier of 1 is the usual wool wait.",
                         "Animals: If no grass block is in reach, they have a 33% chance to eat from a chest or barrel within 20 blocks.",
                         "Animals: They eat short grass, the item shears collect, before their breeding food. If neither is left, a second 33% chance starves them and they drop no meat.",
                         "Animals: Villagers take 8 times as long to restock. Crowding damages villagers, not livestock: 8 or more in a 3x3x3 take damage. Named villagers and residents are spared."));

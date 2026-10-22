@@ -9,6 +9,7 @@ import dev.extrahardmode.feature.GrassSpreadRules;
 import dev.extrahardmode.feature.HardenedBudget;
 import dev.extrahardmode.feature.HungerRules;
 import dev.extrahardmode.feature.OvergrazingRules;
+import dev.extrahardmode.feature.SheepGrazeRules;
 import dev.extrahardmode.feature.SoftenMap;
 import dev.extrahardmode.feature.TorchLifetimeRules;
 import java.nio.file.Files;
@@ -112,6 +113,7 @@ public final class WorldConfig {
     private int grassGrowthPercent = GrassSpreadRules.DEFAULT_PERCENT;
     private int animalBreedCooldownMultiplier = 6;
     private int eggLayTimeMultiplier = 6;
+    private int sheepWoolGrazeMultiplier = SheepGrazeRules.DEFAULT_MULTIPLIER;
     private int hiveHoneycombCount = 1;
     private int beeHoneyPercent = BeeHoneyRules.DEFAULT_PERCENT;
     private float movingExhaustionPerSecond = HungerRules.DEFAULT_MOVING_EXHAUSTION_PER_SECOND;
@@ -509,6 +511,10 @@ public final class WorldConfig {
 
     public int eggLayTimeMultiplier() {
         return eggLayTimeMultiplier;
+    }
+
+    public int sheepWoolGrazeMultiplier() {
+        return sheepWoolGrazeMultiplier;
     }
 
     public int hiveHoneycombCount() {
@@ -1371,6 +1377,7 @@ public final class WorldConfig {
                 file.setComment("farming.grassGrowthPercent", GrassSpreadRules.CONFIG_COMMENT);
                 file.set("farming.animalBreedCooldownMultiplier", animalBreedCooldownMultiplier);
                 file.set("farming.eggLayTimeMultiplier", eggLayTimeMultiplier);
+                file.set("farming.sheepWoolGrazeMultiplier", sheepWoolGrazeMultiplier);
                 file.set("farming.hiveHoneycombCount", hiveHoneycombCount);
                 file.set("farming.beeHoneyPercent", beeHoneyPercent);
                 file.setComment("farming.beeHoneyPercent", BeeHoneyRules.CONFIG_COMMENT);
@@ -1571,6 +1578,7 @@ public final class WorldConfig {
                 getInt(file, "farming.grassGrowthPercent", GrassSpreadRules.DEFAULT_PERCENT));
         animalBreedCooldownMultiplier = Math.max(1, getInt(file, "farming.animalBreedCooldownMultiplier", 6));
         eggLayTimeMultiplier = Math.max(1, getInt(file, "farming.eggLayTimeMultiplier", 6));
+        sheepWoolGrazeMultiplier = Math.max(1, getInt(file, "farming.sheepWoolGrazeMultiplier", SheepGrazeRules.DEFAULT_MULTIPLIER));
         hiveHoneycombCount = Math.clamp(getInt(file, "farming.hiveHoneycombCount", 1), 0, 64);
         beeHoneyPercent = clampPercent(
                 getInt(file, "farming.beeHoneyPercent", BeeHoneyRules.DEFAULT_PERCENT));
@@ -1759,6 +1767,11 @@ public final class WorldConfig {
                 "farming.eggLayTimeMultiplier",
                 "Chickens take this many times as long to lay eggs. Vanilla is 5–10 minutes; default 6 (30–60 minutes). 1 is vanilla.",
                 6);
+        writeDefaultIfMissing(
+                file,
+                "farming.sheepWoolGrazeMultiplier",
+                "Sheep wait this many times as long between eating grass to regrow wool. Default 6. 1 is vanilla.",
+                SheepGrazeRules.DEFAULT_MULTIPLIER);
         writeDefaultIfMissing(
                 file,
                 "farming.hiveHoneycombCount",
