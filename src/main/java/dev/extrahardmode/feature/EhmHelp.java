@@ -290,7 +290,7 @@ public final class EhmHelp {
                         "Animals: Sheep do this as well, and they still eat grass on their own to regrow their wool.",
                         "Animals: If no grass block is in reach, they have a 33% chance to eat from a chest or barrel within 20 blocks.",
                         "Animals: They eat short grass, the item shears collect, before their breeding food. If neither is left, a second 33% chance starves them and they drop no meat.",
-                        "Animals: Villagers take 8 times as long to restock their trades."));
+                        "Animals: Villagers take 8 times as long to restock. Crowding damages villagers, not livestock: 8 or more in a 3x3x3 take damage. Named villagers and residents are spared."));
     }
 
     private static Page seasons() {

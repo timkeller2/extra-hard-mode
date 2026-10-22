@@ -101,6 +101,7 @@ public final class WorldConfig {
     private boolean animalXpNerf = true;
     private boolean ironGolemNerf = true;
     private boolean overcrowdEnable = true;
+    private boolean overcrowdVillagersOnly = true;
     private int overcrowdThreshold = 8;
     private boolean overgrazingEnable = true;
     private int overgrazingLargeBlocks = OvergrazingRules.DEFAULT_LARGE_BLOCKS;
@@ -464,6 +465,10 @@ public final class WorldConfig {
 
     public boolean overcrowdEnable() {
         return overcrowdEnable;
+    }
+
+    public boolean overcrowdVillagersOnly() {
+        return overcrowdVillagersOnly;
     }
 
     public int overcrowdThreshold() {
@@ -1350,6 +1355,7 @@ public final class WorldConfig {
                 file.set("farming.animalXpNerf", animalXpNerf);
                 file.set("farming.ironGolemNerf", ironGolemNerf);
                 file.set("farming.overcrowd.enable", overcrowdEnable);
+                file.set("farming.overcrowd.villagersOnly", overcrowdVillagersOnly);
                 file.set("farming.overcrowd.threshold", overcrowdThreshold);
                 file.set("farming.overgrazing.enable", overgrazingEnable);
                 file.remove("farming.overgrazing.intervalTicks");
@@ -1549,6 +1555,7 @@ public final class WorldConfig {
         animalXpNerf = file.getOrElse("farming.animalXpNerf", true);
         ironGolemNerf = file.getOrElse("farming.ironGolemNerf", true);
         overcrowdEnable = file.getOrElse("farming.overcrowd.enable", true);
+        overcrowdVillagersOnly = file.getOrElse("farming.overcrowd.villagersOnly", true);
         overcrowdThreshold = file.getOrElse("farming.overcrowd.threshold", 8);
         overgrazingEnable = file.getOrElse("farming.overgrazing.enable", true);
         overgrazingLargeBlocks = OvergrazingRules.clampBlocks(
@@ -1698,10 +1705,18 @@ public final class WorldConfig {
         writeDefaultIfMissing(
                 file,
                 "farming.overcrowd.enable",
-                "Animals and villagers over the threshold in a 3x3x3 take damage. Villagers count villagers; animals count animals.",
+                "Crowding in a 3x3x3 deals damage. Villagers count villagers. Animals count animals only when villagersOnly is false.",
                 true);
         writeDefaultIfMissing(
-                file, "farming.overcrowd.threshold", "Maximum crowding animals or villagers in 3x3x3 before damage. Default 8.", 8);
+                file,
+                "farming.overcrowd.villagersOnly",
+                "Crowding damages villagers only. Set false to also damage crowded animals.",
+                true);
+        writeDefaultIfMissing(
+                file,
+                "farming.overcrowd.threshold",
+                "Maximum crowding villagers in a 3x3x3 before damage. Animals use the same number when villagersOnly is false. Default 8.",
+                8);
         writeDefaultIfMissing(
                 file,
                 "farming.overgrazing.enable",

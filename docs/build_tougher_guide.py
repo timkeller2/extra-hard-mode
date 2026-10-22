@@ -237,6 +237,7 @@ def build():
                 "Livestock overgraze by eating grass they can walk to within 6 blocks and turning that block into dirt. About 9 grass blocks keep a large animal fed. About 4 keep a chicken or rabbit fed.",
                 "Sheep do this as well, and they still eat grass on their own to regrow their wool.",
                 "If no grass block is in reach, an animal has a 33% chance to eat from a chest or barrel it can reach within 20 blocks. It eats short grass, the item shears collect, before its breeding food. If neither is left, a second 33% chance starves it and it drops no meat.",
+                "Crowding damages villagers, not livestock. Eight or more in a 3x3x3 take damage. Residents and named villagers are spared. Set farming.overcrowd.villagersOnly false to crowd animals too.",
                 "Ordinary villagers take 8 times as long to restock. That is separate from residents.",
                 "Composters fill normally but finish slowly. Hopper output from furnaces and composters stores cooking experience in the destination chest at 50% extra.",
             ],

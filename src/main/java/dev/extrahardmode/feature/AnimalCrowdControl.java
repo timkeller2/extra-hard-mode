@@ -63,10 +63,10 @@ public final class AnimalCrowdControl implements FeatureModule {
 
     static void punishIfOvercrowded(ServerLevel level, LivingEntity entity) {
         WorldConfig cfg = ConfigManager.world(level);
-        if (!cfg.overcrowdEnable() || !countsTowardCrowd(entity)) {
+        if (!cfg.overcrowdEnable() || !countsTowardCrowd(entity, cfg.overcrowdVillagersOnly())) {
             return;
         }
-        if (crowdCount(level, entity) < cfg.overcrowdThreshold()) {
+        if (crowdCount(level, entity, cfg.overcrowdVillagersOnly()) < cfg.overcrowdThreshold()) {
             return;
         }
         entity.hurtServer(level, level.damageSources().generic(), 1.0F);
@@ -82,7 +82,7 @@ public final class AnimalCrowdControl implements FeatureModule {
                 0.0);
     }
 
-    static boolean countsTowardCrowd(LivingEntity entity) {
+    static boolean countsTowardCrowd(LivingEntity entity, boolean villagersOnly) {
         if (!entity.isAlive()
                 || entity.hasCustomName()
                 || BiomeBosses.isBoss(entity)
@@ -91,6 +91,9 @@ public final class AnimalCrowdControl implements FeatureModule {
         }
         if (entity instanceof AbstractVillager) {
             return true;
+        }
+        if (!AnimalCrowdRules.animalsCount(villagersOnly)) {
+            return false;
         }
         if (!(entity instanceof Animal animal)) {
             return false;
@@ -105,12 +108,14 @@ public final class AnimalCrowdControl implements FeatureModule {
      * Villagers count other villagers; animals count other crowding animals.
      * A cow pen next to a hall does not fill the villager quota.
      */
-    static int crowdCount(ServerLevel level, LivingEntity entity) {
+    static int crowdCount(ServerLevel level, LivingEntity entity, boolean villagersOnly) {
         AABB box = new AABB(entity.blockPosition()).inflate(1.0);
         if (entity instanceof AbstractVillager) {
-            return level.getEntitiesOfClass(AbstractVillager.class, box, AnimalCrowdControl::countsTowardCrowd)
+            return level.getEntitiesOfClass(
+                            AbstractVillager.class, box, living -> countsTowardCrowd(living, villagersOnly))
                     .size();
         }
-        return level.getEntitiesOfClass(Animal.class, box, AnimalCrowdControl::countsTowardCrowd).size();
+        return level.getEntitiesOfClass(Animal.class, box, living -> countsTowardCrowd(living, villagersOnly))
+                .size();
     }
 }
