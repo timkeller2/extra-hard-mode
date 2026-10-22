@@ -21,7 +21,7 @@ public abstract class EatBlockGoalMixin {
 
     @Redirect(
             method = "canUse",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/util/RandomSource;nextInt:(I)I"))
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/util/RandomSource;nextInt(I)I"))
     private int tougher$slowerWoolGraze(RandomSource random, int bound) {
         if (!(this.mob.level() instanceof ServerLevel level) || !WorldGate.isModuleActive(level, AntiFarming.ID)) {
             return random.nextInt(bound);
