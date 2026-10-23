@@ -114,6 +114,14 @@ class InhabitantRulesTest {
         assertFalse(open.eligible());
         assertTrue(open.missing().contains("not enclosed"));
         assertTrue(InhabitantRules.inspectFallback(pass).contains("Eligible"));
+        assertEquals(0, pass.isolation());
+        InhabitantRules.GateResult distant = InhabitantRules.gates(true, 40, true, true, true, true, true, ok, 0, 2);
+        assertEquals(pass.score() + 2, distant.score());
+        assertEquals(2, distant.isolation());
+        assertTrue(InhabitantRules.inspectFallback(distant).contains("Distance adds 2."));
+        InhabitantRules.GateResult nearer = InhabitantRules.gates(true, 40, true, true, true, true, true, ok, 0, 1);
+        assertEquals(1, nearer.isolation());
+        assertTrue(InhabitantRules.inspectFallback(nearer).contains("Distance adds 1."));
         assertTrue(InhabitantRules.inspectFallback(open).contains("Missing"));
     }
 
@@ -126,6 +134,13 @@ class InhabitantRulesTest {
         assertFalse(InhabitantRules.farEnough(47, 0, 48));
         assertTrue(InhabitantRules.farEnough(48, 0, 48));
         assertTrue(InhabitantRules.farEnough(0, 48, 48));
+        assertEquals(0, InhabitantRules.isolationPoints(50L * 50L));
+        assertEquals(1, InhabitantRules.isolationPoints(50L * 50L + 1L));
+        assertEquals(1, InhabitantRules.isolationPoints(100L * 100L));
+        assertEquals(2, InhabitantRules.isolationPoints(100L * 100L + 1L));
+        assertEquals(2, InhabitantRules.isolationPoints(Long.MAX_VALUE));
+        assertEquals(0, InhabitantRules.isolationPoints(0L));
+        assertEquals(1, InhabitantRules.isolationPoints(InhabitantRules.horizontalDistanceSquared(36, 36)));
         assertEquals(35, InhabitantRules.VILLAGER_CLEARANCE);
         assertFalse(InhabitantRules.clearOfVillager(34, 0, 0, 35));
         assertTrue(InhabitantRules.clearOfVillager(35, 0, 0, 35));

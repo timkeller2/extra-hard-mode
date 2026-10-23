@@ -284,7 +284,9 @@ def build():
             "Saturation of 18 or more doubles that regen and is not consumed. Below 18 the bonus stops. "
             "A quartz block right-clicked in the air casts Battery. It costs no mana. "
             "Battery lasts 2 minutes per ability level, at least 2 minutes, and multiplies mana regeneration by 1 plus the square root of its level. It renews until your mana reaches your mana level. "
-            "Past your level, regeneration is one-quarter speed. The old ceiling of 40 mana rises when Well Fed or ready gold pushes your level past 40. "
+            "Past your level, regeneration is one-quarter speed. "
+            "The filling crystal shows a faint mark of about ten minutes of regen. It grows when you are well fed or Battery is on, and shrinks once you are past your mana level. "
+            "The old ceiling of 40 mana rises when Well Fed or ready gold pushes your level past 40. "
             "Achievements and wise teachers can raise the permanent mana level. Well Fed adds levels on top, and those extra levels leave when Well Fed drops. "
             "Ready gold adds mana levels too, and those leave when the gold comes off.",
             s["body"],
@@ -340,6 +342,7 @@ def build():
         Paragraph(
             "Right-click a bed with a clock to score a room. An enclosed, lit room of 24 to 300 air blocks, with a bed and a door or fence gate facing outside, "
             "can attract one resident if it has at least 12 furnishing points and stays 20 blocks from another occupied home. "
+            "A home more than 50 blocks from the nearest other occupied home gains 1 point, or 2 points when more than 100 blocks away. "
             "Furnishings come from size, extra rooms, windows, art, rugs, seating, storage, workstations, lights, plants, books, a second bed, and a kitchen. "
             "Empty eligible homes are checked at dawn. Chance starts at 8% at 12 points and rises with the score. It is halved in blight. "
             "Chests bias a hauler, a kitchen biases a cook, and plants or workstations bias a farmer. "
@@ -354,7 +357,7 @@ def build():
                 "The name over a resident is their name and occupation, such as Alden the Jeweler.",
                 "Clothes are a villager outfit, so two of one occupation may look different. A jeweler, wealthy trader, or drop collector wears a finer coat. An armorsmith or wise teacher ranks higher, and a master armorsmith or council member wears the highest rank.",
                 "Most residents restock every 14 Minecraft days. Armorsmiths restock every 30. Look at one who is waiting to see the time left, in days and hours.",
-                "Shop size follows house points. The top of the roll is 50% at 14 points and 175% at 38. The bottom is half of that. Prices do not inflate. A farm neighbor may sell one seed or plantable vegetable for 6 to 16 emeralds.",
+                "Shop size follows house points. The top of the roll is 50% at 14 points and 175% at 38. Higher scores stay there. The bottom is half of that. Prices do not inflate. A farm neighbor may sell one seed or plantable vegetable for 6 to 16 emeralds.",
                 "A jeweler sells a diamond for 8 emeralds, 4 gold ingots for 2, an iron block for 6, and a copper or redstone block for 2. Larger shops add lapis, amethyst, quartz, gold nuggets, ingots, and blocks of gold, lapis, amethyst, quartz, and diamond. A diamond block is 72 emeralds.",
                 "An armorsmith sells one heavy iron piece each restock. Which piece can change. The other sales are enchanted iron armor, each a different slot. A larger shop may buy iron. Heavy iron costs 12, 15, 21, or 24 emeralds for boots, a helmet, leggings, or a chestplate. Enchanted iron costs 6, 8, 11, or 12. A master armorsmith does the same with diamond: one heavy piece at four times the iron price, enchanted diamond armor at the heavy iron price, and a larger shop may buy diamonds.",
                 "A brewer sells one level 2 potion each restock. Which potion can change. Up to three other potions cost 1 emerald. A larger shop sells brewing ingredients for 1 emerald, such as nether wart, blaze powder, glowstone, and ghast tears.",

@@ -45,8 +45,9 @@ public final class ResidenceScan {
         boolean roofed = hasRoof(level, interior);
         InhabitantRules.AmenityCounts amenities = amenities(level, interior);
         boolean far = farEnough(anchor, occupiedBeds, spacing);
+        int isolation = InhabitantRules.isolationPoints(nearestOccupiedSquared(anchor, occupiedBeds));
         InhabitantRules.GateResult gates = InhabitantRules.gates(
-                enclosed, volume, hasBed, doorOutside, lit, roofed, far, amenities, house.rooms());
+                enclosed, volume, hasBed, doorOutside, lit, roofed, far, amenities, house.rooms(), isolation);
         return new Result(anchor, volume, enclosed, hasBed, doorOutside, lit, roofed, amenities, gates);
     }
 
@@ -416,6 +417,26 @@ public final class ResidenceScan {
             }
         }
         return false;
+    }
+
+    /** Squared horizontal distance to the nearest other occupied bed. None is farther than the far bonus. */
+    static long nearestOccupiedSquared(BlockPos bed, List<BlockPos> occupied) {
+        if (occupied == null || occupied.isEmpty()) {
+            return Long.MAX_VALUE;
+        }
+        long best = Long.MAX_VALUE;
+        boolean found = false;
+        for (BlockPos other : occupied) {
+            if (other == null || other.equals(bed)) {
+                continue;
+            }
+            long dist = InhabitantRules.horizontalDistanceSquared(bed.getX() - other.getX(), bed.getZ() - other.getZ());
+            if (!found || dist < best) {
+                best = dist;
+                found = true;
+            }
+        }
+        return found ? best : Long.MAX_VALUE;
     }
 
     static boolean farEnough(BlockPos bed, List<BlockPos> occupied, int spacing) {

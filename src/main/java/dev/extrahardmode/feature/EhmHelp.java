@@ -375,7 +375,8 @@ public final class EhmHelp {
                         "Mana: Cyan crystals. You regen (mana level + current mana) / 200 per minute.",
                         "Mana: Saturation of 18 or more doubles your mana regen. Below 18 that bonus stops.",
                         "Mana: That doubled regen does not consume saturation.",
-                        "Mana: Past your level you regen at 1/4 speed. The ceiling of 40 mana rises when Well Fed or ready gold pushes your level past 40. Achievements can raise your mana level."));
+                        "Mana: Past your level you regen at 1/4 speed. The ceiling of 40 mana rises when Well Fed or ready gold pushes your level past 40. Achievements can raise your mana level.",
+                        "Mana: The filling crystal shows a faint mark of about ten minutes of regen. It grows when you are well fed or Battery is on, and shrinks past your mana level."));
     }
 
     private static Page abilities() {

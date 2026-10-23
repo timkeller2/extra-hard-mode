@@ -26,6 +26,10 @@ public final class InhabitantRules {
     public static final int VOLUME_POINT_CAP = 5;
     public static final int ROOM_POINT_CAP = 3;
     public static final int SPACING = 20;
+    /** More than this horizontal distance from the nearest other occupied home gives 1 point. */
+    public static final int ISOLATION_NEAR_BLOCKS = 50;
+    /** More than this distance gives 2 points instead of 1. */
+    public static final int ISOLATION_FAR_BLOCKS = 100;
     /** A new resident will not appear when a villager is closer than this, in blocks. */
     public static final int VILLAGER_CLEARANCE = 35;
     public static final int BASE_CHANCE_PERCENT = 8;
@@ -334,6 +338,7 @@ public final class InhabitantRules {
             boolean roofed,
             boolean farEnough,
             int score,
+            int isolation,
             List<String> missing) {
         public boolean eligible() {
             return enclosed
@@ -474,7 +479,22 @@ public final class InhabitantRules {
             boolean farEnough,
             AmenityCounts counts,
             int rooms) {
-        int scored = score(counts, volume, rooms);
+        return gates(enclosed, volume, hasBed, doorOutside, lit, roofed, farEnough, counts, rooms, 0);
+    }
+
+    public static GateResult gates(
+            boolean enclosed,
+            int volume,
+            boolean hasBed,
+            boolean doorOutside,
+            boolean lit,
+            boolean roofed,
+            boolean farEnough,
+            AmenityCounts counts,
+            int rooms,
+            int isolation) {
+        int distancePoints = Math.max(0, Math.min(2, isolation));
+        int scored = score(counts, volume, rooms) + distancePoints;
         return new GateResult(
                 enclosed,
                 volume,
@@ -485,6 +505,7 @@ public final class InhabitantRules {
                 roofed,
                 farEnough,
                 scored,
+                distancePoints,
                 missing(enclosed, volume, hasBed, doorOutside, lit, roofed, farEnough, scored));
     }
 
@@ -492,7 +513,12 @@ public final class InhabitantRules {
         if (result == null) {
             return "This is not a room.";
         }
-        String head = "This room: " + result.score() + "/" + MIN_SCORE + " points.";
+        String distance = switch (result.isolation()) {
+            case 1 -> " Distance adds 1.";
+            case 2 -> " Distance adds 2.";
+            default -> "";
+        };
+        String head = "This room: " + result.score() + "/" + MIN_SCORE + " points." + distance;
         if (result.eligible()) {
             return head + " Eligible for a resident.";
         }
@@ -515,7 +541,8 @@ public final class InhabitantRules {
         return List.of(
                 "Rooms: Need an enclosed room (solid walls, floor, and roof; doors and trapdoors are openings, not holes).",
                 "Rooms: Also need 24 to 300 interior air blocks, a bed, and a door or fence gate that faces outside.",
-                "Rooms: Block light 8 on every floor tile, and stay 20 blocks from another occupied home.");
+                "Rooms: Block light 8 on every floor tile, and stay 20 blocks from another occupied home.",
+                "Rooms: More than 50 blocks from the nearest other occupied home gives +1 point. More than 100 blocks gives +2 instead.");
     }
 
     public static List<String> homesFurnishingLines() {
@@ -556,7 +583,7 @@ public final class InhabitantRules {
 
     public static List<String> homesShopLines() {
         return List.of(
-                "Shops: Shop size follows house points. The top of the roll is 50% at 14 points and 175% at 38, the highest score.",
+                "Shops: Shop size follows house points. The top of the roll is 50% at 14 points and 175% at 38. Higher scores stay there.",
                 "Shops: The bottom of that roll is half the top. A 14-point home rolls 25-50% of the usual trade types and of each listing's uses.",
                 "Shops: Houses under 14 points use that same 25-50% band. There is at least one use of each listing that is rolled.",
                 "Shops: Each listing rolls its uses separately. Extra types beyond the usual shop are random trades.",
@@ -602,7 +629,28 @@ public final class InhabitantRules {
 
     public static boolean farEnough(int dx, int dz, int spacing) {
         long min = Math.max(0, spacing);
-        return (long) dx * dx + (long) dz * dz >= min * min;
+        return horizontalDistanceSquared(dx, dz) >= min * min;
+    }
+
+    public static long horizontalDistanceSquared(int dx, int dz) {
+        return (long) dx * dx + (long) dz * dz;
+    }
+
+    /**
+     * House points for distance to the nearest other occupied home. No other home,
+     * and any gap past {@link #ISOLATION_FAR_BLOCKS}, is 2. Past
+     * {@link #ISOLATION_NEAR_BLOCKS} is 1. An equal distance does not qualify.
+     */
+    public static int isolationPoints(long nearestDistanceSquared) {
+        long far = (long) ISOLATION_FAR_BLOCKS * ISOLATION_FAR_BLOCKS;
+        long near = (long) ISOLATION_NEAR_BLOCKS * ISOLATION_NEAR_BLOCKS;
+        if (nearestDistanceSquared > far) {
+            return 2;
+        }
+        if (nearestDistanceSquared > near) {
+            return 1;
+        }
+        return 0;
     }
 
     /** True when a villager at this offset is far enough for a resident to appear. */

@@ -241,6 +241,8 @@ class EhmHelpTest {
         assertTrue(all.contains("wealthy trader"));
         assertTrue(all.contains("or a jeweler"));
         assertTrue(all.contains("stay 20 blocks"));
+        assertTrue(all.contains("More than 50 blocks"));
+        assertTrue(all.contains("More than 100 blocks"));
         assertTrue(all.contains("35 blocks of a villager"));
         assertTrue(all.contains("Alden the Jeweler"));
         assertTrue(all.contains("higher-ranked clothes"));
@@ -329,6 +331,7 @@ class EhmHelpTest {
         assertTrue(farmText.contains("bone meal"));
         assertFalse(farmText.contains("Stone and deepslate"));
         assertTrue(farming.lines().size() < 40);
+        assertTrue(String.join(" ", EhmHelp.resolve("mana").lines()).contains("faint mark of about ten minutes"));
         String combatText = String.join(" ", EhmHelp.resolve("combat").lines());
         assertTrue(combatText.contains("teleports to the nearest open spot"));
         assertTrue(combatText.contains("phantom that ignores sunlight"));
