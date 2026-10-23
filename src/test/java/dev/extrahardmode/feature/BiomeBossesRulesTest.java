@@ -195,4 +195,49 @@ class BiomeBossesRulesTest {
         assertEquals(6.0F / 50.0F / 100.0F, obsidian, 0.0000001F);
         assertEquals(1.0F / 0.5F / 30.0F, BiomeBossesRules.toolDestroyProgress(0.5F, 1.0F, true), 0.00001F);
     }
+
+    @Test
+    void stuckBossSearchesSixteenChebyshevBlocks() {
+        assertEquals(16, BiomeBossesRules.UNSTUCK_RADIUS);
+        assertEquals(20, BiomeBossesRules.UNSTUCK_RETRY_TICKS);
+        assertEquals(0, BiomeBossesRules.chebyshev(0, 0, 0));
+        assertEquals(1, BiomeBossesRules.chebyshev(1, -1, 0));
+        assertEquals(16, BiomeBossesRules.chebyshev(16, -16, 16));
+        assertEquals(17, BiomeBossesRules.chebyshev(-17, 3, 2));
+        assertTrue(BiomeBossesRules.withinUnstuck(16, 0, -16));
+        assertTrue(BiomeBossesRules.withinUnstuck(0, 0, 0));
+        assertFalse(BiomeBossesRules.withinUnstuck(17, 0, 0));
+    }
+
+    @Test
+    void finaleRosterKeepsTwoPiglinsAndAddsOneOfEachOther() {
+        var roster = BiomeBossesRules.finaleRoster();
+        assertEquals(8, roster.size());
+        assertEquals(2, roster.stream().filter(kind -> kind == BiomeBossesRules.FinaleKind.PIGLIN).count());
+        assertEquals(1, roster.stream().filter(kind -> kind == BiomeBossesRules.FinaleKind.VEX).count());
+        assertEquals(1, roster.stream().filter(kind -> kind == BiomeBossesRules.FinaleKind.WITCH).count());
+        assertEquals(1, roster.stream().filter(kind -> kind == BiomeBossesRules.FinaleKind.SKELETON).count());
+        assertEquals(1, roster.stream().filter(kind -> kind == BiomeBossesRules.FinaleKind.CREEPER).count());
+        assertEquals(1, roster.stream().filter(kind -> kind == BiomeBossesRules.FinaleKind.ZOMBIE).count());
+        assertEquals(1, roster.stream().filter(kind -> kind == BiomeBossesRules.FinaleKind.PHANTOM).count());
+        assertEquals(BiomeBossesRules.FinaleKind.PIGLIN, roster.get(0));
+        assertEquals(BiomeBossesRules.FinaleKind.PHANTOM, roster.get(roster.size() - 1));
+        assertFalse(BiomeBossesRules.finaleWantsFloor(BiomeBossesRules.FinaleKind.VEX));
+        assertFalse(BiomeBossesRules.finaleWantsFloor(BiomeBossesRules.FinaleKind.PHANTOM));
+        assertTrue(BiomeBossesRules.finaleWantsFloor(BiomeBossesRules.FinaleKind.ZOMBIE));
+        assertTrue(BiomeBossesRules.finaleWantsFloor(BiomeBossesRules.FinaleKind.CREEPER));
+        assertEquals(8, BiomeBossesRules.FINALE_SEARCH_RADIUS);
+        assertEquals(64.0, BiomeBossesRules.FINALE_AGGRO_BLOCKS, 0.0);
+    }
+
+    @Test
+    void finaleRingSpreadsSummonsAroundTheDeathSite() {
+        BiomeBossesRules.PlaneOffset first = BiomeBossesRules.finaleRingOffset(0, 8);
+        BiomeBossesRules.PlaneOffset third = BiomeBossesRules.finaleRingOffset(2, 8);
+        assertEquals(2.5, Math.hypot(first.x(), first.z()), 0.0001);
+        assertEquals(2.5, Math.hypot(third.x(), third.z()), 0.0001);
+        assertTrue(Math.hypot(first.x() - third.x(), first.z() - third.z()) > 1.0);
+        assertEquals(first.x(), BiomeBossesRules.finaleRingOffset(8, 8).x(), 0.0001);
+        assertEquals(first.z(), BiomeBossesRules.finaleRingOffset(8, 8).z(), 0.0001);
+    }
 }

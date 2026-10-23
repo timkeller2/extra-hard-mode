@@ -327,6 +327,9 @@ class EhmHelpTest {
         assertTrue(farmText.contains("bone meal"));
         assertFalse(farmText.contains("Stone and deepslate"));
         assertTrue(farming.lines().size() < 40);
+        String combatText = String.join(" ", EhmHelp.resolve("combat").lines());
+        assertTrue(combatText.contains("teleports to the nearest open spot"));
+        assertTrue(combatText.contains("phantom that ignores sunlight"));
         assertEquals(null, EhmHelp.resolve("nope"));
         assertEquals(null, EhmHelp.resolve("  "));
         var mining = EhmHelp.resolve("mining");

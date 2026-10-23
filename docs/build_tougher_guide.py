@@ -263,6 +263,8 @@ def build():
             "Within 64 blocks, a biome boss shows a health bar with its name. "
             "A brood mother keeps chasing when hit, and every few seconds spits for half her bite damage and a brief blindness. "
             "If a boss cannot walk to you, it breaks blocks in the way at iron-pickaxe speed. "
+            "If it is stuck inside a wall, it teleports to the nearest open spot and keeps fighting. "
+            "Killing an overworld boss summons a vex, a witch, a skeleton, a creeper, a zombie, a phantom that does not burn in sunlight, and two zombified piglins. "
             "Each defeat makes the next boss 30% harder and richer. The third is a world event. "
             "The seventh rolls the credits, and you can keep playing.",
             s["body"],

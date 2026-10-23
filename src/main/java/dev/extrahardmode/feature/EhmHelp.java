@@ -351,6 +351,8 @@ public final class EhmHelp {
                         "Combat: Bosses do not spawn within 80 blocks of a player or a chest.",
                         "Combat: Brood mothers chase when hit. Every few seconds they spit for half damage and a brief blind.",
                         "Combat: A biome boss breaks blocks in its way at iron pickaxe speed when that is how it reaches you.",
+                        "Combat: A biome boss stuck in a wall teleports to the nearest open spot and keeps fighting.",
+                        "Combat: Killing an overworld biome boss summons a vex, a witch, a skeleton, a creeper, a zombie, a phantom that ignores sunlight, and two pigmen.",
                         "Combat: Each defeated boss makes the next 30% harder and richer. The third is a world event.",
                         "Combat: The seventh rolls the Minecraft credits, and you can keep playing.",
                         "Combat: Below Y=48, a visited cave may spawn an extra hostile in light 11. Every 20 blocks you are deeper adds 1. Chance falls by 5% times that block's light.",

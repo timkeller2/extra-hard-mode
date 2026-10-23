@@ -3,7 +3,9 @@ package dev.extrahardmode.feature;
 import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.config.WorldConfig;
+import dev.extrahardmode.feature.monster.PigMen;
 import dev.extrahardmode.item.EhmItems;
+import dev.extrahardmode.module.SpawnReplaceService;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.tag.EhmTags;
 import dev.extrahardmode.world.BiomeBossData;
@@ -21,6 +23,7 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
@@ -47,9 +50,12 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityReference;
 import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.Relative;
 import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.LivingEntity;
@@ -60,6 +66,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.cubemob.MagmaCube;
 import net.minecraft.world.entity.monster.hoglin.Hoglin;
 import net.minecraft.world.entity.monster.zombie.Zombie;
+import net.minecraft.world.entity.monster.zombie.ZombifiedPiglin;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
 import net.minecraft.world.entity.projectile.LlamaSpit;
 import net.minecraft.world.entity.projectile.Projectile;
@@ -74,6 +81,7 @@ import net.minecraft.world.item.component.Fireworks;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.entity.EnderChestBlockEntity;
@@ -81,6 +89,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.storage.LevelData;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.BooleanOp;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
  * Rare persistent biome-family bosses. Each family appears once per game.
@@ -99,6 +112,8 @@ public final class BiomeBosses implements FeatureModule {
     private static long creditsAtTick = -1L;
     /** Loaded bosses only. An unloaded boss drops its bar and gets a new one when the chunk loads. */
     private static final Map<UUID, TrackedBar> BARS = new HashMap<>();
+    /** Last open position of a loaded boss, and when another unstuck search is allowed. */
+    private static final Map<UUID, RescueState> RESCUE = new HashMap<>();
     private static final EquipmentSlot[] ARMOR_SLOTS = {
         EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET
     };
@@ -130,12 +145,17 @@ public final class BiomeBosses implements FeatureModule {
         bus.listen(ServerLivingEntityEvents.AFTER_DEATH, ID, BiomeBosses::onDeath);
         bus.listen(ServerLivingEntityEvents.AFTER_DAMAGE, ID, BiomeBosses::onAttacked);
         ServerTickEvents.END_LEVEL_TICK.register(BiomeBosses::tickBossBars);
-        ServerLifecycleEvents.SERVER_STOPPED.register(server -> dismissAllBars());
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
+            dismissAllBars();
+            RESCUE.clear();
+        });
     }
 
     @Override
     public void onWorldUnload(ServerLevel level) {
-        dismissDimension(level.dimension().identifier());
+        Identifier dimension = level.dimension().identifier();
+        dismissDimension(dimension);
+        RESCUE.entrySet().removeIf(entry -> dimension.equals(entry.getValue().dimension()));
     }
 
     @Override
@@ -684,6 +704,7 @@ public final class BiomeBosses implements FeatureModule {
         Identifier dimension = level.dimension().identifier();
         if (!WorldGate.isModuleActive(level, ID)) {
             dismissDimension(dimension);
+            RESCUE.entrySet().removeIf(entry -> dimension.equals(entry.getValue().dimension()));
             return;
         }
         Set<UUID> present = new HashSet<>();
@@ -697,6 +718,7 @@ public final class BiomeBosses implements FeatureModule {
                 continue;
             }
             present.add(id);
+            rescueIfStuck(level, boss);
             syncBar(level, dimension, boss);
         }
         List<UUID> stale = new ArrayList<>();
@@ -708,6 +730,8 @@ public final class BiomeBosses implements FeatureModule {
         for (UUID id : stale) {
             dismissBar(id);
         }
+        RESCUE.entrySet().removeIf(
+                entry -> dimension.equals(entry.getValue().dimension()) && !present.contains(entry.getKey()));
     }
 
     private static void syncBar(ServerLevel level, Identifier dimension, LivingEntity boss) {
@@ -781,6 +805,9 @@ public final class BiomeBosses implements FeatureModule {
     }
 
     private record TrackedBar(Identifier dimension, ServerBossEvent event) {}
+
+    /** {@code retryAt} is {@link Long#MIN_VALUE} when another search may run immediately. */
+    private record RescueState(Identifier dimension, Vec3 lastFree, long retryAt) {}
 
     static void thunderAll(MinecraftServer server) {
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
@@ -941,6 +968,7 @@ public final class BiomeBosses implements FeatureModule {
         for (int i = 0; i < 3; i++) {
             strikeLightning(level, x, y, z);
         }
+        spawnFinale(level, x, y, z);
         spawnFireworks(level, x, y + 1.0, z, 8);
         level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, x, y + 1.0, z, 2, 0.0, 0.0, 0.0, 0.0);
         level.sendParticles(ParticleTypes.TOTEM_OF_UNDYING, x, y + 1.0, z, 80, 1.5, 2.0, 1.5, 0.35);
@@ -999,11 +1027,259 @@ public final class BiomeBosses implements FeatureModule {
                 player.getRandom().nextLong()));
     }
 
+    /**
+     * Visual bolt only. Marked processed before it loads so {@link PigMen} does not also summon a piglin wave.
+     * The death roster is {@link #spawnFinale}.
+     */
     static void strikeLightning(ServerLevel level, double x, double y, double z) {
         LightningBolt bolt = new LightningBolt(EntityTypes.LIGHTNING_BOLT, level);
         bolt.setPos(x, y, z);
         bolt.setVisualOnly(true);
+        bolt.setAttached(EhmAttachments.EHM_SPAWN_PROCESSED, Boolean.TRUE);
         level.addFreshEntity(bolt);
+    }
+
+    /**
+     * Overworld death summons. Same gates as lightning pigmen: monsters allowed, and not a no-replacement
+     * biome or structure. Nether and End bosses keep the lightning show only.
+     */
+    static void spawnFinale(ServerLevel level, double x, double y, double z) {
+        if (level.dimension() != Level.OVERWORLD) {
+            return;
+        }
+        if (!level.getGameRules().get(GameRules.SPAWN_MONSTERS)) {
+            return;
+        }
+        BlockPos at = BlockPos.containing(x, y, z);
+        if (level.getBiome(at).is(SpawnReplaceService.NO_SPAWN_REPLACEMENTS)) {
+            return;
+        }
+        if (level.structureManager()
+                .getStructureWithPieceAt(at, SpawnReplaceService.NO_SPAWN_REPLACEMENT_STRUCTURES)
+                .isValid()) {
+            return;
+        }
+        List<BiomeBossesRules.FinaleKind> roster = BiomeBossesRules.finaleRoster();
+        ServerPlayer target = nearestFighter(level, x, y, z);
+        for (int i = 0; i < roster.size(); i++) {
+            BiomeBossesRules.FinaleKind kind = roster.get(i);
+            switch (kind) {
+                case PIGLIN -> placeFinale(level, EntityTypes.ZOMBIFIED_PIGLIN, kind, x, y, z, i, roster.size(), target);
+                case VEX -> placeFinale(level, EntityTypes.VEX, kind, x, y, z, i, roster.size(), target);
+                case WITCH -> placeFinale(level, EntityTypes.WITCH, kind, x, y, z, i, roster.size(), target);
+                case SKELETON -> placeFinale(level, EntityTypes.SKELETON, kind, x, y, z, i, roster.size(), target);
+                case CREEPER -> placeFinale(level, EntityTypes.CREEPER, kind, x, y, z, i, roster.size(), target);
+                case ZOMBIE -> placeFinale(level, EntityTypes.ZOMBIE, kind, x, y, z, i, roster.size(), target);
+                case PHANTOM -> placeFinale(level, EntityTypes.PHANTOM, kind, x, y, z, i, roster.size(), target);
+            }
+        }
+    }
+
+    private static ServerPlayer nearestFighter(ServerLevel level, double x, double y, double z) {
+        double best = BiomeBossesRules.FINALE_AGGRO_BLOCKS * BiomeBossesRules.FINALE_AGGRO_BLOCKS;
+        ServerPlayer nearest = null;
+        for (ServerPlayer player : level.players()) {
+            if (!player.isAlive() || player.isCreative() || player.isSpectator()) {
+                continue;
+            }
+            double distance = player.distanceToSqr(x, y, z);
+            if (distance <= best) {
+                best = distance;
+                nearest = player;
+            }
+        }
+        return nearest;
+    }
+
+    private static <T extends Mob> void placeFinale(
+            ServerLevel level,
+            EntityType<T> type,
+            BiomeBossesRules.FinaleKind kind,
+            double x,
+            double y,
+            double z,
+            int index,
+            int count,
+            ServerPlayer target) {
+        T mob = type.create(level, EntitySpawnReason.EVENT);
+        if (mob == null) {
+            return;
+        }
+        BiomeBossesRules.PlaneOffset ring = BiomeBossesRules.finaleRingOffset(index, count);
+        Vec3 preferred = new Vec3(x + ring.x(), y, z + ring.z());
+        mob.snapTo(preferred.x, preferred.y, preferred.z);
+        boolean wantsFloor = BiomeBossesRules.finaleWantsFloor(kind);
+        Vec3 spot = nearestClear(level, mob, preferred, BiomeBossesRules.FINALE_SEARCH_RADIUS, wantsFloor);
+        if (spot == null && wantsFloor) {
+            spot = nearestClear(level, mob, preferred, BiomeBossesRules.FINALE_SEARCH_RADIUS, false);
+        }
+        if (spot == null) {
+            return;
+        }
+        mob.snapTo(spot.x, spot.y, spot.z);
+        mob.finalizeSpawn(
+                level, level.getCurrentDifficultyAt(BlockPos.containing(spot)), EntitySpawnReason.EVENT, null);
+        mob.setAttached(EhmAttachments.EHM_SPAWN_PROCESSED, Boolean.TRUE);
+        if (kind == BiomeBossesRules.FinaleKind.PHANTOM) {
+            mob.setAttached(EhmAttachments.EHM_NO_SUN_BURN, Boolean.TRUE);
+        }
+        if (mob instanceof ZombifiedPiglin piglin) {
+            PigMen.anger(piglin);
+            if (target != null) {
+                piglin.setPersistentAngerTarget(EntityReference.of(target));
+            }
+        }
+        if (target != null) {
+            mob.setTarget(target);
+        }
+        level.addFreshEntity(mob);
+    }
+
+    /** A suffocating boss moves to the nearest open spot and the fight continues. */
+    private static void rescueIfStuck(ServerLevel level, LivingEntity boss) {
+        Identifier dimension = level.dimension().identifier();
+        if (!boss.isInWall()) {
+            RESCUE.put(boss.getUUID(), new RescueState(dimension, boss.position(), Long.MIN_VALUE));
+            return;
+        }
+        RescueState state = RESCUE.get(boss.getUUID());
+        long now = level.getGameTime();
+        if (state != null && dimension.equals(state.dimension()) && now < state.retryAt()) {
+            return;
+        }
+        Vec3 dest = nearestEscape(level, boss, state, dimension);
+        Vec3 remembered = state == null || !dimension.equals(state.dimension()) ? null : state.lastFree();
+        if (dest == null) {
+            RESCUE.put(
+                    boss.getUUID(),
+                    new RescueState(dimension, remembered, now + BiomeBossesRules.UNSTUCK_RETRY_TICKS));
+            return;
+        }
+        float yaw = boss.getYRot();
+        float pitch = boss.getXRot();
+        double fromX = boss.getX();
+        double fromY = boss.getY();
+        double fromZ = boss.getZ();
+        if (!boss.teleportTo(level, dest.x, dest.y, dest.z, Set.of(), yaw, pitch, true)) {
+            RESCUE.put(
+                    boss.getUUID(),
+                    new RescueState(dimension, remembered, now + BiomeBossesRules.UNSTUCK_RETRY_TICKS));
+            return;
+        }
+        boss.resetFallDistance();
+        boss.setDeltaMovement(Vec3.ZERO);
+        RESCUE.put(boss.getUUID(), new RescueState(dimension, dest, Long.MIN_VALUE));
+        level.playSound(null, fromX, fromY, fromZ, SoundEvents.ENDERMAN_TELEPORT, SoundSource.HOSTILE, 1.0F, 1.0F);
+        level.playSound(null, dest.x, dest.y, dest.z, SoundEvents.ENDERMAN_TELEPORT, SoundSource.HOSTILE, 1.0F, 1.0F);
+        level.sendParticles(
+                ParticleTypes.PORTAL,
+                dest.x,
+                dest.y + boss.getBbHeight() * 0.5,
+                dest.z,
+                24,
+                0.4,
+                0.5,
+                0.4,
+                0.15);
+    }
+
+    private static Vec3 nearestEscape(ServerLevel level, LivingEntity boss, RescueState state, Identifier dimension) {
+        if (state != null && dimension.equals(state.dimension()) && state.lastFree() != null) {
+            Vec3 remembered = state.lastFree();
+            if (nearEnough(boss, remembered) && clearOfWall(level, boss, remembered, false)) {
+                return remembered;
+            }
+        }
+        Vec3 origin = boss.position();
+        Vec3 floored = searchShells(level, boss, origin, BiomeBossesRules.UNSTUCK_RADIUS, true);
+        if (floored != null) {
+            return floored;
+        }
+        return searchShells(level, boss, origin, BiomeBossesRules.UNSTUCK_RADIUS, false);
+    }
+
+    private static Vec3 nearestClear(ServerLevel level, Entity entity, Vec3 origin, int radius, boolean needFloor) {
+        if (clearOfWall(level, entity, origin, needFloor)) {
+            return origin;
+        }
+        return searchShells(level, entity, origin, radius, needFloor);
+    }
+
+    private static Vec3 searchShells(ServerLevel level, Entity entity, Vec3 origin, int radius, boolean needFloor) {
+        for (int ring = 1; ring <= radius; ring++) {
+            for (int dy = -ring; dy <= ring; dy++) {
+                for (int dx = -ring; dx <= ring; dx++) {
+                    for (int dz = -ring; dz <= ring; dz++) {
+                        if (BiomeBossesRules.chebyshev(dx, dy, dz) != ring) {
+                            continue;
+                        }
+                        Vec3 candidate = origin.add(dx, dy, dz);
+                        if (clearOfWall(level, entity, candidate, needFloor)) {
+                            return candidate;
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private static boolean nearEnough(Entity entity, Vec3 feet) {
+        BlockPos from = entity.blockPosition();
+        BlockPos to = BlockPos.containing(feet);
+        return BiomeBossesRules.withinUnstuck(to.getX() - from.getX(), to.getY() - from.getY(), to.getZ() - from.getZ());
+    }
+
+    /**
+     * A spot the body can occupy without suffocating. The eye box matches {@link Entity#isInWall()}.
+     * A sturdy floor is preferred for the boss and for ground summons. Flyers and a buried boss with no
+     * floor nearby accept a clear spot without one.
+     */
+    private static boolean clearOfWall(ServerLevel level, Entity entity, Vec3 feet, boolean needFloor) {
+        if (feet == null || !Double.isFinite(feet.x) || !Double.isFinite(feet.y) || !Double.isFinite(feet.z)) {
+            return false;
+        }
+        double height = entity.getBbHeight();
+        if (feet.y < level.getMinY() || feet.y + height >= level.getMaxY()) {
+            return false;
+        }
+        BlockPos feetPos = BlockPos.containing(feet);
+        BlockPos headPos = BlockPos.containing(feet.x, feet.y + Math.max(0.0, height - 0.01), feet.z);
+        if (!level.isLoaded(feetPos) || !level.isLoaded(headPos)) {
+            return false;
+        }
+        if (level.getFluidState(feetPos).is(FluidTags.LAVA)) {
+            return false;
+        }
+        if (needFloor) {
+            BlockPos below = feetPos.below();
+            if (!level.getBlockState(below).isFaceSturdy(level, below, Direction.UP)) {
+                return false;
+            }
+        }
+        double dx = feet.x - entity.getX();
+        double dy = feet.y - entity.getY();
+        double dz = feet.z - entity.getZ();
+        AABB body = entity.getBoundingBox().move(dx, dy, dz);
+        if (!level.noBlockCollision(entity, body) || !level.noBorderCollision(entity, body)) {
+            return false;
+        }
+        return !eyeWouldSuffocate(level, entity, dx, dy, dz);
+    }
+
+    /** Same thin eye box and suffocating-shape test as {@link Entity#isInWall()}. */
+    private static boolean eyeWouldSuffocate(ServerLevel level, Entity entity, double dx, double dy, double dz) {
+        float width = entity.getDimensions(entity.getPose()).width() * 0.8F;
+        Vec3 eye = entity.getEyePosition().add(dx, dy, dz);
+        AABB box = AABB.ofSize(eye, width, 1.0E-6D, width);
+        return BlockPos.betweenClosedStream(box).anyMatch(pos -> {
+            BlockState state = level.getBlockState(pos);
+            if (state.isAir() || !state.isSuffocating(level, pos)) {
+                return false;
+            }
+            VoxelShape shape = state.getCollisionShape(level, pos).move(pos);
+            return Shapes.joinIsNotEmpty(shape, Shapes.create(box), BooleanOp.AND);
+        });
     }
 
     static void spawnFireworks(ServerLevel level, double x, double y, double z, int count) {

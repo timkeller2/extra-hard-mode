@@ -221,6 +221,13 @@ public final class EhmAttachments {
     /** The dig goal was added to this entity instance. Not saved; goals are not reloaded. */
     public static final AttachmentType<Boolean> EHM_BOSS_MINE_GOAL =
             AttachmentRegistry.create(ExtraHardModeMod.id("boss_mine_goal"));
+    /**
+     * Persistent. A mob with this set does not burn in sunlight. The biome-boss finale phantom uses it
+     * so daylight does not end the fight.
+     */
+    public static final AttachmentType<Boolean> EHM_NO_SUN_BURN = AttachmentRegistry.create(
+            ExtraHardModeMod.id("no_sun_burn"),
+            builder -> builder.persistent(Codec.BOOL).initializer(() -> Boolean.FALSE));
 
     public static final AttachmentType<Map<String, Integer>> EHM_BLOCK_PLACE_COUNTS = AttachmentRegistry.create(
             ExtraHardModeMod.id("block_place_counts"),

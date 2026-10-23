@@ -1,5 +1,8 @@
 package dev.extrahardmode.feature;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Biome-boss spawn gates. Minecraft-free so JUnit can cover distance, cooldown, and rolls.
  */
@@ -57,6 +60,18 @@ public final class BiomeBossesRules {
     public static final int WRONG_TOOL_DIVISOR = 100;
     /** How often a boss rechecks whether it can walk to its target. */
     public static final int BOSS_PATH_RECHECK_TICKS = 20;
+    /** Chebyshev blocks searched when a boss is suffocating inside solid blocks. */
+    public static final int UNSTUCK_RADIUS = 16;
+    /** Ticks to wait before searching again when no open spot exists. */
+    public static final int UNSTUCK_RETRY_TICKS = 20;
+    /** Horizontal blocks between the death site and each finale summon. */
+    public static final double FINALE_RING_RADIUS = 2.5;
+    /** Chebyshev blocks searched for a clear finale spawn. */
+    public static final int FINALE_SEARCH_RADIUS = 8;
+    /** A finale mob targets a survival player inside this range. */
+    public static final double FINALE_AGGRO_BLOCKS = 64.0;
+    /** Zombified piglins kept in the death summon. The rest of the roster is one of each other kind. */
+    public static final int FINALE_PIGLIN_COUNT = 2;
 
     private BiomeBossesRules() {}
 
@@ -255,5 +270,53 @@ public final class BiomeBossesRules {
         float speed = Math.max(0.0F, toolSpeed);
         int divisor = correctForDrops ? CORRECT_TOOL_DIVISOR : WRONG_TOOL_DIVISOR;
         return speed / hardness / divisor;
+    }
+
+    /** Creatures called when an overworld biome boss dies. Two piglins, then one of each other kind. */
+    public enum FinaleKind {
+        PIGLIN,
+        VEX,
+        WITCH,
+        SKELETON,
+        CREEPER,
+        ZOMBIE,
+        PHANTOM
+    }
+
+    /** Horizontal offset from a death site. */
+    public record PlaneOffset(double x, double z) {}
+
+    public static List<FinaleKind> finaleRoster() {
+        List<FinaleKind> roster = new ArrayList<>();
+        for (int i = 0; i < FINALE_PIGLIN_COUNT; i++) {
+            roster.add(FinaleKind.PIGLIN);
+        }
+        roster.add(FinaleKind.VEX);
+        roster.add(FinaleKind.WITCH);
+        roster.add(FinaleKind.SKELETON);
+        roster.add(FinaleKind.CREEPER);
+        roster.add(FinaleKind.ZOMBIE);
+        roster.add(FinaleKind.PHANTOM);
+        return List.copyOf(roster);
+    }
+
+    /** Flyers do not need a sturdy block under them. */
+    public static boolean finaleWantsFloor(FinaleKind kind) {
+        return kind != FinaleKind.VEX && kind != FinaleKind.PHANTOM;
+    }
+
+    public static int chebyshev(int dx, int dy, int dz) {
+        return Math.max(Math.abs(dx), Math.max(Math.abs(dy), Math.abs(dz)));
+    }
+
+    /** True when a block offset is inside the unstuck search, including the boss's own block. */
+    public static boolean withinUnstuck(int dx, int dy, int dz) {
+        return chebyshev(dx, dy, dz) <= UNSTUCK_RADIUS;
+    }
+
+    public static PlaneOffset finaleRingOffset(int index, int count) {
+        int size = Math.max(1, count);
+        double angle = (Math.PI * 2.0 * Math.floorMod(index, size)) / size;
+        return new PlaneOffset(Math.cos(angle) * FINALE_RING_RADIUS, Math.sin(angle) * FINALE_RING_RADIUS);
     }
 }
