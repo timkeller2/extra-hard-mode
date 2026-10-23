@@ -240,7 +240,9 @@ class EhmHelpTest {
         assertTrue(all.contains("has not appeared yet"));
         assertTrue(all.contains("wealthy trader"));
         assertTrue(all.contains("or a jeweler"));
-        assertTrue(all.contains("Mira the Jeweler"));
+        assertTrue(all.contains("stay 20 blocks"));
+        assertTrue(all.contains("35 blocks of a villager"));
+        assertTrue(all.contains("Alden the Jeweler"));
         assertTrue(all.contains("higher-ranked clothes"));
         assertTrue(all.contains("copper or redstone block"));
         assertTrue(all.contains("A diamond block is 72 emeralds"));

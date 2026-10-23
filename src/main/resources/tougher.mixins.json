@@ -117,6 +117,8 @@
     "client.ClientBlockItemPlaceMixin",
     "client.ClientPlayerDestroySpeedMixin",
     "client.ClientPlayerHarvestMixin",
+    "client.ClientReconnectMixin",
+    "client.ClientHandshakeReconnectMixin",
     "client.DebugScreenEntryListMixin",
     "client.DebugScreenOverlayMixin",
     "client.ClientInventorySlotMixin",

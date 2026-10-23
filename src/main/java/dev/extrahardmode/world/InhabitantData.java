@@ -159,6 +159,11 @@ public final class InhabitantData extends SavedData {
                     id, bed, score, specialty, name, next, leaveAfterDay, emptyUntilDay, uneasy, lastRestockDay, lastRollDay);
         }
 
+        public Home withName(String next) {
+            return new Home(
+                    id, bed, score, specialty, next, living, leaveAfterDay, emptyUntilDay, uneasy, lastRestockDay, lastRollDay);
+        }
+
         public Home withScore(int next) {
             return new Home(
                     id, bed, next, specialty, name, living, leaveAfterDay, emptyUntilDay, uneasy, lastRestockDay, lastRollDay);

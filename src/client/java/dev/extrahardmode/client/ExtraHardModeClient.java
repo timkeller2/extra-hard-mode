@@ -356,6 +356,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
                 client.execute(() -> AchievementFloater.spawn(payload));
             }
         });
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> BriefReconnect.joined());
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             lastSync = null;
             lastMana = null;

@@ -175,7 +175,7 @@ public final class WorldConfig {
     private int inhabitantMaxVolume = 300;
     private int inhabitantMinLight = 8;
     private int inhabitantMinScore = 12;
-    private int inhabitantSpacing = 48;
+    private int inhabitantSpacing = 20;
     private int inhabitantBaseChancePercent = 8;
     private int inhabitantChancePerPoint = 2;
     private int inhabitantMaxChancePercent = 40;
@@ -1635,7 +1635,7 @@ public final class WorldConfig {
         inhabitantMaxVolume = Math.max(inhabitantMinVolume, getInt(file, "inhabitants.maxVolume", 300));
         inhabitantMinLight = Math.clamp(getInt(file, "inhabitants.minLight", 8), 0, 15);
         inhabitantMinScore = Math.max(0, getInt(file, "inhabitants.minScore", 12));
-        inhabitantSpacing = Math.max(0, getInt(file, "inhabitants.spacing", 48));
+        inhabitantSpacing = Math.max(0, getInt(file, "inhabitants.spacing", 20));
         inhabitantBaseChancePercent = percent(getInt(file, "inhabitants.baseChancePercent", 8));
         inhabitantChancePerPoint = Math.max(0, getInt(file, "inhabitants.chancePerPoint", 2));
         inhabitantMaxChancePercent = percent(getInt(file, "inhabitants.maxChancePercent", 40));
@@ -1821,7 +1821,7 @@ public final class WorldConfig {
         writeDefaultIfMissing(file, "inhabitants.minLight", "Minimum block light on interior floor air.", 8);
         writeDefaultIfMissing(file, "inhabitants.minScore", "Amenity points required to attract a resident.", 12);
         writeDefaultIfMissing(
-                file, "inhabitants.spacing", "Horizontal blocks between occupied home beds.", 48);
+                file, "inhabitants.spacing", "Horizontal blocks between occupied home beds.", 20);
         writeDefaultIfMissing(
                 file, "inhabitants.baseChancePercent", "Dawn spawn chance at the minimum score.", 8);
         writeDefaultIfMissing(

@@ -119,9 +119,20 @@ class InhabitantRulesTest {
 
     @Test
     void spacingAndDawnChance() {
+        assertEquals(20, InhabitantRules.SPACING);
+        assertFalse(InhabitantRules.farEnough(19, 0, InhabitantRules.SPACING));
+        assertTrue(InhabitantRules.farEnough(20, 0, InhabitantRules.SPACING));
+        assertTrue(InhabitantRules.farEnough(0, 20, InhabitantRules.SPACING));
         assertFalse(InhabitantRules.farEnough(47, 0, 48));
         assertTrue(InhabitantRules.farEnough(48, 0, 48));
         assertTrue(InhabitantRules.farEnough(0, 48, 48));
+        assertEquals(35, InhabitantRules.VILLAGER_CLEARANCE);
+        assertFalse(InhabitantRules.clearOfVillager(34, 0, 0, 35));
+        assertTrue(InhabitantRules.clearOfVillager(35, 0, 0, 35));
+        assertFalse(InhabitantRules.clearOfVillager(0, -34, 0, 35));
+        assertTrue(InhabitantRules.clearOfVillager(0, 0, 35, 35));
+        assertFalse(InhabitantRules.clearOfVillager(20, 20, 20, 35));
+        assertTrue(InhabitantRules.clearOfVillager(21, 21, 21, 35));
         assertEquals(0, InhabitantRules.spawnChancePercent(11, false));
         assertEquals(8, InhabitantRules.spawnChancePercent(12, false));
         assertEquals(20, InhabitantRules.spawnChancePercent(18, false));
@@ -149,8 +160,23 @@ class InhabitantRulesTest {
         assertEquals(16, InhabitantRules.haulerStack(2));
         assertEquals(16, InhabitantRules.farmWheatBuy(false));
         assertEquals(8, InhabitantRules.farmWheatBuy(true));
-        assertEquals("Alder", InhabitantRules.pickName(0));
-        assertEquals(InhabitantRules.pickName(0), InhabitantRules.pickName(20));
+        assertEquals("Alden", InhabitantRules.pickName(0));
+        assertEquals(64, InhabitantRules.nameCount());
+        assertEquals("Tobias", InhabitantRules.pickName(63));
+        assertEquals(InhabitantRules.pickName(0), InhabitantRules.pickName(64));
+        Set<String> residentNames = new HashSet<>();
+        for (int roll = 0; roll < 128; roll++) {
+            residentNames.add(InhabitantRules.pickName(roll));
+        }
+        assertEquals(64, residentNames.size());
+        assertTrue(InhabitantRules.listedName("Alden"));
+        assertFalse(InhabitantRules.listedName("Mira"));
+        assertFalse(InhabitantRules.listedName("Alder"));
+        assertFalse(InhabitantRules.listedName(""));
+        assertFalse(InhabitantRules.listedName(null));
+        assertEquals(InhabitantRules.nameForHome("bed-1"), InhabitantRules.nameForHome("bed-1"));
+        assertEquals(InhabitantRules.pickName(0), InhabitantRules.nameForHome(null));
+        assertTrue(InhabitantRules.listedName(InhabitantRules.nameForHome("bed-1")));
         assertEquals(
                 List.of("hauler", "cook", "farm", "trader", "council", "brewer"),
                 InhabitantRules.unseenSpecialties(List.of(), 12));

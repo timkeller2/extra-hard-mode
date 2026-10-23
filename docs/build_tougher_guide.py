@@ -339,7 +339,7 @@ def build():
         Paragraph("Homes and residents", s["h"]),
         Paragraph(
             "Right-click a bed with a clock to score a room. An enclosed, lit room of 24 to 300 air blocks, with a bed and a door or fence gate facing outside, "
-            "can attract one resident if it has at least 12 furnishing points and stays 48 blocks from another occupied home. "
+            "can attract one resident if it has at least 12 furnishing points and stays 20 blocks from another occupied home. "
             "Furnishings come from size, extra rooms, windows, art, rugs, seating, storage, workstations, lights, plants, books, a second bed, and a kitchen. "
             "Empty eligible homes are checked at dawn. Chance starts at 8% at 12 points and rises with the score. It is halved in blight. "
             "Chests bias a hauler, a kitchen biases a cook, and plants or workstations bias a farmer. "
@@ -350,7 +350,8 @@ def build():
         ),
         bullets(
             [
-                "The name over a resident is their name and occupation, such as Mira the Jeweler.",
+                "A resident will not appear within 35 blocks of a villager. Other residents do not count.",
+                "The name over a resident is their name and occupation, such as Alden the Jeweler.",
                 "Clothes are a villager outfit, so two of one occupation may look different. A jeweler, wealthy trader, or drop collector wears a finer coat. An armorsmith or wise teacher ranks higher, and a master armorsmith or council member wears the highest rank.",
                 "Most residents restock every 14 Minecraft days. Armorsmiths restock every 30. Look at one who is waiting to see the time left, in days and hours.",
                 "Shop size follows house points. The top of the roll is 50% at 14 points and 175% at 38. The bottom is half of that. Prices do not inflate. A farm neighbor may sell one seed or plantable vegetable for 6 to 16 emeralds.",

@@ -250,6 +250,7 @@ public final class Inhabitants implements FeatureModule {
                 Component.literal(InhabitantRules.inspectFallback(result.gates()))));
         InhabitantData.Home home = data.get(ResidenceScan.homeId(result.bed()));
         if (home != null && home.living().isPresent()) {
+            home = ensureMaleName(data, home);
             home = releaseIfResidentMissing(level, data, home, day);
         }
         if (home != null && home.living().isPresent()) {
@@ -258,6 +259,10 @@ public final class Inhabitants implements FeatureModule {
                     "%s the %s lives here.",
                     Component.literal(home.name()),
                     Component.literal(InhabitantRules.specialtyFallback(home.specialty()))));
+        } else if (villagerNearby(level, result.bed())) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.inhabitant_near_villager",
+                    "A villager is within 35 blocks, so no resident will appear."));
         }
     }
 
@@ -279,6 +284,7 @@ public final class Inhabitants implements FeatureModule {
             if (home.living().isEmpty()) {
                 continue;
             }
+            home = ensureMaleName(data, home);
             home = releaseIfResidentMissing(level, data, home, day);
             if (home.living().isEmpty()) {
                 continue;
@@ -413,6 +419,9 @@ public final class Inhabitants implements FeatureModule {
         int missed = InhabitantRules.missedArrivalRolls(existing.lastRollDay(), day);
         data.put(existing.withScore(result.gates().score()).withLastRoll(day));
         if (missed <= 0) {
+            return;
+        }
+        if (villagerNearby(level, result.bed())) {
             return;
         }
         int chance = InhabitantRules.spawnChancePercent(
@@ -762,6 +771,16 @@ public final class Inhabitants implements FeatureModule {
         }
     }
 
+    /** A living home whose saved name is not on the male list is renamed once. */
+    static InhabitantData.Home ensureMaleName(InhabitantData data, InhabitantData.Home home) {
+        if (home == null || InhabitantRules.listedName(home.name())) {
+            return home;
+        }
+        InhabitantData.Home named = home.withName(InhabitantRules.nameForHome(home.id()));
+        data.put(named);
+        return named;
+    }
+
     /** Drop a home's resident record when that villager is dead or no longer loaded near the bed. */
     static InhabitantData.Home releaseIfResidentMissing(
             ServerLevel level, InhabitantData data, InhabitantData.Home home, long day) {
@@ -1088,6 +1107,22 @@ public final class Inhabitants implements FeatureModule {
                     level.getRandom(),
                     shopScore(villager, result.gates().score()));
         }
+    }
+
+    /** A living villager who is not already a resident, closer than {@link InhabitantRules#VILLAGER_CLEARANCE}. */
+    static boolean villagerNearby(ServerLevel level, BlockPos bed) {
+        int range = InhabitantRules.VILLAGER_CLEARANCE;
+        AABB box = new AABB(bed).inflate(range);
+        double x = bed.getX() + 0.5;
+        double y = bed.getY() + 0.5;
+        double z = bed.getZ() + 0.5;
+        for (Villager villager : level.getEntitiesOfClass(
+                Villager.class, box, candidate -> candidate.isAlive() && !isInhabitant(candidate))) {
+            if (!InhabitantRules.clearOfVillager(villager.getX() - x, villager.getY() - y, villager.getZ() - z, range)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     static List<BlockPos> occupiedBeds(ServerLevel level) {

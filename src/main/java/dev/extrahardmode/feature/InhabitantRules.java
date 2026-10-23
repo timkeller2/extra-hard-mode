@@ -25,7 +25,9 @@ public final class InhabitantRules {
     public static final int VOLUME_PER_POINT = 48;
     public static final int VOLUME_POINT_CAP = 5;
     public static final int ROOM_POINT_CAP = 3;
-    public static final int SPACING = 48;
+    public static final int SPACING = 20;
+    /** A new resident will not appear when a villager is closer than this, in blocks. */
+    public static final int VILLAGER_CLEARANCE = 35;
     public static final int BASE_CHANCE_PERCENT = 8;
     public static final int CHANCE_PER_POINT = 2;
     public static final int MAX_CHANCE_PERCENT = 40;
@@ -299,8 +301,13 @@ public final class InhabitantRules {
             sellOf("minecraft:copper_ingot", 12, 1, WEALTHY_TRADE_USES));
 
     private static final String[] NAMES = {
-        "Alder", "Bram", "Cora", "Dune", "Ellis", "Fern", "Goss", "Hela", "Ivo", "Jules",
-        "Kade", "Lumen", "Mira", "Noll", "Osa", "Pell", "Quinn", "Ryn", "Sage", "Tess"
+        "Alden", "Bram", "Cedric", "Darren", "Edmund", "Felix", "Gavin", "Harold", "Ivo", "Ivan",
+        "Kade", "Leon", "Marcus", "Nolan", "Oscar", "Peter", "Russell", "Stuart", "Samuel", "Thomas",
+        "Arthur", "Bennett", "Calvin", "Derek", "Edward", "Franklin", "George", "Henry", "Isaac", "James",
+        "Kenneth", "Lawrence", "Martin", "Nicholas", "Oliver", "Patrick", "Quentin", "Robert", "Simon", "Theodore",
+        "Victor", "Walter", "Xavier", "Yusuf", "Zachary", "Adrian", "Blake", "Conrad", "Dominic", "Ernest",
+        "Frederick", "Grant", "Hugh", "Ian", "Jasper", "Keith", "Lewis", "Miles", "Nathan", "Owen",
+        "Paul", "Reid", "Seth", "Tobias"
     };
 
     public record AmenityCounts(
@@ -508,7 +515,7 @@ public final class InhabitantRules {
         return List.of(
                 "Rooms: Need an enclosed room (solid walls, floor, and roof; doors and trapdoors are openings, not holes).",
                 "Rooms: Also need 24 to 300 interior air blocks, a bed, and a door or fence gate that faces outside.",
-                "Rooms: Block light 8 on every floor tile, and stay 48 blocks from another occupied home.");
+                "Rooms: Block light 8 on every floor tile, and stay 20 blocks from another occupied home.");
     }
 
     public static List<String> homesFurnishingLines() {
@@ -526,8 +533,9 @@ public final class InhabitantRules {
 
     public static List<String> homesResidentLines() {
         return List.of(
-                "Residents: The name over their head is their name and occupation, such as Mira the Jeweler.",
+                "Residents: The name over their head is their name and occupation, such as Alden the Jeweler.",
                 "Residents: Clothes are a villager outfit, so two jewelers may differ. Finer residents wear higher-ranked clothes.",
+                "Residents: A resident will not appear within 35 blocks of a villager. Other residents do not count.",
                 "Residents: Eligible loaded homes are checked at dawn. An empty eligible home is timestamped the day it becomes inhabitable.",
                 "Residents: When you visit later, each missed day is rolled once (same chances as dawn), then the timestamp is set to today.",
                 "Residents: Houses in unloaded chunks can still fill. Chance starts at 8% at 12 points and rises with extra points (halved in blight).",
@@ -595,6 +603,12 @@ public final class InhabitantRules {
     public static boolean farEnough(int dx, int dz, int spacing) {
         long min = Math.max(0, spacing);
         return (long) dx * dx + (long) dz * dz >= min * min;
+    }
+
+    /** True when a villager at this offset is far enough for a resident to appear. */
+    public static boolean clearOfVillager(double dx, double dy, double dz, int clearance) {
+        double min = Math.max(0, clearance);
+        return dx * dx + dy * dy + dz * dz >= min * min;
     }
 
     public static int spawnChancePercent(int score, boolean blight) {
@@ -854,7 +868,7 @@ public final class InhabitantRules {
         }
     }
 
-    /** Floating name, such as {@code Mira the Jeweler}. */
+    /** Floating name, such as {@code Alden the Jeweler}. */
     public static String nameplate(String name, String specialty) {
         String who = name == null || name.isBlank() ? "Traveler" : name.trim();
         return who + " the " + titleWords(specialtyFallback(specialty));
@@ -904,6 +918,28 @@ public final class InhabitantRules {
 
     public static String pickName(int roll) {
         return NAMES[Math.floorMod(roll, NAMES.length)];
+    }
+
+    public static int nameCount() {
+        return NAMES.length;
+    }
+
+    /** True when {@code name} is one of the male names new residents are drawn from. */
+    public static boolean listedName(String name) {
+        if (name == null || name.isEmpty()) {
+            return false;
+        }
+        for (String candidate : NAMES) {
+            if (candidate.equals(name)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Stable male name for a home that still has an older name. */
+    public static String nameForHome(String homeId) {
+        return pickName(homeId == null ? 0 : homeId.hashCode());
     }
 
     /** Cobble (and similar dumps) per emerald. More chests → better rate. */
