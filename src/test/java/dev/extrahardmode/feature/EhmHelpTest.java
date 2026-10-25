@@ -182,7 +182,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("300 blocks from spawn"));
         assertTrue(String.join(" ", lines).contains("Everyone can earn every achievement"));
         assertTrue(String.join(" ", lines).contains("small brown number"));
-        assertTrue(String.join(" ", lines).contains("placements remaining only while you sneak"));
+        assertTrue(String.join(" ", lines).contains("Sneak while holding a placeable block"));
         assertFalse(String.join(" ", lines).contains("your mana abilities"));
         assertTrue(String.join(" ", lines).contains("25 extra experience and 3 more emeralds"));
         assertTrue(String.join(" ", lines).contains("3 experience"));

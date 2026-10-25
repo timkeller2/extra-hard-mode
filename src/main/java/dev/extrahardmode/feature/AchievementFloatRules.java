@@ -15,9 +15,15 @@ public final class AchievementFloatRules {
 
     private AchievementFloatRules() {}
 
-    /** Builder counts appear only while the player is sneaking. Slayer counts always appear. */
-    public static boolean showPlacementCount(boolean sneaking) {
-        return sneaking;
+    /** How far in front of the eyes the sneak preview floats, in blocks. */
+    public static final double SNEAK_AHEAD_BLOCKS = 1.5;
+
+    /**
+     * Builder counts appear when sneak starts while a placeable block is held.
+     * Holding sneak does not repeat it. Slayer counts are not gated here.
+     */
+    public static boolean showPlacementCount(boolean wasSneaking, boolean sneaking, boolean holdingPlaceable) {
+        return holdingPlaceable && sneaking && !wasSneaking;
     }
 
     /** Actions still needed. Zero when this track has no further tier. */

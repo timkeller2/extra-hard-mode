@@ -229,6 +229,10 @@ public final class EhmAttachments {
             ExtraHardModeMod.id("no_sun_burn"),
             builder -> builder.persistent(Codec.BOOL).initializer(() -> Boolean.FALSE));
 
+    /** Previous sneak state, so the placement preview fires once per press. Not saved. */
+    public static final AttachmentType<Boolean> EHM_WAS_SNEAKING =
+            AttachmentRegistry.create(ExtraHardModeMod.id("was_sneaking"));
+
     public static final AttachmentType<Map<String, Integer>> EHM_BLOCK_PLACE_COUNTS = AttachmentRegistry.create(
             ExtraHardModeMod.id("block_place_counts"),
             builder -> builder.persistent(Codec.unboundedMap(Codec.STRING, Codec.INT))

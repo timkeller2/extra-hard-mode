@@ -32,6 +32,7 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -40,6 +41,7 @@ import net.minecraft.world.item.component.Fireworks;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * Per-block builder and per-hostile slayer achievements, plus mana regen.
@@ -64,6 +66,7 @@ public final class Achievements implements FeatureModule {
             if ((level.getGameTime() + player.getId()) % AchievementRules.TICKS_PER_MINUTE == 0) {
                 tickMana(player);
             }
+            onSneakEdge(player);
         }
     }
 
@@ -95,19 +98,59 @@ public final class Achievements implements FeatureModule {
                 AchievementRules.BUILDER_THRESHOLDS,
                 true,
                 block.getName());
-        if (!AchievementFloatRules.showPlacementCount(player.isShiftKeyDown())) {
+    }
+
+    /** Rising edge of sneak while a placeable block is held. The first seen state does not count. */
+    static void onSneakEdge(ServerPlayer player) {
+        if (player == null || skipPlayer(player)) {
             return;
         }
-        net.minecraft.core.BlockPos placed = context.getClickedPos();
+        boolean sneaking = player.isShiftKeyDown();
+        Boolean was = player.getAttached(EhmAttachments.EHM_WAS_SNEAKING);
+        player.setAttached(EhmAttachments.EHM_WAS_SNEAKING, sneaking);
+        if (was == null) {
+            return;
+        }
+        Block block = heldPlaceable(player);
+        if (!AchievementFloatRules.showPlacementCount(was, sneaking, block != null)) {
+            return;
+        }
+        String key = blockKey(block);
+        if (key == null) {
+            return;
+        }
+        Vec3 eye = player.getEyePosition();
+        Vec3 look = player.getLookAngle();
+        double ahead = AchievementFloatRules.SNEAK_AHEAD_BLOCKS;
         floatRemaining(
                 player,
-                count,
+                countOf(player, EhmAttachments.EHM_BLOCK_PLACE_COUNTS, key),
                 key,
                 EhmAttachments.EHM_BLOCK_AWARDED,
                 AchievementRules.BUILDER_THRESHOLDS,
-                placed.getX() + 0.5,
-                placed.getY() + 0.95,
-                placed.getZ() + 0.5);
+                eye.x + look.x * ahead,
+                eye.y + look.y * ahead,
+                eye.z + look.z * ahead);
+    }
+
+    /** Main hand, or the offhand when the main hand is not a placeable block. */
+    static Block heldPlaceable(Player player) {
+        if (player == null) {
+            return null;
+        }
+        Block main = blockOf(player.getMainHandItem());
+        if (main != null) {
+            return main;
+        }
+        return blockOf(player.getOffhandItem());
+    }
+
+    private static Block blockOf(ItemStack stack) {
+        if (stack == null || stack.isEmpty() || !(stack.getItem() instanceof BlockItem blockItem)) {
+            return null;
+        }
+        Block block = blockItem.getBlock();
+        return blockKey(block) == null ? null : block;
     }
 
     static void onBreak(

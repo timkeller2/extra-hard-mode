@@ -425,7 +425,7 @@ public final class EhmHelp {
                         "Achievements: The first time you visit a biome you gain 50 experience, and 100 more if you are the first player to visit it.",
                         "Achievements: The first time you build a habitable home in a biome you gain (house points × 3) experience.",
                         "Achievements: The first time you travel 300 blocks from spawn you gain 100 experience.",
-                        "Achievements: The small brown number shows kills remaining, and placements remaining only while you sneak. It drifts down and left for 3 seconds, and stays hidden when finished."));
+                        "Achievements: The small brown number shows kills left. Sneak while holding a placeable block to see placements left. It drifts down and left for 3 seconds and hides when finished."));
     }
 
     private static Page homes() {

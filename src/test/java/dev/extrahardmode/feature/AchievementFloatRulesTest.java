@@ -8,9 +8,12 @@ import org.junit.jupiter.api.Test;
 
 class AchievementFloatRulesTest {
     @Test
-    void placementCountShowsOnlyWhileSneaking() {
-        assertTrue(AchievementFloatRules.showPlacementCount(true));
-        assertFalse(AchievementFloatRules.showPlacementCount(false));
+    void placementCountShowsWhenSneakStartsWithABlock() {
+        assertTrue(AchievementFloatRules.showPlacementCount(false, true, true));
+        assertFalse(AchievementFloatRules.showPlacementCount(true, true, true));
+        assertFalse(AchievementFloatRules.showPlacementCount(false, false, true));
+        assertFalse(AchievementFloatRules.showPlacementCount(false, true, false));
+        assertFalse(AchievementFloatRules.showPlacementCount(true, false, true));
     }
 
     @Test

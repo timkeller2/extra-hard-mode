@@ -15,7 +15,7 @@ import net.minecraft.util.Util;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 
-/** Small brown count that drifts down and left from a placement or a kill. */
+/** Small brown count that drifts down and left from a sneak preview or a kill. */
 public final class AchievementFloater {
     private static final List<Floater> FLOATERS = new ArrayList<>();
 

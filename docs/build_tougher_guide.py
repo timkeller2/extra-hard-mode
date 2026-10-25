@@ -333,7 +333,7 @@ def build():
                     "The first player on the server to claim one gets 25 extra experience and 3 more emeralds by default.",
                     "You have your experience level as a percent chance to gain a mana level.",
                     "The first visit to a biome is 50 experience, and 100 more if you are first on the server. The first habitable home in a biome is house points times 3. The first trip 300 blocks from spawn is 100 experience.",
-                    "Sneak while placing a block to see how many placements remain. A kill always shows that number. It drifts down and left for 3 seconds, and stays hidden when that track is finished.",
+                    "Sneak while holding a block you can place to see how many placements remain. Placing it is not required. A kill always shows that number. It drifts down and left for 3 seconds, and stays hidden when that track is finished.",
                 ],
                 s["bullet"],
             ),
