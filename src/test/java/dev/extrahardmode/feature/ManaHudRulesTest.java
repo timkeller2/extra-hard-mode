@@ -1,7 +1,6 @@
 package dev.extrahardmode.feature;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
@@ -97,32 +96,21 @@ class ManaHudRulesTest {
     }
 
     @Test
-    void previewSpanCoversOnlyFutureMana() {
-        assertFalse(ManaHudRules.previewSpan(0, 4.0, 4.0).visible());
-        assertEquals(2, ManaHudRules.fillPixels(0.4));
-        assertEquals(5, ManaHudRules.fillPixels(1.0));
-        assertEquals(9, ManaHudRules.fillPixels(2.0));
-
-        ManaHudRules.PreviewSpan partial = ManaHudRules.previewSpan(0, 0.4, 0.9);
-        assertEquals(ManaHudRules.fillPixels(0.4), partial.fromPixel());
-        assertEquals(ManaHudRules.fillPixels(0.9), partial.toPixel());
-        assertTrue(partial.fromPixel() > 0);
-
-        assertFalse(ManaHudRules.previewSpan(0, 2.0, 2.4).visible());
-        ManaHudRules.PreviewSpan next = ManaHudRules.previewSpan(1, 2.0, 2.4);
-        assertEquals(0, next.fromPixel());
-        assertTrue(next.toPixel() > 0);
-
-        assertFalse(ManaHudRules.previewSpan(0, 3.2, 4.0).visible());
-        assertTrue(ManaHudRules.previewSpan(1, 3.2, 4.0).visible());
+    void previewUsesTheSameHalfAndFullCrystals() {
+        assertEquals(null, ManaHudRules.previewFill(0, 4.0, 4.0));
+        assertEquals(null, ManaHudRules.previewFill(0, 0.4, 0.9));
+        assertEquals(ManaHudRules.Fill.HALF, ManaHudRules.previewFill(0, 0.4, 1.2));
+        assertEquals(ManaHudRules.Fill.FULL, ManaHudRules.previewFill(0, 0.0, 2.0));
+        assertEquals(null, ManaHudRules.previewFill(0, 2.0, 2.4));
+        assertEquals(null, ManaHudRules.previewFill(1, 2.0, 2.4));
+        assertEquals(ManaHudRules.Fill.FULL, ManaHudRules.previewFill(0, 1.2, 3.2));
+        assertEquals(ManaHudRules.Fill.HALF, ManaHudRules.previewFill(1, 1.2, 3.2));
+        assertEquals(null, ManaHudRules.previewFill(0, 3.2, 5.0));
+        assertEquals(ManaHudRules.Fill.FULL, ManaHudRules.previewFill(1, 3.2, 5.0));
+        assertEquals(ManaHudRules.Fill.HALF, ManaHudRules.previewFill(2, 3.2, 5.0));
+        assertEquals(null, ManaHudRules.previewFill(-1, 0.0, 2.0));
         assertEquals(3, ManaHudRules.drawnCrystalCount(4, 4.0, 4.4));
         assertEquals(5, ManaHudRules.drawnCrystalCount(10, 0.0, 0.5));
-
-        ManaHudRules.PreviewSpan clipped =
-                ManaHudRules.visibleSpan(new ManaHudRules.PreviewSpan(4, 9), true);
-        assertEquals(4, clipped.fromPixel());
-        assertEquals(ManaHudRules.HALF_WIDTH, clipped.toPixel());
-        assertFalse(ManaHudRules.visibleSpan(new ManaHudRules.PreviewSpan(6, 9), true).visible());
     }
 
     @Test

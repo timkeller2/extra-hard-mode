@@ -1,8 +1,6 @@
 package dev.extrahardmode.feature;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -35,24 +33,39 @@ class TomeRulesTest {
     }
 
     @Test
-    void writeRequiresALevelAbove30() {
-        assertFalse(TomeRules.canWrite(30));
-        assertFalse(TomeRules.canWrite(0));
-        assertTrue(TomeRules.canWrite(31));
+    void level30OrBelowBanksEverythingAndAbove30BanksOnlyTheExcess() {
+        assertEquals(0, TomeRules.levelAfterWrite(30));
+        assertEquals(0, TomeRules.levelAfterWrite(0));
+        assertEquals(0, TomeRules.levelAfterWrite(15));
+        assertEquals(30, TomeRules.levelAfterWrite(31));
+        assertEquals(1395, TomeRules.bankedXp(30, 1395));
+        assertEquals(1451, TomeRules.bankedXp(30, 1451));
+        assertEquals(315, TomeRules.bankedXp(15, 315));
+        assertEquals(0, TomeRules.bankedXp(0, 0));
+        assertEquals(112, TomeRules.bankedXp(31, 1507));
+        assertEquals(56, TomeRules.bankedXp(31, 1451));
     }
 
     @Test
-    void bothStepsKeepTheFullAmountPlusFivePercentPerLevel() {
-        assertEquals(118, TomeRules.share(112, 1.0));
-        assertEquals(129, TomeRules.share(112, 3.0));
-        assertEquals(11, TomeRules.share(10, 1.0));
-        assertEquals(9, TomeRules.share(9, 1.0));
+    void bothStepsUseEightyPercentPlusTwoPercentPerLevel() {
+        assertEquals(92, TomeRules.share(112, 1.0));
+        assertEquals(96, TomeRules.share(112, 3.0));
+        assertEquals(8, TomeRules.share(10, 1.0));
+        assertEquals(7, TomeRules.share(9, 1.0));
         assertEquals(1, TomeRules.share(1, 1.0));
         assertEquals(0, TomeRules.share(0, 5.0));
         assertEquals(0, TomeRules.share(100, 0.0));
-        assertEquals(6, TomeRules.share(6, 1.0));
-        assertEquals(7, TomeRules.share(6, 4.0));
-        assertEquals(9, TomeRules.share(6, 10.0));
+        assertEquals(5, TomeRules.share(6, 1.0));
+        assertEquals(5, TomeRules.share(6, 4.0));
+        assertEquals(6, TomeRules.share(6, 10.0));
+        assertEquals(98, TomeRules.share(100, 9.0));
+        assertEquals(100, TomeRules.share(100, 10.0));
+        assertEquals(102, TomeRules.share(100, 11.0));
+        assertEquals(100, TomeRules.share(TomeRules.share(100, 10.0), 10.0));
+        assertEquals(96, TomeRules.share(TomeRules.share(100, 9.0), 9.0));
+        assertEquals(104, TomeRules.share(TomeRules.share(100, 11.0), 11.0));
+        assertEquals(92, TomeRules.share(TomeRules.bankedXp(31, 1507), 1.0));
+        assertEquals(1144, TomeRules.share(TomeRules.bankedXp(30, 1395), 1.0));
     }
 
     @Test

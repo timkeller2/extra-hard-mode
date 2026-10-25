@@ -331,7 +331,7 @@ class EhmHelpTest {
         assertTrue(farmText.contains("bone meal"));
         assertFalse(farmText.contains("Stone and deepslate"));
         assertTrue(farming.lines().size() < 40);
-        assertTrue(String.join(" ", EhmHelp.resolve("mana").lines()).contains("faint mark of about ten minutes"));
+        assertTrue(String.join(" ", EhmHelp.resolve("mana").lines()).contains("the way they will look"));
         String combatText = String.join(" ", EhmHelp.resolve("combat").lines());
         assertTrue(combatText.contains("teleports to the nearest open spot"));
         assertTrue(combatText.contains("phantom that ignores sunlight"));

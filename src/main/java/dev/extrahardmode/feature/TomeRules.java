@@ -3,23 +3,40 @@ package dev.extrahardmode.feature;
 /**
  * Experience saved and returned by the Tome of the Wise. Minecraft-free for JUnit.
  *
- * <p>Write keeps the experience required to be exactly level {@link #KEPT_LEVEL} and stores
- * 100% of the rest plus {@link #FRACTION_PER_LEVEL} per ability level. Read grants that same
- * share of the stored amount.
+ * <p>Above {@link #KEPT_LEVEL}, write banks only the experience past that level and leaves the
+ * player there. At that level or below, write banks all visible experience and leaves the
+ * player at level 0. Either amount is then reduced to {@link #BASE_PERCENT} plus
+ * {@link #PERCENT_PER_LEVEL} per ability level. Level 10 is 100%. Read grants that same share
+ * of the stored amount.
  */
 public final class TomeRules {
-    /** Experience level left after a tome is written. The player must be above this to write. */
+    /** Experience level kept when writing above it. At this level or below, the player is emptied to 0. */
     public static final int KEPT_LEVEL = 30;
-    /** Added to the full amount for each point of ability level. Level 1 is 105%. */
-    public static final double FRACTION_PER_LEVEL = 0.05;
+    /** Percent of the banked experience before ability level. Level 10 reaches 100%. */
+    public static final int BASE_PERCENT = 80;
+    /** Added to {@link #BASE_PERCENT} for each point of ability level. */
+    public static final int PERCENT_PER_LEVEL = 2;
     public static final String TITLE = "Tome of the Wise";
     /** Custom data key on the written book. Read uses this, not the page text. */
     public static final String XP_KEY = "tougher_xp";
 
     private TomeRules() {}
 
-    public static boolean canWrite(int experienceLevel) {
-        return experienceLevel > KEPT_LEVEL;
+    /** Level left after a successful write. Above {@link #KEPT_LEVEL}, that level. Otherwise 0. */
+    public static int levelAfterWrite(int experienceLevel) {
+        return experienceLevel > KEPT_LEVEL ? KEPT_LEVEL : 0;
+    }
+
+    /**
+     * Experience considered before the ability share. Above {@link #KEPT_LEVEL}, only the excess.
+     * At that level or below, all visible experience.
+     */
+    public static int bankedXp(int experienceLevel, int totalXp) {
+        int safe = Math.max(0, totalXp);
+        if (experienceLevel > KEPT_LEVEL) {
+            return excessAboveKeptLevel(safe);
+        }
+        return safe;
     }
 
     /**
@@ -78,12 +95,12 @@ public final class TomeRules {
         return Math.max(0, totalXp - floor);
     }
 
-    /** {@code round(amount * (100% + 5% * abilityLevel))}. Zero when the input is empty. */
+    /** {@code round(amount * (80% + 2% * abilityLevel))}. Zero when the input or level is empty. */
     public static int share(int amount, double abilityLevel) {
         if (amount <= 0 || !(abilityLevel > 0.0)) {
             return 0;
         }
-        double raw = amount * (1.0 + FRACTION_PER_LEVEL * abilityLevel);
+        double raw = amount * (BASE_PERCENT + PERCENT_PER_LEVEL * abilityLevel) / 100.0;
         if (raw >= Integer.MAX_VALUE) {
             return Integer.MAX_VALUE;
         }

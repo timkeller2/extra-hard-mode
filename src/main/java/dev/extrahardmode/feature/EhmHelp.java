@@ -376,7 +376,7 @@ public final class EhmHelp {
                         "Mana: Saturation of 18 or more doubles your mana regen. Below 18 that bonus stops.",
                         "Mana: That doubled regen does not consume saturation.",
                         "Mana: Past your level you regen at 1/4 speed. The ceiling of 40 mana rises when Well Fed or ready gold pushes your level past 40. Achievements can raise your mana level.",
-                        "Mana: The filling crystal shows a faint mark of about ten minutes of regen. It grows when you are well fed or Battery is on, and shrinks past your mana level."));
+                        "Mana: Crystals gained in about ten minutes show faintly, the way they will look. It grows when you are well fed or Battery is on, and shrinks past your mana level."));
     }
 
     private static Page abilities() {
@@ -397,8 +397,8 @@ public final class EhmHelp {
                         "Abilities: Battery lasts 2 minutes per level. Regen is 1 plus the square root of that level. It stops at your mana level. A renew spends 1 block, or 2 from a stack.",
                         "Abilities: Lapis lazuli casts Lapis Shield for 1 mana. It lasts 1 minute per level and absorbs that much damage before armor.",
                         "Abilities: Every 3 points blocked costs 1 lapis lazuli, rounded up. If you cannot pay, the hit is not blocked and Lapis Shield ends.",
-                        "Abilities: A book above level 30 writes a Tome of the Wise for 1 mana. It saves 100% of the experience above level 30, plus 5% per ability level, then sets you to level 30.",
-                        "Abilities: Two books in hand consume both and add +2. Reading that tome costs 1 mana and returns 100% of the saved experience, plus 5% per ability level.",
+                        "Abilities: A book writes a Tome of the Wise for 1 mana. Above level 30 it banks the excess and leaves you at 30. At 30 or below it banks everything and leaves you at 0.",
+                        "Abilities: Writing and reading each apply 80% plus 2% per ability level, above or below 30. Below 10 some is lost and above 10 some is gained. Two books add +2.",
                         "Abilities: You can learn up to half your mana level in abilities, rounded up.",
                         "Abilities: Every ability's effective level is at least 1.",
                         "Abilities: Unlearned abilities can be used and still gain skill, at −3 power (floored at 1), until you have a free slot to learn them.",

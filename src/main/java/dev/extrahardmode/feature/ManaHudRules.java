@@ -29,13 +29,6 @@ public final class ManaHudRules {
         }
     }
 
-    /** Ghost pixels on one crystal, {@code fromPixel} inclusive and {@code toPixel} exclusive. */
-    public record PreviewSpan(int fromPixel, int toPixel) {
-        public boolean visible() {
-            return toPixel > fromPixel;
-        }
-    }
-
     private ManaHudRules() {}
 
     /** Two mana points make one crystal, like two HP make one heart. The hard cap is 20 crystals. */
@@ -155,34 +148,27 @@ public final class ManaHudRules {
         return Math.max(crystalCount(manaLevel, currentMana), crystalCount(manaLevel, previewMana));
     }
 
-    /** Left-to-right pixels of one crystal. Two mana is the full 9px width. */
-    public static int fillPixels(double manaInCrystal) {
-        double clamped = Math.max(0.0, Math.min(2.0, manaInCrystal));
-        return (int) Math.round(clamped / 2.0 * CRYSTAL_SIZE);
-    }
-
-    /** Future pixels only. A crystal that is already full through {@code previewMana} is empty. */
-    public static PreviewSpan previewSpan(int crystalIndex, double currentMana, double previewMana) {
+    /**
+     * Half or full sprite this crystal will show after the preview, when that is
+     * more filled than it looks now. A gain that stays under one mana stays empty.
+     */
+    public static Fill previewFill(int crystalIndex, double currentMana, double previewMana) {
         if (crystalIndex < 0) {
-            return new PreviewSpan(0, 0);
+            return null;
         }
-        double origin = crystalIndex * 2.0;
-        int from = fillPixels(currentMana - origin);
-        int to = fillPixels(previewMana - origin);
-        if (to <= from) {
-            return new PreviewSpan(from, from);
+        double nowMana = Math.max(0.0, currentMana);
+        double laterMana = Math.max(0.0, previewMana);
+        if (laterMana <= nowMana) {
+            return null;
         }
-        return new PreviewSpan(from, to);
-    }
-
-    /** Clip a span to the container. A half container stops at {@link #HALF_WIDTH}. */
-    public static PreviewSpan visibleSpan(PreviewSpan span, boolean halfCapacity) {
-        int limit = halfCapacity ? HALF_WIDTH : CRYSTAL_SIZE;
-        int from = Math.min(Math.max(0, span.fromPixel()), limit);
-        int to = Math.min(Math.max(0, span.toPixel()), limit);
-        if (to <= from) {
-            return new PreviewSpan(from, from);
+        Fill now = fill(crystalIndex, (float) nowMana);
+        Fill later = fill(crystalIndex, (float) laterMana);
+        if (later == Fill.EMPTY || later == now || now == Fill.FULL) {
+            return null;
         }
-        return new PreviewSpan(from, to);
+        if (now == Fill.HALF && later != Fill.FULL) {
+            return null;
+        }
+        return later;
     }
 }

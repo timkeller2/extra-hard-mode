@@ -3132,9 +3132,10 @@ public final class ManaAbilities implements FeatureModule {
     }
 
     /**
-     * A plain book above experience level 30. One book is spent, or two from a stack,
-     * and that second book adds +2. The tome stores 100% of the experience above level
-     * 30, plus 5% per ability level, then the player is set back to exactly level 30.
+     * A plain book at any experience level. One book is spent, or two from a stack, and
+     * that second book adds +2. The tome stores 80% of the banked experience plus 2% per
+     * ability level. Above level 30 only the excess is banked and the player returns to
+     * level 30. At level 30 or below, all experience is banked and the player returns to 0.
      */
     static boolean tryWriteTome(ServerPlayer player) {
         if (!player.getMainHandItem().is(Items.BOOK) || Achievements.skipPlayer(player)) {
@@ -3143,16 +3144,11 @@ public final class ManaAbilities implements FeatureModule {
         if (alreadyHandled(player, (ServerLevel) player.level())) {
             return true;
         }
-        if (!TomeRules.canWrite(player.experienceLevel)) {
-            player.sendSystemMessage(Component.translatableWithFallback(
-                    "tougher.message.tome_level", "You must be above experience level 30."));
-            markHandled(player);
-            return true;
-        }
         int bonus = AbilityRules.catalystBonus(player.getMainHandItem().getCount());
         double power = abilityPower(player, AbilityRules.WRITE_TOME, bonus);
         int visible = TomeRules.totalXp(player.experienceLevel, player.experienceProgress);
-        int saved = TomeRules.share(TomeRules.excessAboveKeptLevel(visible), power);
+        int keptLevel = TomeRules.levelAfterWrite(player.experienceLevel);
+        int saved = TomeRules.share(TomeRules.bankedXp(player.experienceLevel, visible), power);
         if (saved <= 0) {
             player.sendSystemMessage(Component.translatableWithFallback(
                     "tougher.message.tome_empty", "That would save no experience."));
@@ -3166,7 +3162,7 @@ public final class ManaAbilities implements FeatureModule {
         ItemStack tome = writtenTome(player.getScoreboardName(), saved);
         spend(player, Items.BOOK, AbilityRules.WRITE_TOME);
         giveTome(player, tome);
-        dropToKeptLevel(player);
+        dropToKeptLevel(player, keptLevel);
         castTome(player);
         tellAbilityUse(player, "tougher.ability.write_tome", "Write Tome of the Wise", power);
         player.sendSystemMessage(Component.translatableWithFallback(
@@ -3178,7 +3174,7 @@ public final class ManaAbilities implements FeatureModule {
 
     /**
      * A written book that stores experience. Costs 1 mana and that book, and grants
-     * 100% of the stored experience, plus 5% per ability level. Sneak opens the book instead.
+     * 80% of the stored experience, plus 2% per ability level. Sneak opens the book instead.
      */
     static boolean tryReadTome(ServerPlayer player) {
         ItemStack held = player.getMainHandItem();
@@ -3245,18 +3241,19 @@ public final class ManaAbilities implements FeatureModule {
         return Math.max(0, data.copyTag().getIntOr(TomeRules.XP_KEY, 0));
     }
 
-    /** Leaves the player at exactly level {@link TomeRules#KEPT_LEVEL} with an empty bar. */
-    static void dropToKeptLevel(ServerPlayer player) {
-        int kept = TomeRules.xpToReachLevel(TomeRules.KEPT_LEVEL);
+    /** Leaves the player at exactly {@code keptLevel} with an empty bar. */
+    static void dropToKeptLevel(ServerPlayer player, int keptLevel) {
+        int target = Math.max(0, keptLevel);
+        int kept = TomeRules.xpToReachLevel(target);
         int visible = TomeRules.totalXp(player.experienceLevel, player.experienceProgress);
         int excess = Math.max(0, visible - kept);
         if (excess > 0) {
             player.giveExperiencePoints(-excess);
         }
         int after = TomeRules.totalXp(player.experienceLevel, player.experienceProgress);
-        if (player.experienceLevel != TomeRules.KEPT_LEVEL || player.experienceProgress != 0.0F || after != kept) {
+        if (player.experienceLevel != target || player.experienceProgress != 0.0F || after != kept) {
             player.totalExperience = Math.max(0, player.totalExperience - (after - kept));
-            player.setExperienceLevels(TomeRules.KEPT_LEVEL);
+            player.setExperienceLevels(target);
             player.setExperiencePoints(0);
         }
     }

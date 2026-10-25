@@ -262,7 +262,6 @@
   "tougher.message.lapis_shield_end": "Lapis Shield ends.",
   "tougher.message.lapis_shield_broke": "Lapis Shield ends. Not enough lapis lazuli.",
   "tougher.message.lapis_shield_busy": "That character already has a Lapis Shield.",
-  "tougher.message.tome_level": "You must be above experience level 30.",
   "tougher.message.tome_empty": "That would save no experience.",
   "tougher.message.tome_small": "That tome's experience is too small to read at this level.",
   "tougher.message.tome_write": "The tome holds %s experience.",

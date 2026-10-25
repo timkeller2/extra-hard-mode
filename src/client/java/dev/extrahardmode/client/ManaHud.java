@@ -15,7 +15,7 @@ import net.minecraft.world.entity.player.Player;
 
 /**
  * Heart-style mana crystals: black containers, cyan full/half fill, packed then wrapped.
- * A faint mark on the crystal still filling shows about ten minutes of regen.
+ * Crystals gained over about ten minutes are drawn faintly, with the same half and full sprites.
  */
 public final class ManaHud {
     public static final Identifier ELEMENT_ID = ExtraHardModeMod.id("mana");
@@ -108,21 +108,18 @@ public final class ManaHud {
             if (level <= 0) {
                 continue;
             }
-            ManaHudRules.PreviewSpan span =
-                    ManaHudRules.visibleSpan(ManaHudRules.previewSpan(index, current, preview), halfCapacity);
-            if (!span.visible()) {
+            ManaHudRules.Fill ghost = ManaHudRules.previewFill(index, current, preview);
+            if (ghost != ManaHudRules.Fill.HALF && ghost != ManaHudRules.Fill.FULL) {
                 continue;
             }
-            graphics.enableScissor(x + span.fromPixel(), y, x + span.toPixel(), y + ManaHudRules.CRYSTAL_SIZE);
             graphics.blitSprite(
                     RenderPipelines.GUI_TEXTURED,
-                    FULL,
+                    ghost == ManaHudRules.Fill.FULL ? FULL : HALF,
                     x,
                     y,
                     ManaHudRules.CRYSTAL_SIZE,
                     ManaHudRules.CRYSTAL_SIZE,
                     ManaHudRules.PREVIEW_ALPHA);
-            graphics.disableScissor();
         }
     }
 

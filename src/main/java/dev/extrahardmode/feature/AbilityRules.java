@@ -518,7 +518,7 @@ public final class AbilityRules {
             case EMPOWER -> "Redstone will lend its strength to the next working.";
             case BATTERY -> "A block of quartz will hold a charge for your mana.";
             case LAPIS_SHIELD -> "Lapis can stand in the air between a body and the blow.";
-            case WRITE_TOME -> "What you have learned past a certain height can be set down, and carried.";
+            case WRITE_TOME -> "Experience can be set down in a book, and carried.";
             case READ_TOME -> "A careful reading gives back only a share of what was written down.";
             default -> "There is a lesson here, if you can pay for it.";
         };
@@ -557,9 +557,9 @@ public final class AbilityRules {
             case LAPIS_SHIELD ->
                 "Hold lapis lazuli and right-click a creature, or yourself if none is targeted. It costs 1 mana. Right-click again to cancel.";
             case WRITE_TOME ->
-                "Hold a book above experience level 30 and right-click. It costs 1 mana. Two books add +2. You return to level 30.";
+                "Hold a book and right-click. It costs 1 mana. Above level 30 the excess is saved and you return to 30. At 30 or below, all of it is saved and you return to 0. Two books add +2.";
             case READ_TOME ->
-                "Hold a tome that holds experience and right-click. It costs 1 mana and returns 100% of what was saved, plus 5% per ability level.";
+                "Hold a tome that holds experience and right-click. It costs 1 mana and returns 80% of what was saved, plus 2% per ability level.";
             default -> "";
         };
     }
@@ -735,13 +735,14 @@ public final class AbilityRules {
                     "Lapis Shield: That lapis comes from your hotbar or inventory, not a bundle, armor, or the offhand. If you cannot pay, the hit lands and the shield ends.",
                     "Lapis Shield: Right-click again with lapis lazuli to cancel. One is consumed to cast. Two in hand consume both and add +2.");
             case WRITE_TOME -> List.of(
-                    "Write Tome of the Wise: Right-click while holding a book and above experience level 30. Costs 1 mana and the book.",
-                    "Write Tome of the Wise: It saves 100% of your experience above level 30, plus 5% per ability level, then sets you to exactly level 30.",
+                    "Write Tome of the Wise: Right-click while holding a book. Costs 1 mana and the book.",
+                    "Write Tome of the Wise: Above level 30 and at 30 or below, it saves 80% plus 2% per ability level. Below 10 some is lost, and above 10 some is gained.",
+                    "Write Tome of the Wise: Above level 30 only the excess is saved, and you return to exactly level 30. At level 30 or below, all experience is saved and you return to level 0.",
                     "Write Tome of the Wise: The tome names you and the experience it holds. That amount is stored on the book.",
                     "Write Tome of the Wise: One book is consumed. Two in hand consume both and add +2.");
             case READ_TOME -> List.of(
-                    "Read Tome of the Wise: Right-click a tome that holds experience. Costs 1 mana and the tome.",
-                    "Read Tome of the Wise: You gain 100% of the saved experience, plus 5% per ability level. Sneak and right-click to open it instead.");
+                    "Read Tome of the Wise: Right-click a tome that holds experience, at any level. Costs 1 mana and the tome.",
+                    "Read Tome of the Wise: You gain 80% of the saved experience, plus 2% per ability level, above or below level 30. Sneak and right-click to open it instead.");
             default -> null;
         };
     }
