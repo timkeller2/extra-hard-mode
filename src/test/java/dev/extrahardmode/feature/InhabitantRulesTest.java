@@ -283,7 +283,7 @@ class InhabitantRulesTest {
             assertFalse(AbilityRules.teacherInstruction(ability).isEmpty());
         }
         assertTrue(InhabitantRules.specialtyAllowed(InhabitantRules.COUNCIL, 12));
-        assertEquals(4, InhabitantRules.defaultTradeTypeCount(InhabitantRules.COUNCIL));
+        assertEquals(3, InhabitantRules.defaultTradeTypeCount(InhabitantRules.COUNCIL));
         boolean sawCookAfterAll = false;
         boolean sawBrewerInKitchen = false;
         for (int roll = 0; roll < 80; roll++) {
@@ -400,6 +400,28 @@ class InhabitantRulesTest {
         assertEquals(84, InhabitantRules.armorEmeralds(true, "leggings"));
         assertEquals(96, InhabitantRules.armorEmeralds(true, "chestplate"));
         assertEquals(1, InhabitantRules.ARMOR_TRADE_USES);
+        assertEquals(3, InhabitantRules.DEFAULT_TRADE_USES);
+        assertEquals(3, InhabitantRules.WEALTHY_TRADE_USES);
+        assertEquals(3, InhabitantRules.FARM_PLANT_USES);
+        assertEquals(3, InhabitantRules.ARMOR_METAL_BUY_USES);
+        assertEquals(3, InhabitantRules.BREWER_POTION_USES);
+        assertEquals(3, InhabitantRules.BREWER_INGREDIENT_USES);
+        for (String specialty : InhabitantRules.SPECIALTIES) {
+            for (InhabitantRules.TradeListing listing : InhabitantRules.defaultListings(specialty, 1, false)) {
+                assertTrue(listing.maxUses() >= 1 && listing.maxUses() <= 3, specialty + " " + listing.itemId());
+            }
+            for (InhabitantRules.TradeListing listing : InhabitantRules.extraListings(specialty, 1, false)) {
+                assertTrue(listing.maxUses() >= 1 && listing.maxUses() <= 3, specialty + " " + listing.itemId());
+            }
+        }
+        for (InhabitantRules.TradeListing listing : InhabitantRules.genericExtraListings()) {
+            assertTrue(listing.maxUses() >= 1 && listing.maxUses() <= 3, listing.itemId());
+        }
+        for (boolean master : new boolean[] {false, true}) {
+            for (InhabitantRules.TradeListing listing : InhabitantRules.armorUsualListings(master)) {
+                assertEquals(1, listing.maxUses());
+            }
+        }
         assertEquals(6, InhabitantRules.enchantedArmorEmeralds(false, "boots"));
         assertEquals(8, InhabitantRules.enchantedArmorEmeralds(false, "helmet"));
         assertEquals(11, InhabitantRules.enchantedArmorEmeralds(false, "leggings"));
@@ -413,12 +435,52 @@ class InhabitantRulesTest {
         List<InhabitantRules.WealthyListing> first = InhabitantRules.pickWealthyListings(1);
         List<InhabitantRules.WealthyListing> same = InhabitantRules.pickWealthyListings(1);
         List<InhabitantRules.WealthyListing> other = InhabitantRules.pickWealthyListings(99);
-        assertEquals(8, first.size());
+        assertEquals(3, first.size());
         assertEquals(first, same);
-        assertEquals(8, other.size());
+        assertEquals(3, other.size());
         long unique = first.stream().map(InhabitantRules.WealthyListing::itemId).distinct().count();
-        assertEquals(8, unique);
+        assertEquals(3, unique);
         assertTrue(InhabitantRules.WEALTHY_POOL.size() >= 8);
+        Map<String, InhabitantRules.WealthyListing> wealthy = new HashMap<>();
+        for (InhabitantRules.WealthyListing listing : InhabitantRules.WEALTHY_POOL) {
+            assertEquals(null, wealthy.put(listing.itemId(), listing));
+            if (listing.emeralds() >= 1 && listing.emeralds() <= 3) {
+                assertTrue(listing.count() >= 1, listing.itemId());
+            }
+        }
+        assertEquals(6, wealthy.get("minecraft:copper_ingot").count());
+        assertEquals(6, wealthy.get("minecraft:lapis_lazuli").count());
+        assertEquals(8, wealthy.get("minecraft:redstone").count());
+        assertEquals(6, wealthy.get("minecraft:quartz").count());
+        assertEquals(1, wealthy.get("minecraft:book").count());
+        assertEquals(12, wealthy.get("minecraft:arrow").count());
+        assertEquals(4, wealthy.get("minecraft:cooked_beef").count());
+        assertEquals(8, wealthy.get("minecraft:oak_log").count());
+        assertEquals(8, wealthy.get("minecraft:glass").count());
+        assertEquals(6, wealthy.get("minecraft:leather").count());
+        assertEquals(8, wealthy.get("minecraft:string").count());
+        assertEquals(4, wealthy.get("minecraft:nether_wart").count());
+        assertEquals(4, wealthy.get("minecraft:amethyst_shard").count());
+        assertEquals(8, wealthy.get("minecraft:coal").count());
+        assertEquals(4, wealthy.get("minecraft:lantern").count());
+        assertEquals(4, wealthy.get("minecraft:iron_ingot").count());
+        assertEquals(2, wealthy.get("minecraft:gold_ingot").count());
+        assertEquals(2, wealthy.get("minecraft:obsidian").count());
+        assertEquals(4, wealthy.get("minecraft:glowstone").count());
+        assertEquals(4, wealthy.get("minecraft:packed_ice").count());
+        assertEquals(4, wealthy.get("minecraft:slime_ball").count());
+        assertEquals(4, wealthy.get("minecraft:gunpowder").count());
+        assertEquals(1, wealthy.get("minecraft:ender_pearl").count());
+        assertEquals(1, wealthy.get("minecraft:blaze_rod").count());
+        assertEquals(10, wealthy.get("minecraft:experience_bottle").count());
+        assertEquals(5, wealthy.get("minecraft:experience_bottle").emeralds());
+        assertEquals(1, wealthy.get("minecraft:diamond").count());
+        assertEquals(1, wealthy.get("minecraft:iron_block").count());
+        assertEquals(1, wealthy.get("minecraft:saddle").count());
+        assertEquals(1, wealthy.get("minecraft:golden_apple").count());
+        assertEquals(2, wealthy.get("minecraft:phantom_membrane").count());
+        assertEquals(1, wealthy.get("minecraft:ghast_tear").count());
+        assertEquals(1, wealthy.get("minecraft:name_tag").count());
     }
 
     @Test
@@ -465,8 +527,8 @@ class InhabitantRulesTest {
                 }
             }
             assertEquals(1, heavy);
-            assertTrue(enchanted.size() >= 2);
-            assertTrue(modest.size() <= 5);
+            assertTrue(enchanted.size() >= 1);
+            assertTrue(modest.size() <= 3);
         }
         for (int seed = 0; seed < 120; seed++) {
             List<InhabitantRules.TradeListing> rich =
@@ -502,7 +564,7 @@ class InhabitantRulesTest {
                 }
             }
             assertEquals(1, heavy);
-            assertTrue(rich.size() <= 6);
+            assertTrue(rich.size() <= 5);
             if (buy) {
                 sawBuy = true;
             }
@@ -549,7 +611,7 @@ class InhabitantRulesTest {
             assertEquals(1, listing.emeralds());
             assertTrue(usualFamilies.add(InhabitantRules.potionFamily(listing.potionId())));
         }
-        assertEquals(4, usualFamilies.size());
+        assertEquals(3, usualFamilies.size());
         Set<String> featured = new HashSet<>();
         for (int seed = 0; seed < 80; seed++) {
             List<InhabitantRules.TradeListing> modest = InhabitantRules.scaledListings(
@@ -562,10 +624,10 @@ class InhabitantRulesTest {
         for (int seed = 0; seed < 80; seed++) {
             List<InhabitantRules.TradeListing> rich = InhabitantRules.scaledListings(
                     InhabitantRules.BREWER, 38, 0, false, new Random(seed * 1000003L + 104729L));
-            assertTrue(rich.size() >= 4 && rich.size() <= 7, rich.toString());
+            assertTrue(rich.size() >= 3 && rich.size() <= 5, rich.toString());
             assertBrewerShop(rich, levelTwo, others, ingredients.keySet(), false);
             featured.add(rich.get(0).potionId());
-            if (rich.size() > 4) {
+            if (rich.size() > 3) {
                 sawIngredient = true;
             }
         }
@@ -589,7 +651,7 @@ class InhabitantRulesTest {
             assertEquals(0, listing.enchantLevel());
             if (!listing.potionId().isEmpty()) {
                 assertEquals("minecraft:potion", listing.itemId());
-                assertTrue(i < 4, listing.potionId());
+                assertTrue(i < 3, listing.potionId());
                 String family = InhabitantRules.potionFamily(listing.potionId());
                 assertFalse(family.isEmpty(), listing.potionId());
                 assertTrue(families.add(family), listing.potionId());
@@ -604,7 +666,7 @@ class InhabitantRulesTest {
                     assertEquals(1, listing.count());
                 }
             } else {
-                assertTrue(i >= 4, listing.itemId());
+                assertTrue(i >= 3, listing.itemId());
                 assertTrue(ingredients.contains(listing.itemId()), listing.itemId());
             }
         }
@@ -613,7 +675,7 @@ class InhabitantRulesTest {
             assertTrue(otherCount <= 1);
             assertEquals(offers.size(), levelCount + otherCount);
         } else {
-            assertEquals(3, otherCount);
+            assertEquals(2, otherCount);
         }
     }
 
@@ -740,16 +802,16 @@ class InhabitantRulesTest {
 
     @Test
     void shopStockScalesWithHouseScore() {
-        assertEquals(5, InhabitantRules.defaultTradeTypeCount(InhabitantRules.HAULER));
-        assertEquals(5, InhabitantRules.defaultTradeTypeCount(InhabitantRules.COOK));
+        assertEquals(3, InhabitantRules.defaultTradeTypeCount(InhabitantRules.HAULER));
+        assertEquals(3, InhabitantRules.defaultTradeTypeCount(InhabitantRules.COOK));
         assertEquals(3, InhabitantRules.defaultTradeTypeCount(InhabitantRules.FARM));
         assertEquals(3, InhabitantRules.defaultTradeTypeCount(InhabitantRules.BOUNTY));
-        assertEquals(4, InhabitantRules.defaultTradeTypeCount(InhabitantRules.TRADER));
-        assertEquals(5, InhabitantRules.defaultTradeTypeCount(InhabitantRules.ARMORSMITH));
-        assertEquals(5, InhabitantRules.defaultTradeTypeCount(InhabitantRules.MASTER_ARMORSMITH));
-        assertEquals(8, InhabitantRules.defaultTradeTypeCount(InhabitantRules.WEALTHY));
-        assertEquals(5, InhabitantRules.defaultTradeTypeCount(InhabitantRules.JEWELER));
-        assertEquals(4, InhabitantRules.defaultTradeTypeCount(InhabitantRules.BREWER));
+        assertEquals(3, InhabitantRules.defaultTradeTypeCount(InhabitantRules.TRADER));
+        assertEquals(3, InhabitantRules.defaultTradeTypeCount(InhabitantRules.ARMORSMITH));
+        assertEquals(3, InhabitantRules.defaultTradeTypeCount(InhabitantRules.MASTER_ARMORSMITH));
+        assertEquals(3, InhabitantRules.defaultTradeTypeCount(InhabitantRules.WEALTHY));
+        assertEquals(3, InhabitantRules.defaultTradeTypeCount(InhabitantRules.JEWELER));
+        assertEquals(3, InhabitantRules.defaultTradeTypeCount(InhabitantRules.BREWER));
         assertEquals(0, InhabitantRules.extraTradePoints(12, InhabitantRules.HAULER));
         assertEquals(38, InhabitantRules.MAX_HOUSE_SCORE);
         assertEquals(50, InhabitantRules.tradeMaxPercent(12));
@@ -808,7 +870,7 @@ class InhabitantRulesTest {
             List<InhabitantRules.TradeListing> poor =
                     InhabitantRules.scaledListings(InhabitantRules.HAULER, 12, 1, false, new Random(seed));
             assertFalse(poor.isEmpty());
-            assertTrue(poor.size() <= 3);
+            assertTrue(poor.size() <= 2);
             Set<String> ids = new HashSet<>();
             for (InhabitantRules.TradeListing listing : poor) {
                 assertTrue(ids.add(listing.itemId()));
@@ -822,8 +884,8 @@ class InhabitantRulesTest {
         for (int seed = 0; seed < 80; seed++) {
             List<InhabitantRules.TradeListing> rich =
                     InhabitantRules.scaledListings(InhabitantRules.HAULER, 38, 1, false, new Random(seed));
-            assertTrue(rich.size() >= 4);
-            assertTrue(rich.size() <= 9);
+            assertTrue(rich.size() >= 3);
+            assertTrue(rich.size() <= 5);
             Set<String> ids = new HashSet<>();
             int firstUses = rich.getFirst().maxUses();
             for (InhabitantRules.TradeListing listing : rich) {
@@ -842,14 +904,14 @@ class InhabitantRulesTest {
         for (int seed = 0; seed < 40; seed++) {
             List<InhabitantRules.TradeListing> wealthy =
                     InhabitantRules.scaledListings(InhabitantRules.WEALTHY, 18, 0, false, new Random(seed));
-            assertTrue(wealthy.size() >= 3);
-            assertTrue(wealthy.size() <= 6);
+            assertTrue(wealthy.size() >= 1);
+            assertTrue(wealthy.size() <= 2);
         }
         for (int seed = 0; seed < 40; seed++) {
             List<InhabitantRules.TradeListing> palaceWealthy =
                     InhabitantRules.scaledListings(InhabitantRules.WEALTHY, 38, 0, false, new Random(seed));
-            assertTrue(palaceWealthy.size() >= 7);
-            assertTrue(palaceWealthy.size() <= 14);
+            assertTrue(palaceWealthy.size() >= 3);
+            assertTrue(palaceWealthy.size() <= 5);
         }
     }
 

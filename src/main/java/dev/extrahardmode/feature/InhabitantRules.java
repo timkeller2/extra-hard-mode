@@ -41,11 +41,15 @@ public final class InhabitantRules {
     public static final int RESTOCK_DAYS = 14;
     public static final int ARMOR_RESTOCK_DAYS = 30;
     public static final int ARMOR_TRADE_USES = 1;
-    public static final int WEALTHY_OFFER_COUNT = 8;
-    public static final int WEALTHY_TRADE_USES = 4;
+    /** Base uses on a resident listing. A catalog value above this is stored as this. */
+    public static final int DEFAULT_TRADE_USES = 3;
+    /** Usual shop size. A longer catalog keeps this many and treats the rest as extras. */
+    public static final int USUAL_TRADE_TYPES = 3;
+    public static final int WEALTHY_OFFER_COUNT = USUAL_TRADE_TYPES;
+    public static final int WEALTHY_TRADE_USES = DEFAULT_TRADE_USES;
     /** One diamond. Matches a wealthy trader. */
     public static final int JEWELER_DIAMOND_EMERALDS = 8;
-    /** Four gold ingots, matching a wealthy trader. */
+    /** Four gold ingots for 2 emeralds. */
     public static final int JEWELER_GOLD_INGOT_COUNT = 4;
     public static final int JEWELER_GOLD_EMERALDS = 2;
     /** One iron block. Nine ingots would be about 2 emeralds; the block costs more. */
@@ -68,7 +72,7 @@ public final class InhabitantRules {
     public static final int MAX_TRADE_TYPES = 24;
     /** Usual farm shop sells this many plant listings, drawn from {@link #FARM_PLANT_SELLS}. */
     public static final int FARM_USUAL_SELLS = 2;
-    public static final int FARM_PLANT_USES = 4;
+    public static final int FARM_PLANT_USES = DEFAULT_TRADE_USES;
     /** One seed or plantable vegetable. The pool uses both ends. */
     public static final int FARM_PLANT_MIN_EMERALDS = 6;
     public static final int FARM_PLANT_MAX_EMERALDS = 16;
@@ -91,15 +95,15 @@ public final class InhabitantRules {
     /** Diamonds a master armorsmith buys for one emerald. */
     public static final int ARMOR_DIAMOND_BUY_COUNT = 1;
     /** Uses on the metal buy. Armor sales stay at {@link #ARMOR_TRADE_USES}. */
-    public static final int ARMOR_METAL_BUY_USES = 4;
+    public static final int ARMOR_METAL_BUY_USES = DEFAULT_TRADE_USES;
     /** Drinkable potions, including the level 2 bottle, cost one emerald. */
     public static final int BREWER_POTION_EMERALDS = 1;
-    public static final int BREWER_POTION_USES = 4;
+    public static final int BREWER_POTION_USES = DEFAULT_TRADE_USES;
     /** Other potion effects kept in the usual shop, besides the level 2 bottle. */
-    public static final int BREWER_USUAL_OTHERS = 3;
+    public static final int BREWER_USUAL_OTHERS = 2;
     /** Brewing ingredients are one emerald. The count on each listing is the bargain. */
     public static final int BREWER_INGREDIENT_EMERALDS = 1;
-    public static final int BREWER_INGREDIENT_USES = 8;
+    public static final int BREWER_INGREDIENT_USES = DEFAULT_TRADE_USES;
     /** Copies in the arrival bag when the home has a cauldron. */
     public static final int BREWER_BAG_COPIES = 3;
     private static final List<String> ARMOR_SLOTS = List.of("boots", "helmet", "leggings", "chestplate");
@@ -230,37 +234,37 @@ public final class InhabitantRules {
             new BrewPotion("minecraft:long_weakness", "weakness"));
 
     public static final List<WealthyListing> WEALTHY_POOL = List.of(
-            new WealthyListing("minecraft:iron_ingot", 8, 2),
-            new WealthyListing("minecraft:gold_ingot", 4, 2),
-            new WealthyListing("minecraft:copper_ingot", 12, 1),
+            new WealthyListing("minecraft:iron_ingot", 4, 2),
+            new WealthyListing("minecraft:gold_ingot", 2, 2),
+            new WealthyListing("minecraft:copper_ingot", 6, 1),
             new WealthyListing("minecraft:diamond", 1, 8),
             new WealthyListing("minecraft:iron_block", 1, 6),
-            new WealthyListing("minecraft:ender_pearl", 2, 3),
+            new WealthyListing("minecraft:ender_pearl", 1, 3),
             new WealthyListing("minecraft:name_tag", 1, 10),
             new WealthyListing("minecraft:saddle", 1, 6),
             new WealthyListing("minecraft:golden_apple", 1, 4),
-            new WealthyListing("minecraft:obsidian", 4, 2),
-            new WealthyListing("minecraft:lapis_lazuli", 12, 1),
-            new WealthyListing("minecraft:redstone", 16, 1),
-            new WealthyListing("minecraft:quartz", 12, 1),
-            new WealthyListing("minecraft:book", 2, 1),
-            new WealthyListing("minecraft:experience_bottle", 2, 5),
-            new WealthyListing("minecraft:arrow", 24, 1),
-            new WealthyListing("minecraft:cooked_beef", 8, 1),
-            new WealthyListing("minecraft:oak_log", 16, 1),
-            new WealthyListing("minecraft:glass", 16, 1),
-            new WealthyListing("minecraft:glowstone", 8, 2),
-            new WealthyListing("minecraft:packed_ice", 8, 2),
-            new WealthyListing("minecraft:slime_ball", 8, 2),
-            new WealthyListing("minecraft:leather", 12, 1),
-            new WealthyListing("minecraft:string", 16, 1),
-            new WealthyListing("minecraft:gunpowder", 8, 2),
-            new WealthyListing("minecraft:blaze_rod", 2, 3),
+            new WealthyListing("minecraft:obsidian", 2, 2),
+            new WealthyListing("minecraft:lapis_lazuli", 6, 1),
+            new WealthyListing("minecraft:redstone", 8, 1),
+            new WealthyListing("minecraft:quartz", 6, 1),
+            new WealthyListing("minecraft:book", 1, 1),
+            new WealthyListing("minecraft:experience_bottle", 10, 5),
+            new WealthyListing("minecraft:arrow", 12, 1),
+            new WealthyListing("minecraft:cooked_beef", 4, 1),
+            new WealthyListing("minecraft:oak_log", 8, 1),
+            new WealthyListing("minecraft:glass", 8, 1),
+            new WealthyListing("minecraft:glowstone", 4, 2),
+            new WealthyListing("minecraft:packed_ice", 4, 2),
+            new WealthyListing("minecraft:slime_ball", 4, 2),
+            new WealthyListing("minecraft:leather", 6, 1),
+            new WealthyListing("minecraft:string", 8, 1),
+            new WealthyListing("minecraft:gunpowder", 4, 2),
+            new WealthyListing("minecraft:blaze_rod", 1, 3),
             new WealthyListing("minecraft:ghast_tear", 1, 8),
-            new WealthyListing("minecraft:nether_wart", 8, 1),
-            new WealthyListing("minecraft:amethyst_shard", 8, 1),
-            new WealthyListing("minecraft:coal", 16, 1),
-            new WealthyListing("minecraft:lantern", 8, 1),
+            new WealthyListing("minecraft:nether_wart", 4, 1),
+            new WealthyListing("minecraft:amethyst_shard", 4, 1),
+            new WealthyListing("minecraft:coal", 8, 1),
+            new WealthyListing("minecraft:lantern", 4, 1),
             new WealthyListing("minecraft:phantom_membrane", 2, 4));
 
     /**
@@ -597,7 +601,7 @@ public final class InhabitantRules {
                 "Shops: A larger iron shop may buy iron. A master armorsmith sells one heavy diamond piece the same way, plus enchanted diamond armor, and may buy diamonds.",
                 "Shops: Heavy iron costs 12, 15, 21, or 24 emeralds for boots, a helmet, leggings, or a chestplate. Heavy diamond costs four times that.",
                 "Shops: Enchanted iron armor costs 6, 8, 11, or 12 emeralds for those slots. Enchanted diamond armor costs the same as heavy iron.",
-                "Shops: A brewer sells one level 2 potion each restock, and that potion can change. Up to 3 other potions cost 1 emerald.",
+                "Shops: A brewer sells one level 2 potion each restock, and that potion can change. Up to 2 other potions cost 1 emerald.",
                 "Shops: A larger brewer sells brewing ingredients for 1 emerald, such as nether wart, blaze powder, glowstone, and ghast tears.");
     }
 
@@ -1092,7 +1096,7 @@ public final class InhabitantRules {
         return master ? MASTER_ARMOR_ENCHANT_LEVEL : ARMOR_ENCHANT_LEVEL;
     }
 
-    /** Unique listings from {@link #WEALTHY_POOL}; {@code seed} picks which eight. */
+    /** Unique listings from {@link #WEALTHY_POOL}; {@code seed} picks the usual shop. */
     public static List<WealthyListing> pickWealthyListings(int seed) {
         List<WealthyListing> pool = new ArrayList<>(WEALTHY_POOL);
         int n = pool.size();
@@ -1217,10 +1221,13 @@ public final class InhabitantRules {
     }
 
     public static int defaultTradeTypeCount(String specialty) {
-        if (WEALTHY.equals(specialty)) {
-            return WEALTHY_OFFER_COUNT;
+        int listed = WEALTHY.equals(specialty)
+                ? Math.min(WEALTHY_OFFER_COUNT, WEALTHY_POOL.size())
+                : defaultListings(specialty, 0, false).size();
+        if (listed <= 0) {
+            return 0;
         }
-        return defaultListings(specialty, 0, false).size();
+        return Math.min(USUAL_TRADE_TYPES, listed);
     }
 
     public static List<TradeListing> defaultListings(String specialty, int storage, boolean blight) {
@@ -1228,38 +1235,38 @@ public final class InhabitantRules {
         int stack = haulerStack(storage);
         return switch (type) {
             case HAULER -> List.of(
-                    buyOf("minecraft:cobblestone", stack, 4),
-                    buyOf("minecraft:dirt", stack, 4),
-                    buyOf("minecraft:gravel", stack, 4),
-                    buyOf("minecraft:cobbled_deepslate", stack, 4),
-                    buyOf("minecraft:netherrack", stack, 4));
+                    buyOf("minecraft:cobblestone", stack, 3),
+                    buyOf("minecraft:dirt", stack, 3),
+                    buyOf("minecraft:gravel", stack, 3),
+                    buyOf("minecraft:cobbled_deepslate", stack, 3),
+                    buyOf("minecraft:netherrack", stack, 3));
             case COOK -> List.of(
-                    buyOf("minecraft:cooked_beef", 8, 4),
-                    buyOf("minecraft:cooked_porkchop", 8, 4),
-                    buyOf("minecraft:cooked_chicken", 8, 4),
-                    buyOf("minecraft:baked_potato", 8, 4),
-                    sellOf("minecraft:rabbit_stew", 1, 4, 4));
+                    buyOf("minecraft:cooked_beef", 8, 3),
+                    buyOf("minecraft:cooked_porkchop", 8, 3),
+                    buyOf("minecraft:cooked_chicken", 8, 3),
+                    buyOf("minecraft:baked_potato", 8, 3),
+                    sellOf("minecraft:rabbit_stew", 1, 4, 3));
             case FARM -> farmUsualListings(blight);
             case BREWER -> brewerUsualListings();
             case BOUNTY -> List.of(
-                    buyOf("minecraft:spider_eye", 8, 6),
-                    buyOf("minecraft:gunpowder", 8, 6),
-                    buyOf("minecraft:bone", 16, 6));
+                    buyOf("minecraft:spider_eye", 8, 3),
+                    buyOf("minecraft:gunpowder", 8, 3),
+                    buyOf("minecraft:bone", 16, 3));
             case ARMORSMITH -> armorUsualListings(false);
             case MASTER_ARMORSMITH -> armorUsualListings(true);
             case WISE_TEACHER -> List.of();
             case COUNCIL -> List.of(
-                    sellOf("minecraft:paper", 12, 1, 8),
-                    sellOf("minecraft:book", 1, 3, 4),
-                    sellOf("minecraft:compass", 1, 5, 4),
-                    sellOf("minecraft:clock", 1, 5, 4));
+                    sellOf("minecraft:paper", 12, 1, 3),
+                    sellOf("minecraft:book", 1, 3, 3),
+                    sellOf("minecraft:compass", 1, 5, 3),
+                    sellOf("minecraft:clock", 1, 5, 3));
             case WEALTHY -> wealthyTradeListings().subList(0, Math.min(WEALTHY_OFFER_COUNT, WEALTHY_POOL.size()));
             case JEWELER -> JEWELER_USUAL_SELLS;
             default -> List.of(
-                    sellOf("minecraft:bread", 4, 1, 8),
-                    sellOf("minecraft:coal", 8, 1, 8),
-                    sellOf("minecraft:book", 1, 4, 4),
-                    sellOf("minecraft:white_wool", 8, 1, 8));
+                    sellOf("minecraft:bread", 4, 1, 3),
+                    sellOf("minecraft:coal", 8, 1, 3),
+                    sellOf("minecraft:book", 1, 4, 3),
+                    sellOf("minecraft:white_wool", 8, 1, 3));
         };
     }
 
@@ -1268,93 +1275,93 @@ public final class InhabitantRules {
         int stack = haulerStack(storage);
         return switch (type) {
             case HAULER -> List.of(
-                    buyOf("minecraft:andesite", stack, 4),
-                    buyOf("minecraft:diorite", stack, 4),
-                    buyOf("minecraft:granite", stack, 4),
-                    buyOf("minecraft:tuff", stack, 4),
-                    buyOf("minecraft:sand", stack, 4),
-                    buyOf("minecraft:red_sand", stack, 4),
-                    buyOf("minecraft:mossy_cobblestone", stack, 4),
-                    buyOf("minecraft:stone", stack, 4),
-                    buyOf("minecraft:deepslate", stack, 4),
-                    buyOf("minecraft:basalt", stack, 4),
-                    buyOf("minecraft:blackstone", stack, 4),
-                    buyOf("minecraft:end_stone", stack, 4),
-                    buyOf("minecraft:soul_sand", stack, 4),
-                    buyOf("minecraft:calcite", stack, 4));
+                    buyOf("minecraft:andesite", stack, 3),
+                    buyOf("minecraft:diorite", stack, 3),
+                    buyOf("minecraft:granite", stack, 3),
+                    buyOf("minecraft:tuff", stack, 3),
+                    buyOf("minecraft:sand", stack, 3),
+                    buyOf("minecraft:red_sand", stack, 3),
+                    buyOf("minecraft:mossy_cobblestone", stack, 3),
+                    buyOf("minecraft:stone", stack, 3),
+                    buyOf("minecraft:deepslate", stack, 3),
+                    buyOf("minecraft:basalt", stack, 3),
+                    buyOf("minecraft:blackstone", stack, 3),
+                    buyOf("minecraft:end_stone", stack, 3),
+                    buyOf("minecraft:soul_sand", stack, 3),
+                    buyOf("minecraft:calcite", stack, 3));
             case COOK -> List.of(
-                    buyOf("minecraft:cooked_mutton", 8, 4),
-                    buyOf("minecraft:cooked_rabbit", 8, 4),
-                    buyOf("minecraft:cooked_cod", 8, 4),
-                    buyOf("minecraft:cooked_salmon", 8, 4),
-                    buyOf("minecraft:bread", 8, 4),
-                    buyOf("minecraft:cookie", 16, 4),
-                    sellOf("minecraft:mushroom_stew", 1, 3, 4),
-                    sellOf("minecraft:beetroot_soup", 1, 3, 4),
-                    sellOf("minecraft:pumpkin_pie", 1, 3, 4),
-                    sellOf("minecraft:honey_bottle", 1, 4, 4));
+                    buyOf("minecraft:cooked_mutton", 8, 3),
+                    buyOf("minecraft:cooked_rabbit", 8, 3),
+                    buyOf("minecraft:cooked_cod", 8, 3),
+                    buyOf("minecraft:cooked_salmon", 8, 3),
+                    buyOf("minecraft:bread", 8, 3),
+                    buyOf("minecraft:cookie", 16, 3),
+                    sellOf("minecraft:mushroom_stew", 1, 3, 3),
+                    sellOf("minecraft:beetroot_soup", 1, 3, 3),
+                    sellOf("minecraft:pumpkin_pie", 1, 3, 3),
+                    sellOf("minecraft:honey_bottle", 1, 4, 3));
             case FARM -> farmExtraListings(blight);
             case BREWER -> brewerIngredientListings();
             case BOUNTY -> List.of(
-                    buyOf("minecraft:rotten_flesh", 16, 6),
-                    buyOf("minecraft:string", 16, 6),
-                    buyOf("minecraft:slime_ball", 8, 6),
-                    buyOf("minecraft:leather", 12, 6),
-                    buyOf("minecraft:arrow", 24, 6),
-                    buyOf("minecraft:ink_sac", 12, 6),
-                    buyOf("minecraft:phantom_membrane", 4, 6),
-                    buyOf("minecraft:ender_pearl", 4, 6),
-                    buyOf("minecraft:blaze_rod", 4, 6),
-                    buyOf("minecraft:ghast_tear", 2, 6));
+                    buyOf("minecraft:rotten_flesh", 16, 3),
+                    buyOf("minecraft:string", 16, 3),
+                    buyOf("minecraft:slime_ball", 8, 3),
+                    buyOf("minecraft:leather", 12, 3),
+                    buyOf("minecraft:arrow", 24, 3),
+                    buyOf("minecraft:ink_sac", 12, 3),
+                    buyOf("minecraft:phantom_membrane", 4, 3),
+                    buyOf("minecraft:ender_pearl", 4, 3),
+                    buyOf("minecraft:blaze_rod", 4, 3),
+                    buyOf("minecraft:ghast_tear", 2, 3));
             case ARMORSMITH -> List.of(armorMetalBuy(false));
             case WISE_TEACHER -> List.of();
             case MASTER_ARMORSMITH -> List.of(armorMetalBuy(true));
             case COUNCIL -> List.of(
-                    sellOf("minecraft:map", 1, 4, 4),
-                    sellOf("minecraft:name_tag", 1, 8, 4),
-                    sellOf("minecraft:writable_book", 1, 4, 4),
-                    sellOf("minecraft:item_frame", 4, 1, 8),
-                    sellOf("minecraft:lantern", 4, 1, 8));
+                    sellOf("minecraft:map", 1, 4, 3),
+                    sellOf("minecraft:name_tag", 1, 8, 3),
+                    sellOf("minecraft:writable_book", 1, 4, 3),
+                    sellOf("minecraft:item_frame", 4, 1, 3),
+                    sellOf("minecraft:lantern", 4, 1, 3));
             case WEALTHY -> List.of();
             case JEWELER -> JEWELER_EXTRA_SELLS;
             default -> List.of(
-                    sellOf("minecraft:stick", 16, 1, 8),
-                    sellOf("minecraft:paper", 12, 1, 8),
-                    sellOf("minecraft:glass", 8, 1, 8),
-                    sellOf("minecraft:brick", 8, 1, 8),
-                    sellOf("minecraft:iron_ingot", 4, 2, 8),
-                    sellOf("minecraft:copper_ingot", 8, 1, 8),
-                    sellOf("minecraft:lantern", 4, 1, 8),
-                    sellOf("minecraft:arrow", 16, 1, 8),
-                    sellOf("minecraft:oak_log", 8, 1, 8),
-                    sellOf("minecraft:torch", 8, 1, 8),
-                    sellOf("minecraft:leather", 8, 1, 8),
-                    sellOf("minecraft:name_tag", 1, 8, 4));
+                    sellOf("minecraft:stick", 16, 1, 3),
+                    sellOf("minecraft:paper", 12, 1, 3),
+                    sellOf("minecraft:glass", 8, 1, 3),
+                    sellOf("minecraft:brick", 8, 1, 3),
+                    sellOf("minecraft:iron_ingot", 4, 2, 3),
+                    sellOf("minecraft:copper_ingot", 8, 1, 3),
+                    sellOf("minecraft:lantern", 4, 1, 3),
+                    sellOf("minecraft:arrow", 16, 1, 3),
+                    sellOf("minecraft:oak_log", 8, 1, 3),
+                    sellOf("minecraft:torch", 8, 1, 3),
+                    sellOf("minecraft:leather", 8, 1, 3),
+                    sellOf("minecraft:name_tag", 1, 8, 3));
         };
     }
 
     public static List<TradeListing> genericExtraListings() {
         return List.of(
-                sellOf("minecraft:apple", 8, 1, 6),
-                sellOf("minecraft:stick", 16, 1, 8),
-                sellOf("minecraft:string", 12, 1, 8),
-                sellOf("minecraft:feather", 12, 1, 8),
-                sellOf("minecraft:flint", 8, 1, 8),
-                sellOf("minecraft:clay_ball", 16, 1, 8),
-                sellOf("minecraft:paper", 8, 1, 8),
-                sellOf("minecraft:glass_bottle", 8, 1, 8),
-                sellOf("minecraft:bowl", 8, 1, 8),
-                sellOf("minecraft:kelp", 16, 1, 8),
-                sellOf("minecraft:bamboo", 16, 1, 8),
-                sellOf("minecraft:egg", 8, 1, 6),
-                sellOf("minecraft:charcoal", 8, 1, 8),
-                sellOf("minecraft:raw_copper", 8, 1, 8),
-                sellOf("minecraft:raw_iron", 4, 2, 6),
-                buyOf("minecraft:rotten_flesh", 16, 8),
-                buyOf("minecraft:poisonous_potato", 8, 8),
-                buyOf("minecraft:cactus", 16, 8),
-                buyOf("minecraft:kelp", 32, 8),
-                buyOf("minecraft:bamboo", 32, 8));
+                sellOf("minecraft:apple", 8, 1, 3),
+                sellOf("minecraft:stick", 16, 1, 3),
+                sellOf("minecraft:string", 12, 1, 3),
+                sellOf("minecraft:feather", 12, 1, 3),
+                sellOf("minecraft:flint", 8, 1, 3),
+                sellOf("minecraft:clay_ball", 16, 1, 3),
+                sellOf("minecraft:paper", 8, 1, 3),
+                sellOf("minecraft:glass_bottle", 8, 1, 3),
+                sellOf("minecraft:bowl", 8, 1, 3),
+                sellOf("minecraft:kelp", 16, 1, 3),
+                sellOf("minecraft:bamboo", 16, 1, 3),
+                sellOf("minecraft:egg", 8, 1, 3),
+                sellOf("minecraft:charcoal", 8, 1, 3),
+                sellOf("minecraft:raw_copper", 8, 1, 3),
+                sellOf("minecraft:raw_iron", 4, 2, 3),
+                buyOf("minecraft:rotten_flesh", 16, 3),
+                buyOf("minecraft:poisonous_potato", 8, 3),
+                buyOf("minecraft:cactus", 16, 3),
+                buyOf("minecraft:kelp", 32, 3),
+                buyOf("minecraft:bamboo", 32, 3));
     }
 
     /**
@@ -1362,9 +1369,10 @@ public final class InhabitantRules {
      * percent up to that top. The top is 50% at 14 points and 175% at 38.
      * Extra types beyond the usual shop are random leftover listings.
      * An armorsmith keeps one rolled heavy piece, then enchanted armor of that metal.
-     * A larger roll may add a buy of iron or diamonds. Generic goods are not added.
-     * A brewer keeps one rolled level 2 potion, then up to three other potions.
+     * A larger roll may add another piece or a buy of iron or diamonds. Generic goods are not added.
+     * A brewer keeps one rolled level 2 potion, then up to two other potions.
      * A larger roll may add brewing ingredients. Generic goods are not added.
+     * Usual shops keep at most {@link #USUAL_TRADE_TYPES} kinds. Further catalog listings are extras.
      * Item amounts share one roll from -25% to +25%, plus 0 to 25 from the score.
      * Purchases gain that percent; sales to the resident require that percent fewer.
      */
@@ -1389,7 +1397,7 @@ public final class InhabitantRules {
             Collections.shuffle(plants, rng);
             int usualSells = Math.min(FARM_USUAL_SELLS, plants.size());
             defaults = new ArrayList<>();
-            defaults.add(buyOf("minecraft:wheat", farmWheatBuy(blight), 6));
+            defaults.add(buyOf("minecraft:wheat", farmWheatBuy(blight), 3));
             defaults.addAll(plants.subList(0, usualSells));
             Collections.shuffle(defaults, rng);
             extras = new ArrayList<>(plants.subList(usualSells, plants.size()));
@@ -1433,6 +1441,7 @@ public final class InhabitantRules {
             extras.addAll(genericExtraListings());
         }
         Collections.shuffle(extras, rng);
+        retainUsualKinds(defaults, extras, rng);
         int minPercent = tradeMinPercent(score);
         int maxPercent = tradeMaxPercent(score);
         int typePercent = rollTradePercent(minPercent, maxPercent, rng.nextInt());
@@ -1462,10 +1471,23 @@ public final class InhabitantRules {
         return scaled;
     }
 
+    /**
+     * Keeps the front of {@code defaults}, at most {@link #USUAL_TRADE_TYPES}.
+     * The rest join {@code extras}. A heavy piece or level 2 potion stays when it was placed first.
+     */
+    static void retainUsualKinds(List<TradeListing> defaults, List<TradeListing> extras, Random rng) {
+        if (defaults.size() <= USUAL_TRADE_TYPES) {
+            return;
+        }
+        extras.addAll(defaults.subList(USUAL_TRADE_TYPES, defaults.size()));
+        defaults.subList(USUAL_TRADE_TYPES, defaults.size()).clear();
+        Collections.shuffle(extras, rng);
+    }
+
     /** Wheat buy plus the first plant sells. The live shop draws those sells at random. */
     static List<TradeListing> farmUsualListings(boolean blight) {
         List<TradeListing> listings = new ArrayList<>();
-        listings.add(buyOf("minecraft:wheat", farmWheatBuy(blight), 6));
+        listings.add(buyOf("minecraft:wheat", farmWheatBuy(blight), 3));
         int sells = Math.min(FARM_USUAL_SELLS, FARM_PLANT_SELLS.size());
         listings.addAll(FARM_PLANT_SELLS.subList(0, sells));
         return List.copyOf(listings);
@@ -1483,12 +1505,12 @@ public final class InhabitantRules {
 
     static List<TradeListing> farmSideListings(boolean blight) {
         return List.of(
-                sellOf("minecraft:oak_sapling", 1, 2, 4),
-                sellOf("minecraft:birch_sapling", 1, 2, 4),
-                sellOf("minecraft:spruce_sapling", 1, 2, 4),
-                sellOf("minecraft:bone_meal", 4, 1, 6),
-                buyOf("minecraft:beetroot", farmWheatBuy(blight), 6),
-                buyOf("minecraft:apple", 8, 6));
+                sellOf("minecraft:oak_sapling", 1, 2, 3),
+                sellOf("minecraft:birch_sapling", 1, 2, 3),
+                sellOf("minecraft:spruce_sapling", 1, 2, 3),
+                sellOf("minecraft:bone_meal", 4, 1, 3),
+                buyOf("minecraft:beetroot", farmWheatBuy(blight), 3),
+                buyOf("minecraft:apple", 8, 3));
     }
 
     /** One heavy piece of each slot. A restock keeps a single rolled piece from this list. */
@@ -1514,8 +1536,8 @@ public final class InhabitantRules {
     }
 
     /**
-     * Usual catalog size: one heavy piece plus enchanted armor of every slot.
-     * Boots stand in for the heavy piece. The live shop rolls that piece.
+     * One heavy piece plus enchanted armor of every slot. Boots stand in for the heavy piece.
+     * The live shop keeps {@link #USUAL_TRADE_TYPES}, with that heavy piece first.
      */
     static List<TradeListing> armorUsualListings(boolean master) {
         List<TradeListing> listings = new ArrayList<>();
@@ -1540,20 +1562,28 @@ public final class InhabitantRules {
     }
 
     static TradeListing buyOf(String itemId, int count, int uses) {
-        return new TradeListing(itemId, count, 1, uses, true, 0, "");
+        return new TradeListing(itemId, count, 1, defaultUses(uses), true, 0, "");
     }
 
     static TradeListing sellOf(String itemId, int count, int emeralds, int uses) {
-        return new TradeListing(itemId, count, emeralds, uses, false, 0, "");
+        return new TradeListing(itemId, count, emeralds, defaultUses(uses), false, 0, "");
     }
 
     static TradeListing sellEnchantedOf(String itemId, int count, int emeralds, int uses, int enchantLevel) {
-        return new TradeListing(itemId, count, emeralds, uses, false, Math.max(1, enchantLevel), "");
+        return new TradeListing(itemId, count, emeralds, defaultUses(uses), false, Math.max(1, enchantLevel), "");
+    }
+
+    /** Armor sales stay at 1. Every other catalog value above {@link #DEFAULT_TRADE_USES} is stored as that. */
+    static int defaultUses(int uses) {
+        if (uses <= DEFAULT_TRADE_USES) {
+            return uses;
+        }
+        return DEFAULT_TRADE_USES;
     }
 
     static TradeListing potionSell(BrewPotion potion) {
         return new TradeListing(
-                "minecraft:potion", 1, BREWER_POTION_EMERALDS, BREWER_POTION_USES, false, 0, potion.potionId());
+                "minecraft:potion", 1, BREWER_POTION_EMERALDS, defaultUses(BREWER_POTION_USES), false, 0, potion.potionId());
     }
 
     /** First level 2 potion, then other effects whose family differs. The live shop rolls both. */
