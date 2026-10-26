@@ -10,7 +10,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.lighting.BlockLightEngine;
 import net.minecraft.world.level.lighting.LightEngine;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -18,14 +17,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(BlockLightEngine.class)
 public abstract class BlockLightEngineMixin {
-    @Shadow
-    protected abstract void enqueueIncrease(long packedPos, long queueEntry);
-
-    @Shadow
-    protected static boolean isEmptyShape(BlockState state) {
-        throw new AssertionError();
-    }
-
     @Inject(method = "getEmission", at = @At("RETURN"), cancellable = true)
     private void tougher$dimBurningTorches(
             long packedPos, BlockState state, CallbackInfoReturnable<Integer> cir) {
@@ -59,8 +50,10 @@ public abstract class BlockLightEngineMixin {
         if (light == vanilla) {
             return;
         }
-        enqueueIncrease(
-                pos.asLong(), LightEngine.QueueEntry.increaseLightFromEmission(light, isEmptyShape(state)));
+        boolean emptyShape = !state.canOcclude() || !state.useShapeForLightOcclusion();
+        ((LightEngineAccess) (Object) this)
+                .tougher$enqueueIncrease(
+                        pos.asLong(), LightEngine.QueueEntry.increaseLightFromEmission(light, emptyShape));
         ci.cancel();
     }
 }
