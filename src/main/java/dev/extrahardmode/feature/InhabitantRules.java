@@ -44,7 +44,7 @@ public final class InhabitantRules {
     /** Base uses on a resident listing. A catalog value above this is stored as this. */
     public static final int DEFAULT_TRADE_USES = 3;
     /** Usual shop size. A longer catalog keeps this many and treats the rest as extras. */
-    public static final int USUAL_TRADE_TYPES = 3;
+    public static final int USUAL_TRADE_TYPES = 4;
     public static final int WEALTHY_OFFER_COUNT = USUAL_TRADE_TYPES;
     public static final int WEALTHY_TRADE_USES = DEFAULT_TRADE_USES;
     /** One diamond. Matches a wealthy trader. */
@@ -100,7 +100,7 @@ public final class InhabitantRules {
     public static final int BREWER_POTION_EMERALDS = 1;
     public static final int BREWER_POTION_USES = DEFAULT_TRADE_USES;
     /** Other potion effects kept in the usual shop, besides the level 2 bottle. */
-    public static final int BREWER_USUAL_OTHERS = 2;
+    public static final int BREWER_USUAL_OTHERS = 3;
     /** Brewing ingredients are one emerald. The count on each listing is the bargain. */
     public static final int BREWER_INGREDIENT_EMERALDS = 1;
     public static final int BREWER_INGREDIENT_USES = DEFAULT_TRADE_USES;
@@ -601,7 +601,7 @@ public final class InhabitantRules {
                 "Shops: A larger iron shop may buy iron. A master armorsmith sells one heavy diamond piece the same way, plus enchanted diamond armor, and may buy diamonds.",
                 "Shops: Heavy iron costs 12, 15, 21, or 24 emeralds for boots, a helmet, leggings, or a chestplate. Heavy diamond costs four times that.",
                 "Shops: Enchanted iron armor costs 6, 8, 11, or 12 emeralds for those slots. Enchanted diamond armor costs the same as heavy iron.",
-                "Shops: A brewer sells one level 2 potion each restock, and that potion can change. Up to 2 other potions cost 1 emerald.",
+                "Shops: A brewer sells one level 2 potion each restock, and that potion can change. Up to 3 other potions cost 1 emerald.",
                 "Shops: A larger brewer sells brewing ingredients for 1 emerald, such as nether wart, blaze powder, glowstone, and ghast tears.");
     }
 
@@ -1370,7 +1370,7 @@ public final class InhabitantRules {
      * Extra types beyond the usual shop are random leftover listings.
      * An armorsmith keeps one rolled heavy piece, then enchanted armor of that metal.
      * A larger roll may add another piece or a buy of iron or diamonds. Generic goods are not added.
-     * A brewer keeps one rolled level 2 potion, then up to two other potions.
+     * A brewer keeps one rolled level 2 potion, then up to three other potions.
      * A larger roll may add brewing ingredients. Generic goods are not added.
      * Usual shops keep at most {@link #USUAL_TRADE_TYPES} kinds. Further catalog listings are extras.
      * Item amounts share one roll from -25% to +25%, plus 0 to 25 from the score.
