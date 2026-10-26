@@ -110,6 +110,8 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("0 never fills"));
         assertTrue(String.join(" ", lines).contains("second segment"));
         assertTrue(String.join(" ", lines).contains("8 times as long to restock"));
+        assertTrue(String.join(" ", lines).contains("rounded-up eighth"));
+        assertTrue(String.join(" ", lines).contains("cannot exceed that librarian's rank"));
         assertTrue(String.join(" ", lines).contains("positive is good"));
         assertTrue(String.join(" ", lines).contains("13%"));
         assertTrue(String.join(" ", lines).contains("Look at farmland"));
@@ -148,6 +150,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("80 on a copper torch"));
         assertTrue(String.join(" ", lines).contains("does not make it permanent"));
         assertTrue(String.join(" ", lines).contains("Copper torches last twice as long"));
+        assertTrue(String.join(" ", lines).contains("lose 1 light for every 10 blocks below"));
         assertTrue(String.join(" ", lines).contains("remaining time"));
         assertTrue(String.join(" ", lines).contains("Permanent if it never burns out"));
         assertTrue(String.join(" ", lines).contains("Redstone torches are permanent"));

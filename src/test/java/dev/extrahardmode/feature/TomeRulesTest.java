@@ -1,6 +1,9 @@
 package dev.extrahardmode.feature;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -66,6 +69,38 @@ class TomeRulesTest {
         assertEquals(104, TomeRules.share(TomeRules.share(100, 11.0), 11.0));
         assertEquals(92, TomeRules.share(TomeRules.bankedXp(31, 1507), 1.0));
         assertEquals(1144, TomeRules.share(TomeRules.bankedXp(30, 1395), 1.0));
+    }
+
+    @Test
+    void writingStartsAtLevel7AndSplitsBooksIntoTomes() {
+        assertFalse(TomeRules.canWrite(6));
+        assertFalse(TomeRules.canWrite(0));
+        assertTrue(TomeRules.canWrite(7));
+        assertTrue(TomeRules.canWrite(30));
+        assertEquals(1, TomeRules.booksConsumed(1));
+        assertEquals(1, TomeRules.tomeCount(1));
+        assertEquals(2, TomeRules.booksConsumed(2));
+        assertEquals(1, TomeRules.tomeCount(2));
+        assertEquals(3, TomeRules.booksConsumed(3));
+        assertEquals(2, TomeRules.tomeCount(3));
+        assertEquals(4, TomeRules.booksConsumed(4));
+        assertEquals(3, TomeRules.tomeCount(4));
+        assertEquals(5, TomeRules.booksConsumed(5));
+        assertEquals(4, TomeRules.tomeCount(5));
+        assertEquals(5, TomeRules.booksConsumed(9));
+        assertEquals(4, TomeRules.tomeCount(9));
+        assertEquals(0, TomeRules.booksConsumed(0));
+        assertEquals(0, TomeRules.tomeCount(0));
+        assertArrayEquals(new int[] {92}, TomeRules.split(92, 1));
+        assertArrayEquals(new int[] {46, 46}, TomeRules.split(92, 2));
+        assertArrayEquals(new int[] {31, 31, 30}, TomeRules.split(92, 3));
+        assertArrayEquals(new int[] {23, 23, 23, 23}, TomeRules.split(92, 4));
+        assertArrayEquals(new int[] {1, 1, 1, 0}, TomeRules.split(3, 4));
+        assertEquals(0, TomeRules.split(0, 4).length);
+        assertEquals("46 and 46", TomeRules.amountList(new int[] {46, 46}));
+        assertEquals("31, 31, and 30", TomeRules.amountList(new int[] {31, 31, 30}));
+        assertEquals("23, 23, 23, and 23", TomeRules.amountList(new int[] {23, 23, 23, 23}));
+        assertEquals("1, 1, and 1", TomeRules.amountList(new int[] {1, 1, 1, 0}));
     }
 
     @Test

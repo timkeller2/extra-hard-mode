@@ -21,6 +21,8 @@ public final class EhmTags {
             TagKey.create(Registries.BLOCK, ExtraHardModeMod.id("soft_torch_surfaces"));
     public static final TagKey<Block> DEPTH_LIMITED_LIGHTS =
             TagKey.create(Registries.BLOCK, ExtraHardModeMod.id("depth_limited_lights"));
+    public static final TagKey<Block> COPPER_LANTERNS =
+            TagKey.create(Registries.BLOCK, ExtraHardModeMod.id("copper_lanterns"));
     public static final TagKey<Block> NATURAL_SPAWN_BLOCKS =
             TagKey.create(Registries.BLOCK, ExtraHardModeMod.id("natural_spawn_blocks"));
     /** Right-clicking these should use the block, not a mana ability (unless sneaking). */

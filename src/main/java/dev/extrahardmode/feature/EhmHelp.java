@@ -239,6 +239,7 @@ public final class EhmHelp {
                         "Torches: Placed torches need airflow and a firm block, and campfires also need airflow.",
                         "Torches: Placed torches burn out after 7 Minecraft days (set burn days to 0 to keep them) and dim after 2 days.",
                         "Torches: Light is 14 − (days burning − 2). Copper torches last twice as long.",
+                        "Torches: Copper lanterns below Y=0 lose 1 light for every 10 blocks below. Y=-10 is 1 lower. Y=0 and above stay full.",
                         "Torches: Right-click a torch with coal or charcoal to add 40 days (80 on a copper torch). One item is consumed. That does not make it permanent.",
                         "Torches: Look at a torch, copper torch, or campfire to see remaining time (Permanent if it never burns out).",
                         "Torches: Redstone torches are permanent. They do not burn out, dim, or show a duration.",
@@ -290,7 +291,9 @@ public final class EhmHelp {
                         "Animals: Sheep overgraze too, and wait 6 times as long to eat grass and regrow their wool. farming.sheepWoolGrazeMultiplier of 1 is the usual wool wait.",
                         "Animals: If no grass block is in reach, they have a 33% chance to eat from a chest or barrel within 20 blocks.",
                         "Animals: They eat short grass, the item shears collect, before their breeding food. If neither is left, a second 33% chance starves them and they drop no meat.",
-                        "Animals: Villagers take 8 times as long to restock. Crowding damages villagers, not livestock: 8 or more in a 3x3x3 take damage. Named villagers and residents are spared."));
+                        "Animals: Villagers take 8 times as long to restock. Novice fletchers buy 32 flint per emerald. 8 or more villagers in a 3x3x3 take damage. Named villagers and residents are spared.",
+                        "Animals: An unemployed villager cannot take a job once that job has the rounded-up eighth of the villagers within 64 blocks.",
+                        "Animals: A librarian book cannot exceed that librarian's rank. Higher ranks may also sell earlier enchantments, up to that rank."));
     }
 
     private static Page seasons() {
@@ -319,11 +322,9 @@ public final class EhmHelp {
                         "Soil: Hoe targets: wood/stone −10, copper −5, iron 0, diamond +10, gold +20, netherite +30.",
                         "Soil: Each Efficiency level adds 0.25 to that target's hoe quality: wood/stone 0, copper 1, iron 2, diamond 3, gold 4, netherite 5.",
                         "Soil: If that would make the plot worse, the step is 1/10 of the gap to the target (at least 1, at most 4).",
-                        "Soil: If it would improve the plot, the step is 3. Harvesting by any other means subtracts 5.",
-                        "Soil: Planting the same crop again on a plot subtracts 5 from the shown modifier.",
+                        "Soil: If it would improve the plot, the step is 3. Harvesting by any other means subtracts 5. Planting the same crop again on a plot subtracts 5.",
                         "Soil: Harvesting sugar cane updates the soil under the cane the same way.",
-                        "Soil: Let it grow adds 3 to the soil under each plant it grows. Bone meal on a plant adds 5 to that plot's shown soil modifier.",
-                        "Soil: Right-click a clock to see the current loss rate."));
+                        "Soil: Let it grow adds 3 to the soil under each plant it grows. Bone meal on a plant adds 5 to that plot's shown soil modifier. Right-click a clock to see the current loss rate."));
     }
 
     private static Page processing() {
@@ -397,8 +398,9 @@ public final class EhmHelp {
                         "Abilities: Battery lasts 2 minutes per level. Regen is 1 plus the square root of that level. It stops at your mana level. A renew spends 1 block, or 2 from a stack.",
                         "Abilities: Lapis lazuli casts Lapis Shield for 1 mana. It lasts 1 minute per level and absorbs that much damage before armor.",
                         "Abilities: Every 3 points blocked costs 1 lapis lazuli, rounded up. If you cannot pay, the hit is not blocked and Lapis Shield ends.",
-                        "Abilities: A book writes a Tome of the Wise for 1 mana. Above level 30 it banks the excess and leaves you at 30. At 30 or below it banks everything and leaves you at 0.",
-                        "Abilities: Writing and reading each apply 80% plus 2% per ability level, above or below 30. Below 10 some is lost and above 10 some is gained. Two books add +2.",
+                        "Abilities: From level 7, a book writes a Tome of the Wise for 1 mana. Above 30 it banks the excess and leaves you at 30. At 30 or below it banks everything and leaves you at 0.",
+                        "Abilities: Writing and reading each apply 80% plus 2% per ability level, above or below 30. Below 10 some is lost and above 10 some is gained.",
+                        "Abilities: One book makes one tome. Two or more add +2. Three, four, or five books make 2, 3, or 4 tomes and split the experience. More than five still uses five and makes 4.",
                         "Abilities: You can learn up to half your mana level in abilities, rounded up.",
                         "Abilities: Every ability's effective level is at least 1.",
                         "Abilities: Unlearned abilities can be used and still gain skill, at −3 power (floored at 1), until you have a free slot to learn them.",

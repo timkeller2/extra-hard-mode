@@ -3132,24 +3132,34 @@ public final class ManaAbilities implements FeatureModule {
     }
 
     /**
-     * A plain book at any experience level. One book is spent, or two from a stack, and
-     * that second book adds +2. The tome stores 80% of the banked experience plus 2% per
-     * ability level. Above level 30 only the excess is banked and the player returns to
-     * level 30. At level 30 or below, all experience is banked and the player returns to 0.
+     * A plain book at experience level 7 or higher. One book makes one tome. Two or more
+     * add +2, and each further book makes another tome, up to four tomes from five books.
+     * The saved experience is split across those tomes. Above level 30 only the excess is
+     * banked and the player returns to level 30. At level 30 or below, all experience is
+     * banked and the player returns to 0.
      */
     static boolean tryWriteTome(ServerPlayer player) {
-        if (!player.getMainHandItem().is(Items.BOOK) || Achievements.skipPlayer(player)) {
+        ItemStack held = player.getMainHandItem();
+        if (!held.is(Items.BOOK) || Achievements.skipPlayer(player)) {
             return false;
         }
         if (alreadyHandled(player, (ServerLevel) player.level())) {
             return true;
         }
-        int bonus = AbilityRules.catalystBonus(player.getMainHandItem().getCount());
+        if (!TomeRules.canWrite(player.experienceLevel)) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.tome_level", "You must be at least experience level 7."));
+            markHandled(player);
+            return true;
+        }
+        int heldCount = held.getCount();
+        int bonus = AbilityRules.catalystBonus(heldCount);
         double power = abilityPower(player, AbilityRules.WRITE_TOME, bonus);
         int visible = TomeRules.totalXp(player.experienceLevel, player.experienceProgress);
         int keptLevel = TomeRules.levelAfterWrite(player.experienceLevel);
         int saved = TomeRules.share(TomeRules.bankedXp(player.experienceLevel, visible), power);
-        if (saved <= 0) {
+        int[] parts = TomeRules.split(saved, TomeRules.tomeCount(heldCount));
+        if (saved <= 0 || parts.length == 0) {
             player.sendSystemMessage(Component.translatableWithFallback(
                     "tougher.message.tome_empty", "That would save no experience."));
             markHandled(player);
@@ -3159,16 +3169,31 @@ public final class ManaAbilities implements FeatureModule {
                 player, AbilityRules.WRITE_TOME, "tougher.ability.write_tome", "Write Tome of the Wise")) {
             return true;
         }
-        ItemStack tome = writtenTome(player.getScoreboardName(), saved);
-        spend(player, Items.BOOK, AbilityRules.WRITE_TOME);
-        giveTome(player, tome);
+        String author = player.getScoreboardName();
+        held.shrink(TomeRules.booksConsumed(heldCount));
+        spend(player, null, AbilityRules.WRITE_TOME);
+        int written = 0;
+        for (int part : parts) {
+            if (part <= 0) {
+                continue;
+            }
+            giveTome(player, writtenTome(author, part));
+            written++;
+        }
         dropToKeptLevel(player, keptLevel);
         castTome(player);
         tellAbilityUse(player, "tougher.ability.write_tome", "Write Tome of the Wise", power);
-        player.sendSystemMessage(Component.translatableWithFallback(
-                "tougher.message.tome_write",
-                "The tome holds %s experience.",
-                Component.literal(Integer.toString(saved))));
+        if (written <= 1) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.tome_write",
+                    "The tome holds %s experience.",
+                    Component.literal(Integer.toString(saved))));
+        } else {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.tome_write_many",
+                    "The tomes hold %s experience.",
+                    Component.literal(TomeRules.amountList(parts))));
+        }
         return true;
     }
 

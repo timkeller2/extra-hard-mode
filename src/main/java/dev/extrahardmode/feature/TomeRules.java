@@ -7,11 +7,16 @@ package dev.extrahardmode.feature;
  * player there. At that level or below, write banks all visible experience and leaves the
  * player at level 0. Either amount is then reduced to {@link #BASE_PERCENT} plus
  * {@link #PERCENT_PER_LEVEL} per ability level. Level 10 is 100%. Read grants that same share
- * of the stored amount.
+ * of the stored amount. Writing requires {@link #MIN_WRITE_LEVEL}. One book makes one tome.
+ * Two or more add +2, and each further book makes another tome, up to four from five books.
  */
 public final class TomeRules {
+    /** Lowest experience level that can write a tome. */
+    public static final int MIN_WRITE_LEVEL = 7;
     /** Experience level kept when writing above it. At this level or below, the player is emptied to 0. */
     public static final int KEPT_LEVEL = 30;
+    /** Most books one write consumes. One of them is the +2 when more than one is used. */
+    public static final int MAX_BOOKS = 5;
     /** Percent of the banked experience before ability level. Level 10 reaches 100%. */
     public static final int BASE_PERCENT = 80;
     /** Added to {@link #BASE_PERCENT} for each point of ability level. */
@@ -21,6 +26,83 @@ public final class TomeRules {
     public static final String XP_KEY = "tougher_xp";
 
     private TomeRules() {}
+
+    public static boolean canWrite(int experienceLevel) {
+        return experienceLevel >= MIN_WRITE_LEVEL;
+    }
+
+    /** Books removed from the main hand. One book, or up to {@link #MAX_BOOKS} from a larger stack. */
+    public static int booksConsumed(int heldCount) {
+        if (heldCount <= 0) {
+            return 0;
+        }
+        return Math.min(MAX_BOOKS, heldCount);
+    }
+
+    /**
+     * Tomes written from a main-hand stack. One consumed book is the +2 bonus when
+     * two or more are spent, and the rest each become a tome.
+     */
+    public static int tomeCount(int heldCount) {
+        int consumed = booksConsumed(heldCount);
+        if (consumed <= 1) {
+            return consumed;
+        }
+        return consumed - 1;
+    }
+
+    /**
+     * Splits {@code saved} across {@code tomes}. The parts differ by at most one and
+     * sum to {@code saved}. Earlier parts receive the remainder.
+     */
+    public static int[] split(int saved, int tomes) {
+        if (saved <= 0 || tomes <= 0) {
+            return new int[0];
+        }
+        int[] parts = new int[tomes];
+        int base = saved / tomes;
+        int extra = saved % tomes;
+        for (int i = 0; i < tomes; i++) {
+            parts[i] = base + (i < extra ? 1 : 0);
+        }
+        return parts;
+    }
+
+    /** English list of the positive amounts, such as {@code 46 and 46} or {@code 31, 31, and 30}. */
+    public static String amountList(int[] amounts) {
+        int count = 0;
+        if (amounts != null) {
+            for (int amount : amounts) {
+                if (amount > 0) {
+                    count++;
+                }
+            }
+        }
+        if (count == 0) {
+            return "0";
+        }
+        String[] words = new String[count];
+        int index = 0;
+        for (int amount : amounts) {
+            if (amount > 0) {
+                words[index++] = Integer.toString(amount);
+            }
+        }
+        if (count == 1) {
+            return words[0];
+        }
+        if (count == 2) {
+            return words[0] + " and " + words[1];
+        }
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i < count; i++) {
+            if (i > 0) {
+                out.append(i == count - 1 ? ", and " : ", ");
+            }
+            out.append(words[i]);
+        }
+        return out.toString();
+    }
 
     /** Level left after a successful write. Above {@link #KEPT_LEVEL}, that level. Otherwise 0. */
     public static int levelAfterWrite(int experienceLevel) {

@@ -3,14 +3,21 @@ package dev.extrahardmode.mixin;
 import dev.extrahardmode.feature.AntiFarming;
 import dev.extrahardmode.feature.CropGrowthRules;
 import dev.extrahardmode.feature.FeatureBus;
+import dev.extrahardmode.feature.FletcherTrades;
 import dev.extrahardmode.feature.Inhabitants;
+import dev.extrahardmode.feature.JobClaimRules;
+import dev.extrahardmode.feature.JobClaims;
+import dev.extrahardmode.feature.LibrarianBooks;
 import dev.extrahardmode.feature.VillagerNerf;
 import dev.extrahardmode.feature.VillagerRestockRules;
 import dev.extrahardmode.world.WorldGate;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.world.entity.npc.villager.VillagerData;
+import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
@@ -54,10 +61,42 @@ public abstract class VillagerTradesMixin {
         if (Inhabitants.isInhabitant(self)) {
             return;
         }
-        if (!FeatureBus.guard((Level) level, VillagerNerf.ID)) {
+        if (WorldGate.isActive(level)) {
+            LibrarianBooks.apply(self);
+            FletcherTrades.apply(self);
+        }
+        if (FeatureBus.guard((Level) level, VillagerNerf.ID)) {
+            VillagerNerf.apply(self);
+        }
+    }
+
+    /** Blocks an unemployed villager from taking a job that already has its share nearby. */
+    @Inject(method = "setVillagerData", at = @At("HEAD"), cancellable = true)
+    private void tougher$limitJobClaims(VillagerData data, CallbackInfo ci) {
+        Villager self = (Villager) (Object) this;
+        if (!(self.level() instanceof ServerLevel level) || !WorldGate.isActive(level)) {
             return;
         }
-        VillagerNerf.apply(self);
+        if (Inhabitants.isInhabitant(self) || data == null) {
+            return;
+        }
+        VillagerData current = self.getVillagerData();
+        if (current.profession().equals(data.profession())) {
+            return;
+        }
+        if (!current.profession().is(VillagerProfession.NONE)) {
+            return;
+        }
+        if (!JobClaimRules.isClaimedJob(
+                data.profession().is(VillagerProfession.NONE), data.profession().is(VillagerProfession.NITWIT))) {
+            return;
+        }
+        if (!JobClaims.blocked(level, self, data.profession())) {
+            return;
+        }
+        self.releasePoi(MemoryModuleType.JOB_SITE);
+        self.getBrain().eraseMemory(MemoryModuleType.JOB_SITE);
+        ci.cancel();
     }
 
     @Inject(method = "mobInteract", at = @At("HEAD"))
@@ -75,10 +114,13 @@ public abstract class VillagerTradesMixin {
             Inhabitants.onStartTrading(self, player);
             return;
         }
-        if (!FeatureBus.guard(self.level(), VillagerNerf.ID)) {
-            return;
+        if (self.level() instanceof ServerLevel serverLevel && WorldGate.isActive(serverLevel)) {
+            LibrarianBooks.apply(self);
+            FletcherTrades.apply(self);
         }
-        VillagerNerf.apply(self);
+        if (FeatureBus.guard(self.level(), VillagerNerf.ID)) {
+            VillagerNerf.apply(self);
+        }
     }
 
     @Inject(method = "canBreed", at = @At("HEAD"), cancellable = true)

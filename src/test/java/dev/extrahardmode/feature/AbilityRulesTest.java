@@ -252,7 +252,10 @@ class AbilityRulesTest {
         assertTrue(AbilityRules.helpFallback(AbilityRules.WRITE_TOME).contains("exactly level 30"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.WRITE_TOME).contains("return to level 0"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.WRITE_TOME).contains("stored on the book"));
-        assertTrue(AbilityRules.helpFallback(AbilityRules.WRITE_TOME).contains("Two in hand consume both and add +2"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.WRITE_TOME).contains("experience level 7 or higher"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.WRITE_TOME).contains("Two or more add +2"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.WRITE_TOME).contains("make 2, 3, or 4 tomes"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.WRITE_TOME).contains("makes 4 tomes"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.READ_TOME).contains("80% of the saved experience"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.READ_TOME).contains("plus 2% per ability level"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.READ_TOME).contains("above or below level 30"));

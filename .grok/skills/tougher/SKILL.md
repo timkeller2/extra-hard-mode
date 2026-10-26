@@ -34,6 +34,7 @@ Local jar copy is in `Agents.md`. This skill is the rest of the standing setup.
 ## Git and the guide
 
 - Branch `extra-hard-mode` tracks `origin/main`. Push only when asked, with `git push origin HEAD:main` to `https://github.com/timkeller2/extra-hard-mode.git`. Do not commit unless asked.
+- When the user says "Commit", follow the commit skill. That skill commits, pushes, and updates both live servers.
 - Commit subjects already in the log look like `feat:`, `fix:`, and `docs:`.
 - Player guide source is `docs/build_tougher_guide.py`. It writes `docs/Tougher.pdf`. Regenerate it when a player-facing rule changes.
 - Latest guide, always the file on `main`: `https://github.com/timkeller2/extra-hard-mode/raw/main/docs/Tougher.pdf`
