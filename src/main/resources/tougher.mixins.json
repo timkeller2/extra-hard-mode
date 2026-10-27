@@ -126,7 +126,8 @@
     "client.GuiMixin",
     "client.HudMixin",
     "client.MinecraftMixin",
-    "client.KeyboardHandlerMixin"
+    "client.KeyboardHandlerMixin",
+    "client.SoundEngineMixin"
   ],
   "injectors": {
     "defaultRequire": 1
