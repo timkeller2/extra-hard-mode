@@ -60,6 +60,11 @@ public record ClientboundSyncPayload(
             ClientboundSyncPayload::extras,
             ClientboundSyncPayload::fromParts);
 
+    /** False for {@link #inactive()}. That payload is the client stand-in for WorldGate off. */
+    public boolean worldActive() {
+        return !equals(inactive());
+    }
+
     public static ClientboundSyncPayload inactive() {
         return new ClientboundSyncPayload(
                 false,

@@ -3,6 +3,7 @@ package dev.extrahardmode.client;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.feature.AbilityRules;
 import dev.extrahardmode.feature.ClientFoodCap;
+import dev.extrahardmode.feature.CopperLanterns;
 import dev.extrahardmode.feature.DebugScreenRules;
 import dev.extrahardmode.feature.PlacementRules;
 import dev.extrahardmode.tag.EhmTags;
@@ -327,6 +328,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
         };
         ClientPlayNetworking.registerGlobalReceiver(ClientboundSyncPayload.TYPE, (payload, context) -> {
             lastSync = payload;
+            CopperLanterns.setClientActive(payload.worldActive());
             ClientboundSyncPayload.DisplayExtras.SeasonBits season = payload.extras().season();
             SeasonAtmosphere.syncClient(season.antiFarming(), season.lossRate(), season.changingSeasons());
         });
@@ -359,6 +361,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> BriefReconnect.joined());
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             lastSync = null;
+            CopperLanterns.setClientActive(false);
             lastMana = null;
             lastFlight = null;
             lastPowerMine = null;

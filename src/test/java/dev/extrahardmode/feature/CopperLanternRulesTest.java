@@ -1,7 +1,10 @@
 package dev.extrahardmode.feature;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import dev.extrahardmode.network.ClientboundSyncPayload;
 import org.junit.jupiter.api.Test;
 
 class CopperLanternRulesTest {
@@ -28,5 +31,14 @@ class CopperLanternRulesTest {
     void darkBlocksStayDark() {
         assertEquals(0, CopperLanternRules.light(0, -40));
         assertEquals(0, CopperLanternRules.light(-3, -40));
+    }
+
+    @Test
+    void clientEngineDimsWhenTheSyncedWorldIsOn() {
+        assertTrue(CopperLanterns.engineActive(false, false, true));
+        assertFalse(CopperLanterns.engineActive(false, true, false));
+        assertTrue(CopperLanterns.engineActive(true, true, false));
+        assertFalse(CopperLanterns.engineActive(true, false, true));
+        assertFalse(ClientboundSyncPayload.inactive().worldActive());
     }
 }
