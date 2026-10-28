@@ -170,24 +170,16 @@ def build():
             "Losing a level removes exactly that level's benefits. Health and hunger clamp down. The mana level leaves, but mana you already hold is kept. That is not an extra hit.",
             s["body"],
         ),
-        Paragraph("These stop at Well Fed 5:", s["body"]),
-        bullets(
-            [
-                "2% less saturation loss per level, up to 10%.",
-                "+1 melee damage at level 2, and another at level 4.",
-                "Food regen is 1 second faster at level 2, and 2 seconds faster at 4 and 5, and never faster than once every 10 seconds.",
-                "Luck I from level 3 on.",
-                "Poison and Hunger last 10% less per level, up to half.",
-            ],
-            s["bullet"],
-        ),
         KeepTogether([
-            Paragraph("These keep rising past 5, and leave when Well Fed drops:", s["body"]),
+            Paragraph("These leave when Well Fed drops:", s["body"]),
             bullets(
             [
                 "+1 health point per level, arriving filled. Odd totals show a half heart outline.",
                 "+1 hunger per level, arriving filled. You can keep eating until that higher bar is full. Eating is no longer blocked at 20.",
-                "+1 mana level per level. It does not arrive filled, and eating does not restore mana.",
+                "+1 mana level for every 3 Well Fed levels, rounded down. Well Fed 3 is +1. It does not arrive filled, and eating does not restore mana.",
+                "+1 melee damage for every 8 Well Fed levels, rounded down. Well Fed 8 is +1.",
+                "Food regen is 1 second faster for every 3 Well Fed levels, rounded down, and never faster than once every 5 seconds.",
+                "Saturation loss falls 1% per Well Fed level, up to 30%.",
             ],
             s["bullet"],
         ),
@@ -291,7 +283,7 @@ def build():
             "Past your level, regeneration is one-quarter speed. "
             "Crystals you will gain in about ten minutes show faintly, the same way they will look. That grows when you are well fed or Battery is on, and shrinks once you are past your mana level. "
             "The old ceiling of 40 mana rises when Well Fed or ready gold pushes your level past 40. "
-            "Achievements and wise teachers can raise the permanent mana level. Well Fed adds levels on top, and those extra levels leave when Well Fed drops. "
+            "Achievements and wise teachers can raise the permanent mana level. Well Fed adds one level for every three Well Fed levels, and those extra levels leave when Well Fed drops. "
             "Ready gold adds mana levels too, and those leave when the gold comes off.",
             s["body"],
         ),
@@ -333,8 +325,8 @@ def build():
             Paragraph("Achievements", s["h"]),
             bullets(
                 [
-                    "Place many of one block, or defeat many of one monster that drops loot. Each claim gives 50 experience and 4 to 7 emeralds. Everyone can earn every achievement.",
-                    "The first player on the server to claim one gets 25 extra experience and 3 more emeralds by default.",
+                    "Place many of one block, or defeat many of one monster that drops loot. Each claim gives 75 experience. Everyone can earn every achievement.",
+                    "The first player on the server to claim one gets 25 extra experience by default.",
                     "You have your experience level as a percent chance to gain a mana level.",
                     "The first visit to a biome is 50 experience, and 100 more if you are first on the server. The first habitable home in a biome is house points times 3. The first trip 300 blocks from spawn is 100 experience.",
                     "Sneak while holding a block you can place to see how many placements remain. Placing it is not required. A kill always shows that number. It drifts down and left for 3 seconds, and stays hidden when that track is finished.",

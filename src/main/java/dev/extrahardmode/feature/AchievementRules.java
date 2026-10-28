@@ -12,7 +12,7 @@ import java.util.Set;
  */
 public final class AchievementRules {
     public static final int[] BUILDER_THRESHOLDS = {256, 512, 1024};
-    public static final int[] SLAYER_THRESHOLDS = {25, 100, 250};
+    public static final int[] SLAYER_THRESHOLDS = {25, 50, 100};
     public static final int BREAK_DECREMENT_PERCENT = 75;
     public static final int TICKS_PER_MINUTE = 1200;
     /** Base regen per Minecraft minute is {@code (manaLevel + currentMana) / REGEN_DIVISOR}. */
@@ -24,15 +24,9 @@ public final class AchievementRules {
     public static final double OVERFLOW_REGEN_MULTIPLIER = 0.25;
     /** Stored mana cannot exceed this (20 crystals), unless mana level is higher. */
     public static final double MANA_HARD_CAP = 40.0;
-    public static final int REWARD_EXPERIENCE_POINTS = 50;
+    public static final int REWARD_EXPERIENCE_POINTS = 75;
     /** Extra XP for the first player to claim a given achievement server-wide. */
     public static final int FIRST_CLAIM_BONUS_EXPERIENCE = 25;
-    /** Faces on the emerald die. 1d4 plus {@link #REWARD_EMERALD_FLAT} is 4 through 7. */
-    public static final int REWARD_EMERALD_SIDES = 4;
-    /** Added to every emerald die. */
-    public static final int REWARD_EMERALD_FLAT = 3;
-    /** Extra emeralds for the first server-wide claim of that achievement. */
-    public static final int FIRST_CLAIM_EMERALD_BONUS = 3;
 
     public static final int CLOSEST_LIST_LIMIT = 15;
     public static final int SLAYER_LIST_LIMIT = 3;
@@ -159,18 +153,9 @@ public final class AchievementRules {
         return regenPerMinute * SATURATION_REGEN_MULTIPLIER;
     }
 
-    /** Base 50 XP, plus 25 when this player is first server-wide. */
+    /** Base 75 XP, plus 25 when this player is first server-wide. */
     public static int rewardExperience(boolean firstClaim) {
         return REWARD_EXPERIENCE_POINTS + (firstClaim ? FIRST_CLAIM_BONUS_EXPERIENCE : 0);
-    }
-
-    /** One claim pays 1d4+3 emeralds, plus 3 when this player is first server-wide. {@code roll} may be any int. */
-    public static int rewardEmeralds(int roll, boolean firstClaim) {
-        int amount = REWARD_EMERALD_FLAT + 1 + Math.floorMod(roll, REWARD_EMERALD_SIDES);
-        if (firstClaim) {
-            amount += FIRST_CLAIM_EMERALD_BONUS;
-        }
-        return amount;
     }
 
     /** Experience-level percent chance of a bonus mana level, 0–100. */

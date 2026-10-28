@@ -25,22 +25,31 @@ class WellFedRulesTest {
     }
 
     @Test
-    void benefitsStopAtFiveWhileHungerAndGraceContinue() {
+    void bonusesFollowTheirOwnRules() {
         assertEquals(5, WellFedRules.healthBonus(5));
         assertEquals(9, WellFedRules.healthBonus(9));
-        assertEquals(2, WellFedRules.meleeBonus(5));
-        assertEquals(2, WellFedRules.meleeBonus(9));
-        assertEquals(0.90F, WellFedRules.saturationMultiplier(5), 0.001F);
-        assertEquals(0.90F, WellFedRules.saturationMultiplier(9), 0.001F);
-        assertTrue(WellFedRules.luck(3));
-        assertFalse(WellFedRules.luck(2));
+        assertEquals(0, WellFedRules.meleeBonus(7));
+        assertEquals(1, WellFedRules.meleeBonus(8));
+        assertEquals(1, WellFedRules.meleeBonus(15));
+        assertEquals(2, WellFedRules.meleeBonus(16));
+        assertEquals(7, WellFedRules.meleeBonus(57));
+        assertEquals(0.95F, WellFedRules.saturationMultiplier(5), 0.001F);
+        assertEquals(0.91F, WellFedRules.saturationMultiplier(9), 0.001F);
+        assertEquals(0.70F, WellFedRules.saturationMultiplier(30), 0.001F);
+        assertEquals(0.70F, WellFedRules.saturationMultiplier(57), 0.001F);
+        assertEquals(0, WellFedRules.manaBonus(0));
+        assertEquals(0, WellFedRules.manaBonus(2));
+        assertEquals(1, WellFedRules.manaBonus(3));
+        assertEquals(1, WellFedRules.manaBonus(5));
+        assertEquals(3, WellFedRules.manaBonus(9));
         assertEquals(25, WellFedRules.foodMax(5));
         assertEquals(29, WellFedRules.foodMax(9));
-        assertEquals(260, WellFedRules.regenTicks(300, 5));
-        assertEquals(260, WellFedRules.regenTicks(300, 9));
-        assertEquals(200, WellFedRules.regenTicks(180, 5));
-        assertEquals(0.5F, WellFedRules.effectDurationScale(5), 0.001F);
-        assertEquals(0.5F, WellFedRules.effectDurationScale(8), 0.001F);
+        assertEquals(300, WellFedRules.regenTicks(300, 0));
+        assertEquals(280, WellFedRules.regenTicks(300, 5));
+        assertEquals(240, WellFedRules.regenTicks(300, 9));
+        assertEquals(100, WellFedRules.regenTicks(300, 30));
+        assertEquals(100, WellFedRules.regenTicks(300, 57));
+        assertEquals(80, WellFedRules.regenTicks(80, 0));
         assertEquals(0, WellFedRules.repeatPenalty(5, 1));
         assertEquals(1, WellFedRules.repeatPenalty(6, 1));
         assertEquals(17, WellFedRules.holdWindow(5));

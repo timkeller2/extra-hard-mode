@@ -170,7 +170,7 @@ class EhmHelpTest {
         assertFalse(String.join(" ", lines).contains("1 more each time"));
         assertFalse(String.join(" ", lines).contains("how many lapis"));
         assertFalse(String.join(" ", lines).contains("sparkles you blue"));
-        assertTrue(String.join(" ", lines).contains("50 experience and 4 to 7 emeralds"));
+        assertTrue(String.join(" ", lines).contains("75 experience"));
         assertTrue(String.join(" ", lines).contains("visit a biome you gain 50 experience"));
         assertTrue(String.join(" ", lines).contains("first player to visit it"));
         assertTrue(String.join(" ", lines).contains("habitable home in a biome"));
@@ -187,7 +187,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("small brown number"));
         assertTrue(String.join(" ", lines).contains("Sneak while holding a placeable block"));
         assertFalse(String.join(" ", lines).contains("your mana abilities"));
-        assertTrue(String.join(" ", lines).contains("25 extra experience and 3 more emeralds"));
+        assertTrue(String.join(" ", lines).contains("25 extra experience"));
         assertTrue(String.join(" ", lines).contains("3 experience"));
         assertTrue(String.join(" ", lines).contains("faster hit softer"));
         assertTrue(String.join(" ", lines).contains("1% per 10 blocks"));

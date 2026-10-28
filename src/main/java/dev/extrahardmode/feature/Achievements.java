@@ -28,7 +28,6 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
@@ -284,7 +283,6 @@ public final class Achievements implements FeatureModule {
             celebrate(player);
             boolean firstClaim = competitive && first;
             giveReward(player, firstClaim);
-            grantEmeralds(player, firstClaim);
         }
         if (grantedThrough != already) {
             putCount(player, awardedType, key, grantedThrough);
@@ -318,20 +316,6 @@ public final class Achievements implements FeatureModule {
         player.level()
                 .addFreshEntity(new FireworkRocketEntity(
                         player.level(), player.getX(), player.getY() + 1.0, player.getZ(), rocket));
-    }
-
-    static void grantEmeralds(ServerPlayer player, boolean firstClaim) {
-        int count = AchievementRules.rewardEmeralds(player.getRandom().nextInt(), firstClaim);
-        give(player, new ItemStack(Items.EMERALD, count));
-    }
-
-    static void give(ServerPlayer player, ItemStack stack) {
-        if (!player.addItem(stack)) {
-            ItemEntity dropped = player.drop(stack, false, net.minecraft.util.Prediction.SERVER_ONLY);
-            if (dropped != null) {
-                dropped.setNoPickUpDelay();
-            }
-        }
     }
 
     static void giveReward(ServerPlayer player, boolean firstClaim) {
@@ -494,7 +478,7 @@ public final class Achievements implements FeatureModule {
 
     /** Permanent mana, Well Fed, and ready golden equipment. Gold's share leaves when that gear does. */
     public static int manaLevel(ServerPlayer player) {
-        return storedManaLevel(player) + WellFed.level(player) + readyGoldLevels(player);
+        return storedManaLevel(player) + WellFedRules.manaBonus(WellFed.level(player)) + readyGoldLevels(player);
     }
 
     /** Ready gold armor and a held golden item. Reads the wear record; it does not start the timer. */

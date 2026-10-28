@@ -982,7 +982,7 @@ public final class WorldConfig {
                 writeDefaultIfMissing(
                         file,
                         "achievements.competitive",
-                        "The first player to claim a builder or slayer achievement server-wide gets 25 extra experience and 3 more emeralds. Everyone can still earn every achievement. Default true.",
+                        "The first player to claim a builder or slayer achievement server-wide gets 25 extra experience. Everyone can still earn every achievement. Default true.",
                         true);
                 writeDefaultIfMissing(
                         file,

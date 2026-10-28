@@ -260,9 +260,11 @@ public final class EhmHelp {
                         "Hunger: After those seven, each longer run of different meals raises Well Fed by one. It can pass 5.",
                         "Hunger: Well Fed allows that many repeated meals in a longer window before the level drops.",
                         "Hunger: The same-food penalty waits one extra repeat per Well Fed level.",
-                        "Hunger: Through Well Fed 5: 2% less saturation loss, +1 damage every two levels, faster regen, and Luck at 3.",
-                        "Hunger: Poison and hunger last 10% less per Well Fed level, up to half.",
-                        "Hunger: Every Well Fed level adds 1 health, 1 hunger, and 1 mana level, even past 5. Health and hunger arrive filled. The mana level does not.",
+                        "Hunger: Saturation loss falls 1% per Well Fed level, up to 30%.",
+                        "Hunger: Every Well Fed level adds 1 health and 1 hunger, even past 5. They arrive filled.",
+                        "Hunger: Every 3 Well Fed levels add 1 mana level, rounded down. Well Fed 3 is +1. It does not arrive filled.",
+                        "Hunger: Every 8 Well Fed levels add 1 melee damage, rounded down. Well Fed 8 is +1.",
+                        "Hunger: Food regen is 1 second faster per 3 Well Fed levels, rounded down, never faster than every 5 seconds.",
                         "Hunger: Those bonuses leave when Well Fed drops. Eating does not restore mana.",
                         "Hunger: The locator bar is off until you eat a golden carrot. It stays on until your saturation is gone. Another player sees you only while their bar is on too."));
     }
@@ -421,8 +423,8 @@ public final class EhmHelp {
                 "tougher.help.achievements.",
                 List.of(
                         "Achievements: Place many of one block or defeat many of one monster that drops loot.",
-                        "Achievements: Each achievement gives 50 experience and 4 to 7 emeralds. Everyone can earn every achievement.",
-                        "Achievements: By default the first player to claim one server-wide gets 25 extra experience and 3 more emeralds.",
+                        "Achievements: Each achievement gives 75 experience. Everyone can earn every achievement.",
+                        "Achievements: By default the first player to claim one server-wide gets 25 extra experience.",
                         "Achievements: You have (your experience level)% chance to gain a mana level.",
                         "Achievements: /tougher achieve lists the 5 closest builder tracks and at most 3 slayer tracks, plus the last block you placed.",
                         "Achievements: The first time you visit a biome you gain 50 experience, and 100 more if you are the first player to visit it.",

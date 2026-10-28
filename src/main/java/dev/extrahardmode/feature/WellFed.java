@@ -104,7 +104,6 @@ public final class WellFed {
     private static void applyModifiers(ServerPlayer player, int wellFed) {
         setModifier(player.getAttribute(Attributes.MAX_HEALTH), ExtraHardModeMod.WELL_FED_HEALTH, WellFedRules.healthBonus(wellFed));
         setModifier(player.getAttribute(Attributes.ATTACK_DAMAGE), ExtraHardModeMod.WELL_FED_DAMAGE, WellFedRules.meleeBonus(wellFed));
-        setModifier(player.getAttribute(Attributes.LUCK), ExtraHardModeMod.WELL_FED_LUCK, WellFedRules.luck(wellFed) ? 1 : 0);
     }
 
     private static void clearModifiers(ServerPlayer player) {

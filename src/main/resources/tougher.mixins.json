@@ -50,7 +50,6 @@
     "FlintAndSteelItemMixin",
     "FishingHookMixin",
     "FoodDataMixin",
-    "LivingEntityEffectMixin",
     "PlayerFoodMixin",
     "FoodPropertiesMixin",
     "GhastMixin",

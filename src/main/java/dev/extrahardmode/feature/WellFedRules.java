@@ -7,22 +7,30 @@ import java.util.Set;
 
 /**
  * Well Fed from meals past the first seven different foods. Minecraft-free.
- * Levels above {@link #BENEFIT_CAP} still raise health, hunger, mana, and the grace windows.
+ * Mana rises by 1 for every 3 levels. Melee rises by 1 for every 8 levels.
+ * Food regen is 1 second faster for every 3 levels, and never faster than every 5 seconds.
+ * Saturation drain falls 1% per level, up to 30%.
  */
 public final class WellFedRules {
     public static final int BASE_MEALS = HungerRules.DEFAULT_FOOD_HISTORY;
-    public static final int BENEFIT_CAP = 5;
     /** Stored meals. Well Fed cannot grow past this minus {@link #BASE_MEALS}. */
     public static final int HISTORY_CAP = 64;
     public static final int BASE_FOOD = 20;
     public static final int FOOD_CAP = BASE_FOOD + (HISTORY_CAP - BASE_MEALS);
-    public static final int MIN_REGEN_TICKS = 10 * HungerRules.TICKS_PER_SECOND;
+    /** Food regen never runs more often than once every 5 seconds. */
+    public static final int MIN_REGEN_TICKS = 5 * HungerRules.TICKS_PER_SECOND;
+    /** One mana level for every this many Well Fed levels, rounded down. */
+    public static final int MANA_LEVELS_PER_BONUS = 3;
+    /** One melee damage for every this many Well Fed levels, rounded down. */
+    public static final int MELEE_LEVELS_PER_BONUS = 8;
+    /** One second off food regen for every this many Well Fed levels, rounded down. */
+    public static final int REGEN_LEVELS_PER_SECOND = 3;
+    /** Saturation exhaustion falls by this fraction of vanilla per Well Fed level. */
+    public static final float SATURATION_PER_LEVEL = 0.01F;
+    /** Saturation exhaustion never falls by more than this fraction of vanilla. */
+    public static final float SATURATION_CAP = 0.30F;
 
     private WellFedRules() {}
-
-    public static int benefitLevel(int wellFed) {
-        return Math.clamp(wellFed, 0, BENEFIT_CAP);
-    }
 
     /** Meals that must all be different to reach this Well Fed level. */
     public static int gainWindow(int level) {
@@ -90,38 +98,28 @@ public final class WellFedRules {
         return BASE_FOOD + Math.max(0, wellFed);
     }
 
-    /** +1 attack damage at levels 2 and 4, then no further. */
+    /** +1 attack damage at Well Fed 8, 16, 24, and so on. */
     public static int meleeBonus(int wellFed) {
-        return benefitLevel(wellFed) / 2;
+        return Math.max(0, wellFed) / MELEE_LEVELS_PER_BONUS;
+    }
+
+    /** +1 mana level at Well Fed 3, 6, 9, and so on. */
+    public static int manaBonus(int wellFed) {
+        return Math.max(0, wellFed) / MANA_LEVELS_PER_BONUS;
     }
 
     public static float saturationMultiplier(int wellFed) {
-        return 1.0F - 0.02F * benefitLevel(wellFed);
+        float reduction = Math.min(SATURATION_CAP, SATURATION_PER_LEVEL * Math.max(0, wellFed));
+        return 1.0F - reduction;
     }
 
     public static int regenTicks(int configuredTicks, int wellFed) {
-        int faster = benefitLevel(wellFed) / 2;
+        int faster = Math.max(0, wellFed) / REGEN_LEVELS_PER_SECOND;
         int ticks = Math.max(1, configuredTicks) - faster * HungerRules.TICKS_PER_SECOND;
         if (faster <= 0) {
             return Math.max(1, configuredTicks);
         }
         return Math.max(MIN_REGEN_TICKS, ticks);
-    }
-
-    public static boolean luck(int wellFed) {
-        return benefitLevel(wellFed) >= 3;
-    }
-
-    /** Poison and hunger effects. 1 at Well Fed 0, 0.5 at Well Fed 5. */
-    public static float effectDurationScale(int wellFed) {
-        return 1.0F - 0.1F * benefitLevel(wellFed);
-    }
-
-    public static int scaleDuration(int duration, int wellFed) {
-        if (duration <= 0) {
-            return duration;
-        }
-        return Math.max(1, Math.round(duration * effectDurationScale(wellFed)));
     }
 
     public static int penaltyWindow(int wellFed) {

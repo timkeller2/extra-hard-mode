@@ -26,8 +26,9 @@ class AchievementRulesTest {
     void slayerTiers() {
         assertEquals(0, AchievementRules.awardedAfter(0, 24, AchievementRules.SLAYER_THRESHOLDS));
         assertEquals(1, AchievementRules.awardedAfter(0, 25, AchievementRules.SLAYER_THRESHOLDS));
-        assertEquals(2, AchievementRules.awardedAfter(0, 100, AchievementRules.SLAYER_THRESHOLDS));
-        assertEquals(3, AchievementRules.awardedAfter(0, 250, AchievementRules.SLAYER_THRESHOLDS));
+        assertEquals(2, AchievementRules.awardedAfter(0, 50, AchievementRules.SLAYER_THRESHOLDS));
+        assertEquals(2, AchievementRules.awardedAfter(0, 99, AchievementRules.SLAYER_THRESHOLDS));
+        assertEquals(3, AchievementRules.awardedAfter(0, 100, AchievementRules.SLAYER_THRESHOLDS));
         assertEquals(1, AchievementRules.awardedAfter(1, 25, AchievementRules.SLAYER_THRESHOLDS));
     }
 
@@ -90,17 +91,10 @@ class AchievementRulesTest {
 
     @Test
     void achievementRewardUsesExperienceLevelChance() {
-        assertEquals(50, AchievementRules.REWARD_EXPERIENCE_POINTS);
+        assertEquals(75, AchievementRules.REWARD_EXPERIENCE_POINTS);
         assertEquals(25, AchievementRules.FIRST_CLAIM_BONUS_EXPERIENCE);
-        assertEquals(50, AchievementRules.rewardExperience(false));
-        assertEquals(75, AchievementRules.rewardExperience(true));
-        assertEquals(4, AchievementRules.rewardEmeralds(0, false));
-        assertEquals(7, AchievementRules.rewardEmeralds(3, false));
-        assertEquals(4, AchievementRules.rewardEmeralds(4, false));
-        assertEquals(7, AchievementRules.rewardEmeralds(-1, false));
-        assertEquals(7, AchievementRules.rewardEmeralds(0, true));
-        assertEquals(10, AchievementRules.rewardEmeralds(3, true));
-        assertEquals(3, AchievementRules.FIRST_CLAIM_EMERALD_BONUS);
+        assertEquals(75, AchievementRules.rewardExperience(false));
+        assertEquals(100, AchievementRules.rewardExperience(true));
         assertEquals(0, AchievementRules.manaChancePercent(0));
         assertEquals(15, AchievementRules.manaChancePercent(15));
         assertEquals(100, AchievementRules.manaChancePercent(100));
@@ -124,7 +118,7 @@ class AchievementRulesTest {
         assertEquals(256, AchievementRules.nextTarget(250, AchievementRules.BUILDER_THRESHOLDS, 0));
         assertEquals(1024, AchievementRules.nextTarget(200, AchievementRules.BUILDER_THRESHOLDS, 2));
         assertEquals(0, AchievementRules.nextTarget(200, AchievementRules.BUILDER_THRESHOLDS, 3));
-        assertEquals(100, AchievementRules.nextTarget(10, AchievementRules.SLAYER_THRESHOLDS, 1));
+        assertEquals(50, AchievementRules.nextTarget(10, AchievementRules.SLAYER_THRESHOLDS, 1));
     }
 
     @Test
@@ -133,7 +127,7 @@ class AchievementRulesTest {
         builders.put("minecraft:oak_planks", 200);
         builders.put("minecraft:dirt", 0);
         builders.put("minecraft:stone", 1024);
-        Map<String, Integer> slayers = Map.of("minecraft:zombie", 23, "minecraft:creeper", 99);
+        Map<String, Integer> slayers = Map.of("minecraft:zombie", 23, "minecraft:creeper", 49);
         List<AchievementRules.Progress> closest = AchievementRules.closest(
                 builders,
                 slayers,
@@ -142,8 +136,8 @@ class AchievementRulesTest {
                 AchievementRules.CLOSEST_LIST_LIMIT);
         assertEquals(3, closest.size());
         assertEquals("minecraft:creeper", closest.get(0).id());
-        assertEquals(99, closest.get(0).count());
-        assertEquals(100, closest.get(0).nextTarget());
+        assertEquals(49, closest.get(0).count());
+        assertEquals(50, closest.get(0).nextTarget());
         assertEquals("minecraft:zombie", closest.get(1).id());
         assertEquals(23, closest.get(1).count());
         assertEquals(25, closest.get(1).nextTarget());
