@@ -64,7 +64,6 @@
     "LivingEntityHurtMixin",
     "LightEngineAccess",
     "LlamaSpitMixin",
-    "LivingEntityLootAccess",
     "LivingEntityLootMixin",
     "LootlessMixin",
     "MobAiStepMixin",

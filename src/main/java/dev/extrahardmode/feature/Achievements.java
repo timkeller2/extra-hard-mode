@@ -2,8 +2,6 @@ package dev.extrahardmode.feature;
 
 import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.config.ConfigManager;
-import dev.extrahardmode.mixin.LivingEntityLootAccess;
-import dev.extrahardmode.module.EntityHelper;
 import dev.extrahardmode.module.TutorialCounts;
 import dev.extrahardmode.network.ClientboundAchievementFloatPayload;
 import dev.extrahardmode.network.ClientboundManaPayload;
@@ -183,9 +181,6 @@ public final class Achievements implements FeatureModule {
         if (!(entity instanceof Enemy) || entity instanceof Player) {
             return;
         }
-        if (!lootableKill(entity, level)) {
-            return;
-        }
         Entity attacker = source.getEntity();
         if (!(attacker instanceof ServerPlayer player) || skipPlayer(player)) {
             return;
@@ -231,13 +226,6 @@ public final class Achievements implements FeatureModule {
             return;
         }
         ServerPlayNetworking.send(player, new ClientboundAchievementFloatPayload(x, y, z, remaining));
-    }
-
-    static boolean lootableKill(LivingEntity entity, ServerLevel level) {
-        if (EntityHelper.lootless(entity) || Dragon.skipLoot(entity)) {
-            return false;
-        }
-        return ((LivingEntityLootAccess) entity).tougher$shouldDropLoot(level);
     }
 
     static void tickMana(ServerPlayer player) {

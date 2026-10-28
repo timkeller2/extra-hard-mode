@@ -422,7 +422,7 @@ public final class EhmHelp {
         return Page.of(
                 "tougher.help.achievements.",
                 List.of(
-                        "Achievements: Place many of one block or defeat many of one monster that drops loot.",
+                        "Achievements: Place many of one block or defeat many of one monster.",
                         "Achievements: Each achievement gives 75 experience. Everyone can earn every achievement.",
                         "Achievements: By default the first player to claim one server-wide gets 25 extra experience.",
                         "Achievements: You have (your experience level)% chance to gain a mana level.",

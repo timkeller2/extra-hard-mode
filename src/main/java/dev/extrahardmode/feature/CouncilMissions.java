@@ -88,9 +88,6 @@ public final class CouncilMissions {
         if (!(entity.level() instanceof ServerLevel level)) {
             return;
         }
-        if (!Achievements.lootableKill(entity, level)) {
-            return;
-        }
         Identifier typeId = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
         if (typeId == null) {
             return;

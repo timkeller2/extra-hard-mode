@@ -325,7 +325,7 @@ def build():
             Paragraph("Achievements", s["h"]),
             bullets(
                 [
-                    "Place many of one block, or defeat many of one monster that drops loot. Each claim gives 75 experience. Everyone can earn every achievement.",
+                    "Place many of one block, or defeat many of one monster. Each claim gives 75 experience. Everyone can earn every achievement.",
                     "The first player on the server to claim one gets 25 extra experience by default.",
                     "You have your experience level as a percent chance to gain a mana level.",
                     "The first visit to a biome is 50 experience, and 100 more if you are first on the server. The first habitable home in a biome is house points times 3. The first trip 300 blocks from spawn is 100 experience.",
