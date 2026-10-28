@@ -150,7 +150,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("80 on a copper torch"));
         assertTrue(String.join(" ", lines).contains("does not make it permanent"));
         assertTrue(String.join(" ", lines).contains("Copper torches last twice as long"));
-        assertTrue(String.join(" ", lines).contains("lose 1 light for every 10 blocks below"));
+        assertTrue(String.join(" ", lines).contains("lose 1 light for every 5 blocks below"));
         assertTrue(String.join(" ", lines).contains("remaining time"));
         assertTrue(String.join(" ", lines).contains("Permanent if it never burns out"));
         assertTrue(String.join(" ", lines).contains("Redstone torches are permanent"));

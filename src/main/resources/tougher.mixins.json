@@ -75,6 +75,7 @@
     "MobSunBurnMixin",
     "MobTargetMixin",
     "MonsterLootMixin",
+    "MonsterSpawnLightMixin",
     "MangrovePropaguleBlockMixin",
     "MushroomBlockMixin",
     "NaturalSpawnerMixin",

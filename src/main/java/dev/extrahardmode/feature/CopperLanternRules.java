@@ -1,12 +1,12 @@
 package dev.extrahardmode.feature;
 
 /**
- * Copper lanterns keep their vanilla light at Y=0 and above. Each full 10 blocks
- * below Y=0 removes 1. Y=-9 stays full. Y=-10 loses 1. The result never goes below 0.
+ * Copper lanterns keep their vanilla light at Y=0 and above. Each full 5 blocks
+ * below Y=0 removes 1. Y=-4 stays full. Y=-5 loses 1. The result never goes below 0.
  */
 public final class CopperLanternRules {
     public static final int SURFACE_Y = 0;
-    public static final int DEPTH_STEP = 10;
+    public static final int DEPTH_STEP = 5;
 
     private CopperLanternRules() {}
 

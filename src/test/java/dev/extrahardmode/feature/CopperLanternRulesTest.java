@@ -16,15 +16,15 @@ class CopperLanternRulesTest {
     }
 
     @Test
-    void eachTenBlocksBelowRemovesOne() {
+    void eachFiveBlocksBelowRemovesOne() {
         assertEquals(15, CopperLanternRules.light(15, -1));
-        assertEquals(15, CopperLanternRules.light(15, -9));
-        assertEquals(14, CopperLanternRules.light(15, -10));
-        assertEquals(14, CopperLanternRules.light(15, -19));
-        assertEquals(13, CopperLanternRules.light(15, -20));
-        assertEquals(9, CopperLanternRules.light(15, -64));
-        assertEquals(0, CopperLanternRules.light(15, -150));
-        assertEquals(0, CopperLanternRules.light(15, -160));
+        assertEquals(15, CopperLanternRules.light(15, -4));
+        assertEquals(14, CopperLanternRules.light(15, -5));
+        assertEquals(14, CopperLanternRules.light(15, -9));
+        assertEquals(13, CopperLanternRules.light(15, -10));
+        assertEquals(3, CopperLanternRules.light(15, -64));
+        assertEquals(0, CopperLanternRules.light(15, -75));
+        assertEquals(0, CopperLanternRules.light(15, -80));
     }
 
     @Test

@@ -239,7 +239,7 @@ public final class EhmHelp {
                         "Torches: Placed torches need airflow and a firm block, and campfires also need airflow.",
                         "Torches: Placed torches burn out after 7 Minecraft days (set burn days to 0 to keep them) and dim after 2 days.",
                         "Torches: Light is 14 − (days burning − 2). Copper torches last twice as long.",
-                        "Torches: Copper lanterns below Y=0 lose 1 light for every 10 blocks below. Y=-10 is 1 lower. Y=0 and above stay full.",
+                        "Torches: Copper lanterns below Y=0 lose 1 light for every 5 blocks below. Y=-5 is 1 lower. Y=0 and above stay full.",
                         "Torches: Right-click a torch with coal or charcoal to add 40 days (80 on a copper torch). One item is consumed. That does not make it permanent.",
                         "Torches: Look at a torch, copper torch, or campfire to see remaining time (Permanent if it never burns out).",
                         "Torches: Redstone torches are permanent. They do not burn out, dim, or show a duration.",
@@ -357,6 +357,7 @@ public final class EhmHelp {
                         "Combat: Each defeated boss makes the next 30% harder and richer. The third is a world event.",
                         "Combat: The seventh rolls the Minecraft credits, and you can keep playing.",
                         "Combat: Below Y=48, a visited cave may spawn an extra hostile in light 11. Every 20 blocks you are deeper adds 1. Chance falls by 5% times that block's light.",
+                        "Combat: Below Y=0 in the overworld, hostile mobs can spawn in block light of 1 per 15 blocks down. Y=-15 allows 1. Y=-30 allows 2.",
                         "Combat: Within 64 blocks, a biome boss shows a health bar with its name."));
     }
 

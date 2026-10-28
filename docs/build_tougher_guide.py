@@ -141,7 +141,7 @@ def build():
             [
                 "Placed torches need airflow and a firm block. Campfires need airflow too.",
                 "Torches burn out after 7 Minecraft days and start dimming after 2. Light is 14 minus (days burning minus 2). Copper torches last twice as long.",
-                "Copper lanterns below Y=0 lose 1 light for every 10 blocks below. At Y=-10 the light is 1 lower. At Y=0 and above they stay full.",
+                "Copper lanterns below Y=0 lose 1 light for every 5 blocks below. At Y=-5 the light is 1 lower. At Y=0 and above they stay full.",
                 "Right-click a torch with coal or charcoal to add 40 days (80 on copper). That does not make it permanent.",
                 "Look at a torch or campfire to see the time left. Redstone torches are permanent: they do not burn, dim, or show a duration.",
                 "Breaking a torch with less than 3 days left destroys it. Permanent torches still drop.",
@@ -251,6 +251,7 @@ def build():
             [
                 "Mobs hit harder. Skeletons ignore arrows. Zombies vary about 20% in speed: faster ones hit softer and look smaller.",
                 "Below Y=48, a cave you have walked may spawn an extra hostile. The light may be 11, and every 20 blocks you are below Y=48 adds 1, so Y=28 allows 12 and Y=8 allows 13. The chance falls by 5% times the light of the chosen block.",
+                "Below Y=0 in the overworld, normal hostile mobs can spawn in block light of 1 for every 15 blocks down. At Y=-15 that is light 1. At Y=-30 that is light 2.",
                 "Skeleton and bogged special shots are 1% per 10 blocks from world spawn, and certain at 1,000 blocks or farther.",
                 "Zombies can rise again. Shields absorb the whole blocked hit and last one-third as long.",
                 "Creepers may drop live TNT. TNT sets fire to 20% of the blocks it hits, rounded. Set explosions.tnt.firePercent to 0 to turn that off.",
