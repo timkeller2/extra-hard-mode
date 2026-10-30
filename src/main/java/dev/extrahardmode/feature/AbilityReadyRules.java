@@ -462,9 +462,6 @@ public final class AbilityReadyRules {
         if (AbilityRules.FLIGHT.equals(ability)) {
             return AbilityRules.FEATHER_ID;
         }
-        if (AbilityRules.LIGHT.equals(ability)) {
-            return AbilityRules.COAL_ID;
-        }
         if (AbilityRules.DETECT_ORE.equals(ability)) {
             return AbilityRules.COMPASS_ID;
         }

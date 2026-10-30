@@ -21,6 +21,7 @@ public final class AbilityRules {
     public static final String MAGIC_ARROW = "magic_arrow";
     public static final String FLIGHT = "flight";
     public static final String GROW = "grow";
+    /** Retired. Saved lessons and practice are dropped. Night Vision potions replace it. */
     public static final String LIGHT = "light";
     public static final String POWER_MINE = "power_mine";
     public static final String DETECT_ORE = "detect_ore";
@@ -92,7 +93,6 @@ public final class AbilityRules {
     public static final String DIAMOND_HOE_ID = "minecraft:diamond_hoe";
     public static final String GOLDEN_HOE_ID = "minecraft:golden_hoe";
     public static final String NETHERITE_HOE_ID = "minecraft:netherite_hoe";
-    public static final String COAL_ID = "minecraft:coal";
     public static final String SPIDER_EYE_ID = "minecraft:spider_eye";
     public static final String GOLDEN_SWORD_ID = "minecraft:golden_sword";
     /** Clay brick item, not the bricks block and not stone bricks. */
@@ -136,14 +136,6 @@ public final class AbilityRules {
     public static final int SLOW_SECONDS_PER_POWER = 6;
     /** Blocks the web travels per tick. */
     public static final double SLOW_WEB_SPEED = 1.0;
-    /** Base glow duration, plus this many seconds per rounded ability level. */
-    public static final int LIGHT_SECONDS_BASE = 30;
-    public static final int LIGHT_SECONDS_PER_LEVEL = 30;
-    public static final int TICKS_PER_MINUTE = 1200;
-    /** Light level is this plus whole minutes remaining, capped at {@link #LIGHT_LEVEL}. */
-    public static final int LIGHT_LEVEL_BASE = 9;
-    /** Torch-bright block light (maximum). */
-    public static final int LIGHT_LEVEL = 14;
     private static final int[][] ORE_NEIGHBORS = {
         {1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}
     };
@@ -154,7 +146,6 @@ public final class AbilityRules {
                     MAGIC_ARROW,
                     FLIGHT,
                     GROW,
-                    LIGHT,
                     POWER_MINE,
                     DETECT_ORE,
                     SLOW,
@@ -186,9 +177,6 @@ public final class AbilityRules {
         }
         if (isGrowHoe(itemId)) {
             return GROW;
-        }
-        if (isLightCoal(itemId)) {
-            return LIGHT;
         }
         if (isPowerPickaxe(itemId)) {
             return POWER_MINE;
@@ -228,10 +216,6 @@ public final class AbilityRules {
 
     public static boolean isGrowHoe(String itemId) {
         return itemId != null && itemId.endsWith("_hoe");
-    }
-
-    public static boolean isLightCoal(String itemId) {
-        return COAL_ID.equals(itemId);
     }
 
     public static boolean isPowerPickaxe(String itemId) {
@@ -479,7 +463,6 @@ public final class AbilityRules {
             case MAGIC_ARROW -> "Magic arrow";
             case FLIGHT -> "Flight";
             case GROW -> "Let it grow";
-            case LIGHT -> "Let there be light";
             case POWER_MINE -> "Power mining";
             case DETECT_ORE -> "Detect ore";
             case SLOW -> "Slow";
@@ -507,7 +490,6 @@ public final class AbilityRules {
             case MAGIC_ARROW -> "An arrow can be taught to want a target, and charcoal still remembers the fire.";
             case FLIGHT -> "The sky is only heavy if you agree that it is.";
             case GROW -> "Green things listen, if you speak with a hoe.";
-            case LIGHT -> "Carry a coal, and the dark will negotiate.";
             case POWER_MINE -> "Stone yields to a pick that has been properly introduced.";
             case DETECT_ORE -> "The ground is talkative, if you hold a compass still.";
             case SLOW -> "Haste is a habit. String can interrupt it.";
@@ -538,7 +520,6 @@ public final class AbilityRules {
                 "Hold an arrow and right-click. It seeks a creature along your aim. Charcoal in your inventory adds +2 and makes it burn. It costs 1 mana.";
             case FLIGHT -> "Hold a feather and right-click. Jump to rise, sneak in the air to descend, and sneak on a block to stop.";
             case GROW -> "Hold any hoe and right-click a plant. It costs 1 mana and some hoe durability.";
-            case LIGHT -> "Hold coal and right-click to shine. Right-click again with coal to snuff it.";
             case POWER_MINE -> "Hold any pickaxe and right-click. Hardened stone stops eating extra durability for a while.";
             case DETECT_ORE ->
                 "Hold a compass and right-click. You turn toward the best ore you are skilled enough to sense, preferring ore within 2 blocks of your height.";
@@ -583,7 +564,6 @@ public final class AbilityRules {
                 "magic arrow",
                 "flight",
                 "grow",
-                "light",
                 "power mine",
                 "detect ore",
                 "slow",
@@ -612,7 +592,6 @@ public final class AbilityRules {
             case "fire bolt", "firebolt", "magic arrow", "magicarrow" -> MAGIC_ARROW;
             case "flight" -> FLIGHT;
             case "grow", "let it grow", "letitgrow" -> GROW;
-            case "light", "let there be light" -> LIGHT;
             case "power mine", "power mining", "powermine" -> POWER_MINE;
             case "detect ore", "detectore" -> DETECT_ORE;
             case "slow" -> SLOW;
@@ -670,12 +649,6 @@ public final class AbilityRules {
                     "Let it grow: Each plant grown improves that soil's shown crop-loss modifier by 3.",
                     "Let it grow: Random growth is one plant within 2 blocks by 1 stage, repeated (ability level + hoe bonus) times.",
                     "Let it grow: Hoe bonus: wood/stone 0, copper +1, iron +2, diamond +3, gold +4, netherite +5.");
-            case LIGHT -> List.of(
-                    "Let there be light: Right-click while holding coal. Costs 1 mana. You shine for 30 seconds plus 30 seconds per ability level.",
-                    "Let there be light: Brightness is 9 plus whole minutes remaining, up to torch-bright (14). Right-click again with coal to snuff it.",
-                    "Let there be light: If the glow ends and you still have mana, another mana is spent and it continues, and you gain skill as if you cast it again.",
-                    "Let there be light: One coal is consumed. Two in hand consume both and add +2.",
-                    "Let there be light: A renew spends coal only when you are holding it, and that one adds +2.");
             case POWER_MINE -> List.of(
                     "Power mining: Right-click while holding any pickaxe. Costs 1 mana.",
                     "Power mining: For (ability level × 12) seconds, Tougher extra pickaxe wear on hardened stone is suspended. Ends when the timer expires.",
@@ -808,7 +781,6 @@ public final class AbilityRules {
                 "tougher.ability.index.flight",
                 "tougher.ability.index.magic_arrow",
                 "tougher.ability.index.grow",
-                "tougher.ability.index.light",
                 "tougher.ability.index.power_mine",
                 "tougher.ability.index.detect_ore",
                 "tougher.ability.index.slow",
@@ -837,7 +809,6 @@ public final class AbilityRules {
                 "Feather: Flight",
                 "Arrow: Magic arrow",
                 "Any hoe: Let it grow",
-                "Coal: Let there be light",
                 "Any pickaxe: Power mining",
                 "Compass: Detect ore",
                 "String: Slow",
@@ -1165,12 +1136,49 @@ public final class AbilityRules {
         return next;
     }
 
-    /** A wise teacher who offered Fire bolt now offers Magic Arrow. */
+    /** A wise teacher who offered Fire bolt now offers Magic Arrow. Let there be light is retired. */
     public static String storedWiseAbility(String stored) {
         if (FIRE_BOLT.equals(stored)) {
             return MAGIC_ARROW;
         }
+        if (LIGHT.equals(stored)) {
+            return "";
+        }
         return stored;
+    }
+
+    /** Drops a retired ability from saved practice. */
+    public static Map<String, Integer> dropAbilityUses(Map<String, Integer> uses, String retired) {
+        if (uses == null || retired == null || !uses.containsKey(retired)) {
+            return uses == null ? Map.of() : uses;
+        }
+        Map<String, Integer> next = new HashMap<>(uses);
+        next.remove(retired);
+        return next;
+    }
+
+    /** Drops a retired ability from a saved lesson list. */
+    public static List<String> dropAbilityList(List<String> ids, String retired) {
+        if (ids == null || retired == null || !ids.contains(retired)) {
+            return ids == null ? List.of() : ids;
+        }
+        List<String> next = new ArrayList<>();
+        for (String id : ids) {
+            if (!retired.equals(id)) {
+                next.add(id);
+            }
+        }
+        return next;
+    }
+
+    /** Drops a retired ability's cooldown. */
+    public static Map<String, Long> dropAbilityLastUse(Map<String, Long> lastUse, String retired) {
+        if (lastUse == null || retired == null || !lastUse.containsKey(retired)) {
+            return lastUse == null ? Map.of() : lastUse;
+        }
+        Map<String, Long> next = new HashMap<>(lastUse);
+        next.remove(retired);
+        return next;
     }
 
     /**
@@ -1215,7 +1223,6 @@ public final class AbilityRules {
 
     public static boolean autoRenews(String ability) {
         return FLIGHT.equals(ability)
-                || LIGHT.equals(ability)
                 || IRON_HEART.equals(ability)
                 || MASTER_BUILDER.equals(ability)
                 || DIAMOND_SKIN.equals(ability)
@@ -1501,18 +1508,6 @@ public final class AbilityRules {
             return 0;
         }
         return Math.max(0, (int) Math.round(base * slowHealthFactor(maxHealth)));
-    }
-
-    /** 30 seconds plus 30 seconds per rounded ability level. */
-    public static int lightDurationTicks(double power) {
-        int levels = Math.max(0, (int) Math.round(Math.max(0.0, power)));
-        return Math.max(20, (LIGHT_SECONDS_BASE + LIGHT_SECONDS_PER_LEVEL * levels) * 20);
-    }
-
-    /** Block light: 9 + floor(remaining minutes), capped at 14. */
-    public static int lightLevel(int remainingTicks) {
-        int minutes = Math.max(0, remainingTicks) / TICKS_PER_MINUTE;
-        return Math.min(LIGHT_LEVEL, LIGHT_LEVEL_BASE + minutes);
     }
 
     /**

@@ -50,7 +50,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("Stone and deepslate"));
         assertFalse(String.join(" ", lines).contains("tuff"));
         assertTrue(String.join(" ", lines).contains("Let it grow"));
-        assertTrue(String.join(" ", lines).contains("Let there be light"));
+        assertFalse(String.join(" ", lines).contains("Let there be light"));
         assertTrue(String.join(" ", lines).contains("An arrow casts Magic arrow"));
         assertTrue(String.join(" ", lines).contains("adds +2 and the burn"));
         assertFalse(String.join(" ", lines).contains("Fire bolt"));
@@ -312,7 +312,8 @@ class EhmHelpTest {
         assertTrue(EhmHelp.resolve("slow").lines().stream().anyMatch(line -> line.startsWith("Slow:")));
         assertTrue(EhmHelp.resolve("sense evil").lines().stream().anyMatch(line -> line.startsWith("Sense Evil:")));
         assertTrue(EhmHelp.resolve("smite evil").lines().stream().anyMatch(line -> line.startsWith("Smite Evil:")));
-        assertTrue(EhmHelp.resolve("light").lines().stream().anyMatch(line -> line.startsWith("Let there be light:")));
+        assertEquals(null, EhmHelp.resolve("light"));
+        assertEquals(null, EhmHelp.resolve("let there be light"));
         assertTrue(EhmHelp.resolve("master builder").lines().stream().anyMatch(line -> line.startsWith("Master Builder:")));
         assertTrue(EhmHelp.resolve("diamond skin").lines().stream().anyMatch(line -> line.startsWith("Diamond Skin:")));
         assertTrue(EhmHelp.resolve("empower").lines().stream().anyMatch(line -> line.startsWith("Empower:")));

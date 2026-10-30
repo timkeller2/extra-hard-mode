@@ -86,9 +86,6 @@ public final class AbilityDurationHud {
         if (AbilityRules.POWER_MINE.equals(ability)) {
             return 0x1A2430;
         }
-        if (AbilityRules.LIGHT.equals(ability)) {
-            return 0x2A2610;
-        }
         if (AbilityRules.IRON_HEART.equals(ability)) {
             return 0x22262C;
         }
@@ -114,9 +111,6 @@ public final class AbilityDurationHud {
         if (AbilityRules.POWER_MINE.equals(ability)) {
             return 0x6EC1E4;
         }
-        if (AbilityRules.LIGHT.equals(ability)) {
-            return 0xFFF2A8;
-        }
         if (AbilityRules.IRON_HEART.equals(ability)) {
             return 0xC5CDD6;
         }
@@ -141,9 +135,6 @@ public final class AbilityDurationHud {
     static ItemStack icon(String ability) {
         if (AbilityRules.POWER_MINE.equals(ability)) {
             return new ItemStack(Items.IRON_PICKAXE);
-        }
-        if (AbilityRules.LIGHT.equals(ability)) {
-            return new ItemStack(Items.COAL);
         }
         if (AbilityRules.IRON_HEART.equals(ability)) {
             return new ItemStack(Items.IRON_INGOT);

@@ -387,7 +387,7 @@ public final class EhmHelp {
         return Page.of(
                 "tougher.help.abilities.",
                 List.of(
-                        "Abilities: Hold the catalyst and right-click. Let it grow on a plant; coal for Let there be light.",
+                        "Abilities: Hold the catalyst and right-click. Let it grow on a plant.",
                         "Abilities: An arrow casts Magic arrow. Charcoal in your inventory adds +2 and the burn, and one is consumed. Iron ingot: Iron Heart. Golden sword: Smite Evil.",
                         "Abilities: Smite Evil costs 1/4 mana. With at least 1 mana, the crosshair turns gold on a creature in reach.",
                         "Abilities: A clay brick casts Master Builder. It renews like Iron Heart until you run out of mana.",

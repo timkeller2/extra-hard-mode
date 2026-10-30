@@ -83,7 +83,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
 
-/** Mana abilities: heal, iron heart, magic arrow, flight, let it grow, let there be light, power mining, detect ore, slow, sense evil, smite evil, master builder, diamond skin, empower, battery, lapis shield, write tome, read tome. */
+/** Mana abilities: heal, iron heart, magic arrow, flight, let it grow, power mining, detect ore, slow, sense evil, smite evil, master builder, diamond skin, empower, battery, lapis shield, write tome, read tome. */
 public final class ManaAbilities implements FeatureModule {
     public static final Identifier ID = ExtraHardModeMod.id("mana_abilities");
     /** Look range for Lapis Shield when the click itself did not land on a character. */
@@ -190,9 +190,6 @@ public final class ManaAbilities implements FeatureModule {
                 return InteractionResult.FAIL;
             }
             if (serverPlayer.getMainHandItem().is(Items.GOLDEN_SWORD) && trySmiteEvil(serverPlayer, null)) {
-                return InteractionResult.FAIL;
-            }
-            if (isLightCoal(serverPlayer.getMainHandItem()) && tryLetThereBeLight(serverPlayer)) {
                 return InteractionResult.FAIL;
             }
             if (serverPlayer.getMainHandItem().is(Items.BRICK) && tryMasterBuilder(serverPlayer)) {
@@ -310,14 +307,6 @@ public final class ManaAbilities implements FeatureModule {
                 && WorldGate.isModuleActive(serverLevel, ID)
                 && serverPlayer.getMainHandItem().is(Items.GOLDEN_SWORD)
                 && trySmiteEvil(serverPlayer, null)) {
-            return InteractionResult.FAIL;
-        }
-        if (hand == InteractionHand.MAIN_HAND
-                && player instanceof ServerPlayer serverPlayer
-                && level instanceof ServerLevel serverLevel
-                && WorldGate.isModuleActive(serverLevel, ID)
-                && isLightCoal(serverPlayer.getMainHandItem())
-                && tryLetThereBeLight(serverPlayer)) {
             return InteractionResult.FAIL;
         }
         if (hand == InteractionHand.MAIN_HAND
@@ -2131,82 +2120,19 @@ public final class ManaAbilities implements FeatureModule {
                 0.0);
     }
 
-    public static boolean tryLetThereBeLight(ServerPlayer player) {
-        ItemStack held = player.getMainHandItem();
-        if (!isLightCoal(held) || Achievements.skipPlayer(player)) {
-            return false;
-        }
-        if (!(player.level() instanceof ServerLevel level) || !WorldGate.isModuleActive(level, ID)) {
-            return false;
-        }
-        if (alreadyHandled(player, level)) {
-            return true;
-        }
-        if (remainingPlayerLight(player) > 0) {
-            stopPlayerLight(player);
-            player.sendSystemMessage(Component.translatableWithFallback(
-                    "tougher.message.light_off", "You snuff the light."));
-            markHandled(player);
-            return true;
-        }
-        if (blockedByCooldownOrMana(
-                player, AbilityRules.LIGHT, "tougher.ability.light", "Let there be light")) {
-            return true;
-        }
-        int bonus = AbilityRules.catalystBonus(held.getCount());
-        double power = abilityPower(player, AbilityRules.LIGHT, bonus);
-        spend(player, held.getItem(), AbilityRules.LIGHT);
-        startPlayerLight(player, power);
-        castEffect(player, SoundEvents.CONDUIT_ACTIVATE, ParticleTypes.END_ROD, ParticleTypes.GLOW);
-        tellAbilityUse(player, "tougher.ability.light", "Let there be light", power);
-        return true;
-    }
-
-    static boolean isLightCoal(ItemStack stack) {
-        return stack != null && !stack.isEmpty() && AbilityRules.isLightCoal(heldItemId(stack));
-    }
-
-    static void startPlayerLight(ServerPlayer player, double power) {
-        int duration = AbilityRules.lightDurationTicks(power);
-        player.setAttached(EhmAttachments.EHM_LIGHT_REMAINING, duration);
-        player.setAttached(EhmAttachments.EHM_LIGHT_BAR_MAX, duration);
-        placeFollowLight(player);
-        sendAbilityDurations(player);
-    }
-
+    /** Ends a glow that was already running. The ability can no longer be cast. */
     static void tickPlayerLight(ServerPlayer player) {
-        int remaining = remainingPlayerLight(player);
-        if (remaining <= 0) {
-            clearPlayerLight(player);
+        Long packed = player.getAttachedOrElse(EhmAttachments.EHM_LIGHT_POS, Long.MIN_VALUE);
+        boolean placed = packed != null && packed != Long.MIN_VALUE;
+        if (remainingPlayerLight(player) <= 0 && !placed) {
             return;
         }
-        if (Achievements.skipPlayer(player) || !WorldGate.isModuleActive(player.level(), ID)) {
-            stopPlayerLight(player);
-            return;
-        }
-        remaining--;
-        if (remaining > 0) {
-            player.setAttached(EhmAttachments.EHM_LIGHT_REMAINING, remaining);
-            placeFollowLight(player);
-            return;
-        }
-        if (AbilityRules.hasManaToUse(AbilityRules.LIGHT, Achievements.currentMana(player))) {
-            int bonus = renewCatalystBonus(player, Items.COAL);
-            double power = abilityPower(player, AbilityRules.LIGHT, bonus);
-            consumeRenewCatalyst(player, Items.COAL);
-            player.setAttached(
-                    EhmAttachments.EHM_MANA_CURRENT,
-                    Math.max(0.0, Achievements.currentMana(player) - AbilityRules.manaCost(AbilityRules.LIGHT)));
-            Achievements.sendMana(player);
-            recordAbilityUse(player, AbilityRules.LIGHT);
-            startPlayerLight(player, power);
-            castEffect(player, SoundEvents.CONDUIT_ACTIVATE, ParticleTypes.END_ROD, ParticleTypes.GLOW);
-            tellAbilityUse(player, "tougher.ability.light", "Let there be light", power);
-            return;
-        }
+        boolean tell = remainingPlayerLight(player) > 0;
         stopPlayerLight(player);
-        player.sendSystemMessage(Component.translatableWithFallback(
-                "tougher.message.light_end", "Your light fades."));
+        if (tell) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.light_end", "Your light fades."));
+        }
     }
 
     static int remainingPlayerLight(ServerPlayer player) {
@@ -2215,18 +2141,10 @@ public final class ManaAbilities implements FeatureModule {
     }
 
     static void stopPlayerLight(ServerPlayer player) {
-        boolean wasLit = remainingPlayerLight(player) > 0;
         player.setAttached(EhmAttachments.EHM_LIGHT_REMAINING, 0);
         player.setAttached(EhmAttachments.EHM_LIGHT_BAR_MAX, 0);
         clearPlayerLight(player);
         sendAbilityDurations(player);
-        if (wasLit && player.level().getServer() != null) {
-            putLong(
-                    player,
-                    EhmAttachments.EHM_ABILITY_LAST_USE,
-                    AbilityRules.LIGHT,
-                    player.level().getServer().overworld().getGameTime());
-        }
     }
 
     public static void clearPlayerLight(ServerPlayer player) {
@@ -2254,48 +2172,6 @@ public final class ManaAbilities implements FeatureModule {
         if (level != null) {
             removeOurLight(level, BlockPos.of(packed));
         }
-    }
-
-    static void placeFollowLight(ServerPlayer player) {
-        if (!(player.level() instanceof ServerLevel level)) {
-            return;
-        }
-        BlockPos pos = BlockPos.containing(player.getX(), player.getEyeY(), player.getZ());
-        Long last = player.getAttachedOrElse(EhmAttachments.EHM_LIGHT_POS, Long.MIN_VALUE);
-        String lastDim = player.getAttachedOrElse(EhmAttachments.EHM_LIGHT_DIM, "");
-        String nowDim = level.dimension().identifier().toString();
-        if (last != null && last != Long.MIN_VALUE && (!nowDim.equals(lastDim) || last != pos.asLong())) {
-            clearPlayerLight(player);
-        }
-        if (placeOurLight(level, pos, remainingPlayerLight(player))) {
-            player.setAttached(EhmAttachments.EHM_LIGHT_POS, pos.asLong());
-            player.setAttached(EhmAttachments.EHM_LIGHT_DIM, nowDim);
-        }
-    }
-
-    static boolean placeOurLight(ServerLevel level, BlockPos pos, int remainingTicks) {
-        BlockState current = level.getBlockState(pos);
-        BlockState light = Blocks.LIGHT
-                .defaultBlockState()
-                .setValue(LightBlock.LEVEL, AbilityRules.lightLevel(remainingTicks));
-        if (current.is(Blocks.LIGHT)) {
-            if (current.hasProperty(LightBlock.WATERLOGGED) && current.getValue(LightBlock.WATERLOGGED)) {
-                light = light.setValue(LightBlock.WATERLOGGED, true);
-            }
-            if (!current.equals(light)) {
-                level.setBlock(pos, light, 3);
-            }
-            return true;
-        }
-        if (current.isAir() || current.canBeReplaced()) {
-            level.setBlock(pos, light, 3);
-            return true;
-        }
-        if (current.is(Blocks.WATER) && current.getFluidState().isSource()) {
-            level.setBlock(pos, light.setValue(LightBlock.WATERLOGGED, true), 3);
-            return true;
-        }
-        return false;
     }
 
     static void removeOurLight(ServerLevel level, BlockPos pos) {
@@ -2660,8 +2536,6 @@ public final class ManaAbilities implements FeatureModule {
                 || held.is(Items.SPIDER_EYE)
                 || held.is(Items.BOOK)) {
             hoeBonus += AbilityRules.catalystBonus(held.getCount());
-        } else if (isLightCoal(held)) {
-            hoeBonus += AbilityRules.catalystBonus(held.getCount());
         }
         Component abilityName = abilityName(ability);
         if (held.is(ItemTags.HOES)) {
@@ -2679,13 +2553,6 @@ public final class ManaAbilities implements FeatureModule {
             }
             return;
         }
-        if (isLightCoal(held) && remainingPlayerLight(player) > 0) {
-            player.sendOverlayMessage(Component.translatableWithFallback(
-                    "tougher.message.ability_hint_torch_off",
-                    "Right click to snuff %s...",
-                    abilityName));
-            return;
-        }
         if (held.is(ItemTags.PICKAXES)
                 || held.is(Items.COMPASS)
                 || held.is(Items.PAPER)
@@ -2700,8 +2567,7 @@ public final class ManaAbilities implements FeatureModule {
                 || held.is(Items.QUARTZ_BLOCK)
                 || held.is(Items.LAPIS_LAZULI)
                 || held.is(Items.BOOK)
-                || tomeXp(held) > 0
-                || isLightCoal(held)) {
+                || tomeXp(held) > 0) {
             if (hoeBonus > 0) {
                 player.sendOverlayMessage(Component.translatableWithFallback(
                         "tougher.message.ability_hint_right_bonus",
@@ -2832,7 +2698,6 @@ public final class ManaAbilities implements FeatureModule {
     static boolean shouldPushDurations(ServerPlayer player) {
         int flight = remainingFlight(player);
         int mine = remainingPowerMine(player);
-        int light = remainingPlayerLight(player);
         int heart = remainingIronHeartBuff(player);
         int builder = remainingMasterBuilder(player);
         int skin = remainingDiamondSkin(player);
@@ -2842,7 +2707,6 @@ public final class ManaAbilities implements FeatureModule {
         int warn = AbilityDurationRules.WARN_TICKS;
         return inDurationWindow(flight, warn)
                 || inDurationWindow(mine, warn)
-                || inDurationWindow(light, warn)
                 || inDurationWindow(heart, warn)
                 || inDurationWindow(builder, warn)
                 || inDurationWindow(skin, warn)
@@ -2870,13 +2734,6 @@ public final class ManaAbilities implements FeatureModule {
                 remainingPowerMine(player),
                 player.getAttachedOrElse(EhmAttachments.EHM_POWER_MINE_BAR_MAX, 0),
                 false);
-        addDuration(
-                effects,
-                AbilityRules.LIGHT,
-                remainingPlayerLight(player),
-                player.getAttachedOrElse(EhmAttachments.EHM_LIGHT_BAR_MAX, 0),
-                AbilityRules.autoRenews(AbilityRules.LIGHT)
-                        && AbilityRules.hasManaToUse(AbilityRules.LIGHT, Achievements.currentMana(player)));
         int heart = remainingIronHeartBuff(player);
         if (heart > 0) {
             ServerPlayer caster = ironHeartCaster(player);
@@ -2960,9 +2817,6 @@ public final class ManaAbilities implements FeatureModule {
         } else {
             sendPowerMineInactive(player);
         }
-        if (remainingPlayerLight(player) > 0) {
-            placeFollowLight(player);
-        }
         if (remainingIronHeartBuff(player) > 0) {
             Float amount = player.getAttachedOrElse(EhmAttachments.EHM_IRON_HEART_AMOUNT, 0.0F);
             if (amount != null && amount > 0.0F) {
@@ -3039,9 +2893,6 @@ public final class ManaAbilities implements FeatureModule {
         }
         if (remainingPowerMine(player) > 0) {
             active.add(AbilityRules.POWER_MINE);
-        }
-        if (remainingPlayerLight(player) > 0) {
-            active.add(AbilityRules.LIGHT);
         }
         if (remainingIronHeartBuff(player) > 0) {
             active.add(AbilityRules.IRON_HEART);
@@ -3327,9 +3178,6 @@ public final class ManaAbilities implements FeatureModule {
         }
         if (held.is(Items.STRING)) {
             return AbilityRules.SLOW;
-        }
-        if (isLightCoal(held)) {
-            return AbilityRules.LIGHT;
         }
         if (held.is(Items.SPIDER_EYE)) {
             return AbilityRules.SENSE_EVIL;
@@ -3700,7 +3548,7 @@ public final class ManaAbilities implements FeatureModule {
         return player.getAttachedOrElse(EhmAttachments.EHM_ABILITY_USES, Map.of());
     }
 
-    /** Moves a saved Fire bolt record onto Magic Arrow. Does nothing once that id is gone. */
+    /** Moves a saved Fire bolt record onto Magic Arrow and drops Let there be light. */
     static void foldRetiredFireBolt(ServerPlayer player) {
         if (player == null) {
             return;
@@ -3713,20 +3561,44 @@ public final class ManaAbilities implements FeatureModule {
         boolean learnedHit = learned != null && learned.contains(AbilityRules.FIRE_BOLT);
         boolean taughtHit = taught != null && taught.contains(AbilityRules.FIRE_BOLT);
         boolean lastHit = lastUse != null && lastUse.containsKey(AbilityRules.FIRE_BOLT);
-        if (!usesHit && !learnedHit && !taughtHit && !lastHit) {
+        boolean lightUses = uses != null && uses.containsKey(AbilityRules.LIGHT);
+        boolean lightLearned = learned != null && learned.contains(AbilityRules.LIGHT);
+        boolean lightTaught = taught != null && taught.contains(AbilityRules.LIGHT);
+        boolean lightLast = lastUse != null && lastUse.containsKey(AbilityRules.LIGHT);
+        if (!usesHit && !learnedHit && !taughtHit && !lastHit && !lightUses && !lightLearned && !lightTaught && !lightLast) {
             return;
         }
         if (usesHit) {
-            player.setAttached(EhmAttachments.EHM_ABILITY_USES, AbilityRules.foldFireBoltUses(uses));
+            uses = AbilityRules.foldFireBoltUses(uses);
+            player.setAttached(EhmAttachments.EHM_ABILITY_USES, uses);
+        }
+        if (lightUses) {
+            player.setAttached(
+                    EhmAttachments.EHM_ABILITY_USES, AbilityRules.dropAbilityUses(uses, AbilityRules.LIGHT));
         }
         if (learnedHit) {
-            player.setAttached(EhmAttachments.EHM_ABILITY_LEARNED, AbilityRules.foldFireBoltList(learned));
+            learned = AbilityRules.foldFireBoltList(learned);
+            player.setAttached(EhmAttachments.EHM_ABILITY_LEARNED, learned);
+        }
+        if (lightLearned) {
+            player.setAttached(
+                    EhmAttachments.EHM_ABILITY_LEARNED, AbilityRules.dropAbilityList(learned, AbilityRules.LIGHT));
         }
         if (taughtHit) {
-            player.setAttached(EhmAttachments.EHM_ABILITY_TAUGHT, AbilityRules.foldFireBoltList(taught));
+            taught = AbilityRules.foldFireBoltList(taught);
+            player.setAttached(EhmAttachments.EHM_ABILITY_TAUGHT, taught);
+        }
+        if (lightTaught) {
+            player.setAttached(
+                    EhmAttachments.EHM_ABILITY_TAUGHT, AbilityRules.dropAbilityList(taught, AbilityRules.LIGHT));
         }
         if (lastHit) {
-            player.setAttached(EhmAttachments.EHM_ABILITY_LAST_USE, AbilityRules.foldFireBoltLastUse(lastUse));
+            lastUse = AbilityRules.foldFireBoltLastUse(lastUse);
+            player.setAttached(EhmAttachments.EHM_ABILITY_LAST_USE, lastUse);
+        }
+        if (lightLast) {
+            player.setAttached(
+                    EhmAttachments.EHM_ABILITY_LAST_USE, AbilityRules.dropAbilityLastUse(lastUse, AbilityRules.LIGHT));
         }
     }
 

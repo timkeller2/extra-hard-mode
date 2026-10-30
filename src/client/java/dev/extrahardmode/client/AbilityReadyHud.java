@@ -129,9 +129,6 @@ public final class AbilityReadyHud {
         if (AbilityRules.GROW.equals(ability)) {
             return new ItemStack(Items.IRON_HOE);
         }
-        if (AbilityRules.LIGHT.equals(ability)) {
-            return new ItemStack(Items.COAL);
-        }
         if (AbilityRules.POWER_MINE.equals(ability)) {
             return new ItemStack(Items.IRON_PICKAXE);
         }

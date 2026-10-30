@@ -393,10 +393,10 @@ class AbilityReadyRulesTest {
                 Map.of(AbilityRules.HEAL, 50L),
                 false,
                 null,
-                Set.of(AbilityRules.LIGHT));
+                Set.of(AbilityRules.POWER_MINE));
         assertEquals(AbilityRules.HEAL, cooling.get(0).ability());
         assertEquals(AbilityReadyRules.cooldownSeconds(healCooldown), cooling.get(0).cooldownSeconds());
-        assertEquals(AbilityRules.LIGHT, cooling.get(1).ability());
+        assertEquals(AbilityRules.POWER_MINE, cooling.get(1).ability());
         assertEquals(0, cooling.get(1).cooldownSeconds());
         assertEquals(AbilityReadyRules.FORCED_ICON_PIXELS, AbilityReadyRules.hudIconPixels(cooling.get(1).level(), true));
     }
