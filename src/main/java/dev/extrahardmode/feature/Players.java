@@ -66,7 +66,7 @@ import net.minecraft.world.phys.BlockHitResult;
 
 /**
  * Player-triggered Tougher rules: death forfeit, weak respawn, bed-camp
- * clear, environmental injuries, punching fire, inventory-weight drowning,
+ * clear, environmental injuries, punching fire, inventory-weight sinking,
  * armor slowdown, leaky shields, and boats that smash on long falls.
  */
 public final class Players implements FeatureModule {
