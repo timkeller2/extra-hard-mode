@@ -226,7 +226,7 @@ def build():
         bullets(
             [
                 "Animals wait 6 times as long to breed. Chickens lay eggs 6 times as slowly.",
-                "Grass spreads onto dirt at a Grass Growth Rate of 25%. That is farming.grassGrowthPercent. 100 is the usual rate and 0 never spreads.",
+                "Grass spreads onto dirt at a Grass Growth Rate of 25%. That is farming.grassGrowthPercent. 100 is the usual rate and 0 never spreads. A fence, gate, door, wall, or other block that leaves the top of the grass open does not stop that spread.",
                 "Livestock overgraze by eating grass they can walk to within 6 blocks and turning that block into dirt. About 9 grass blocks keep a large animal fed. About 4 keep a chicken or rabbit fed.",
                 "Sheep overgraze too, and wait 6 times as long to eat grass and regrow their wool. farming.sheepWoolGrazeMultiplier of 1 is the usual wool wait.",
                 "If no grass block is in reach, an animal has a 33% chance to eat from a chest or barrel it can reach within 20 blocks. It eats short grass, the item shears collect, before its breeding food. If neither is left, a second 33% chance starves it and it drops no meat.",

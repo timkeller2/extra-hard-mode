@@ -29,4 +29,15 @@ class GrassSpreadRulesTest {
         assertFalse(GrassSpreadRules.allowSpread(0, 0));
         assertFalse(GrassSpreadRules.allowSpread(-5, 0));
     }
+
+    @Test
+    void openCoverLetsFencesSpreadAndStillBlocksASealedTop() {
+        assertTrue(GrassSpreadRules.openCover(false, false, false));
+        assertFalse(GrassSpreadRules.openCover(true, false, false));
+        assertFalse(GrassSpreadRules.openCover(false, true, false));
+        assertFalse(GrassSpreadRules.openCover(false, false, true));
+        assertEquals(15, GrassSpreadRules.spreadLight(4, 15, 0, 0, 0, 0));
+        assertEquals(9, GrassSpreadRules.spreadLight(2, 0, 9, 3, 1, 0));
+        assertEquals(3, GrassSpreadRules.spreadLight(3, 1, 0, 2, 0, 0));
+    }
 }

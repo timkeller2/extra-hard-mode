@@ -287,7 +287,7 @@ public final class EhmHelp {
                 "tougher.help.animals.",
                 List.of(
                         "Animals: Animals wait 6 times as long to breed again. Chickens lay eggs 6 times as slowly.",
-                        "Animals: Grass Growth Rate: 25% of the usual spread onto dirt. farming.grassGrowthPercent of 100 is the usual rate. 0 never spreads.",
+                        "Animals: Grass Growth Rate: 25%. farming.grassGrowthPercent of 100 is usual and 0 never spreads. A fence, gate, door, wall, or other open block does not stop that spread.",
                         "Animals: Livestock overgraze by eating grass they can walk to within 6 blocks and turning that block into dirt.",
                         "Animals: About 9 grass blocks keep a cow, pig, sheep, or other large animal fed. About 4 keep a chicken or rabbit fed.",
                         "Animals: Sheep overgraze too, and wait 6 times as long to eat grass and regrow their wool. farming.sheepWoolGrazeMultiplier of 1 is the usual wool wait.",

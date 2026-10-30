@@ -75,6 +75,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("6 times as long to breed"));
         assertTrue(String.join(" ", lines).contains("Grass Growth Rate: 25%"));
         assertTrue(String.join(" ", lines).contains("0 never spreads"));
+        assertTrue(String.join(" ", lines).contains("fence, gate, door, wall"));
         assertTrue(String.join(" ", lines).contains("Well Fed or ready gold pushes your level past 40"));
         assertTrue(String.join(" ", lines).contains("overgraze"));
         assertTrue(String.join(" ", lines).contains("9 grass blocks"));
