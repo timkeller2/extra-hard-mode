@@ -45,6 +45,12 @@ public final class InhabitantRules {
     public static final int DEFAULT_TRADE_USES = 3;
     /** Usual shop size. A longer catalog keeps this many and treats the rest as extras. */
     public static final int USUAL_TRADE_TYPES = 4;
+    /** Hauler buy stack with no storage. Each storage block takes {@link #HAULER_PER_STORAGE} off, down to {@link #HAULER_STACK_MIN}. */
+    public static final int HAULER_STACK = 32;
+    public static final int HAULER_STACK_MIN = 16;
+    public static final int HAULER_PER_STORAGE = 2;
+    /** A trader buys two more of each thing he sells. Those buys start with no uses. */
+    public static final int TRADER_BUY_EXTRA = 2;
     public static final int WEALTHY_OFFER_COUNT = USUAL_TRADE_TYPES;
     public static final int WEALTHY_TRADE_USES = DEFAULT_TRADE_USES;
     /** One diamond. Matches a wealthy trader. */
@@ -56,10 +62,10 @@ public final class InhabitantRules {
     public static final int JEWELER_IRON_BLOCK_EMERALDS = 6;
     /** One copper block or one redstone block. Each is a small stack of the loose item, sold as a block. */
     public static final int JEWELER_SMALL_BLOCK_EMERALDS = 2;
-    /** Nine diamonds at {@link #JEWELER_DIAMOND_EMERALDS} each. */
-    public static final int JEWELER_DIAMOND_BLOCK_EMERALDS = 72;
-    /** Nine gold ingots, with the same kind of premium as an iron block. */
-    public static final int JEWELER_GOLD_BLOCK_EMERALDS = 12;
+    /** One diamond block from a jeweler. */
+    public static final int JEWELER_DIAMOND_BLOCK_EMERALDS = 32;
+    /** One gold block from a jeweler. Same emerald price as an iron block. */
+    public static final int JEWELER_GOLD_BLOCK_EMERALDS = 6;
     /**
      * Shop roll top is {@link #TRADE_UPPER_AT_FLOOR}% at this score and
      * {@link #TRADE_UPPER_AT_CAP}% at {@link #MAX_HOUSE_SCORE}. Lower scores use the floor.
@@ -269,8 +275,8 @@ public final class InhabitantRules {
 
     /**
      * Seeds and plantable vegetables a farm neighbor may sell. Most are one item.
-     * Pumpkin seeds and melon seeds are 6, and nether wart is 4. The emerald cost
-     * is hefty next to buying a stack of cobble.
+     * Pumpkin seeds and melon seeds are 6, and nether wart is 4. Glow berries are
+     * 3 for 1 emerald. The other emerald costs are hefty next to a stack of cobble.
      */
     public static final List<TradeListing> FARM_PLANT_SELLS = List.of(
             sellOf("minecraft:wheat_seeds", 1, 6, FARM_PLANT_USES),
@@ -280,7 +286,7 @@ public final class InhabitantRules {
             sellOf("minecraft:sweet_berries", 1, 8, FARM_PLANT_USES),
             sellOf("minecraft:sugar_cane", 1, 8, FARM_PLANT_USES),
             sellOf("minecraft:cocoa_beans", 1, 8, FARM_PLANT_USES),
-            sellOf("minecraft:glow_berries", 1, 12, FARM_PLANT_USES),
+            sellOf("minecraft:glow_berries", 3, 1, FARM_PLANT_USES),
             sellOf("minecraft:pumpkin_seeds", 6, 12, FARM_PLANT_USES),
             sellOf("minecraft:melon_seeds", 6, 12, FARM_PLANT_USES),
             sellOf("minecraft:nether_wart", 4, 12, FARM_PLANT_USES),
@@ -583,7 +589,15 @@ public final class InhabitantRules {
                 "Residents: Looking at one shows hearts, one per 10 health, beside the restock time.",
                 "Residents: They shoot mobs that come within 12 blocks and are after them. The bow hits 3 harder than a normal arrow.",
                 "Residents: A close attack makes them switch to an iron sword. A zombie cannot turn them unless they are already below 5 health.",
-                "Residents: A home stops listing someone who has died or is no longer around the bed.");
+                "Residents: A home stops listing someone who has died or is no longer around the bed.",
+                "Lessons: Speak to a wise teacher and he tells of a hunt every 30 Minecraft days.",
+                "Lessons: The pack is 3 to 8, from the home and his experience, times 1 plus lessons and mana he has given you.",
+                "Lessons: The first hunts are easier creatures. Later hunts are harder. It lies 200 to 500 blocks north, south, east, or west.",
+                "Lessons: His name, the pack, and the direction show on your screen. At that distance the direction becomes near here.",
+                "Lessons: Come back closer than that distance and the direction returns.",
+                "Lessons: After 2 minutes out there, on land, at night or below ground, one spawns every 5 to 15 seconds within 20 to 40 blocks.",
+                "Lessons: Those creatures give triple experience and double loot, and they always drop both. They vanish after 3 Minecraft days.",
+                "Lessons: An unfinished hunt ends after 14 Minecraft days. Each wise teacher can give you a different hunt, and each player has his own.");
     }
 
     public static List<String> homesShopLines() {
@@ -595,15 +609,19 @@ public final class InhabitantRules {
                 "Shops: Each trade adds 1 trading experience. A stock change adds the square root of that experience to the house points.",
                 "Shops: Each stock change rolls item amounts once from -25% to +25%, then adds 0 to 25 for house points and trading experience.",
                 "Shops: That total adds items when you buy and subtracts the items required when you sell to the resident. Emerald prices stay the same.",
-                "Shops: A farm neighbor may sell one seed or plantable vegetable for 6 to 16 emeralds. Pumpkin and melon seeds are 6, and nether wart is 4.",
+                "Shops: A hauler pays 1 emerald for 32 of a block. Each chest, barrel, or shulker box takes 2 off that stack, down to 16.",
+                "Shops: A farm neighbor may sell one seed or plantable vegetable for 6 to 16 emeralds. Pumpkin and melon seeds are 6, and nether wart is 4. Glow berries are 3 for 1 emerald.",
+                "Shops: A trader also buys each thing he sells. The buy stack is 2 larger and pays the same number of emeralds.",
+                "Shops: Those buys start with no uses. Buying from him adds 1 use to each of them. Selling him anything spends 1 use on each of them.",
                 "Shops: A jeweler sells a diamond for 8 emeralds, 4 gold ingots for 2, an iron block for 6, and a copper or redstone block for 2.",
-                "Shops: Larger jewelers also sell lapis, amethyst, quartz, gold nuggets, and blocks of gold, lapis, amethyst, quartz, and diamond. A diamond block is 72 emeralds.",
+                "Shops: Larger jewelers also sell lapis, amethyst, quartz, gold nuggets, and blocks of gold, lapis, amethyst, quartz, and diamond.",
+                "Shops: A gold block is 6 emeralds and a diamond block is 32.",
                 "Shops: An armorsmith sells one heavy iron piece each restock, and the piece can change. Other sales are enchanted iron armor, each a different slot.",
                 "Shops: A larger iron shop may buy iron. A master armorsmith sells one heavy diamond piece the same way, plus enchanted diamond armor, and may buy diamonds.",
                 "Shops: Heavy iron costs 12, 15, 21, or 24 emeralds for boots, a helmet, leggings, or a chestplate. Heavy diamond costs four times that.",
                 "Shops: Enchanted iron armor costs 6, 8, 11, or 12 emeralds for those slots. Enchanted diamond armor costs the same as heavy iron.",
                 "Shops: A brewer sells one level 2 potion each restock, and that potion can change. Up to 3 other potions cost 1 emerald.",
-                "Shops: A larger brewer sells brewing ingredients for 1 emerald, such as nether wart, blaze powder, glowstone, and ghast tears.",
+                "Shops: A larger brewer sells one of each brewing ingredient for 1 emerald, such as nether wart, blaze powder, glowstone, and ghast tears.",
                 "Shops: A loot collector pays 1 emerald for 4 spider eyes, 4 gunpowder, or 8 bones.",
                 "Shops: A larger loot collector also pays 1 emerald for 8 rotten flesh, 8 string, 4 slimeballs, 6 leather, or 12 arrows.",
                 "Shops: That shop also pays 1 emerald for 6 ink sacs, 2 phantom membranes, 2 ender pearls, 2 blaze rods, or 1 ghast tear.");
@@ -617,6 +635,7 @@ public final class InhabitantRules {
                 "Bounties: The next bounty from that resident waits 7 Minecraft days after the last one was given, and only after you finish the previous one.",
                 "Bounties: Each council member can give you one. You can hold 5 at a time, counting hunts and unpaid emerald turn-ins.",
                 "Bounties: A kill counts for every open bounty on that mob.",
+                "Bounties: A natural spawn within 128 blocks has a 15% chance per open bounty to be that creature. The first success is kept, so more bounties make it more likely.",
                 "Bounties: Finishing grants XP equal to one quarter of the slain mobs' health plus 25, with 10% more per extra house point.",
                 "Bounties: You also get a congratulations message and a sound. Return to that resident for emeralds equal to one tenth of that XP.",
                 "Bounties: Collecting plays a sound. If 7 days have passed, that resident offers a new bounty.",
@@ -998,9 +1017,15 @@ public final class InhabitantRules {
         return pickName(homeId == null ? 0 : homeId.hashCode());
     }
 
-    /** Cobble (and similar dumps) per emerald. More chests → better rate. */
+    /** Cobble (and similar dumps) per emerald. Each storage block takes 2 off the stack of 32, down to 16. */
     public static int haulerStack(int storage) {
-        return storage >= 2 ? 16 : 32;
+        int blocks = Math.max(0, storage);
+        return Math.max(HAULER_STACK_MIN, HAULER_STACK - HAULER_PER_STORAGE * blocks);
+    }
+
+    /** Items a trader asks for when buying back a stack he is currently selling. */
+    public static int traderBuyCount(int sellCount) {
+        return Math.max(0, sellCount) + TRADER_BUY_EXTRA;
     }
 
     public static int farmWheatBuy(boolean blight) {
@@ -1472,7 +1497,33 @@ public final class InhabitantRules {
             int count = adjustedQuantity(listing.count(), quantityPercent, listing.buy());
             scaled.add(listing.withCount(count).withUses(scaledAmount(listing.maxUses(), usePercent)));
         }
+        if (TRADER.equals(type)) {
+            return traderBuybacks(scaled);
+        }
         return scaled;
+    }
+
+    /**
+     * One buy for each thing this trader is selling. The stack is {@link #TRADER_BUY_EXTRA}
+     * larger, the emerald price matches the sale, and the buy starts with no uses.
+     */
+    static List<TradeListing> traderBuybacks(List<TradeListing> offers) {
+        List<TradeListing> paired = new ArrayList<>(offers.size() * 2);
+        paired.addAll(offers);
+        for (TradeListing listing : offers) {
+            if (listing.buy()) {
+                continue;
+            }
+            paired.add(new TradeListing(
+                    listing.itemId(),
+                    traderBuyCount(listing.count()),
+                    Math.max(1, listing.emeralds()),
+                    0,
+                    true,
+                    0,
+                    listing.potionId()));
+        }
+        return List.copyOf(paired);
     }
 
     /**
@@ -1609,19 +1660,19 @@ public final class InhabitantRules {
         return List.copyOf(listings);
     }
 
-    /** Brewing ingredients a larger brewer sells after the potion listings. */
+    /** One of each brewing ingredient. A larger brewer sells these for 1 emerald. */
     static List<TradeListing> brewerIngredientListings() {
         return List.of(
-                sellOf("minecraft:nether_wart", 4, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
-                sellOf("minecraft:blaze_powder", 2, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
-                sellOf("minecraft:glowstone_dust", 4, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
-                sellOf("minecraft:redstone", 4, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
-                sellOf("minecraft:sugar", 4, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
-                sellOf("minecraft:glass_bottle", 4, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
-                sellOf("minecraft:spider_eye", 4, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
-                sellOf("minecraft:gunpowder", 2, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
-                sellOf("minecraft:magma_cream", 2, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
-                sellOf("minecraft:fermented_spider_eye", 2, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
+                sellOf("minecraft:nether_wart", 1, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
+                sellOf("minecraft:blaze_powder", 1, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
+                sellOf("minecraft:glowstone_dust", 1, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
+                sellOf("minecraft:redstone", 1, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
+                sellOf("minecraft:sugar", 1, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
+                sellOf("minecraft:glass_bottle", 1, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
+                sellOf("minecraft:spider_eye", 1, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
+                sellOf("minecraft:gunpowder", 1, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
+                sellOf("minecraft:magma_cream", 1, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
+                sellOf("minecraft:fermented_spider_eye", 1, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
                 sellOf("minecraft:glistering_melon_slice", 1, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
                 sellOf("minecraft:golden_carrot", 1, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),
                 sellOf("minecraft:pufferfish", 1, BREWER_INGREDIENT_EMERALDS, BREWER_INGREDIENT_USES),

@@ -6,6 +6,7 @@ import dev.extrahardmode.config.WorldConfig;
 import dev.extrahardmode.feature.Achievements;
 import dev.extrahardmode.feature.CouncilMissions;
 import dev.extrahardmode.feature.ManaAbilities;
+import dev.extrahardmode.feature.WiseLessons;
 import dev.extrahardmode.world.WorldGate;
 import net.fabricmc.fabric.api.entity.event.v1.ServerEntityLevelChangeEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
@@ -37,6 +38,8 @@ public final class EhmNetworking {
         PayloadTypeRegistry.clientboundPlay()
                 .register(ClientboundCouncilBountyPayload.TYPE, ClientboundCouncilBountyPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay()
+                .register(ClientboundWiseLessonPayload.TYPE, ClientboundWiseLessonPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay()
                 .register(ClientboundCompassSpawnPayload.TYPE, ClientboundCompassSpawnPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay()
                 .register(ClientboundAchievementFloatPayload.TYPE, ClientboundAchievementFloatPayload.STREAM_CODEC);
@@ -46,6 +49,7 @@ public final class EhmNetworking {
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             ManaAbilities.clearPlayerLight(handler.player);
             ManaAbilities.clearStrongCastHud(handler.player);
+            WiseLessons.clearHud(handler.player);
         });
         ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.register((player, origin, destination) -> {
             sendSync(player);
@@ -97,6 +101,7 @@ public final class EhmNetworking {
         sendCompassSpawn(handler.player);
         ManaAbilities.onJoin(handler.player);
         CouncilMissions.sendHud(handler.player);
+        WiseLessons.sendHud(handler.player);
         WorldGate.onPlayerJoin(handler.player);
     }
 

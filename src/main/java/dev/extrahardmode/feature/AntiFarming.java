@@ -10,9 +10,14 @@ import dev.extrahardmode.world.EhmTags;
 import dev.extrahardmode.world.FarmlandData;
 import dev.extrahardmode.world.StemFruitData;
 import dev.extrahardmode.world.WorldGate;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
@@ -21,6 +26,7 @@ import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.api.loot.v3.LootTableEvents;
 import dev.extrahardmode.network.ClientboundSoilLookPayload;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -311,10 +317,75 @@ public final class AntiFarming implements FeatureModule {
             }
             boolean hoe = !tool.isEmpty() && tool.is(ItemTags.HOES);
             int quality = hoe ? CropGrowthRules.cocoaHoeQuality(itemId(tool), efficiencyLevel(level, tool)) : 0;
+            int tree = 0;
+            net.minecraft.world.phys.Vec3 origin = context.getOptional(LootContextParams.ORIGIN);
+            if (origin != null) {
+                tree = cocoaTreeModifier(level, BlockPos.containing(origin), state);
+            }
             int beans = CropGrowthRules.ripeCocoaBeans(
-                    level.getRandom().nextInt(2), hoe, quality, level.getRandom().nextInt(100));
+                    level.getRandom().nextInt(2), hoe, quality, level.getRandom().nextInt(100), tree);
             replaceCocoaBeanCount(drops, beans);
         }
+    }
+
+    /**
+     * Percent added to the extra-bean roll. Logs that can hold cocoa and touch
+     * this pod's log, including above and below, are the tree. Other pods on
+     * those logs subtract. Jungle logs add, up to +20%.
+     */
+    static int cocoaTreeModifier(ServerLevel level, BlockPos podPos, BlockState podState) {
+        if (level == null || podPos == null || podState == null || !podState.hasProperty(CocoaBlock.FACING)) {
+            return 0;
+        }
+        BlockPos origin = podPos.relative(podState.getValue(CocoaBlock.FACING));
+        if (!level.isLoaded(origin) || !level.getBlockState(origin).is(BlockTags.SUPPORTS_COCOA)) {
+            return 0;
+        }
+        Set<BlockPos> seen = new HashSet<>();
+        ArrayDeque<BlockPos> queue = new ArrayDeque<>();
+        List<BlockPos> logs = new ArrayList<>();
+        seen.add(origin);
+        queue.add(origin);
+        logs.add(origin);
+        int jungle = level.getBlockState(origin).is(BlockTags.JUNGLE_LOGS) ? 1 : 0;
+        while (!queue.isEmpty() && logs.size() < CropGrowthRules.COCOA_TREE_SCAN_LIMIT) {
+            BlockPos current = queue.poll();
+            for (Direction direction : Direction.values()) {
+                if (logs.size() >= CropGrowthRules.COCOA_TREE_SCAN_LIMIT) {
+                    break;
+                }
+                BlockPos next = current.relative(direction);
+                if (!seen.add(next) || !level.isLoaded(next)) {
+                    continue;
+                }
+                BlockState state = level.getBlockState(next);
+                if (!state.is(BlockTags.SUPPORTS_COCOA)) {
+                    continue;
+                }
+                logs.add(next);
+                queue.add(next);
+                if (state.is(BlockTags.JUNGLE_LOGS)) {
+                    jungle++;
+                }
+            }
+        }
+        int pods = 0;
+        for (BlockPos log : logs) {
+            for (Direction direction : Direction.Plane.HORIZONTAL) {
+                BlockPos side = log.relative(direction);
+                if (side.equals(podPos) || !level.isLoaded(side)) {
+                    continue;
+                }
+                BlockState sideState = level.getBlockState(side);
+                if (!(sideState.getBlock() instanceof CocoaBlock) || !sideState.hasProperty(CocoaBlock.FACING)) {
+                    continue;
+                }
+                if (side.relative(sideState.getValue(CocoaBlock.FACING)).equals(log)) {
+                    pods++;
+                }
+            }
+        }
+        return CropGrowthRules.cocoaTreeModifier(pods, jungle);
     }
 
     /** Keep one cocoa-bean stack and set it to {@code count}. Other drops stay. */

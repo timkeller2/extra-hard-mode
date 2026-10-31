@@ -33,6 +33,7 @@ public final class SpawnReplaceService {
             TagKey.create(Registries.STRUCTURE, ExtraHardModeMod.id("no_spawn_replacement_structures"));
 
     private static final Map<EntityType<?>, List<ReplaceFn>> REPLACEMENTS = new ConcurrentHashMap<>();
+    private static final List<ReplaceFn> ANY_REPLACEMENTS = new CopyOnWriteArrayList<>();
     private static final AtomicBoolean MIXIN_APPLIED = new AtomicBoolean();
     private static final AtomicBoolean MIXIN_MISSING_WARNED = new AtomicBoolean();
 
@@ -65,6 +66,12 @@ public final class SpawnReplaceService {
         }
     }
 
+    /** Checked for every natural spawn, before the per-type rolls. The first hit wins. */
+    public static void registerAny(ReplaceFn fn) {
+        Objects.requireNonNull(fn, "fn");
+        ANY_REPLACEMENTS.add(fn);
+    }
+
     /** First non-null type replacement wins. Register order is module bootstrap order. */
     public static void register(EntityType<?> from, ReplaceFn fn) {
         Objects.requireNonNull(from, "from");
@@ -95,10 +102,17 @@ public final class SpawnReplaceService {
         if (locationExcluded(level, pos)) {
             return false;
         }
+        if (replaceFirst(mob, level, ANY_REPLACEMENTS)) {
+            return true;
+        }
         List<ReplaceFn> fns = REPLACEMENTS.get(mob.getType());
         if (fns == null || fns.isEmpty()) {
             return false;
         }
+        return replaceFirst(mob, level, fns);
+    }
+
+    private static boolean replaceFirst(Mob mob, ServerLevel level, List<ReplaceFn> fns) {
         for (ReplaceFn fn : fns) {
             EntityType<?> replacement = fn.roll(mob, level);
             if (replacement != null && replacement != mob.getType()) {

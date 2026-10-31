@@ -42,6 +42,7 @@ import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.entity.npc.villager.VillagerType;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.MerchantMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.Potion;
@@ -79,6 +80,7 @@ public final class Inhabitants implements FeatureModule {
 
     @Override
     public void bootstrap(FeatureBus bus) {
+        CouncilMissions.registerSpawnReplacement();
         bus.listen(UseBlockCallback.EVENT, ID, Inhabitants::onUseBlock);
         bus.listen(UseEntityCallback.EVENT, ID, Inhabitants::onUseEntity);
         bus.listen(ServerLivingEntityEvents.AFTER_DEATH, ID, Inhabitants::onDeath);
@@ -89,8 +91,10 @@ public final class Inhabitants implements FeatureModule {
     public void serverTick(ServerLevel level) {
         if (level.getGameTime() % 20L == 0L) {
             long day = AntiFarming.overworldDay(level);
+            WiseLessons.despawnExpired(level, day);
             for (ServerPlayer player : level.players()) {
                 CouncilMissions.tick(player, day);
+                WiseLessons.tick(player, level, day);
             }
         }
         if (level.dimension() != Level.OVERWORLD) {
@@ -138,6 +142,14 @@ public final class Inhabitants implements FeatureModule {
     }
 
     static void teach(ServerPlayer player, Villager villager, ServerLevel level, InhabitantData.Home home) {
+        try {
+            teachServices(player, villager, level, home);
+        } finally {
+            WiseLessons.onTalk(player, villager, level, home);
+        }
+    }
+
+    private static void teachServices(ServerPlayer player, Villager villager, ServerLevel level, InhabitantData.Home home) {
         String ability = ensureWiseAbility(villager, level);
         String teacherId = villager.getStringUUID();
         List<String> taughtMana = player.getAttachedOrElse(EhmAttachments.EHM_WISE_MANA, List.of());
@@ -657,7 +669,7 @@ public final class Inhabitants implements FeatureModule {
         }
         int count = offerCount(item, listing.count());
         if (listing.buy()) {
-            return buy(item, count, listing.maxUses());
+            return buy(item, count, listing.emeralds(), listing.maxUses());
         }
         ItemStack result = new ItemStack(item, count);
         if (listing.enchantLevel() > 0 && random != null && registries != null) {
@@ -713,12 +725,13 @@ public final class Inhabitants implements FeatureModule {
         return BuiltInRegistries.ITEM.getValue(id);
     }
 
-    static MerchantOffer buy(net.minecraft.world.item.Item item, int count, int maxUses) {
+    static MerchantOffer buy(net.minecraft.world.item.Item item, int count, int emeralds, int maxUses) {
+        int paid = Math.clamp(emeralds, 1, 64);
         return new MerchantOffer(
                 new ItemCost(item, Math.max(1, count)),
                 Optional.empty(),
-                new ItemStack(Items.EMERALD),
-                Math.max(1, maxUses),
+                new ItemStack(Items.EMERALD, paid),
+                Math.max(0, maxUses),
                 0,
                 0.0F);
     }
@@ -882,6 +895,7 @@ public final class Inhabitants implements FeatureModule {
     }
 
     static void onDeath(LivingEntity entity, DamageSource source) {
+        WiseLessons.onMobDeath(entity);
         CouncilMissions.onKill(entity, source);
         if (!(entity instanceof Villager villager)
                 || !isInhabitant(villager)
@@ -1065,7 +1079,7 @@ public final class Inhabitants implements FeatureModule {
     }
 
     /** One completed trade. Ordinary villagers are ignored. */
-    public static void onTrade(Villager villager) {
+    public static void onTrade(Villager villager, MerchantOffer traded) {
         if (villager == null || !isInhabitant(villager) || villager.level().isClientSide()) {
             return;
         }
@@ -1073,6 +1087,91 @@ public final class Inhabitants implements FeatureModule {
         if (xp < Integer.MAX_VALUE) {
             villager.setAttached(EhmAttachments.EHM_RESIDENT_TRADE_XP, xp + 1);
         }
+        if (traded != null) {
+            adjustTraderBuys(villager, traded);
+        }
+    }
+
+    /**
+     * A purchase from a trader adds one use to every buyback. A sale spends one use
+     * on every buyback. Vanilla already spent the use on the offer that just traded.
+     */
+    static void adjustTraderBuys(Villager villager, MerchantOffer traded) {
+        if (!(villager.level() instanceof ServerLevel level)) {
+            return;
+        }
+        InhabitantData.Home home = InhabitantData.of(level).byLiving(villager.getUUID());
+        if (home == null || !InhabitantRules.TRADER.equals(home.specialty())) {
+            return;
+        }
+        MerchantOffers offers = villager.getOffers();
+        boolean changed = false;
+        if (traded.getBaseCostA().is(Items.EMERALD)) {
+            for (int i = 0; i < offers.size(); i++) {
+                MerchantOffer offer = offers.get(i);
+                if (!pairedTraderBuy(offers, offer)) {
+                    continue;
+                }
+                offers.set(i, copyWithMaxUses(offer, offer.getMaxUses() + 1));
+                changed = true;
+            }
+        } else if (traded.getResult().is(Items.EMERALD)) {
+            for (MerchantOffer offer : offers) {
+                if (offer == traded || !pairedTraderBuy(offers, offer)) {
+                    continue;
+                }
+                if (offer.getUses() < offer.getMaxUses()) {
+                    offer.increaseUses();
+                    changed = true;
+                }
+            }
+        }
+        if (changed) {
+            syncOffers(villager);
+        }
+    }
+
+    /** A buy of an item this trader is also selling. Other buys stay on their own uses. */
+    static boolean pairedTraderBuy(MerchantOffers offers, MerchantOffer offer) {
+        if (offer == null || offer.getBaseCostA().is(Items.EMERALD) || !offer.getResult().is(Items.EMERALD)) {
+            return false;
+        }
+        ItemStack cost = offer.getBaseCostA();
+        for (MerchantOffer other : offers) {
+            if (other.getBaseCostA().is(Items.EMERALD) && other.getResult().is(cost.getItem())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static MerchantOffer copyWithMaxUses(MerchantOffer offer, int maxUses) {
+        return new MerchantOffer(
+                offer.getItemCostA(),
+                offer.getItemCostB(),
+                offer.getResult().copy(),
+                offer.getUses(),
+                Math.max(0, maxUses),
+                offer.getXp(),
+                offer.getPriceMultiplier(),
+                offer.getDemand());
+    }
+
+    static void syncOffers(Villager villager) {
+        Player player = villager.getTradingPlayer();
+        if (player == null || player.containerMenu == null) {
+            return;
+        }
+        if (player.containerMenu instanceof MerchantMenu menu) {
+            menu.updateSellItem();
+        }
+        player.sendMerchantOffers(
+                player.containerMenu.containerId,
+                villager.getOffers(),
+                villager.getVillagerData().level(),
+                villager.getVillagerXp(),
+                villager.showProgressBar(),
+                villager.canRestock());
     }
 
     static int tradeXp(Villager villager) {

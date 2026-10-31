@@ -119,6 +119,35 @@ class CouncilMissionRulesTest {
     }
 
     @Test
+    void eachOpenBountyRollsOnceAndTheFirstHitWins() {
+        assertEquals(15, CouncilMissionRules.BOUNTY_SPAWN_PERCENT);
+        assertEquals(128, CouncilMissionRules.BOUNTY_SPAWN_NEAR_BLOCKS);
+        assertEquals(0, CouncilMissionRules.bountyReplacementIndex(List.of("minecraft:skeleton"), "minecraft:zombie", new int[] {14}));
+        assertEquals(-1, CouncilMissionRules.bountyReplacementIndex(List.of("minecraft:skeleton"), "minecraft:zombie", new int[] {15}));
+        assertEquals(-1, CouncilMissionRules.bountyReplacementIndex(List.of("minecraft:skeleton"), "minecraft:zombie", new int[] {99}));
+        assertEquals(0, CouncilMissionRules.bountyReplacementIndex(List.of("minecraft:skeleton"), "minecraft:zombie", new int[] {0}));
+        assertEquals(
+                1,
+                CouncilMissionRules.bountyReplacementIndex(
+                        List.of("minecraft:skeleton", "minecraft:creeper"), "minecraft:zombie", new int[] {15, 0}));
+        assertEquals(
+                0,
+                CouncilMissionRules.bountyReplacementIndex(
+                        List.of("minecraft:skeleton", "minecraft:creeper"), "minecraft:zombie", new int[] {0, 0}));
+        assertEquals(
+                1,
+                CouncilMissionRules.bountyReplacementIndex(
+                        List.of("minecraft:zombie", "minecraft:skeleton"), "minecraft:zombie", new int[] {0, 10}));
+        assertEquals(
+                -1,
+                CouncilMissionRules.bountyReplacementIndex(
+                        List.of("minecraft:zombie", "minecraft:skeleton"), "minecraft:zombie", new int[] {0, 15}));
+        assertEquals(-1, CouncilMissionRules.bountyReplacementIndex(List.of(), "minecraft:zombie", new int[] {0}));
+        assertEquals(-1, CouncilMissionRules.bountyReplacementIndex(null, "minecraft:zombie", new int[] {0}));
+        assertEquals(0, CouncilMissionRules.bountyReplacementIndex(List.of("minecraft:witch"), "minecraft:spider", new int[] {-100}));
+    }
+
+    @Test
     void eachResidentHoldsOneBountyAndFiveIsTheCap() {
         CouncilMissionRules.Mission first =
                 CouncilMissionRules.assign(CouncilMissionRules.NONE, "a", "Ada", 12, 0, 0, 0);

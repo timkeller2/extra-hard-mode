@@ -30,6 +30,14 @@ public final class CropGrowthRules {
     public static final int COCOA_HOE_NETHERITE = 30;
     /** Each Efficiency level adds this much cocoa hoe quality. */
     public static final int COCOA_EFFICIENCY_PER_LEVEL = 2;
+    /** Taken off the extra-bean chance for each other pod on the same logs. */
+    public static final int COCOA_OTHER_POD_PERCENT = 2;
+    /** Added for each jungle log in that tree, before the cap. */
+    public static final int COCOA_JUNGLE_LOG_PERCENT = 2;
+    /** Jungle-log bonus stops here. Other pods can still take the total below it. */
+    public static final int COCOA_JUNGLE_LOG_PERCENT_CAP = 20;
+    /** Connected-log search stops after this many blocks. */
+    public static final int COCOA_TREE_SCAN_LIMIT = 256;
     /** Sapling random ticks fire 1/10 as often as vanilla. */
     public static final int TREE_DURATION_PERCENT = 1000;
     /** Leaf loot keeps this percent of sapling counts (50 = half). */
@@ -110,12 +118,30 @@ public final class CropGrowthRules {
     }
 
     /**
-     * Ripe cocoa beans. {@code coin} even is 1 and odd is 2. A hoe adds one when
-     * {@code roll} (0–99) is less than {@code quality}.
+     * Extra-bean chance from the tree. Each other pod subtracts
+     * {@link #COCOA_OTHER_POD_PERCENT}. Each jungle log adds
+     * {@link #COCOA_JUNGLE_LOG_PERCENT}, up to {@link #COCOA_JUNGLE_LOG_PERCENT_CAP}.
+     */
+    public static int cocoaTreeModifier(int otherPods, int jungleLogs) {
+        int logs = Math.max(0, jungleLogs);
+        int pods = Math.max(0, otherPods);
+        int logBonus = Math.min(COCOA_JUNGLE_LOG_PERCENT_CAP, logs * COCOA_JUNGLE_LOG_PERCENT);
+        return logBonus - pods * COCOA_OTHER_POD_PERCENT;
+    }
+
+    /**
+     * Ripe cocoa beans. {@code coin} even is 1 and odd is 2. One more bean drops
+     * when {@code roll} (0–99) is less than hoe quality plus {@code treeModifier}.
+     * A harvest without a hoe uses only the tree.
      */
     public static int ripeCocoaBeans(int coin, boolean hoe, int quality, int roll) {
+        return ripeCocoaBeans(coin, hoe, quality, roll, 0);
+    }
+
+    public static int ripeCocoaBeans(int coin, boolean hoe, int quality, int roll, int treeModifier) {
         int count = COCOA_BEAN_MIN + Math.floorMod(coin, COCOA_BEAN_MAX - COCOA_BEAN_MIN + 1);
-        if (hoe && cocoaHoeAddsBean(roll, quality)) {
+        int chance = treeModifier + (hoe ? quality : 0);
+        if (cocoaHoeAddsBean(roll, chance)) {
             count++;
         }
         return count;

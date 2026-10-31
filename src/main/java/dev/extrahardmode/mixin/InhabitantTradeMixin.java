@@ -14,7 +14,7 @@ public abstract class InhabitantTradeMixin {
     @Inject(method = "notifyTrade", at = @At("RETURN"))
     private void tougher$residentTradeXp(MerchantOffer offer, CallbackInfo ci) {
         if ((Object) this instanceof Villager villager) {
-            Inhabitants.onTrade(villager);
+            Inhabitants.onTrade(villager, offer);
         }
     }
 }

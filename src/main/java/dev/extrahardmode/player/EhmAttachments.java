@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.feature.CouncilMissionRules;
+import dev.extrahardmode.feature.WiseLessonRules;
 import it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import java.lang.reflect.Field;
@@ -522,6 +523,67 @@ public final class EhmAttachments {
                     builder -> builder.persistent(COUNCIL_MISSION_CODEC.listOf())
                             .copyOnDeath()
                             .initializer(ArrayList::new));
+
+    public static final Codec<WiseLessonRules.Lesson> WISE_LESSON_CODEC = RecordCodecBuilder.create(
+            instance -> instance.group(
+                            Codec.STRING
+                                    .optionalFieldOf("teacher_id", "")
+                                    .forGetter(WiseLessonRules.Lesson::teacherId),
+                            Codec.STRING
+                                    .optionalFieldOf("teacher_name", "")
+                                    .forGetter(WiseLessonRules.Lesson::teacherName),
+                            Codec.STRING
+                                    .optionalFieldOf("dimension", "")
+                                    .forGetter(WiseLessonRules.Lesson::dimension),
+                            Codec.DOUBLE
+                                    .optionalFieldOf("origin_x", 0.0)
+                                    .forGetter(WiseLessonRules.Lesson::originX),
+                            Codec.DOUBLE
+                                    .optionalFieldOf("origin_z", 0.0)
+                                    .forGetter(WiseLessonRules.Lesson::originZ),
+                            Codec.STRING.optionalFieldOf("mob_id", "").forGetter(WiseLessonRules.Lesson::mobId),
+                            Codec.STRING.optionalFieldOf("plural", "").forGetter(WiseLessonRules.Lesson::plural),
+                            Codec.INT.optionalFieldOf("size", 0).forGetter(WiseLessonRules.Lesson::size),
+                            Codec.INT.optionalFieldOf("distance", 0).forGetter(WiseLessonRules.Lesson::distance),
+                            Codec.STRING
+                                    .optionalFieldOf("direction", "")
+                                    .forGetter(WiseLessonRules.Lesson::direction),
+                            Codec.LONG
+                                    .optionalFieldOf("assigned_day", -1L)
+                                    .forGetter(WiseLessonRules.Lesson::assignedDay),
+                            Codec.INT.optionalFieldOf("spawned", 0).forGetter(WiseLessonRules.Lesson::spawned),
+                            Codec.INT.optionalFieldOf("dwell_ticks", 0).forGetter(WiseLessonRules.Lesson::dwellTicks),
+                            Codec.INT.optionalFieldOf("spawn_wait", -1).forGetter(WiseLessonRules.Lesson::spawnWait),
+                            Codec.BOOL.optionalFieldOf("active", false).forGetter(WiseLessonRules.Lesson::active),
+                            Codec.STRING
+                                    .listOf()
+                                    .optionalFieldOf("mobs", List.of())
+                                    .forGetter(WiseLessonRules.Lesson::mobs))
+                    .apply(instance, WiseLessonRules.Lesson::new));
+
+    /** One hunt per wise teacher. The lifetime count picks the next creature tier. */
+    public static final AttachmentType<List<WiseLessonRules.Lesson>> EHM_WISE_LESSONS = AttachmentRegistry.create(
+            ExtraHardModeMod.id("wise_lessons"),
+            builder -> builder.persistent(WISE_LESSON_CODEC.listOf())
+                    .copyOnDeath()
+                    .initializer(ArrayList::new));
+
+    public static final AttachmentType<Integer> EHM_WISE_LESSON_COUNT = AttachmentRegistry.create(
+            ExtraHardModeMod.id("wise_lesson_count"),
+            builder -> builder.persistent(Codec.INT).copyOnDeath().initializer(() -> 0));
+
+    /** Set on a hunt creature so its drops ignore the griefing penalty. */
+    public static final AttachmentType<Boolean> EHM_WISE_LESSON_MOB = AttachmentRegistry.create(
+            ExtraHardModeMod.id("wise_lesson_mob"),
+            builder -> builder.persistent(Codec.BOOL).initializer(() -> Boolean.FALSE));
+
+    public static final AttachmentType<Long> EHM_WISE_EXPIRE_DAY = AttachmentRegistry.create(
+            ExtraHardModeMod.id("wise_lesson_expire"),
+            builder -> builder.persistent(Codec.LONG).initializer(() -> Long.MAX_VALUE));
+
+    public static final AttachmentType<UUID> EHM_WISE_LESSON_OWNER = AttachmentRegistry.create(
+            ExtraHardModeMod.id("wise_lesson_owner"),
+            builder -> builder.persistent(UUIDUtil.CODEC));
 
     /** Namespace used before the mod id became tougher. Saved animals still carry it. */
     static final String LEGACY_NAMESPACE = "extrahardmode";

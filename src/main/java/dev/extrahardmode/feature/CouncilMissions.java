@@ -1,8 +1,10 @@
 package dev.extrahardmode.feature;
 
+import dev.extrahardmode.module.SpawnReplaceService;
 import dev.extrahardmode.network.ClientboundCouncilBountyPayload;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.world.InhabitantData;
+import dev.extrahardmode.world.WorldGate;
 import java.util.ArrayList;
 import java.util.List;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -15,7 +17,9 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -25,7 +29,18 @@ import net.minecraft.world.item.Items;
  * Per-player council kill bounties. Each council member can hold one, up to five at a time.
  */
 public final class CouncilMissions {
+    private static boolean spawnReplacementRegistered;
+
     private CouncilMissions() {}
+
+    /** One registration. Each open bounty is a separate 15% roll, and the first hit is the only swap. */
+    public static void registerSpawnReplacement() {
+        if (spawnReplacementRegistered) {
+            return;
+        }
+        spawnReplacementRegistered = true;
+        SpawnReplaceService.registerAny(CouncilMissions::rollSpawnReplacement);
+    }
 
     public static List<CouncilMissionRules.Mission> boardOf(ServerPlayer player) {
         List<CouncilMissionRules.Mission> stored = player.getAttached(EhmAttachments.EHM_COUNCIL_MISSIONS);
@@ -75,6 +90,70 @@ public final class CouncilMissions {
         if (changed) {
             save(player, next);
         }
+    }
+
+    /**
+     * Bounty creature for this natural spawn, or null to leave it. Uses the nearest
+     * survival player within {@link CouncilMissionRules#BOUNTY_SPAWN_NEAR_BLOCKS}.
+     */
+    public static EntityType<?> rollSpawnReplacement(Mob mob, ServerLevel level) {
+        if (mob == null || level == null || !WorldGate.isModuleActive(level, Inhabitants.ID)) {
+            return null;
+        }
+        ServerPlayer player = nearestHunter(level, mob);
+        if (player == null) {
+            return null;
+        }
+        long today = AntiFarming.overworldDay(level);
+        List<String> ids = new ArrayList<>();
+        for (CouncilMissionRules.Mission mission : boardOf(player)) {
+            if (mission.active() && !CouncilMissionRules.expired(mission.assignedDay(), today)) {
+                ids.add(mission.mobId());
+            }
+        }
+        if (ids.isEmpty()) {
+            return null;
+        }
+        Identifier spawning = BuiltInRegistries.ENTITY_TYPE.getKey(mob.getType());
+        String spawningId = spawning == null ? "" : spawning.toString();
+        int[] rolls = new int[ids.size()];
+        var random = level.getRandom();
+        for (int i = 0; i < rolls.length; i++) {
+            rolls[i] = random.nextInt(100);
+        }
+        int index = CouncilMissionRules.bountyReplacementIndex(ids, spawningId, rolls);
+        if (index < 0) {
+            return null;
+        }
+        Identifier id = Identifier.tryParse(ids.get(index));
+        if (id == null || !BuiltInRegistries.ENTITY_TYPE.containsKey(id)) {
+            return null;
+        }
+        EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getValue(id);
+        if (type == mob.getType()) {
+            return null;
+        }
+        return type;
+    }
+
+    private static ServerPlayer nearestHunter(ServerLevel level, Mob mob) {
+        double limit = (double) CouncilMissionRules.BOUNTY_SPAWN_NEAR_BLOCKS * CouncilMissionRules.BOUNTY_SPAWN_NEAR_BLOCKS;
+        ServerPlayer nearest = null;
+        double best = limit;
+        for (ServerPlayer player : level.players()) {
+            if (!player.isAlive() || Achievements.skipPlayer(player)) {
+                continue;
+            }
+            double distance = player.distanceToSqr(mob);
+            if (distance > limit) {
+                continue;
+            }
+            if (nearest == null || distance < best) {
+                best = distance;
+                nearest = player;
+            }
+        }
+        return nearest;
     }
 
     public static void onKill(LivingEntity entity, DamageSource source) {

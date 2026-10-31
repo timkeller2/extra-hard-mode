@@ -21,6 +21,10 @@ public final class CouncilMissionRules {
     public static final int MAX_TIER = 3;
     public static final int SPAWN_WEIGHT_FACTOR = 3;
     public static final int HUD_GAP = 2;
+    /** Each open bounty, rolled once, in order. A hit replaces the natural spawn and the rest are not rolled. */
+    public static final int BOUNTY_SPAWN_PERCENT = 15;
+    /** Natural spawns farther than this from the nearest hunting player are left alone. */
+    public static final int BOUNTY_SPAWN_NEAR_BLOCKS = 128;
 
     public record Mob(String id, String label, int hp, int tier) {}
 
@@ -396,6 +400,29 @@ public final class CouncilMissionRules {
             return "";
         }
         return hudLabel(mission.label(), mission.kills(), mission.target());
+    }
+
+    /**
+     * Index of the first open bounty that replaces {@code spawningMobId}.
+     * Each entry is one d100 roll (0–99 succeeds below {@link #BOUNTY_SPAWN_PERCENT}).
+     * A bounty for the creature that is already spawning is skipped, and the next bounty is still rolled.
+     * The first success ends the check.
+     */
+    public static int bountyReplacementIndex(List<String> bountyMobIds, String spawningMobId, int[] rolls) {
+        if (bountyMobIds == null || rolls == null) {
+            return -1;
+        }
+        int count = Math.min(bountyMobIds.size(), rolls.length);
+        for (int i = 0; i < count; i++) {
+            String id = bountyMobIds.get(i);
+            if (id == null || id.isEmpty() || id.equals(spawningMobId)) {
+                continue;
+            }
+            if (Math.floorMod(rolls[i], 100) < BOUNTY_SPAWN_PERCENT) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     /** Three times the heaviest other bag weight. */

@@ -280,7 +280,8 @@ public final class EhmHelp {
                         "Crops: Pumpkins and melons fruit at 1/10 vanilla rate. After each fruit the vine may become a weed, starting at 0% and rising 5% per fruit.",
                         "Crops: Broken pumpkin and melon vines drop no seeds. Shearing a full hive gives 1 honeycomb.",
                         "Crops: A bee that returns with nectar fills a hive or nest at 25% of the usual rate. farming.beeHoneyPercent of 100 is the usual rate. 0 never fills.",
-                        "Crops: A ripe cocoa pod drops 1 or 2 beans. A hoe adds 1 when a d100 is under its quality: iron 0, diamond 10, gold 20, netherite 30, plus 2 per Efficiency. Other hoes are 0."));
+                        "Crops: A ripe cocoa pod drops 1 or 2 beans. One more on a d100 under hoe quality plus the tree: iron 0, diamond 10, gold 20, netherite 30, plus 2 per Efficiency. Other hoes are 0.",
+                        "Crops: Each other pod on that tree is -2%. Each jungle log in the tree is +2%, up to +20%."));
     }
 
     private static Page animals() {
@@ -308,8 +309,7 @@ public final class EhmHelp {
                         "Seasons: Growth speed scales by that seasonal loss plus the soil modifier of the plant's own plot, never faster than vanilla.",
                         "Seasons: Ripe food crops and second-segment sugar cane die at that seasonal loss plus the plot's soil modifier.",
                         "Seasons: For example, 51% loss and −25 soil is 26%. Let it grow never causes that death.",
-                        "Seasons: When the loss rate is above 25%, cows, sheep, and pigs drop 1 less meat.",
-                        "Seasons: When the loss rate is above 60%, those animals drop 2 less, chickens drop 1 less, and bees stay in their hives.",
+                        "Seasons: When the loss rate is above 25%, cows, sheep, and pigs drop 1 less meat. When above 60%, those animals drop 2 less, chickens drop 1 less, and bees stay in their hives.",
                         "Seasons: Above 60% loss, the air turns blighted."));
     }
 

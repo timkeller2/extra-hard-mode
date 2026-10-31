@@ -89,6 +89,20 @@ class CropGrowthRulesTest {
         assertFalse(CropGrowthRules.cocoaHoeAddsBean(0, 0));
         assertTrue(CropGrowthRules.cocoaHoeAddsBean(0, 1));
         assertFalse(CropGrowthRules.cocoaHoeAddsBean(10, 10));
+        assertEquals(0, CropGrowthRules.cocoaTreeModifier(0, 0));
+        assertEquals(2, CropGrowthRules.cocoaTreeModifier(0, 1));
+        assertEquals(20, CropGrowthRules.cocoaTreeModifier(0, 10));
+        assertEquals(20, CropGrowthRules.cocoaTreeModifier(0, 11));
+        assertEquals(-2, CropGrowthRules.cocoaTreeModifier(1, 0));
+        assertEquals(0, CropGrowthRules.cocoaTreeModifier(1, 1));
+        assertEquals(14, CropGrowthRules.cocoaTreeModifier(3, 10));
+        assertEquals(4, CropGrowthRules.cocoaTreeModifier(-3, 2));
+        assertEquals(2, CropGrowthRules.ripeCocoaBeans(0, true, 10, 29, 20));
+        assertEquals(1, CropGrowthRules.ripeCocoaBeans(0, true, 10, 30, 20));
+        assertEquals(2, CropGrowthRules.ripeCocoaBeans(0, false, 30, 19, 20));
+        assertEquals(1, CropGrowthRules.ripeCocoaBeans(0, false, 0, 0, 0));
+        assertEquals(1, CropGrowthRules.ripeCocoaBeans(0, true, 10, 0, -10));
+        assertEquals(2, CropGrowthRules.ripeCocoaBeans(1, true, 10, 0, -10));
     }
 
     @Test

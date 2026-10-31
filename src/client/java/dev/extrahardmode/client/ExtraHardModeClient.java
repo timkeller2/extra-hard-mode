@@ -26,6 +26,7 @@ import dev.extrahardmode.network.ClientboundLightLookPayload;
 import dev.extrahardmode.network.ClientboundSoilLookPayload;
 import dev.extrahardmode.network.ClientboundSyncPayload;
 import dev.extrahardmode.network.ClientboundToastPayload;
+import dev.extrahardmode.network.ClientboundWiseLessonPayload;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import net.fabricmc.api.ClientModInitializer;
@@ -66,6 +67,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
     private static volatile ClientboundSoilLookPayload lastSoilLook;
     private static volatile ClientboundLightLookPayload lastLightLook;
     private static volatile ClientboundCouncilBountyPayload lastCouncilBounty;
+    private static volatile ClientboundWiseLessonPayload lastWiseLesson;
     private static volatile GlobalPos compassSpawn;
 
     public static ClientboundSyncPayload lastSync() {
@@ -116,6 +118,10 @@ public class ExtraHardModeClient implements ClientModInitializer {
 
     public static ClientboundCouncilBountyPayload lastCouncilBounty() {
         return lastCouncilBounty;
+    }
+
+    public static ClientboundWiseLessonPayload lastWiseLesson() {
+        return lastWiseLesson;
     }
 
     public static GlobalPos compassSpawn() {
@@ -350,6 +356,8 @@ public class ExtraHardModeClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(
                 ClientboundCouncilBountyPayload.TYPE, (payload, context) -> lastCouncilBounty = payload);
         ClientPlayNetworking.registerGlobalReceiver(
+                ClientboundWiseLessonPayload.TYPE, (payload, context) -> lastWiseLesson = payload);
+        ClientPlayNetworking.registerGlobalReceiver(
                 ClientboundCompassSpawnPayload.TYPE,
                 (payload, context) -> compassSpawn = payload.set() ? payload.pos() : null);
         ClientPlayNetworking.registerGlobalReceiver(ClientboundAchievementFloatPayload.TYPE, (payload, context) -> {
@@ -370,6 +378,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
             lastSoilLook = null;
             lastLightLook = null;
             lastCouncilBounty = null;
+            lastWiseLesson = null;
             compassSpawn = null;
             AchievementFloater.clear();
             SeasonAtmosphere.clearClient();
@@ -378,6 +387,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
         AbilityDurationHud.register();
         AbilityReadyHud.register();
         CouncilBountyHud.register();
+        WiseLessonHud.register();
         SoilLookHud.register();
         LightLookHud.register();
         AbilityHelp.register();
