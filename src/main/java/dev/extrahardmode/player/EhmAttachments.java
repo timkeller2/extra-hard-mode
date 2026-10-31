@@ -506,7 +506,13 @@ public final class EhmAttachments {
                                     .forGetter(CouncilMissionRules.Mission::giverId),
                             Codec.STRING
                                     .optionalFieldOf("giver_name", "")
-                                    .forGetter(CouncilMissionRules.Mission::giverName))
+                                    .forGetter(CouncilMissionRules.Mission::giverName),
+                            Codec.LONG
+                                    .optionalFieldOf("spawn_count_day", -1L)
+                                    .forGetter(CouncilMissionRules.Mission::spawnCountDay),
+                            Codec.INT
+                                    .optionalFieldOf("spawn_replacements", 0)
+                                    .forGetter(CouncilMissionRules.Mission::spawnReplacements))
                     .apply(instance, CouncilMissionRules.Mission::new));
 
     /** Per-player council kill bounty kept so older saves still load. New hunts use {@link #EHM_COUNCIL_MISSIONS}. */

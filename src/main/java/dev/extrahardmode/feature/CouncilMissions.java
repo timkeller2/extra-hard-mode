@@ -33,7 +33,7 @@ public final class CouncilMissions {
 
     private CouncilMissions() {}
 
-    /** One registration. Each open bounty is a separate 15% roll, and the first hit is the only swap. */
+    /** One registration. Each open bounty is a separate 10% roll, and the first hit is the only swap. */
     public static void registerSpawnReplacement() {
         if (spawnReplacementRegistered) {
             return;
@@ -109,14 +109,23 @@ public final class CouncilMissions {
             return null;
         }
         long today = AntiFarming.overworldDay(level);
-        List<String> ids = new ArrayList<>();
-        for (CouncilMissionRules.Mission mission : boardOf(player)) {
+        List<CouncilMissionRules.Mission> board = boardOf(player);
+        List<CouncilMissionRules.Mission> open = new ArrayList<>();
+        for (CouncilMissionRules.Mission mission : board) {
             if (mission.active() && !CouncilMissionRules.expired(mission.assignedDay(), today)) {
-                ids.add(mission.mobId());
+                open.add(mission);
             }
         }
-        if (ids.isEmpty()) {
+        if (open.isEmpty()) {
             return null;
+        }
+        List<String> ids = new ArrayList<>();
+        boolean[] capped = new boolean[open.size()];
+        for (int i = 0; i < open.size(); i++) {
+            CouncilMissionRules.Mission mission = open.get(i);
+            ids.add(mission.mobId());
+            capped[i] = CouncilMissionRules.spawnCapped(
+                    mission.spawnCountDay(), mission.spawnReplacements(), today);
         }
         Identifier spawning = BuiltInRegistries.ENTITY_TYPE.getKey(mob.getType());
         String spawningId = spawning == null ? "" : spawning.toString();
@@ -125,7 +134,7 @@ public final class CouncilMissions {
         for (int i = 0; i < rolls.length; i++) {
             rolls[i] = random.nextInt(100);
         }
-        int index = CouncilMissionRules.bountyReplacementIndex(ids, spawningId, rolls);
+        int index = CouncilMissionRules.bountyReplacementIndex(ids, spawningId, rolls, capped);
         if (index < 0) {
             return null;
         }
@@ -137,6 +146,12 @@ public final class CouncilMissions {
         if (type == mob.getType()) {
             return null;
         }
+        CouncilMissionRules.Mission chosen = open.get(index);
+        List<CouncilMissionRules.Mission> next = new ArrayList<>();
+        for (CouncilMissionRules.Mission mission : board) {
+            next.add(mission == chosen ? mission.withReplacement(today) : mission);
+        }
+        save(player, next);
         return type;
     }
 

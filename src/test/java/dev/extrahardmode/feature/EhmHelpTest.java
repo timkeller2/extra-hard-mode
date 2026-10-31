@@ -302,7 +302,8 @@ class EhmHelpTest {
         assertTrue(all.contains("Every 3 successes"));
         assertTrue(all.contains("with that resident"));
         assertTrue(all.contains("A kill counts for every open bounty"));
-        assertTrue(all.contains("15% chance per open bounty"));
+        assertTrue(all.contains("10% chance per open bounty"));
+        assertTrue(all.contains("at most 3 hostile mobs in one Minecraft day"));
         assertTrue(all.contains("hostile mob within 128 blocks"));
         assertTrue(all.contains("passive spawns are not replaced"));
         assertTrue(all.contains("more bounties make it more likely"));

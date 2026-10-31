@@ -22,7 +22,9 @@ public final class CouncilMissionRules {
     public static final int SPAWN_WEIGHT_FACTOR = 3;
     public static final int HUD_GAP = 2;
     /** Each open bounty, rolled once, in order. A hit replaces the natural spawn and the rest are not rolled. */
-    public static final int BOUNTY_SPAWN_PERCENT = 15;
+    public static final int BOUNTY_SPAWN_PERCENT = 10;
+    /** Successful replacements of one bounty in one Minecraft day. The next day starts again at zero. */
+    public static final int BOUNTY_REPLACEMENTS_PER_DAY = 3;
     /** Natural spawns farther than this from the nearest hunting player are left alone. */
     public static final int BOUNTY_SPAWN_NEAR_BLOCKS = 128;
 
@@ -47,7 +49,9 @@ public final class CouncilMissionRules {
             int lastCompletedTarget,
             int completedCount,
             String giverId,
-            String giverName) {
+            String giverName,
+            long spawnCountDay,
+            int spawnReplacements) {
         public boolean hasMob() {
             return mobId != null && !mobId.isEmpty();
         }
@@ -75,7 +79,9 @@ public final class CouncilMissionRules {
                     lastCompletedTarget,
                     completedCount,
                     giverId,
-                    giverName);
+                    giverName,
+                    spawnCountDay,
+                    spawnReplacements);
         }
 
         public Mission withGiver(String id, String name) {
@@ -93,7 +99,9 @@ public final class CouncilMissionRules {
                     lastCompletedTarget,
                     completedCount,
                     id == null ? "" : id,
-                    name == null ? "" : name);
+                    name == null ? "" : name,
+                    spawnCountDay,
+                    spawnReplacements);
         }
 
         /**
@@ -117,7 +125,9 @@ public final class CouncilMissionRules {
                     recorded,
                     completedCount + 1,
                     giverId,
-                    giverName);
+                    giverName,
+                    spawnCountDay,
+                    spawnReplacements);
         }
 
         /** Drop the hunt; keep the giver and lifetime progress. */
@@ -136,12 +146,36 @@ public final class CouncilMissionRules {
                     lastCompletedTarget,
                     completedCount,
                     giverId,
-                    giverName);
+                    giverName,
+                    -1L,
+                    0);
+        }
+
+        /** One successful replacement. A new Minecraft day starts the count over at one. */
+        public Mission withReplacement(long today) {
+            int used = CouncilMissionRules.replacementsToday(spawnCountDay, spawnReplacements, today) + 1;
+            return new Mission(
+                    mobId,
+                    label,
+                    hp,
+                    target,
+                    kills,
+                    assignedDay,
+                    houseScore,
+                    completed,
+                    awardedXp,
+                    pendingEmeralds,
+                    lastCompletedTarget,
+                    completedCount,
+                    giverId,
+                    giverName,
+                    today,
+                    used);
         }
     }
 
     public static final Mission NONE =
-            new Mission("", "", 0, 0, 0, -1L, 0, false, 0, 0, 0, 0, "", "");
+            new Mission("", "", 0, 0, 0, -1L, 0, false, 0, 0, 0, 0, "", "", -1L, 0);
 
     public static final List<Mob> MOBS = List.of(
             new Mob("minecraft:zombie", "Zombie", 20, 0),
@@ -411,18 +445,36 @@ public final class CouncilMissionRules {
         return "monster".equals(spawnCategory);
     }
 
+    /** Replacements already counted on {@code today}. A different day counts as none. */
+    public static int replacementsToday(long countedDay, int count, long today) {
+        if (countedDay != today) {
+            return 0;
+        }
+        return Math.max(0, count);
+    }
+
+    /** True when this bounty has already replaced {@link #BOUNTY_REPLACEMENTS_PER_DAY} mobs today. */
+    public static boolean spawnCapped(long countedDay, int count, long today) {
+        return replacementsToday(countedDay, count, today) >= BOUNTY_REPLACEMENTS_PER_DAY;
+    }
+
     /**
      * Index of the first open bounty that replaces {@code spawningMobId}.
      * Each entry is one d100 roll (0–99 succeeds below {@link #BOUNTY_SPAWN_PERCENT}).
      * A bounty for the creature that is already spawning is skipped, and the next bounty is still rolled.
-     * The first success ends the check.
+     * A bounty that already replaced its daily share is skipped the same way.
+     * The first success ends the check. A null {@code capped} list leaves every bounty eligible.
      */
-    public static int bountyReplacementIndex(List<String> bountyMobIds, String spawningMobId, int[] rolls) {
+    public static int bountyReplacementIndex(
+            List<String> bountyMobIds, String spawningMobId, int[] rolls, boolean[] capped) {
         if (bountyMobIds == null || rolls == null) {
             return -1;
         }
         int count = Math.min(bountyMobIds.size(), rolls.length);
         for (int i = 0; i < count; i++) {
+            if (capped != null && i < capped.length && capped[i]) {
+                continue;
+            }
             String id = bountyMobIds.get(i);
             if (id == null || id.isEmpty() || id.equals(spawningMobId)) {
                 continue;
@@ -432,6 +484,10 @@ public final class CouncilMissionRules {
             }
         }
         return -1;
+    }
+
+    public static int bountyReplacementIndex(List<String> bountyMobIds, String spawningMobId, int[] rolls) {
+        return bountyReplacementIndex(bountyMobIds, spawningMobId, rolls, null);
     }
 
     /** Three times the heaviest other bag weight. */
@@ -473,6 +529,8 @@ public final class CouncilMissionRules {
                 prior.lastCompletedTarget(),
                 prior.completedCount(),
                 giverId == null ? "" : giverId,
-                giverName == null ? "" : giverName);
+                giverName == null ? "" : giverName,
+                -1L,
+                0);
     }
 }

@@ -120,16 +120,17 @@ class CouncilMissionRulesTest {
 
     @Test
     void eachOpenBountyRollsOnceAndTheFirstHitWins() {
-        assertEquals(15, CouncilMissionRules.BOUNTY_SPAWN_PERCENT);
+        assertEquals(10, CouncilMissionRules.BOUNTY_SPAWN_PERCENT);
+        assertEquals(3, CouncilMissionRules.BOUNTY_REPLACEMENTS_PER_DAY);
         assertEquals(128, CouncilMissionRules.BOUNTY_SPAWN_NEAR_BLOCKS);
-        assertEquals(0, CouncilMissionRules.bountyReplacementIndex(List.of("minecraft:skeleton"), "minecraft:zombie", new int[] {14}));
-        assertEquals(-1, CouncilMissionRules.bountyReplacementIndex(List.of("minecraft:skeleton"), "minecraft:zombie", new int[] {15}));
+        assertEquals(0, CouncilMissionRules.bountyReplacementIndex(List.of("minecraft:skeleton"), "minecraft:zombie", new int[] {9}));
+        assertEquals(-1, CouncilMissionRules.bountyReplacementIndex(List.of("minecraft:skeleton"), "minecraft:zombie", new int[] {10}));
         assertEquals(-1, CouncilMissionRules.bountyReplacementIndex(List.of("minecraft:skeleton"), "minecraft:zombie", new int[] {99}));
         assertEquals(0, CouncilMissionRules.bountyReplacementIndex(List.of("minecraft:skeleton"), "minecraft:zombie", new int[] {0}));
         assertEquals(
                 1,
                 CouncilMissionRules.bountyReplacementIndex(
-                        List.of("minecraft:skeleton", "minecraft:creeper"), "minecraft:zombie", new int[] {15, 0}));
+                        List.of("minecraft:skeleton", "minecraft:creeper"), "minecraft:zombie", new int[] {10, 0}));
         assertEquals(
                 0,
                 CouncilMissionRules.bountyReplacementIndex(
@@ -137,11 +138,11 @@ class CouncilMissionRulesTest {
         assertEquals(
                 1,
                 CouncilMissionRules.bountyReplacementIndex(
-                        List.of("minecraft:zombie", "minecraft:skeleton"), "minecraft:zombie", new int[] {0, 10}));
+                        List.of("minecraft:zombie", "minecraft:skeleton"), "minecraft:zombie", new int[] {0, 9}));
         assertEquals(
                 -1,
                 CouncilMissionRules.bountyReplacementIndex(
-                        List.of("minecraft:zombie", "minecraft:skeleton"), "minecraft:zombie", new int[] {0, 15}));
+                        List.of("minecraft:zombie", "minecraft:skeleton"), "minecraft:zombie", new int[] {0, 10}));
         assertEquals(-1, CouncilMissionRules.bountyReplacementIndex(List.of(), "minecraft:zombie", new int[] {0}));
         assertEquals(-1, CouncilMissionRules.bountyReplacementIndex(null, "minecraft:zombie", new int[] {0}));
         assertEquals(0, CouncilMissionRules.bountyReplacementIndex(List.of("minecraft:witch"), "minecraft:spider", new int[] {-100}));
@@ -155,6 +156,38 @@ class CouncilMissionRulesTest {
         assertFalse(CouncilMissionRules.bountyCanReplace("misc"));
         assertFalse(CouncilMissionRules.bountyCanReplace(null));
         assertFalse(CouncilMissionRules.bountyCanReplace(""));
+        assertEquals(
+                1,
+                CouncilMissionRules.bountyReplacementIndex(
+                        List.of("minecraft:witch", "minecraft:skeleton"),
+                        "minecraft:zombie",
+                        new int[] {0, 9},
+                        new boolean[] {true, false}));
+        assertEquals(
+                -1,
+                CouncilMissionRules.bountyReplacementIndex(
+                        List.of("minecraft:witch", "minecraft:skeleton"),
+                        "minecraft:zombie",
+                        new int[] {0, 0},
+                        new boolean[] {true, true}));
+        CouncilMissionRules.Mission fresh =
+                CouncilMissionRules.assign(CouncilMissionRules.NONE, "a", "Ada", 12, 0, 0, 0);
+        assertEquals(-1L, fresh.spawnCountDay());
+        assertEquals(0, fresh.spawnReplacements());
+        assertEquals(0, CouncilMissionRules.replacementsToday(fresh.spawnCountDay(), fresh.spawnReplacements(), 4));
+        assertFalse(CouncilMissionRules.spawnCapped(fresh.spawnCountDay(), fresh.spawnReplacements(), 4));
+        CouncilMissionRules.Mission third = fresh.withReplacement(4).withReplacement(4).withReplacement(4);
+        assertEquals(4L, third.spawnCountDay());
+        assertEquals(3, third.spawnReplacements());
+        assertTrue(CouncilMissionRules.spawnCapped(third.spawnCountDay(), third.spawnReplacements(), 4));
+        assertEquals(0, CouncilMissionRules.replacementsToday(third.spawnCountDay(), third.spawnReplacements(), 5));
+        assertFalse(CouncilMissionRules.spawnCapped(third.spawnCountDay(), third.spawnReplacements(), 5));
+        assertEquals(1, third.withReplacement(5).spawnReplacements());
+        assertEquals(3, third.withKills(2).spawnReplacements());
+        assertEquals(4L, third.withKills(2).spawnCountDay());
+        assertEquals(0, third.clearHunt().spawnReplacements());
+        assertEquals(-1L, third.clearHunt().spawnCountDay());
+        assertEquals(0, CouncilMissionRules.replacementsToday(4, -2, 4));
     }
 
     @Test
