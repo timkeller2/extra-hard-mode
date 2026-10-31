@@ -203,8 +203,30 @@ class WiseLessonRulesTest {
     @Test
     void xpIsTripledAndMarksExpireAfterThreeDays() {
         assertEquals(15, WiseLessonRules.scaledXp(5));
+        assertEquals(50, WiseLessonRules.scaledXp(5, true));
         assertEquals(0, WiseLessonRules.scaledXp(0));
+        assertEquals(0, WiseLessonRules.scaledXp(0, true));
         assertEquals(0, WiseLessonRules.scaledXp(-2));
+        assertEquals(3, WiseLessonRules.xpFactor(false));
+        assertEquals(10, WiseLessonRules.xpFactor(true));
+        assertEquals(2, WiseLessonRules.lootRolls(false));
+        assertEquals(3, WiseLessonRules.lootRolls(true));
+        assertTrue(WiseLessonRules.leadSpawn(0));
+        assertFalse(WiseLessonRules.leadSpawn(1));
+        assertEquals(4.0, WiseLessonRules.leadHealthBonus());
+        assertEquals(0.25, WiseLessonRules.leadScaleBonus());
+        assertEquals(100, WiseLessonRules.wholeHealth(100.2));
+        assertEquals(0, WiseLessonRules.wholeHealth(0));
+        assertEquals(10, WiseLessonRules.leadEmeralds(100, 0));
+        assertEquals(20, WiseLessonRules.leadEmeralds(100, 10));
+        assertEquals(10, WiseLessonRules.leadEmeralds(100, 11));
+        assertEquals(15, WiseLessonRules.leadEmeralds(100, 5));
+        assertEquals(8, WiseLessonRules.leadEmeralds(80, 0));
+        assertEquals(16, WiseLessonRules.leadEmeralds(80, 8));
+        assertEquals(13, WiseLessonRules.leadEmeralds(130, 0));
+        assertEquals(26, WiseLessonRules.leadEmeralds(130, 13));
+        assertEquals(0, WiseLessonRules.leadEmeralds(0, 4));
+        assertEquals(0, WiseLessonRules.leadEmeralds(-5, 1));
         assertEquals(13, WiseLessonRules.expireDay(10));
         WiseLessonRules.Mark mark = WiseLessonRules.parseMark("abc|13");
         assertEquals("abc", mark.uuid());

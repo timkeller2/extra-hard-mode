@@ -198,6 +198,8 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("every 30 Minecraft days"));
         assertTrue(String.join(" ", lines).contains("near here"));
         assertTrue(String.join(" ", lines).contains("triple experience"));
+        assertTrue(String.join(" ", lines).contains("5 times the health"));
+        assertTrue(String.join(" ", lines).contains("10 times the experience"));
         assertTrue(String.join(" ", lines).contains("An unfinished hunt ends after 14 Minecraft days"));
         assertTrue(String.join(" ", lines).contains("each player has his own"));
         assertTrue(String.join(" ", lines).contains("Those buys start with no uses"));
@@ -276,6 +278,9 @@ class EhmHelpTest {
         assertTrue(all.contains("every 30 Minecraft days"));
         assertTrue(all.contains("near here"));
         assertTrue(all.contains("triple experience"));
+        assertTrue(all.contains("5 times the health"));
+        assertTrue(all.contains("10 times the experience"));
+        assertTrue(all.contains("emeralds from 10% to 20% of that health"));
         assertTrue(all.contains("An unfinished hunt ends after 14 Minecraft days"));
         assertTrue(all.contains("each player has his own"));
         assertTrue(all.contains("master armorsmith"));

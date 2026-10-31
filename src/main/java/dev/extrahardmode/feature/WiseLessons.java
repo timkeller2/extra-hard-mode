@@ -1,5 +1,6 @@
 package dev.extrahardmode.feature;
 
+import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.network.ClientboundWiseLessonPayload;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.world.InhabitantData;
@@ -21,6 +22,11 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -34,12 +40,21 @@ import net.minecraft.world.level.block.state.BlockState;
  */
 public final class WiseLessons {
     private static final Map<UUID, String> LAST_HUD = new HashMap<>();
+    private static final Identifier LEAD_HEALTH = ExtraHardModeMod.id("wise_lesson_lead_health");
+    private static final Identifier LEAD_SCALE = ExtraHardModeMod.id("wise_lesson_lead_scale");
+    private static final int EMERALD_STACK = 64;
 
     private WiseLessons() {}
 
     public static boolean isLessonMob(LivingEntity entity) {
         return entity != null
                 && Boolean.TRUE.equals(entity.getAttachedOrElse(EhmAttachments.EHM_WISE_LESSON_MOB, Boolean.FALSE));
+    }
+
+    /** The first creature of its hunt. */
+    public static boolean isLead(LivingEntity entity) {
+        return isLessonMob(entity)
+                && Boolean.TRUE.equals(entity.getAttachedOrElse(EhmAttachments.EHM_WISE_LESSON_LEAD, Boolean.FALSE));
     }
 
     public static void onTalk(ServerPlayer player, Villager villager, ServerLevel level, InhabitantData.Home home) {
@@ -136,7 +151,8 @@ public final class WiseLessons {
                 WiseLessonRules.Second step = WiseLessonRules.afterSecond(updated, inRange, gate, random.nextInt());
                 updated = step.lesson();
                 if (step.attemptSpawn()) {
-                    String mark = trySpawn(player, level, updated, today);
+                    boolean lead = WiseLessonRules.leadSpawn(updated.spawned());
+                    String mark = trySpawn(player, level, updated, today, lead);
                     updated = WiseLessonRules.afterAttempt(updated, mark != null, mark, random.nextInt());
                 }
             }
@@ -279,7 +295,39 @@ public final class WiseLessons {
         return lesson.withSpawn(lesson.spawned(), lesson.spawnWait(), kept, active);
     }
 
-    private static String trySpawn(ServerPlayer player, ServerLevel level, WiseLessonRules.Lesson lesson, long today) {
+    /** One diamond, and emeralds from 10% through 20% of this creature's health. */
+    public static void dropLeadTreasure(LivingEntity mob, ServerLevel level) {
+        if (mob == null || level == null || !isLead(mob)) {
+            return;
+        }
+        mob.spawnAtLocation(level, new ItemStack(Items.DIAMOND));
+        int emeralds = WiseLessonRules.leadEmeralds(
+                WiseLessonRules.wholeHealth(mob.getMaxHealth()), level.getRandom().nextInt());
+        int left = emeralds;
+        while (left > 0) {
+            int pile = Math.min(EMERALD_STACK, left);
+            mob.spawnAtLocation(level, new ItemStack(Items.EMERALD, pile));
+            left -= pile;
+        }
+    }
+
+    private static void promoteLead(Mob mob) {
+        mob.setAttached(EhmAttachments.EHM_WISE_LESSON_LEAD, Boolean.TRUE);
+        addBonus(mob.getAttribute(Attributes.MAX_HEALTH), LEAD_HEALTH, WiseLessonRules.leadHealthBonus());
+        addBonus(mob.getAttribute(Attributes.SCALE), LEAD_SCALE, WiseLessonRules.leadScaleBonus());
+        mob.setHealth(mob.getMaxHealth());
+    }
+
+    private static void addBonus(AttributeInstance attribute, Identifier id, double amount) {
+        if (attribute == null || attribute.hasModifier(id) || amount == 0.0) {
+            return;
+        }
+        attribute.addPermanentModifier(
+                new AttributeModifier(id, amount, AttributeModifier.Operation.ADD_MULTIPLIED_BASE));
+    }
+
+    private static String trySpawn(
+            ServerPlayer player, ServerLevel level, WiseLessonRules.Lesson lesson, long today, boolean lead) {
         RandomSource random = level.getRandom();
         int radius = WiseLessonRules.spawnRadius(random.nextInt());
         double angle = random.nextFloat() * Math.PI * 2.0;
@@ -312,6 +360,9 @@ public final class WiseLessons {
         mob.setAttached(EhmAttachments.EHM_UNNATURAL_SPAWN, Boolean.FALSE);
         mob.setAttached(EhmAttachments.EHM_WISE_LESSON_MOB, Boolean.TRUE);
         mob.setAttached(EhmAttachments.EHM_WISE_LESSON_OWNER, player.getUUID());
+        if (lead) {
+            promoteLead(mob);
+        }
         long expire = WiseLessonRules.expireDay(today);
         mob.setAttached(EhmAttachments.EHM_WISE_EXPIRE_DAY, expire);
         return WiseLessonRules.mark(mob.getStringUUID(), expire);

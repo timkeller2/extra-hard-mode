@@ -597,6 +597,8 @@ public final class InhabitantRules {
                 "Lessons: Come back closer than that distance and the direction returns.",
                 "Lessons: After 2 minutes out there, on land, at night or below ground, one spawns every 5 to 15 seconds within 20 to 40 blocks.",
                 "Lessons: Those creatures give triple experience and double loot, and they always drop both. They vanish after 3 Minecraft days.",
+                "Lessons: The first creature is slightly larger and has 5 times the health.",
+                "Lessons: It drops 10 times the experience and 3 times the loot, plus one diamond and emeralds from 10% to 20% of that health.",
                 "Lessons: An unfinished hunt ends after 14 Minecraft days. Each wise teacher can give you a different hunt, and each player has his own.");
     }
 

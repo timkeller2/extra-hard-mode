@@ -28,6 +28,14 @@ public final class WiseLessonRules {
     public static final int TIER_EVERY = 3;
     public static final int MAX_TIER = 3;
     public static final int XP_FACTOR = 3;
+    /** The first creature of a hunt. Later creatures keep the ordinary factors. */
+    public static final double LEAD_SCALE = 1.25;
+    public static final int LEAD_HEALTH_FACTOR = 5;
+    public static final int LEAD_XP_FACTOR = 10;
+    public static final int LOOT_ROLLS = 2;
+    public static final int LEAD_LOOT_ROLLS = 3;
+    public static final int LEAD_EMERALD_MIN_PERCENT = 10;
+    public static final int LEAD_EMERALD_MAX_PERCENT = 20;
     public static final int NIGHT_START = 13000;
     public static final int NIGHT_END = 23000;
     public static final String NEAR = "near here";
@@ -312,11 +320,69 @@ public final class WiseLessonRules {
         return lines;
     }
 
+    /** True for the creature spawned while none of this hunt have spawned yet. */
+    public static boolean leadSpawn(int alreadySpawned) {
+        return alreadySpawned <= 0;
+    }
+
+    public static int xpFactor(boolean lead) {
+        return lead ? LEAD_XP_FACTOR : XP_FACTOR;
+    }
+
+    public static int lootRolls(boolean lead) {
+        return lead ? LEAD_LOOT_ROLLS : LOOT_ROLLS;
+    }
+
+    /** Added with ADD_MULTIPLIED_BASE so max health becomes {@link #LEAD_HEALTH_FACTOR} times the base. */
+    public static double leadHealthBonus() {
+        return LEAD_HEALTH_FACTOR - 1.0;
+    }
+
+    /** Added with ADD_MULTIPLIED_BASE so the creature is {@link #LEAD_SCALE} times normal size. */
+    public static double leadScaleBonus() {
+        return LEAD_SCALE - 1.0;
+    }
+
     public static int scaledXp(int xp) {
+        return scaledXp(xp, false);
+    }
+
+    public static int scaledXp(int xp, boolean lead) {
         if (xp <= 0) {
             return 0;
         }
-        return xp * XP_FACTOR;
+        return xp * xpFactor(lead);
+    }
+
+    public static int wholeHealth(double health) {
+        if (health <= 0.0 || Double.isNaN(health)) {
+            return 0;
+        }
+        return (int) Math.round(health);
+    }
+
+    /** Rounded share of health. 10% of 100 is 10. */
+    public static int healthShare(int health, int percent) {
+        if (health <= 0 || percent <= 0) {
+            return 0;
+        }
+        return (int) Math.round(health * (percent / 100.0));
+    }
+
+    /**
+     * Emeralds for the first creature: a whole number from 10% through 20% of its health, inclusive.
+     * {@code roll} may be any int.
+     */
+    public static int leadEmeralds(int finalHealth, int roll) {
+        int min = healthShare(finalHealth, LEAD_EMERALD_MIN_PERCENT);
+        int max = healthShare(finalHealth, LEAD_EMERALD_MAX_PERCENT);
+        if (max < min) {
+            max = min;
+        }
+        if (min == max) {
+            return min;
+        }
+        return min + Math.floorMod(roll, max - min + 1);
     }
 
     public static long expireDay(long spawnDay) {

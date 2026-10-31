@@ -325,6 +325,7 @@ def build():
                 "His name, the pack, and the direction show on your screen. At that distance the direction becomes near here. Come back closer and the direction returns.",
                 "After 2 minutes out there, on land, at night or below ground, one spawns every 5 to 15 seconds within 20 to 40 blocks.",
                 "Those creatures give triple experience and double loot, and they always drop both. They vanish after 3 Minecraft days.",
+                "The first creature of a hunt is slightly larger and has 5 times the health. It gives 10 times the experience and 3 times the loot, plus one diamond and emeralds equal to 10% to 20% of that health.",
                 "An unfinished hunt ends after 14 Minecraft days. Each wise teacher can give you a different hunt, and each player has his own.",
             ],
             s["bullet"],

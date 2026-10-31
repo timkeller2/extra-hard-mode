@@ -18,11 +18,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
  * Lesson creatures drop twice and grant triple experience, including kills with no player blow.
- * The guard is set before the inner calls so those rolls are not doubled again.
+ * The first creature of a hunt drops three times, grants ten times the experience, and adds a diamond
+ * and emeralds. The guard is set before the inner calls so those rolls are not multiplied again.
  */
 @Mixin(LivingEntity.class)
 public abstract class WiseLessonLootMixin {
-    private static final ThreadLocal<Boolean> DOUBLING = ThreadLocal.withInitial(() -> Boolean.FALSE);
+    private static final ThreadLocal<Boolean> MULTIPLYING = ThreadLocal.withInitial(() -> Boolean.FALSE);
 
     @Inject(
             method =
@@ -31,20 +32,26 @@ public abstract class WiseLessonLootMixin {
             cancellable = true)
     private void ehm$doubleLessonLoot(
             ServerLevel level, DamageSource source, boolean causedByPlayer, ResourceKey<LootTable> table, CallbackInfo ci) {
-        if (Boolean.TRUE.equals(DOUBLING.get())) {
+        if (Boolean.TRUE.equals(MULTIPLYING.get())) {
             return;
         }
         LivingEntity self = (LivingEntity) (Object) this;
         if (level == null || !WorldGate.isActive(level) || !WiseLessons.isLessonMob(self)) {
             return;
         }
+        boolean lead = WiseLessons.isLead(self);
         ci.cancel();
-        DOUBLING.set(Boolean.TRUE);
+        MULTIPLYING.set(Boolean.TRUE);
         try {
-            self.dropFromLootTable(level, source, true, table);
-            self.dropFromLootTable(level, source, true, table);
+            int rolls = WiseLessonRules.lootRolls(lead);
+            for (int i = 0; i < rolls; i++) {
+                self.dropFromLootTable(level, source, true, table);
+            }
         } finally {
-            DOUBLING.set(Boolean.FALSE);
+            MULTIPLYING.set(Boolean.FALSE);
+        }
+        if (lead) {
+            WiseLessons.dropLeadTreasure(self, level);
         }
     }
 
@@ -67,6 +74,6 @@ public abstract class WiseLessonLootMixin {
         if (level == null || !WorldGate.isActive(level) || !WiseLessons.isLessonMob(self)) {
             return;
         }
-        cir.setReturnValue(WiseLessonRules.scaledXp(cir.getReturnValueI()));
+        cir.setReturnValue(WiseLessonRules.scaledXp(cir.getReturnValueI(), WiseLessons.isLead(self)));
     }
 }
