@@ -48,4 +48,27 @@ class ExplorationRulesTest {
         assertEquals("an unknown land", ExplorationRules.biomeFallbackName(null));
         assertEquals("biome.minecraft.plains", ExplorationRules.biomeTranslationKey("minecraft", "plains"));
     }
+
+    @Test
+    void homeExperienceRepeatsBeyondTwoHundredFiftyBlocks() {
+        assertEquals(250, ExplorationRules.HOME_BIOME_SPACING);
+        String near = ExplorationRules.homeAwardRecord("minecraft:jungle", "minecraft:overworld", 0, 0);
+        assertEquals(
+                new ExplorationRules.HomeAward("minecraft:jungle", "minecraft:overworld", 0, 0),
+                ExplorationRules.parseHomeAward(near));
+        assertEquals(null, ExplorationRules.parseHomeAward("minecraft:jungle"));
+        java.util.List<String> awards = java.util.List.of(near, "minecraft:jungle");
+        assertFalse(ExplorationRules.homeEarnsExperience(awards, "minecraft:jungle", "minecraft:overworld", 250, 0));
+        assertFalse(ExplorationRules.homeEarnsExperience(awards, "minecraft:jungle", "minecraft:overworld", 0, 0));
+        assertTrue(ExplorationRules.homeEarnsExperience(awards, "minecraft:jungle", "minecraft:overworld", 251, 0));
+        assertTrue(ExplorationRules.homeEarnsExperience(awards, "minecraft:jungle", "minecraft:overworld", 0, -251));
+        assertTrue(ExplorationRules.homeEarnsExperience(awards, "minecraft:plains", "minecraft:overworld", 0, 0));
+        assertTrue(ExplorationRules.homeEarnsExperience(awards, "minecraft:jungle", "minecraft:the_nether", 0, 0));
+        assertTrue(ExplorationRules.homeEarnsExperience(java.util.List.of("minecraft:jungle"), "minecraft:jungle", "minecraft:overworld", 10, 10));
+        assertFalse(ExplorationRules.homeEarnsExperience(awards, "", "minecraft:overworld", 1000, 0));
+        assertFalse(ExplorationRules.homeEarnsExperience(awards, null, "minecraft:overworld", 1000, 0));
+        assertTrue(ExplorationRules.homeEarnsExperience(java.util.List.of(), "minecraft:jungle", "minecraft:overworld", 0, 0));
+        assertEquals("Completing this home can earn experience.", ExplorationRules.homeExperienceProspect(true));
+        assertTrue(ExplorationRules.homeExperienceProspect(false).contains("within 250 blocks"));
+    }
 }

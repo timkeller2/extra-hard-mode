@@ -25,7 +25,7 @@ import net.minecraft.world.level.storage.LevelResource;
 
 /** Per-dimension TOML, stored under the overworld save and keyed by {@code dimension().identifier()}. */
 public final class WorldConfig {
-    public static final int CONFIG_VERSION = 7;
+    public static final int CONFIG_VERSION = 8;
 
     private final Identifier dimensionId;
     private final Map<Identifier, Boolean> modules = new LinkedHashMap<>();
@@ -172,8 +172,8 @@ public final class WorldConfig {
     private double bossDifficultyPercentPerStep = 1.0;
     private double bossTreasurePercentScale = 3.0;
     private int inhabitantMinVolume = 24;
-    private int inhabitantMaxVolume = 300;
-    private int inhabitantMinLight = 8;
+    private int inhabitantMaxVolume = 400;
+    private int inhabitantMinLight = 5;
     private int inhabitantMinScore = 12;
     private int inhabitantSpacing = 20;
     private int inhabitantBaseChancePercent = 8;
@@ -1632,8 +1632,8 @@ public final class WorldConfig {
         villagerNerfBlockDiamondGear = file.getOrElse("villagerNerf.blockDiamondGearTrades", true);
         villagerNerfNoviceMending = file.getOrElse("villagerNerf.nerfNoviceMending", true);
         inhabitantMinVolume = Math.max(1, getInt(file, "inhabitants.minVolume", 24));
-        inhabitantMaxVolume = Math.max(inhabitantMinVolume, getInt(file, "inhabitants.maxVolume", 300));
-        inhabitantMinLight = Math.clamp(getInt(file, "inhabitants.minLight", 8), 0, 15);
+        inhabitantMaxVolume = Math.max(inhabitantMinVolume, getInt(file, "inhabitants.maxVolume", 400));
+        inhabitantMinLight = Math.clamp(getInt(file, "inhabitants.minLight", 5), 0, 15);
         inhabitantMinScore = Math.max(0, getInt(file, "inhabitants.minScore", 12));
         inhabitantSpacing = Math.max(0, getInt(file, "inhabitants.spacing", 20));
         inhabitantBaseChancePercent = percent(getInt(file, "inhabitants.baseChancePercent", 8));
@@ -1817,8 +1817,8 @@ public final class WorldConfig {
                 "Interior air blocks required for a home. Smaller rooms do not qualify.",
                 24);
         writeDefaultIfMissing(
-                file, "inhabitants.maxVolume", "Interior air blocks above this are too large for one resident.", 300);
-        writeDefaultIfMissing(file, "inhabitants.minLight", "Minimum block light on interior floor air.", 8);
+                file, "inhabitants.maxVolume", "Interior air blocks above this are too large for one resident.", 400);
+        writeDefaultIfMissing(file, "inhabitants.minLight", "Minimum block light on interior floor air.", 5);
         writeDefaultIfMissing(file, "inhabitants.minScore", "Amenity points required to attract a resident.", 12);
         writeDefaultIfMissing(
                 file, "inhabitants.spacing", "Horizontal blocks between occupied home beds.", 20);
@@ -1936,6 +1936,8 @@ public final class WorldConfig {
      * Schema 6: food regen 600 ticks (30s) → 300 ticks (15s per 1 HP).
      * Schema 7: overgrazing no longer uses a daily check interval. Bite timing
      * comes from largeMarks and smallMarks.
+     * Schema 8: home interior cap 300 → 400, and floor block light 8 → 5.
+     * Only a stored 300 or 8 is rewritten, so a custom value is kept.
      */
     private static void migrate(CommentedFileConfig file) {
         int version = getInt(file, "configVersion", 1);
@@ -1957,6 +1959,14 @@ public final class WorldConfig {
         }
         if (version < 6 && getInt(file, "hunger.slowRegenTicks", 600) == 600) {
             file.set("hunger.slowRegenTicks", HungerRules.DEFAULT_SLOW_REGEN_TICKS);
+        }
+        if (version < 8) {
+            if (getInt(file, "inhabitants.maxVolume", 300) == 300) {
+                file.set("inhabitants.maxVolume", 400);
+            }
+            if (getInt(file, "inhabitants.minLight", 8) == 8) {
+                file.set("inhabitants.minLight", 5);
+            }
         }
         if (version < 7) {
             file.remove("farming.overgrazing.intervalTicks");

@@ -67,6 +67,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("30 emeralds"));
         assertTrue(String.join(" ", lines).contains("down to free"));
         assertTrue(String.join(" ", lines).contains("does not count toward abilities you learn yourself"));
+        assertTrue(String.join(" ", lines).contains("each house point and each point of his trading experience"));
         assertTrue(String.join(" ", lines).contains("does not explode"));
         assertTrue(String.join(" ", lines).contains("lapis lazuli block"));
         assertTrue(String.join(" ", lines).contains("Redstone dust"));
@@ -180,6 +181,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("visit a biome you gain 50 experience"));
         assertTrue(String.join(" ", lines).contains("first player to visit it"));
         assertTrue(String.join(" ", lines).contains("habitable home in a biome"));
+        assertTrue(String.join(" ", lines).contains("within 250 blocks"));
         assertTrue(String.join(" ", lines).contains("house points × 3"));
         assertTrue(String.join(" ", lines).contains("on its right at the same scale"));
         assertTrue(String.join(" ", lines).contains("highest first"));
@@ -246,7 +248,8 @@ class EhmHelpTest {
         }
         String all = String.join(" ", lines);
         assertTrue(all.contains("/tougher help homes"));
-        assertTrue(all.contains("24 to 300"));
+        assertTrue(all.contains("24 to 400"));
+        assertTrue(all.contains("Block light 5"));
         assertTrue(all.contains("12 points"));
         assertTrue(all.contains("Each 48 interior air"));
         assertTrue(all.contains("enclosed room"));
@@ -321,6 +324,7 @@ class EhmHelpTest {
         assertTrue(index.contains("Paper: Healing"));
         assertTrue(index.contains("Golden sword: Smite Evil"));
         assertTrue(index.contains("/tougher ability help <name>"));
+        assertTrue(index.contains("house points plus his trading experience"));
         assertTrue(lines.stream().noneMatch(line -> line.startsWith("Healing:")));
         for (String ability : AbilityRules.ABILITY_IDS) {
             var page = EhmHelp.abilityPage(ability);

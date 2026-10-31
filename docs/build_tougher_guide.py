@@ -305,7 +305,7 @@ def build():
         ),
         bullets(
             [
-                "Paper: Healing. The health is spread across the 6-second blue sparkle. A honey bottle adds +4 and is consumed, including the bottle. Iron ingot: Iron Heart. Feather: Flight. Sneak on a block to stop; sneaking in the air descends. Arrow: Magic arrow. It deals 3 times ability level. Cooldown is 10 seconds minus skill. Every 2 levels, rounded down, another shot goes to a different creature for no extra cost. Charcoal in the hotbar or inventory, not a bundle, adds +2. One charcoal is consumed, and the arrows burn.",
+                "Paper: Healing. The health is spread across the 6-second blue sparkle. A honey bottle adds +4 and is consumed, including the bottle. Iron ingot: Iron Heart. Feather: Flight. Sneak on a block to stop; sneaking in the air descends. Arrow: Magic arrow. It deals 3 times ability level. Cooldown is 10 seconds minus skill. Every 3 levels, rounded down, another shot goes to a different creature for no extra cost. Charcoal in the hotbar or inventory, not a bundle, adds +2. One charcoal is consumed, and the arrows burn.",
                 "Any hoe: Let it grow, on a plant. Any pickaxe: Power mining. Compass: Detect ore. The compass is kept. Nether quartz is not required. The largest nether quartz stack in the hotbar or inventory, not a bundle, adds the square root of its count, rounded, and that many quartz are consumed from that stack. Reach is 4 + ability level minus that ore's difficulty.",
                 "String: Slow. It throws a web that bursts on a creature or a solid block. Spider eye: Sense Evil. Golden sword: Smite Evil. It costs 1/4 mana. With at least 1 mana, the crosshair turns gold on a creature in reach. Clay brick: Master Builder. Diamond: Diamond Skin. Redstone dust in the air: Empower. Quartz block in the air: Battery. Lapis lazuli: Lapis Shield.",
                 "Slow flies up to ability level times 2 plus 4 blocks. The burst slows creatures within the ability level of the landing. The slow is 20% plus 5% per level, up to 80%, for 6 seconds per level. Above 100 health, both the slow and the duration are multiplied by 100 divided by that health. It does not affect you, or any player closer to you than the hit.",
@@ -318,6 +318,7 @@ def build():
                 "You can learn up to half your mana level in abilities, rounded up, by using them. Unlearned use still gains skill, at -3 power, floored at 1, until a slot is free.",
                 "Bottom-right icons list abilities above level 2, highest first. Each icon is 5% of normal size times that level, and that level sits on its right at the same scale. Hold a book to see all of them. Otherwise only an active ability, one on cooldown, or the ability for the item in your hand is shown. Cooldown seconds are yellow on the icon. A learned ability's level number is golden.",
                 "A wise teacher in a 24-point home teaches one ability for 30 emeralds. Each house point above 24 takes 2 emeralds off, down to free. The lesson ignores the learning cap and does not use a self-learned slot. Paying for an ability you already know frees that slot.",
+                "Learning that ability counts as using it once for each house point and each point of his trading experience.",
                 "Sneak with a diamond block and a lapis lazuli block and that teacher raises your permanent mana by 1, once per teacher.",
                 "Speak to a wise teacher and he tells of a hunt every 30 Minecraft days. The pack is 3 to 8, from the home and his experience, times 1 plus the lessons and mana he has given you.",
                 "The first hunts are easier creatures. Later hunts are harder. The hunt lies 200 to 500 blocks north, south, east, or west of that teacher.",
@@ -335,7 +336,7 @@ def build():
                     "Place many of one block, or defeat many of one monster. Each claim gives 75 experience. Everyone can earn every achievement.",
                     "The first player on the server to claim one gets 25 extra experience by default.",
                     "You have your experience level as a percent chance to gain a mana level.",
-                    "The first visit to a biome is 50 experience, and 100 more if you are first on the server. The first habitable home in a biome is house points times 3. The first trip 300 blocks from spawn is 100 experience.",
+                    "The first visit to a biome is 50 experience, and 100 more if you are first on the server. The first habitable home of a biome within 250 blocks is house points times 3. Another of that biome farther than 250 blocks pays again. The first trip 300 blocks from spawn is 100 experience.",
                     "Sneak while holding a block you can place to see how many placements remain. Placing it is not required. A kill always shows that number. It drifts down and left for 3 seconds, and stays hidden when that track is finished.",
                 ],
                 s["bullet"],
@@ -343,7 +344,7 @@ def build():
         ]),
         Paragraph("Homes and residents", s["h"]),
         Paragraph(
-            "Right-click a bed with a clock to score a room. An enclosed, lit room of 24 to 300 air blocks, with a bed and a door or fence gate facing outside, "
+            "Right-click a bed with a clock to score a room. An enclosed room of 24 to 400 air blocks, with block light 5 on every floor tile, a bed, and a door or fence gate facing outside, "
             "can attract one resident if it has at least 12 furnishing points and stays 20 blocks from another occupied home. "
             "A home more than 50 blocks from the nearest other occupied home gains 1 point, or 2 points when more than 100 blocks away. "
             "Furnishings come from size, extra rooms, windows, art, rugs, seating, storage, workstations, lights, plants, books, a second bed, and a kitchen. "

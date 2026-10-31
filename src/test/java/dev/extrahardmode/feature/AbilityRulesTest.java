@@ -150,6 +150,7 @@ class AbilityRulesTest {
         assertTrue(magicHelp.contains("3 times"));
         assertTrue(magicHelp.contains("minus skill"));
         assertTrue(magicHelp.contains("another arrow"));
+        assertTrue(magicHelp.contains("Every 3 ability levels"));
         assertTrue(magicHelp.contains("seeks the nearest"));
         assertFalse(magicHelp.contains("mana level"));
         assertFalse(magicHelp.contains("Fire bolt"));
@@ -729,10 +730,14 @@ class AbilityRulesTest {
         assertEquals(3, AbilityRules.projectileBurnSeconds(2.5));
         assertEquals(0, AbilityRules.extraProjectileCount(0));
         assertEquals(0, AbilityRules.extraProjectileCount(1.9));
-        assertEquals(1, AbilityRules.extraProjectileCount(2));
+        assertEquals(0, AbilityRules.extraProjectileCount(2));
+        assertEquals(0, AbilityRules.extraProjectileCount(2.9));
+        assertEquals(1, AbilityRules.extraProjectileCount(3));
         assertEquals(1, AbilityRules.extraProjectileCount(3.9));
-        assertEquals(2, AbilityRules.extraProjectileCount(4));
-        assertEquals(4, AbilityRules.extraProjectileCount(8.2));
+        assertEquals(1, AbilityRules.extraProjectileCount(5.9));
+        assertEquals(2, AbilityRules.extraProjectileCount(6));
+        assertEquals(2, AbilityRules.extraProjectileCount(8.2));
+        assertEquals(3, AbilityRules.extraProjectileCount(9));
     }
 
     @Test

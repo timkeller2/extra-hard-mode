@@ -461,7 +461,7 @@ public final class EhmAttachments {
     public static final AttachmentType<List<String>> EHM_VISITED_BIOMES = AttachmentRegistry.create(
             ExtraHardModeMod.id("visited_biomes"),
             builder -> builder.persistent(Codec.STRING.listOf()).copyOnDeath().initializer(ArrayList::new));
-    /** Biome ids where this player has already been rewarded for a habitable home. */
+    /** Paid homes as biome|dimension|x|z. A bare biome id is an older claim with no place. */
     public static final AttachmentType<List<String>> EHM_HOME_BIOMES = AttachmentRegistry.create(
             ExtraHardModeMod.id("home_biomes"),
             builder -> builder.persistent(Codec.STRING.listOf()).copyOnDeath().initializer(ArrayList::new));

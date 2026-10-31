@@ -3694,6 +3694,14 @@ public final class ManaAbilities implements FeatureModule {
      * The lesson does not use a self-learned slot. False when it was already taught or is not a real ability.
      */
     public static boolean teachAbility(ServerPlayer player, String ability) {
+        return teachAbility(player, ability, 0);
+    }
+
+    /**
+     * Learn an ability from a wise teacher, or exempt one the player already knows.
+     * {@code practicedUses} is added as if the player had cast it that many times.
+     */
+    public static boolean teachAbility(ServerPlayer player, String ability, int practicedUses) {
         if (player == null || !AbilityRules.ABILITY_IDS.contains(ability)) {
             return false;
         }
@@ -3709,6 +3717,10 @@ public final class ManaAbilities implements FeatureModule {
         List<String> taught = new ArrayList<>(player.getAttachedOrElse(EhmAttachments.EHM_ABILITY_TAUGHT, List.of()));
         taught.add(ability);
         player.setAttached(EhmAttachments.EHM_ABILITY_TAUGHT, taught);
+        int extra = Math.max(0, practicedUses);
+        if (extra > 0) {
+            putInt(player, EhmAttachments.EHM_ABILITY_USES, ability, uses(player, ability) + extra);
+        }
         return true;
     }
 

@@ -14,9 +14,9 @@ import java.util.Set;
  */
 public final class InhabitantRules {
     public static final int MIN_VOLUME = 24;
-    public static final int MAX_VOLUME = 300;
+    public static final int MAX_VOLUME = 400;
     public static final int FILL_CAP = 512;
-    public static final int MIN_LIGHT = 8;
+    public static final int MIN_LIGHT = 5;
     public static final int MIN_SCORE = 12;
     public static final int FINE_SCORE = 18;
     public static final int NOTABLE_SCORE = 24;
@@ -551,8 +551,8 @@ public final class InhabitantRules {
     public static List<String> homesRoomLines() {
         return List.of(
                 "Rooms: Need an enclosed room (solid walls, floor, and roof; doors and trapdoors are openings, not holes).",
-                "Rooms: Also need 24 to 300 interior air blocks, a bed, and a door or fence gate that faces outside.",
-                "Rooms: Block light 8 on every floor tile, and stay 20 blocks from another occupied home.",
+                "Rooms: Also need 24 to 400 interior air blocks, a bed, and a door or fence gate that faces outside.",
+                "Rooms: Block light 5 on every floor tile, and stay 20 blocks from another occupied home.",
                 "Rooms: More than 50 blocks from the nearest other occupied home gives +1 point. More than 100 blocks gives +2 instead.");
     }
 
@@ -1067,6 +1067,11 @@ public final class InhabitantRules {
     public static String pickWiseAbility(int roll) {
         List<String> ids = AbilityRules.ABILITY_IDS;
         return ids.get(Math.floorMod(roll, ids.size()));
+    }
+
+    /** Uses granted with the lesson: house points plus this resident's trading experience. */
+    public static int wiseTaughtUses(int houseScore, int residentXp) {
+        return Math.max(0, houseScore) + Math.max(0, residentXp);
     }
 
     /** Price for this house. {@code 0} means the lesson is free. */

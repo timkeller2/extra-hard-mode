@@ -175,7 +175,8 @@ public final class Inhabitants implements FeatureModule {
         }
         if (InhabitantRules.shouldTeachAbility(taught, emeralds, price)) {
             InventorySearch.consume(player, Items.EMERALD, price);
-            ManaAbilities.teachAbility(player, ability);
+            ManaAbilities.teachAbility(
+                    player, ability, InhabitantRules.wiseTaughtUses(home.score(), tradeXp(villager)));
             player.sendSystemMessage(Component.translatableWithFallback(
                     "tougher.wise.flavor." + ability, AbilityRules.teacherFlavor(ability)));
             if (knows) {
@@ -256,10 +257,21 @@ public final class Inhabitants implements FeatureModule {
                 level.getRandom(),
                 CropGrowthRules.beesInactive(AntiFarming.currentSeasonalLossRate(level)),
                 player);
+        String report = InhabitantRules.inspectFallback(result.gates());
+        if (!result.gates().eligible()) {
+            String biome = Exploration.biomeId(level.getBiome(result.bed()));
+            boolean earns = ExplorationRules.homeEarnsExperience(
+                    player.getAttachedOrElse(EhmAttachments.EHM_HOME_BIOMES, List.of()),
+                    biome,
+                    level.dimension().identifier().toString(),
+                    result.bed().getX(),
+                    result.bed().getZ());
+            if (!biome.isEmpty()) {
+                report = report + " " + ExplorationRules.homeExperienceProspect(earns);
+            }
+        }
         player.sendSystemMessage(Component.translatableWithFallback(
-                "tougher.message.inhabitant_inspect",
-                "%s",
-                Component.literal(InhabitantRules.inspectFallback(result.gates()))));
+                "tougher.message.inhabitant_inspect", "%s", Component.literal(report)));
         InhabitantData.Home home = data.get(ResidenceScan.homeId(result.bed()));
         if (home != null && home.living().isPresent()) {
             home = ensureMaleName(data, home);

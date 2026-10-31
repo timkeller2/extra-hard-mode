@@ -633,7 +633,7 @@ public final class AbilityRules {
             case MAGIC_ARROW -> List.of(
                     "Magic arrow: Right-click while holding an arrow. Costs 1 mana. The arrow seeks the nearest creature along your aim.",
                     "Magic arrow: Damage is 3 times your ability level. Range scales with ability level. Cooldown is 10 seconds minus skill.",
-                    "Magic arrow: Every 2 ability levels, rounded down, launches another arrow at a different creature. That costs nothing more.",
+                    "Magic arrow: Every 3 ability levels, rounded down, launches another arrow at a different creature. That costs nothing more.",
                     "Magic arrow: Charcoal in your hotbar or inventory, not a bundle, adds +2. One charcoal is consumed, and the arrows burn.",
                     "Magic arrow: One arrow is consumed. Two in hand consume both and add +2.");
             case FLIGHT -> List.of(
@@ -824,7 +824,7 @@ public final class AbilityRules {
                 "You can learn up to half your mana level in abilities, rounded up.",
                 "Unlearned abilities can be used and still gain skill, at −3 power (floored at 1), until you have a free slot to learn them.",
                 "A wise teacher teaches one ability. A 24-point home charges 30 emeralds; each point above that takes 2 off, down to free.",
-                "That lesson does not count toward abilities you learn on your own. Paying for one you already know frees that slot.",
+                "That lesson does not count toward abilities you learn on your own. Uses equal the house points plus his trading experience. Paying for one you already know frees that slot.",
                 "That teacher will raise your mana once for a diamond block and a lapis lazuli block.",
                 "Type /tougher ability help <name> for one ability.");
     }
@@ -1310,12 +1310,12 @@ public final class AbilityRules {
         return Math.max(0, (int) Math.round(Math.max(0.0, power)));
     }
 
-    /** Extra shots besides the first: one per 2 ability levels, rounded down. */
+    /** Extra shots besides the first: one per 3 ability levels, rounded down. */
     public static int extraProjectileCount(double power) {
         if (power <= 0.0) {
             return 0;
         }
-        return (int) Math.floor(power / 2.0);
+        return (int) Math.floor(power / 3.0);
     }
 
     /**

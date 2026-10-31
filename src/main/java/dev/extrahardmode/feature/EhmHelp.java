@@ -410,6 +410,7 @@ public final class EhmHelp {
                         "Abilities: A wise teacher in a 24-point home teaches one ability for 30 emeralds, ignoring the ability limit.",
                         "Abilities: Each house point above 24 lowers that price by 2 emeralds, down to free.",
                         "Abilities: A wise teacher's lesson does not count toward abilities you learn yourself. Paying for one you already know frees that slot.",
+                        "Abilities: Learning it counts as using it once for each house point and each point of his trading experience.",
                         "Abilities: Sneak while carrying a diamond block and a lapis lazuli block and that teacher raises your mana level once.",
                         "Abilities: Hold an item and press ? for details, or type /tougher ability help <name>.",
                         "Abilities: /tougher me lists your mana level and ability skill levels.",
@@ -428,7 +429,7 @@ public final class EhmHelp {
                         "Achievements: You have (your experience level)% chance to gain a mana level.",
                         "Achievements: /tougher achieve lists the 5 closest builder tracks and at most 3 slayer tracks, plus the last block you placed.",
                         "Achievements: The first time you visit a biome you gain 50 experience, and 100 more if you are the first player to visit it.",
-                        "Achievements: The first time you build a habitable home in a biome you gain (house points × 3) experience.",
+                        "Achievements: The first habitable home in a biome within 250 blocks gains (house points × 3) experience. One farther than 250 blocks pays again.",
                         "Achievements: The first time you travel 300 blocks from spawn you gain 100 experience.",
                         "Achievements: The small brown number shows kills left. Sneak while holding a placeable block to see placements left. It drifts down and left for 3 seconds and hides when finished."));
     }

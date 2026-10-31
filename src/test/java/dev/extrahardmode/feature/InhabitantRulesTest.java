@@ -47,7 +47,8 @@ class InhabitantRulesTest {
         assertTrue(InhabitantRules.volumeOk(80));
         assertTrue(InhabitantRules.volumeOk(250));
         assertTrue(InhabitantRules.volumeOk(300));
-        assertFalse(InhabitantRules.volumeOk(301));
+        assertTrue(InhabitantRules.volumeOk(400));
+        assertFalse(InhabitantRules.volumeOk(401));
         assertTrue(InhabitantRules.fillOpen(512, true));
         assertFalse(InhabitantRules.fillOpen(512, false));
         assertFalse(InhabitantRules.fillOpen(250, true));
@@ -280,6 +281,12 @@ class InhabitantRulesTest {
         assertEquals(councilOutfit, InhabitantRules.parseOutfit(InhabitantRules.outfitKey(councilOutfit)));
         assertNull(InhabitantRules.parseOutfit("bad"));
         assertEquals(30, InhabitantRules.WISE_ABILITY_EMERALDS);
+        assertEquals(24, InhabitantRules.wiseTaughtUses(24, 0));
+        assertEquals(124, InhabitantRules.wiseTaughtUses(24, 100));
+        assertEquals(38, InhabitantRules.wiseTaughtUses(38, 0));
+        assertEquals(0, InhabitantRules.wiseTaughtUses(0, 0));
+        assertEquals(5, InhabitantRules.wiseTaughtUses(-3, 5));
+        assertEquals(24, InhabitantRules.wiseTaughtUses(24, -4));
         assertEquals(30, InhabitantRules.wiseAbilityPrice(24));
         assertEquals(28, InhabitantRules.wiseAbilityPrice(25));
         assertEquals(30, InhabitantRules.wiseAbilityPrice(12));

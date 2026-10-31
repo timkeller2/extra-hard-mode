@@ -117,8 +117,9 @@ public final class Exploration implements FeatureModule {
     }
 
     /**
-     * First habitable home this player has completed in {@code pos}'s biome.
-     * Survival players only. XP is house points × 3.
+     * Habitable home whose bed is farther than {@link ExplorationRules#HOME_BIOME_SPACING}
+     * from this player's earlier paid home of the same biome. Survival players only.
+     * XP is house points × 3.
      */
     public static void maybeAwardFirstHome(ServerPlayer player, ServerLevel level, BlockPos pos, int houseScore) {
         if (player == null || Achievements.skipPlayer(player) || pos == null) {
@@ -130,9 +131,13 @@ public final class Exploration implements FeatureModule {
         }
         Holder<Biome> holder = level.getBiome(pos);
         String id = biomeId(holder);
-        if (id.isEmpty() || !markBiome(player, EhmAttachments.EHM_HOME_BIOMES, id)) {
+        String dimension = level.dimension().identifier().toString();
+        List<String> awards = new ArrayList<>(player.getAttachedOrElse(EhmAttachments.EHM_HOME_BIOMES, List.of()));
+        if (id.isEmpty() || !ExplorationRules.homeEarnsExperience(awards, id, dimension, pos.getX(), pos.getZ())) {
             return;
         }
+        awards.add(ExplorationRules.homeAwardRecord(id, dimension, pos.getX(), pos.getZ()));
+        player.setAttached(EhmAttachments.EHM_HOME_BIOMES, awards);
         Component name = biomeName(holder);
         player.giveExperiencePoints(xp);
         player.sendSystemMessage(Component.translatableWithFallback(
