@@ -403,6 +403,15 @@ public final class CouncilMissionRules {
     }
 
     /**
+     * True only for the monster spawn category. Animals, fish, squid, bats, and other friendly
+     * categories stay. Replacing one of those discards it before it fills its own cap, then adds a
+     * hostile that is not counted against the monster cap, so a river of fish becomes a crowd.
+     */
+    public static boolean bountyCanReplace(String spawnCategory) {
+        return "monster".equals(spawnCategory);
+    }
+
+    /**
      * Index of the first open bounty that replaces {@code spawningMobId}.
      * Each entry is one d100 roll (0–99 succeeds below {@link #BOUNTY_SPAWN_PERCENT}).
      * A bounty for the creature that is already spawning is skipped, and the next bounty is still rolled.

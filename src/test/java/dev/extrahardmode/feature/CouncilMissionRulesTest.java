@@ -145,6 +145,16 @@ class CouncilMissionRulesTest {
         assertEquals(-1, CouncilMissionRules.bountyReplacementIndex(List.of(), "minecraft:zombie", new int[] {0}));
         assertEquals(-1, CouncilMissionRules.bountyReplacementIndex(null, "minecraft:zombie", new int[] {0}));
         assertEquals(0, CouncilMissionRules.bountyReplacementIndex(List.of("minecraft:witch"), "minecraft:spider", new int[] {-100}));
+        assertTrue(CouncilMissionRules.bountyCanReplace("monster"));
+        assertFalse(CouncilMissionRules.bountyCanReplace("creature"));
+        assertFalse(CouncilMissionRules.bountyCanReplace("ambient"));
+        assertFalse(CouncilMissionRules.bountyCanReplace("water_creature"));
+        assertFalse(CouncilMissionRules.bountyCanReplace("water_ambient"));
+        assertFalse(CouncilMissionRules.bountyCanReplace("underground_water_creature"));
+        assertFalse(CouncilMissionRules.bountyCanReplace("axolotls"));
+        assertFalse(CouncilMissionRules.bountyCanReplace("misc"));
+        assertFalse(CouncilMissionRules.bountyCanReplace(null));
+        assertFalse(CouncilMissionRules.bountyCanReplace(""));
     }
 
     @Test

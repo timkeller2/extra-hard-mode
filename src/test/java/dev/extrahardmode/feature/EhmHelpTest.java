@@ -298,6 +298,8 @@ class EhmHelpTest {
         assertTrue(all.contains("with that resident"));
         assertTrue(all.contains("A kill counts for every open bounty"));
         assertTrue(all.contains("15% chance per open bounty"));
+        assertTrue(all.contains("hostile mob within 128 blocks"));
+        assertTrue(all.contains("passive spawns are not replaced"));
         assertTrue(all.contains("more bounties make it more likely"));
         assertTrue(all.contains("not replaced in that conversation"));
         assertTrue(all.contains("name the resident"));

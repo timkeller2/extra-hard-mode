@@ -93,11 +93,15 @@ public final class CouncilMissions {
     }
 
     /**
-     * Bounty creature for this natural spawn, or null to leave it. Uses the nearest
-     * survival player within {@link CouncilMissionRules#BOUNTY_SPAWN_NEAR_BLOCKS}.
+     * Bounty creature for this natural hostile spawn, or null to leave it. Friendly categories
+     * (animals, fish, squid, bats) are never swapped. Uses the nearest survival player within
+     * {@link CouncilMissionRules#BOUNTY_SPAWN_NEAR_BLOCKS}.
      */
     public static EntityType<?> rollSpawnReplacement(Mob mob, ServerLevel level) {
         if (mob == null || level == null || !WorldGate.isModuleActive(level, Inhabitants.ID)) {
+            return null;
+        }
+        if (!CouncilMissionRules.bountyCanReplace(mob.getType().getCategory().getName())) {
             return null;
         }
         ServerPlayer player = nearestHunter(level, mob);
