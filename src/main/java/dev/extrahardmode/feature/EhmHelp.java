@@ -279,7 +279,8 @@ public final class EhmHelp {
                         "Crops: Each sapling that would drop has twice the crop loss rate as a percent chance not to. At 50% loss or higher, none drop.",
                         "Crops: Pumpkins and melons fruit at 1/10 vanilla rate. After each fruit the vine may become a weed, starting at 0% and rising 5% per fruit.",
                         "Crops: Broken pumpkin and melon vines drop no seeds. Shearing a full hive gives 1 honeycomb.",
-                        "Crops: A bee that returns with nectar fills a hive or nest at 25% of the usual rate. farming.beeHoneyPercent of 100 is the usual rate. 0 never fills."));
+                        "Crops: A bee that returns with nectar fills a hive or nest at 25% of the usual rate. farming.beeHoneyPercent of 100 is the usual rate. 0 never fills.",
+                        "Crops: A ripe cocoa pod drops 1 or 2 beans. A hoe adds 1 when a d100 is under its quality: iron 0, diamond 10, gold 20, netherite 30, plus 2 per Efficiency. Other hoes are 0."));
     }
 
     private static Page animals() {
@@ -333,9 +334,8 @@ public final class EhmHelp {
         return Page.of(
                 "tougher.help.processing.",
                 List.of(
-                        "Farming: Composters fill normally but take much longer to finish.",
-                        "Farming: Hopper output from furnaces stores cooking XP in the destination chest at 50% extra; taking those items grants it.",
-                        "Farming: Composters do the same for bone meal, using the same XP as smelting iron."));
+                        "Farming: Composters fill normally but take much longer to finish. Composters do the same for bone meal, using the same XP as smelting iron.",
+                        "Farming: Hopper output from furnaces stores cooking XP in the destination chest at 50% extra; taking those items grants it."));
     }
 
     private static Page combat() {

@@ -235,8 +235,8 @@ class InhabitantRulesTest {
         InhabitantRules.Outfit brewerOutfit = InhabitantRules.pickOutfit(InhabitantRules.BREWER, 0, 0, 0);
         assertEquals(1, brewerOutfit.level());
         assertTrue(InhabitantRules.COMMON_OUTFITS.contains(brewerOutfit.professionId()));
-        assertEquals("drop collector", InhabitantRules.specialtyFallback(InhabitantRules.BOUNTY));
-        assertEquals("Nia the Drop Collector", InhabitantRules.nameplate("Nia", InhabitantRules.BOUNTY));
+        assertEquals("loot collector", InhabitantRules.specialtyFallback(InhabitantRules.BOUNTY));
+        assertEquals("Nia the Loot Collector", InhabitantRules.nameplate("Nia", InhabitantRules.BOUNTY));
         assertEquals("Mira the Jeweler", InhabitantRules.nameplate("Mira", InhabitantRules.JEWELER));
         assertEquals("Ada the Council Member", InhabitantRules.nameplate("Ada", InhabitantRules.COUNCIL));
         assertEquals("Bram the Master Armorsmith", InhabitantRules.nameplate("Bram", InhabitantRules.MASTER_ARMORSMITH));
@@ -731,7 +731,12 @@ class InhabitantRulesTest {
         Set<String> ids = new HashSet<>();
         for (InhabitantRules.TradeListing listing : InhabitantRules.FARM_PLANT_SELLS) {
             assertFalse(listing.buy());
-            assertEquals(1, listing.count());
+            int expectedCount = switch (listing.itemId()) {
+                case "minecraft:pumpkin_seeds", "minecraft:melon_seeds" -> 6;
+                case "minecraft:nether_wart" -> 4;
+                default -> 1;
+            };
+            assertEquals(expectedCount, listing.count(), listing.itemId());
             assertTrue(listing.emeralds() >= InhabitantRules.FARM_PLANT_MIN_EMERALDS);
             assertTrue(listing.emeralds() <= InhabitantRules.FARM_PLANT_MAX_EMERALDS);
             assertTrue(ids.add(listing.itemId()));
@@ -772,7 +777,6 @@ class InhabitantRulesTest {
                 assertTrue(offerIds.add(listing.itemId()));
                 if (prices.containsKey(listing.itemId())) {
                     assertFalse(listing.buy());
-                    assertEquals(1, listing.count());
                     assertEquals(prices.get(listing.itemId()).intValue(), listing.emeralds());
                     seen.add(listing.itemId());
                     sawPlantOnSmallFarm = true;
@@ -798,6 +802,45 @@ class InhabitantRulesTest {
             }
         }
         assertTrue(sawThirdPlant);
+    }
+
+    @Test
+    void lootCollectorPaysOneEmeraldForHalfTheOldDropCounts() {
+        Map<String, InhabitantRules.TradeListing> usual = new HashMap<>();
+        for (InhabitantRules.TradeListing listing :
+                InhabitantRules.defaultListings(InhabitantRules.BOUNTY, 1, false)) {
+            assertEquals(null, usual.put(listing.itemId(), listing));
+        }
+        assertEquals(3, usual.size());
+        assertEquals(4, usual.get("minecraft:spider_eye").count());
+        assertEquals(4, usual.get("minecraft:gunpowder").count());
+        assertEquals(8, usual.get("minecraft:bone").count());
+        Map<String, InhabitantRules.TradeListing> extra = new HashMap<>();
+        for (InhabitantRules.TradeListing listing :
+                InhabitantRules.extraListings(InhabitantRules.BOUNTY, 1, false)) {
+            assertEquals(null, extra.put(listing.itemId(), listing));
+        }
+        assertEquals(10, extra.size());
+        assertEquals(8, extra.get("minecraft:rotten_flesh").count());
+        assertEquals(8, extra.get("minecraft:string").count());
+        assertEquals(4, extra.get("minecraft:slime_ball").count());
+        assertEquals(6, extra.get("minecraft:leather").count());
+        assertEquals(12, extra.get("minecraft:arrow").count());
+        assertEquals(6, extra.get("minecraft:ink_sac").count());
+        assertEquals(2, extra.get("minecraft:phantom_membrane").count());
+        assertEquals(2, extra.get("minecraft:ender_pearl").count());
+        assertEquals(2, extra.get("minecraft:blaze_rod").count());
+        assertEquals(1, extra.get("minecraft:ghast_tear").count());
+        for (InhabitantRules.TradeListing listing : usual.values()) {
+            assertTrue(listing.buy());
+            assertEquals(1, listing.emeralds());
+            assertEquals(InhabitantRules.DEFAULT_TRADE_USES, listing.maxUses());
+        }
+        for (InhabitantRules.TradeListing listing : extra.values()) {
+            assertTrue(listing.buy());
+            assertEquals(1, listing.emeralds());
+            assertEquals(InhabitantRules.DEFAULT_TRADE_USES, listing.maxUses());
+        }
     }
 
     @Test

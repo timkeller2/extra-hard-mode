@@ -268,8 +268,9 @@ public final class InhabitantRules {
             new WealthyListing("minecraft:phantom_membrane", 2, 4));
 
     /**
-     * Seeds and plantable vegetables a farm neighbor may sell. One item, and the
-     * emerald cost is hefty next to buying a stack of cobble.
+     * Seeds and plantable vegetables a farm neighbor may sell. Most are one item.
+     * Pumpkin seeds and melon seeds are 6, and nether wart is 4. The emerald cost
+     * is hefty next to buying a stack of cobble.
      */
     public static final List<TradeListing> FARM_PLANT_SELLS = List.of(
             sellOf("minecraft:wheat_seeds", 1, 6, FARM_PLANT_USES),
@@ -280,9 +281,9 @@ public final class InhabitantRules {
             sellOf("minecraft:sugar_cane", 1, 8, FARM_PLANT_USES),
             sellOf("minecraft:cocoa_beans", 1, 8, FARM_PLANT_USES),
             sellOf("minecraft:glow_berries", 1, 12, FARM_PLANT_USES),
-            sellOf("minecraft:pumpkin_seeds", 1, 12, FARM_PLANT_USES),
-            sellOf("minecraft:melon_seeds", 1, 12, FARM_PLANT_USES),
-            sellOf("minecraft:nether_wart", 1, 12, FARM_PLANT_USES),
+            sellOf("minecraft:pumpkin_seeds", 6, 12, FARM_PLANT_USES),
+            sellOf("minecraft:melon_seeds", 6, 12, FARM_PLANT_USES),
+            sellOf("minecraft:nether_wart", 4, 12, FARM_PLANT_USES),
             sellOf("minecraft:torchflower_seeds", 1, FARM_PLANT_MAX_EMERALDS, FARM_PLANT_USES),
             sellOf("minecraft:pitcher_pod", 1, FARM_PLANT_MAX_EMERALDS, FARM_PLANT_USES));
 
@@ -572,7 +573,7 @@ public final class InhabitantRules {
                 "Residents: Houses in unloaded chunks can still fill. Chance starts at 8% at 12 points and rises with extra points (halved in blight).",
                 "Residents: Chests bias a hauler, a kitchen biases a cook, and plants or workstations bias a farm neighbor.",
                 "Residents: A cauldron favors a brewer, and a brewer can come to a 12-point home.",
-                "Residents: 18 points can attract a drop collector, a wealthy trader, or a jeweler, 24 an armorsmith or a wise teacher, and 30 a master armorsmith.",
+                "Residents: 18 points can attract a loot collector, a wealthy trader, or a jeweler, 24 an armorsmith or a wise teacher, and 30 a master armorsmith.",
                 "Residents: A council member can appear in any eligible home. New residents prefer a type that has not appeared yet.",
                 "Residents: The house must be able to host that type. Once every type has spawned, the usual furnishing biases apply.",
                 "Residents: Council members are three times as likely as the most common other type. One resident per home.",
@@ -594,7 +595,7 @@ public final class InhabitantRules {
                 "Shops: Each trade adds 1 trading experience. A stock change adds the square root of that experience to the house points.",
                 "Shops: Each stock change rolls item amounts once from -25% to +25%, then adds 0 to 25 for house points and trading experience.",
                 "Shops: That total adds items when you buy and subtracts the items required when you sell to the resident. Emerald prices stay the same.",
-                "Shops: A farm neighbor may sell one seed or plantable vegetable for 6 to 16 emeralds.",
+                "Shops: A farm neighbor may sell one seed or plantable vegetable for 6 to 16 emeralds. Pumpkin and melon seeds are 6, and nether wart is 4.",
                 "Shops: A jeweler sells a diamond for 8 emeralds, 4 gold ingots for 2, an iron block for 6, and a copper or redstone block for 2.",
                 "Shops: Larger jewelers also sell lapis, amethyst, quartz, gold nuggets, and blocks of gold, lapis, amethyst, quartz, and diamond. A diamond block is 72 emeralds.",
                 "Shops: An armorsmith sells one heavy iron piece each restock, and the piece can change. Other sales are enchanted iron armor, each a different slot.",
@@ -602,7 +603,10 @@ public final class InhabitantRules {
                 "Shops: Heavy iron costs 12, 15, 21, or 24 emeralds for boots, a helmet, leggings, or a chestplate. Heavy diamond costs four times that.",
                 "Shops: Enchanted iron armor costs 6, 8, 11, or 12 emeralds for those slots. Enchanted diamond armor costs the same as heavy iron.",
                 "Shops: A brewer sells one level 2 potion each restock, and that potion can change. Up to 3 other potions cost 1 emerald.",
-                "Shops: A larger brewer sells brewing ingredients for 1 emerald, such as nether wart, blaze powder, glowstone, and ghast tears.");
+                "Shops: A larger brewer sells brewing ingredients for 1 emerald, such as nether wart, blaze powder, glowstone, and ghast tears.",
+                "Shops: A loot collector pays 1 emerald for 4 spider eyes, 4 gunpowder, or 8 bones.",
+                "Shops: A larger loot collector also pays 1 emerald for 8 rotten flesh, 8 string, 4 slimeballs, 6 leather, or 12 arrows.",
+                "Shops: That shop also pays 1 emerald for 6 ink sacs, 2 phantom membranes, 2 ender pearls, 2 blaze rods, or 1 ghast tear.");
     }
 
     public static List<String> homesBountyLines() {
@@ -617,7 +621,7 @@ public final class InhabitantRules {
                 "Bounties: You also get a congratulations message and a sound. Return to that resident for emeralds equal to one tenth of that XP.",
                 "Bounties: Collecting plays a sound. If 7 days have passed, that resident offers a new bounty.",
                 "Bounties: One bounty reads Zombie Bounty 3/12 above the ability icons. Two or more name the resident and stack upward.",
-                "Bounties: A drop collector warns you when a biome boss is out, and names the compass direction from that resident. East is the rising sun.");
+                "Bounties: A loot collector warns you when a biome boss is out, and names the compass direction from that resident. East is the rising sun.");
     }
 
     public static List<String> homesHelpLines() {
@@ -956,7 +960,7 @@ public final class InhabitantRules {
             case COOK -> "cook";
             case BREWER -> "brewer";
             case FARM -> "farm neighbor";
-            case BOUNTY -> "drop collector";
+            case BOUNTY -> "loot collector";
             case TRADER -> "trader";
             case WEALTHY -> "wealthy trader";
             case ARMORSMITH -> "armorsmith";
@@ -1249,9 +1253,9 @@ public final class InhabitantRules {
             case FARM -> farmUsualListings(blight);
             case BREWER -> brewerUsualListings();
             case BOUNTY -> List.of(
-                    buyOf("minecraft:spider_eye", 8, 3),
-                    buyOf("minecraft:gunpowder", 8, 3),
-                    buyOf("minecraft:bone", 16, 3));
+                    buyOf("minecraft:spider_eye", 4, 3),
+                    buyOf("minecraft:gunpowder", 4, 3),
+                    buyOf("minecraft:bone", 8, 3));
             case ARMORSMITH -> armorUsualListings(false);
             case MASTER_ARMORSMITH -> armorUsualListings(true);
             case WISE_TEACHER -> List.of();
@@ -1303,16 +1307,16 @@ public final class InhabitantRules {
             case FARM -> farmExtraListings(blight);
             case BREWER -> brewerIngredientListings();
             case BOUNTY -> List.of(
-                    buyOf("minecraft:rotten_flesh", 16, 3),
-                    buyOf("minecraft:string", 16, 3),
-                    buyOf("minecraft:slime_ball", 8, 3),
-                    buyOf("minecraft:leather", 12, 3),
-                    buyOf("minecraft:arrow", 24, 3),
-                    buyOf("minecraft:ink_sac", 12, 3),
-                    buyOf("minecraft:phantom_membrane", 4, 3),
-                    buyOf("minecraft:ender_pearl", 4, 3),
-                    buyOf("minecraft:blaze_rod", 4, 3),
-                    buyOf("minecraft:ghast_tear", 2, 3));
+                    buyOf("minecraft:rotten_flesh", 8, 3),
+                    buyOf("minecraft:string", 8, 3),
+                    buyOf("minecraft:slime_ball", 4, 3),
+                    buyOf("minecraft:leather", 6, 3),
+                    buyOf("minecraft:arrow", 12, 3),
+                    buyOf("minecraft:ink_sac", 6, 3),
+                    buyOf("minecraft:phantom_membrane", 2, 3),
+                    buyOf("minecraft:ender_pearl", 2, 3),
+                    buyOf("minecraft:blaze_rod", 2, 3),
+                    buyOf("minecraft:ghast_tear", 1, 3));
             case ARMORSMITH -> List.of(armorMetalBuy(false));
             case WISE_TEACHER -> List.of();
             case MASTER_ARMORSMITH -> List.of(armorMetalBuy(true));

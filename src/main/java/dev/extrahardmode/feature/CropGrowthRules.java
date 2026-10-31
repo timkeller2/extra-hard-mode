@@ -20,6 +20,16 @@ public final class CropGrowthRules {
     public static final int NETHER_WART_DURATION_PERCENT = 2000;
     /** Cocoa random ticks fire 1/20 as often as vanilla. */
     public static final int COCOA_DURATION_PERCENT = 2000;
+    /** Ripe cocoa drops 1 or 2 beans before a hoe bonus. */
+    public static final int COCOA_BEAN_MIN = 1;
+    public static final int COCOA_BEAN_MAX = 2;
+    /** Hoe quality for an extra ripe cocoa bean. Iron and lesser hoes are 0. */
+    public static final int COCOA_HOE_IRON = 0;
+    public static final int COCOA_HOE_DIAMOND = 10;
+    public static final int COCOA_HOE_GOLD = 20;
+    public static final int COCOA_HOE_NETHERITE = 30;
+    /** Each Efficiency level adds this much cocoa hoe quality. */
+    public static final int COCOA_EFFICIENCY_PER_LEVEL = 2;
     /** Sapling random ticks fire 1/10 as often as vanilla. */
     public static final int TREE_DURATION_PERCENT = 1000;
     /** Leaf loot keeps this percent of sapling counts (50 = half). */
@@ -76,6 +86,50 @@ public final class CropGrowthRules {
 
     public static int clampDurationPercent(int durationPercent) {
         return Math.max(1, durationPercent);
+    }
+
+    /**
+     * Quality for the ripe-cocoa hoe bonus. Iron is 0, diamond 10, gold 20,
+     * netherite 30. Wood, stone, copper, and any other hoe are 0. Each Efficiency
+     * level adds {@link #COCOA_EFFICIENCY_PER_LEVEL}.
+     */
+    public static int cocoaHoeQuality(String itemId, int efficiencyLevel) {
+        String path = itemId == null ? "" : itemId;
+        int slash = path.lastIndexOf(':');
+        if (slash >= 0) {
+            path = path.substring(slash + 1);
+        }
+        int base =
+                switch (path) {
+                    case "diamond_hoe" -> COCOA_HOE_DIAMOND;
+                    case "golden_hoe" -> COCOA_HOE_GOLD;
+                    case "netherite_hoe" -> COCOA_HOE_NETHERITE;
+                    default -> COCOA_HOE_IRON;
+                };
+        return base + Math.max(0, efficiencyLevel) * COCOA_EFFICIENCY_PER_LEVEL;
+    }
+
+    /**
+     * Ripe cocoa beans. {@code coin} even is 1 and odd is 2. A hoe adds one when
+     * {@code roll} (0–99) is less than {@code quality}.
+     */
+    public static int ripeCocoaBeans(int coin, boolean hoe, int quality, int roll) {
+        int count = COCOA_BEAN_MIN + Math.floorMod(coin, COCOA_BEAN_MAX - COCOA_BEAN_MIN + 1);
+        if (hoe && cocoaHoeAddsBean(roll, quality)) {
+            count++;
+        }
+        return count;
+    }
+
+    /** A d100 of 0–99 succeeds when it is less than {@code quality}. */
+    public static boolean cocoaHoeAddsBean(int roll, int quality) {
+        if (quality <= 0) {
+            return false;
+        }
+        if (quality >= 100) {
+            return true;
+        }
+        return roll < quality;
     }
 
     /** When duration ≥ 100, this many vanilla randomTicks should run (0 or 1). */

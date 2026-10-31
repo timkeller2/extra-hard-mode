@@ -86,6 +86,8 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("lay eggs 6 times"));
         assertTrue(String.join(" ", lines).contains("Trees take 10 times"));
         assertTrue(String.join(" ", lines).contains("Nether wart grows at 1/20"));
+        assertTrue(String.join(" ", lines).contains("1 or 2 beans"));
+        assertTrue(String.join(" ", lines).contains("diamond 10, gold 20, netherite 30"));
         assertTrue(String.join(" ", lines).contains("half as many saplings"));
         assertTrue(String.join(" ", lines).contains("twice the crop loss rate"));
         assertTrue(String.join(" ", lines).contains("At 50% loss or higher, none drop"));
@@ -183,6 +185,8 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("golden when you have learned"));
         assertTrue(String.join(" ", lines).contains("plantable vegetable"));
         assertTrue(String.join(" ", lines).contains("6 to 16 emeralds"));
+        assertTrue(String.join(" ", lines).contains("Pumpkin and melon seeds are 6"));
+        assertTrue(String.join(" ", lines).contains("nether wart is 4"));
         assertTrue(String.join(" ", lines).contains("300 blocks from spawn"));
         assertTrue(String.join(" ", lines).contains("Everyone can earn every achievement"));
         assertTrue(String.join(" ", lines).contains("small brown number"));
@@ -277,6 +281,9 @@ class EhmHelpTest {
         assertTrue(all.contains("only after you finish the previous one"));
         assertTrue(all.contains("compass direction"));
         assertTrue(all.contains("rising sun"));
+        assertTrue(all.contains("loot collector"));
+        assertTrue(all.contains("4 spider eyes"));
+        assertTrue(all.contains("1 ghast tear"));
         assertTrue(all.contains("Windows"));
         assertTrue(all.contains("Kitchen"));
         assertTrue(all.contains("clock"));

@@ -192,6 +192,7 @@ def build():
         bullets(
             [
                 "Crops grow slowly. Sugar cane is one-tenth speed. Cocoa beans and nether wart are one-twentieth. Trees take 10 times as long, and leaves drop half as many saplings. Each sapling that would still drop has twice the crop loss rate as a percent chance not to, so at 50% loss or higher none drop.",
+                "A ripe cocoa pod drops 1 or 2 cocoa beans. Breaking it with a hoe rolls a d100 and adds one bean when that roll is less than the hoe quality. Quality is iron 0, diamond 10, gold 20, and netherite 30. Each Efficiency level adds 2. Wood, stone, and copper hoes are 0.",
                 "A one-block cane that would grow a second segment may become a weed, using the current crop-loss rate plus the soil under it.",
                 "Pumpkins and melons fruit at one-tenth speed. After each fruit the vine may become a weed, starting at 0% and rising 5% per fruit. Broken vines drop no seeds.",
                 "Shearing a full hive gives 1 honeycomb.",
@@ -343,7 +344,7 @@ def build():
             "Empty eligible homes are checked at dawn. Chance starts at 8% at 12 points and rises with the score. It is halved in blight. "
             "Chests bias a hauler, a kitchen biases a cook, and plants or workstations bias a farmer. "
             "A cauldron favors a brewer, who can come to a 12-point home. "
-            "18 points can bring a drop collector, a wealthy trader, or a jeweler. 24 can bring an armorsmith or a wise teacher. 30 can bring a master armorsmith. "
+            "18 points can bring a loot collector, a wealthy trader, or a jeweler. 24 can bring an armorsmith or a wise teacher. 30 can bring a master armorsmith. "
             "A council member can appear in any eligible home and is especially likely. New residents prefer a specialty that has not appeared yet.",
             s["body"],
         ),
@@ -351,19 +352,20 @@ def build():
             [
                 "A resident will not appear within 35 blocks of a villager. Other residents do not count.",
                 "The name over a resident is their name and occupation, such as Alden the Jeweler.",
-                "Clothes are a villager outfit, so two of one occupation may look different. A jeweler, wealthy trader, or drop collector wears a finer coat. An armorsmith or wise teacher ranks higher, and a master armorsmith or council member wears the highest rank.",
+                "Clothes are a villager outfit, so two of one occupation may look different. A jeweler, wealthy trader, or loot collector wears a finer coat. An armorsmith or wise teacher ranks higher, and a master armorsmith or council member wears the highest rank.",
                 "Most residents restock every 14 Minecraft days. Armorsmiths restock every 30. Look at one who is waiting to see the time left, in days and hours.",
-                "Shop size follows house points. The top of the roll is 50% at 14 points and 175% at 38. Higher scores stay there. The bottom is half of that. Prices do not inflate. A farm neighbor may sell one seed or plantable vegetable for 6 to 16 emeralds.",
+                "Shop size follows house points. The top of the roll is 50% at 14 points and 175% at 38. Higher scores stay there. The bottom is half of that. Prices do not inflate. A farm neighbor may sell one seed or plantable vegetable for 6 to 16 emeralds. Pumpkin and melon seeds are 6, and nether wart is 4.",
                 "A jeweler sells a diamond for 8 emeralds, 4 gold ingots for 2, an iron block for 6, and a copper or redstone block for 2. Larger shops add lapis, amethyst, quartz, gold nuggets, ingots, and blocks of gold, lapis, amethyst, quartz, and diamond. A diamond block is 72 emeralds.",
                 "An armorsmith sells one heavy iron piece each restock. Which piece can change. The other sales are enchanted iron armor, each a different slot. A larger shop may buy iron. Heavy iron costs 12, 15, 21, or 24 emeralds for boots, a helmet, leggings, or a chestplate. Enchanted iron costs 6, 8, 11, or 12. A master armorsmith does the same with diamond: one heavy piece at four times the iron price, enchanted diamond armor at the heavy iron price, and a larger shop may buy diamonds.",
                 "A brewer sells one level 2 potion each restock. Which potion can change. Up to three other potions cost 1 emerald. A larger shop sells brewing ingredients for 1 emerald, such as nether wart, blaze powder, glowstone, and ghast tears.",
+                "A loot collector pays 1 emerald for 4 spider eyes, 4 gunpowder, or 8 bones. A larger shop also pays 1 emerald for 8 rotten flesh, 8 string, 4 slimeballs, 6 leather, 12 arrows, 6 ink sacs, 2 phantom membranes, 2 ender pearls, 2 blaze rods, or 1 ghast tear.",
                 "Each trade adds 1 to that resident's trading experience. When their stock changes, the square root of that experience is added to the house points for the new shop.",
                 "That stock change also rolls item amounts once from -25% to +25% and adds 0 to 25 from the house and trading experience. Buying gives that many more items. Selling to the resident asks for that many fewer. Emerald prices stay the same.",
                 "Residents have 40 health plus their house points, and regain 1 health a minute. Looking at one shows hearts, one per 10 health, beside the restock time.",
                 "They shoot mobs that come within 12 blocks and are after them. The bow hits 3 harder than a normal arrow. A close attack makes them switch to an iron sword.",
                 "A zombie cannot turn a resident unless the hit that kills them starts while they are already below 5 health.",
                 "A home stops listing a resident who has died or is no longer around the bed.",
-                "A drop collector warns you when a biome boss is out, and names the compass direction from that resident. East is where the sun rises.",
+                "A loot collector warns you when a biome boss is out, and names the compass direction from that resident. East is where the sun rises.",
                 "Council members each give a personal kill bounty: 6 to 18 common mobs at first, with 14 Minecraft days to finish. Each success with that resident makes their next hunt 20% larger. Every 3 successes, that resident's next hunt is rarer. Another council member keeps a separate ladder, so one can stay easier. You can hold 5 at a time, including ones waiting for emeralds. The next bounty from that resident waits 7 Minecraft days after the last one was given, and only after you finish it.",
                 "A kill counts toward every open bounty on that mob. One bounty shows Zombie Bounty 3/12 above the ability icons. Two or more name the resident and stack upward. A bounty that runs out is not replaced in that conversation. The reward is experience from the slain health, plus emeralds when you return to that resident.",
             ],

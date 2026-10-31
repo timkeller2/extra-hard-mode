@@ -69,6 +69,29 @@ class CropGrowthRulesTest {
     }
 
     @Test
+    void ripeCocoaDropsOneOrTwoAndAHoeMayAddOne() {
+        assertEquals(1, CropGrowthRules.ripeCocoaBeans(0, false, 30, 0));
+        assertEquals(2, CropGrowthRules.ripeCocoaBeans(1, false, 30, 0));
+        assertEquals(2, CropGrowthRules.ripeCocoaBeans(0, true, 10, 9));
+        assertEquals(1, CropGrowthRules.ripeCocoaBeans(0, true, 10, 10));
+        assertEquals(3, CropGrowthRules.ripeCocoaBeans(1, true, 30, 29));
+        assertEquals(2, CropGrowthRules.ripeCocoaBeans(1, true, 0, 0));
+        assertEquals(0, CropGrowthRules.cocoaHoeQuality("minecraft:iron_hoe", 0));
+        assertEquals(0, CropGrowthRules.cocoaHoeQuality("minecraft:wooden_hoe", 0));
+        assertEquals(0, CropGrowthRules.cocoaHoeQuality("minecraft:stone_hoe", 0));
+        assertEquals(0, CropGrowthRules.cocoaHoeQuality("minecraft:copper_hoe", 0));
+        assertEquals(10, CropGrowthRules.cocoaHoeQuality("minecraft:diamond_hoe", 0));
+        assertEquals(20, CropGrowthRules.cocoaHoeQuality("minecraft:golden_hoe", 0));
+        assertEquals(30, CropGrowthRules.cocoaHoeQuality("minecraft:netherite_hoe", 0));
+        assertEquals(12, CropGrowthRules.cocoaHoeQuality("minecraft:diamond_hoe", 1));
+        assertEquals(40, CropGrowthRules.cocoaHoeQuality("minecraft:netherite_hoe", 5));
+        assertEquals(4, CropGrowthRules.cocoaHoeQuality("minecraft:iron_hoe", 2));
+        assertFalse(CropGrowthRules.cocoaHoeAddsBean(0, 0));
+        assertTrue(CropGrowthRules.cocoaHoeAddsBean(0, 1));
+        assertFalse(CropGrowthRules.cocoaHoeAddsBean(10, 10));
+    }
+
+    @Test
     void netherWartDurationIsTwentyTimesVanilla() {
         assertEquals(2000, CropGrowthRules.NETHER_WART_DURATION_PERCENT);
         Random random = new Random(6L);

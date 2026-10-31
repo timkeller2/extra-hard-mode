@@ -300,6 +300,40 @@ public final class AntiFarming implements FeatureModule {
             drops.clear();
             drops.add(new ItemStack(Items.NETHER_WART));
         }
+        if (state != null
+                && state.getBlock() instanceof CocoaBlock
+                && state.getValue(CocoaBlock.AGE) >= CocoaBlock.MAX_AGE
+                && !(entity instanceof ServerPlayer player && EhmApi.playerBypasses(player))) {
+            ItemStack tool = ItemStack.EMPTY;
+            Object rawTool = context.getOptional(LootContextParams.TOOL);
+            if (rawTool instanceof ItemStack held) {
+                tool = held;
+            }
+            boolean hoe = !tool.isEmpty() && tool.is(ItemTags.HOES);
+            int quality = hoe ? CropGrowthRules.cocoaHoeQuality(itemId(tool), efficiencyLevel(level, tool)) : 0;
+            int beans = CropGrowthRules.ripeCocoaBeans(
+                    level.getRandom().nextInt(2), hoe, quality, level.getRandom().nextInt(100));
+            replaceCocoaBeanCount(drops, beans);
+        }
+    }
+
+    /** Keep one cocoa-bean stack and set it to {@code count}. Other drops stay. */
+    static void replaceCocoaBeanCount(java.util.List<ItemStack> drops, int count) {
+        boolean placed = false;
+        for (int i = 0; i < drops.size(); ) {
+            ItemStack stack = drops.get(i);
+            if (!stack.is(Items.COCOA_BEANS)) {
+                i++;
+                continue;
+            }
+            if (!placed && count > 0) {
+                stack.setCount(count);
+                placed = true;
+                i++;
+            } else {
+                drops.remove(i);
+            }
+        }
     }
 
     static boolean onAllowLoad(Entity entity, ServerLevel level, EntitySpawnReason reason, boolean alreadyLoaded) {
