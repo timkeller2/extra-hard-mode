@@ -430,7 +430,7 @@ public final class EhmHelp {
                         "Achievements: Each wool block, wool slab, wool stair, and wool carpet awards once at 64. Other blocks award at 256, then 512, then 1024.",
                         "Achievements: Each achievement gives 75 experience. Everyone can earn every achievement.",
                         "Achievements: By default the first player to claim one server-wide gets 25 extra experience.",
-                        "Achievements: You have (your experience level)% chance to gain a mana level.",
+                        "Achievements: Your experience level is the percent chance of a mana level. It is kept only when a d20 rolls above your mana level before Well Fed and gold.",
                         "Achievements: /tougher achieve lists the 5 closest builder tracks and at most 3 slayer tracks, plus the last block you placed.",
                         "Achievements: The first time you visit a biome you gain 50 experience, and 100 more if you are the first player to visit it.",
                         "Achievements: The first habitable home in a biome within 250 blocks gains (house points × 3) experience. One farther than 250 blocks pays again.",

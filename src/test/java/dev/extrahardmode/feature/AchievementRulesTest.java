@@ -171,6 +171,13 @@ class AchievementRulesTest {
         assertTrue(AchievementRules.manaFromExperience(15, 14));
         assertFalse(AchievementRules.manaFromExperience(15, 15));
         assertTrue(AchievementRules.manaFromExperience(100, 99));
+        assertEquals(20, AchievementRules.MANA_DIE_SIDES);
+        assertTrue(AchievementRules.manaDieBeatsBaseLevel(0, 1));
+        assertFalse(AchievementRules.manaDieBeatsBaseLevel(1, 1));
+        assertTrue(AchievementRules.manaDieBeatsBaseLevel(1, 2));
+        assertTrue(AchievementRules.manaDieBeatsBaseLevel(19, 20));
+        assertFalse(AchievementRules.manaDieBeatsBaseLevel(20, 20));
+        assertFalse(AchievementRules.manaDieBeatsBaseLevel(21, 20));
     }
 
     @Test

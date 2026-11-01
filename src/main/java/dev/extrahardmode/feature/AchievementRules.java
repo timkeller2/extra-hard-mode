@@ -194,6 +194,17 @@ public final class AchievementRules {
         return roll < chance;
     }
 
+    /** Faces on the die rolled after {@link #manaFromExperience} succeeds. */
+    public static final int MANA_DIE_SIDES = 20;
+
+    /**
+     * The experience roll offered a mana level. {@code die} is 1–20 and must be strictly higher
+     * than the stored mana level. Well Fed and ready gold are not part of that level.
+     */
+    public static boolean manaDieBeatsBaseLevel(int baseManaLevel, int die) {
+        return die > Math.max(0, baseManaLevel);
+    }
+
     /** {@code b:minecraft:oak_planks:0} / {@code s:minecraft:zombie:1}. */
     public static String claimKey(boolean builder, String id, int tierIndex) {
         if (id == null || id.isEmpty() || tierIndex < 0) {

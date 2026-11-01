@@ -43,6 +43,12 @@ public final class SpawnReplaceService {
          * @return replacement type, or {@code null} to keep {@code original}
          */
         EntityType<?> roll(Mob original, ServerLevel level);
+
+        /** The replacement is in the world. The original is discarded after this returns. */
+        default void afterSpawn(Mob original, Entity spawned) {}
+
+        /** {@link EntityType#spawn} returned null, so the original mob stays. */
+        default void cancelSpawn() {}
     }
 
     private SpawnReplaceService() {}
@@ -116,13 +122,16 @@ public final class SpawnReplaceService {
         for (ReplaceFn fn : fns) {
             EntityType<?> replacement = fn.roll(mob, level);
             if (replacement != null && replacement != mob.getType()) {
-                return spawnReplacement(mob, level, replacement);
+                if (spawnReplacement(mob, level, replacement, fn)) {
+                    return true;
+                }
+                fn.cancelSpawn();
             }
         }
         return false;
     }
 
-    private static boolean spawnReplacement(Mob original, ServerLevel level, EntityType<?> type) {
+    private static boolean spawnReplacement(Mob original, ServerLevel level, EntityType<?> type, ReplaceFn fn) {
         Entity spawned = type.spawn(level, original.blockPosition(), EntitySpawnReason.EVENT);
         if (spawned == null) {
             return false;
@@ -131,11 +140,15 @@ public final class SpawnReplaceService {
         if (spawned instanceof Mob replacement) {
             replacement.setAttached(EhmAttachments.EHM_SPAWN_PROCESSED, true);
         }
-        if (ConfigManager.global().debug()) {
-            ExtraHardModeMod.LOGGER.debug(
-                    "EHM spawn replace {} -> {} at {}", original.getType(), type, original.blockPosition());
+        try {
+            fn.afterSpawn(original, spawned);
+        } finally {
+            if (ConfigManager.global().debug()) {
+                ExtraHardModeMod.LOGGER.debug(
+                        "EHM spawn replace {} -> {} at {}", original.getType(), type, original.blockPosition());
+            }
+            original.discard();
         }
-        original.discard();
         return true;
     }
 }

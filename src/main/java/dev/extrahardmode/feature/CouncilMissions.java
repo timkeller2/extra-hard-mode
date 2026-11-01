@@ -1,5 +1,6 @@
 package dev.extrahardmode.feature;
 
+import dev.extrahardmode.mixin.PhantomAccess;
 import dev.extrahardmode.module.SpawnReplaceService;
 import dev.extrahardmode.network.ClientboundCouncilBountyPayload;
 import dev.extrahardmode.player.EhmAttachments;
@@ -7,7 +8,9 @@ import dev.extrahardmode.world.InhabitantData;
 import dev.extrahardmode.world.WorldGate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -20,7 +23,10 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Enemy;
+import net.minecraft.world.entity.monster.Phantom;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -29,7 +35,16 @@ import net.minecraft.world.item.Items;
  * Per-player council kill bounties. Each council member can hold one, up to five at a time.
  */
 public final class CouncilMissions {
+    /** Same offset Phantom.finalizeSpawn uses, so a lifted phantom circles the air and not the ground. */
+    private static final int PHANTOM_ANCHOR_ABOVE = 5;
+    private static final int PHANTOM_LIFT_MIN = 6;
+    private static final int PHANTOM_LIFT_MAX = 24;
+
     private static boolean spawnReplacementRegistered;
+    /** Server thread only. Set by the roll and consumed by afterSpawn or cancelSpawn. */
+    private static UUID pendingPlayer;
+    private static String pendingGiver;
+    private static String pendingMob;
 
     private CouncilMissions() {}
 
@@ -39,7 +54,22 @@ public final class CouncilMissions {
             return;
         }
         spawnReplacementRegistered = true;
-        SpawnReplaceService.registerAny(CouncilMissions::rollSpawnReplacement);
+        SpawnReplaceService.registerAny(new SpawnReplaceService.ReplaceFn() {
+            @Override
+            public EntityType<?> roll(Mob original, ServerLevel level) {
+                return rollSpawnReplacement(original, level);
+            }
+
+            @Override
+            public void afterSpawn(Mob original, Entity spawned) {
+                finishSpawnReplacement(original, spawned);
+            }
+
+            @Override
+            public void cancelSpawn() {
+                clearPendingReplacement();
+            }
+        });
     }
 
     public static List<CouncilMissionRules.Mission> boardOf(ServerPlayer player) {
@@ -95,9 +125,11 @@ public final class CouncilMissions {
     /**
      * Bounty creature for this natural hostile spawn, or null to leave it. Friendly categories
      * (animals, fish, squid, bats) are never swapped. Uses the nearest survival player within
-     * {@link CouncilMissionRules#BOUNTY_SPAWN_NEAR_BLOCKS}.
+     * {@link CouncilMissionRules#BOUNTY_SPAWN_NEAR_BLOCKS}. The daily count is not saved here.
+     * {@link #finishSpawnReplacement} saves it once the replacement is alive.
      */
     public static EntityType<?> rollSpawnReplacement(Mob mob, ServerLevel level) {
+        clearPendingReplacement();
         if (mob == null || level == null || !WorldGate.isModuleActive(level, Inhabitants.ID)) {
             return null;
         }
@@ -109,9 +141,8 @@ public final class CouncilMissions {
             return null;
         }
         long today = AntiFarming.overworldDay(level);
-        List<CouncilMissionRules.Mission> board = boardOf(player);
         List<CouncilMissionRules.Mission> open = new ArrayList<>();
-        for (CouncilMissionRules.Mission mission : board) {
+        for (CouncilMissionRules.Mission mission : boardOf(player)) {
             if (mission.active() && !CouncilMissionRules.expired(mission.assignedDay(), today)) {
                 open.add(mission);
             }
@@ -147,12 +178,95 @@ public final class CouncilMissions {
             return null;
         }
         CouncilMissionRules.Mission chosen = open.get(index);
-        List<CouncilMissionRules.Mission> next = new ArrayList<>();
-        for (CouncilMissionRules.Mission mission : board) {
-            next.add(mission == chosen ? mission.withReplacement(today) : mission);
-        }
-        save(player, next);
+        pendingPlayer = player.getUUID();
+        pendingGiver = chosen.giverId() == null ? "" : chosen.giverId();
+        pendingMob = chosen.mobId() == null ? "" : chosen.mobId();
         return type;
+    }
+
+    /**
+     * Counts the replacement only after it is in the world, then keeps it. A monster between 32 and
+     * 128 blocks despawns after about a minute, which was deleting the day's three swaps before a
+     * flying player reached them. A foot-level phantom mostly shows wing spores, so it is lifted.
+     */
+    private static void finishSpawnReplacement(Mob original, Entity spawned) {
+        UUID playerId = pendingPlayer;
+        String giverId = pendingGiver == null ? "" : pendingGiver;
+        String mobId = pendingMob == null ? "" : pendingMob;
+        clearPendingReplacement();
+        if (!(spawned instanceof Mob replacement) || !replacement.isAlive()) {
+            return;
+        }
+        if (!(original.level() instanceof ServerLevel level)) {
+            return;
+        }
+        if (playerId != null) {
+            ServerPlayer counted = level.getServer().getPlayerList().getPlayer(playerId);
+            if (counted != null) {
+                recordReplacement(counted, giverId, mobId, AntiFarming.overworldDay(level));
+            }
+        }
+        replacement.setPersistenceRequired();
+        AttributeInstance follow = replacement.getAttribute(Attributes.FOLLOW_RANGE);
+        if (follow != null) {
+            follow.setBaseValue(CouncilMissionRules.BOUNTY_SPAWN_NEAR_BLOCKS);
+        }
+        ServerPlayer hunter = nearestHunter(level, replacement);
+        if (hunter != null) {
+            replacement.setTarget(hunter);
+        }
+        if (replacement instanceof Phantom phantom) {
+            liftPhantom(level, phantom);
+        }
+    }
+
+    private static void recordReplacement(ServerPlayer player, String giverId, String mobId, long today) {
+        List<CouncilMissionRules.Mission> board = boardOf(player);
+        List<CouncilMissionRules.Mission> next = new ArrayList<>();
+        boolean counted = false;
+        for (CouncilMissionRules.Mission mission : board) {
+            String id = mission.giverId() == null ? "" : mission.giverId();
+            if (!counted
+                    && mission.active()
+                    && !CouncilMissionRules.expired(mission.assignedDay(), today)
+                    && id.equals(giverId)
+                    && mobId.equals(mission.mobId())
+                    && !CouncilMissionRules.spawnCapped(
+                            mission.spawnCountDay(), mission.spawnReplacements(), today)) {
+                next.add(mission.withReplacement(today));
+                counted = true;
+            } else {
+                next.add(mission);
+            }
+        }
+        if (counted) {
+            save(player, next);
+        }
+    }
+
+    /** First open column from 6 to 24 blocks up. The anchor moves with it so the circle does not dive. */
+    private static void liftPhantom(ServerLevel level, Phantom phantom) {
+        int base = phantom.getBlockY();
+        int top = Math.min(base + PHANTOM_LIFT_MAX, level.getMaxY() - 2);
+        int x = phantom.getBlockX();
+        int z = phantom.getBlockZ();
+        for (int y = base + PHANTOM_LIFT_MIN; y <= top; y++) {
+            BlockPos feet = new BlockPos(x, y, z);
+            if (!level.isLoaded(feet)) {
+                return;
+            }
+            if (level.getBlockState(feet).isAir() && level.getBlockState(feet.above()).isAir()) {
+                phantom.snapTo(phantom.getX(), y, phantom.getZ(), phantom.getYRot(), phantom.getXRot());
+                ((PhantomAccess) phantom).tougher$setAnchorPoint(feet.above(PHANTOM_ANCHOR_ABOVE));
+                return;
+            }
+        }
+    }
+
+    private static void clearPendingReplacement() {
+        pendingPlayer = null;
+        pendingGiver = null;
+        pendingMob = null;
     }
 
     private static ServerPlayer nearestHunter(ServerLevel level, Mob mob) {

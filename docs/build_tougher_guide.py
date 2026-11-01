@@ -336,7 +336,7 @@ def build():
                 [
                     "Place many of one block, or defeat many of one monster. Each claim gives 75 experience. Everyone can earn every achievement. Each wool block, wool slab, wool stair, and wool carpet awards once at 64. Other blocks award at 256, then 512, then 1024.",
                     "The first player on the server to claim one gets 25 extra experience by default.",
-                    "You have your experience level as a percent chance to gain a mana level.",
+                    "Your experience level is the percent chance of a mana level. It is kept only when a d20 rolls above your mana level before Well Fed and gold.",
                     "The first visit to a biome is 50 experience, and 100 more if you are first on the server. The first habitable home of a biome within 250 blocks is house points times 3. Another of that biome farther than 250 blocks pays again. The first trip 300 blocks from spawn is 100 experience.",
                     "Sneak while holding a block you can place to see how many placements remain. Placing it is not required. A kill always shows that number. It drifts down and left for 3 seconds, and stays hidden when that track is finished.",
                 ],

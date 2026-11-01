@@ -308,7 +308,11 @@ public final class Achievements implements FeatureModule {
 
     static void giveReward(ServerPlayer player, boolean firstClaim) {
         player.giveExperiencePoints(AchievementRules.rewardExperience(firstClaim));
-        if (AchievementRules.manaFromExperience(player.experienceLevel, player.getRandom().nextInt(100))) {
+        if (!AchievementRules.manaFromExperience(player.experienceLevel, player.getRandom().nextInt(100))) {
+            return;
+        }
+        int die = player.getRandom().nextInt(AchievementRules.MANA_DIE_SIDES) + 1;
+        if (AchievementRules.manaDieBeatsBaseLevel(storedManaLevel(player), die)) {
             grantMana(player, 1);
         }
     }

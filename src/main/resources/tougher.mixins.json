@@ -79,6 +79,7 @@
     "NaturalSpawnerMixin",
     "NetherWartBlockMixin",
     "NeutralMobMixin",
+    "PhantomAccess",
     "PistonStructureMixin",
     "PoisonMobEffectMixin",
     "PlayerActuallyHurtMixin",
