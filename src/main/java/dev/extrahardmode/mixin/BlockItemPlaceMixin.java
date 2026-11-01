@@ -5,6 +5,7 @@ import dev.extrahardmode.feature.AntiFarming;
 import dev.extrahardmode.feature.Dragon;
 import dev.extrahardmode.feature.FeatureBus;
 import dev.extrahardmode.feature.HardenedStone;
+import dev.extrahardmode.feature.LapisPortals;
 import dev.extrahardmode.feature.Torches;
 import dev.extrahardmode.feature.UnsafeBeds;
 import net.minecraft.world.InteractionResult;
@@ -65,5 +66,6 @@ public abstract class BlockItemPlaceMixin {
         Achievements.onPlaced(context, block);
         AntiFarming.onCropPlanted(context, block);
         Torches.onPlaced(context, block);
+        LapisPortals.onPlaced(context, block);
     }
 }

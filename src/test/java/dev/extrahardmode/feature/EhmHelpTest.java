@@ -207,6 +207,17 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("spends 1 use on each"));
         assertTrue(String.join(" ", lines).contains("300 blocks from spawn"));
         assertTrue(String.join(" ", lines).contains("Everyone can earn every achievement"));
+        assertTrue(String.join(" ", lines).contains("awards once at 64"));
+        assertTrue(String.join(" ", lines).contains("chest sits on the back wall"));
+        assertTrue(String.join(" ", lines).contains("largest lapis lazuli stack"));
+        assertTrue(String.join(" ", lines).contains("same count connect"));
+        assertTrue(String.join(" ", lines).contains("close the open door"));
+        assertTrue(String.join(" ", lines).contains("per 100 blocks, rounded up"));
+        assertTrue(String.join(" ", lines).contains("halved, to at least 1"));
+        assertTrue(String.join(" ", lines).contains("larger stack is spent first"));
+        assertTrue(String.join(" ", lines).contains("nether quartz first"));
+        assertTrue(String.join(" ", lines).contains("more than two booths does not link"));
+        assertTrue(String.join(" ", lines).contains("then 512, then 1024"));
         assertTrue(String.join(" ", lines).contains("small brown number"));
         assertTrue(String.join(" ", lines).contains("Sneak while holding a placeable block"));
         assertFalse(String.join(" ", lines).contains("your mana abilities"));
@@ -266,7 +277,9 @@ class EhmHelpTest {
         assertTrue(all.contains("below 5 health"));
         assertTrue(all.contains("has not appeared yet"));
         assertTrue(all.contains("wealthy trader"));
-        assertTrue(all.contains("or a jeweler"));
+        assertTrue(all.contains("a jeweler, an armorsmith"));
+        assertTrue(all.contains("twice as many residents"));
+        assertTrue(all.contains("past three times that number"));
         assertTrue(all.contains("stay 20 blocks"));
         assertTrue(all.contains("More than 50 blocks"));
         assertTrue(all.contains("More than 100 blocks"));

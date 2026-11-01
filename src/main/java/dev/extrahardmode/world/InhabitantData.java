@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.extrahardmode.ExtraHardModeMod;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -96,6 +97,18 @@ public final class InhabitantData extends SavedData {
 
     public Set<String> spawnedSpecialties() {
         return Set.copyOf(spawnedSpecialties);
+    }
+
+    /** Living residents in this dimension, counted by specialty. */
+    public Map<String, Integer> livingCounts() {
+        Map<String, Integer> counts = new HashMap<>();
+        for (Home home : homes.values()) {
+            if (home.living().isEmpty() || home.specialty() == null || home.specialty().isEmpty()) {
+                continue;
+            }
+            counts.merge(home.specialty(), 1, Integer::sum);
+        }
+        return counts;
     }
 
     public void markSpawned(String specialty) {

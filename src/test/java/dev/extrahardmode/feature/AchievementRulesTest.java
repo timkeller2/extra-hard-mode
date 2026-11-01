@@ -23,6 +23,72 @@ class AchievementRulesTest {
     }
 
     @Test
+    void colorBlocksAwardOnceAtSixtyFour() {
+        for (String id : List.of(
+                "minecraft:white_wool",
+                "minecraft:blue_wool",
+                "minecraft:light_gray_wool",
+                "minecraft:orange_carpet",
+                "minecraft:black_carpet",
+                "minecraft:white_wool_slab",
+                "minecraft:light_blue_wool_slab",
+                "minecraft:orange_wool_stairs",
+                "minecraft:pink_wool_stairs")) {
+            int[] thresholds = AchievementRules.builderThresholds(id);
+            assertEquals(AchievementRules.COLOR_BUILDER_THRESHOLDS, thresholds);
+            assertEquals(0, AchievementRules.awardedAfter(0, 63, thresholds));
+            assertEquals(1, AchievementRules.awardedAfter(0, 64, thresholds));
+            assertEquals(1, AchievementRules.awardedAfter(0, 1024, thresholds));
+            assertEquals(1, AchievementRules.awardedAfter(1, 1024, thresholds));
+            assertEquals(64, AchievementRules.nextTarget(10, thresholds, 0));
+            assertEquals(0, AchievementRules.nextTarget(80, thresholds, 1));
+        }
+        for (String id : List.of(
+                "minecraft:oak_planks",
+                "minecraft:stone",
+                "minecraft:white_concrete",
+                "minecraft:white_stained_glass",
+                "minecraft:white_terracotta",
+                "minecraft:white_bed",
+                "minecraft:glass",
+                "minecraft:oak_slab",
+                "minecraft:smooth_stone_slab",
+                "minecraft:oak_stairs",
+                "minecraft:stone_brick_stairs",
+                "minecraft:moss_carpet",
+                "minecraft:pale_moss_carpet")) {
+            assertEquals(AchievementRules.BUILDER_THRESHOLDS, AchievementRules.builderThresholds(id));
+        }
+        Map<String, Integer> builders = new LinkedHashMap<>();
+        builders.put("minecraft:white_wool", 10);
+        builders.put("minecraft:red_wool", 40);
+        builders.put("minecraft:oak_planks", 200);
+        builders.put("minecraft:oak_stairs", 100);
+        builders.put("minecraft:white_wool_stairs", 20);
+        List<AchievementRules.Progress> closest = AchievementRules.closest(builders, Map.of(), 15);
+        assertEquals(64, progress(closest, "minecraft:white_wool").nextTarget());
+        assertEquals(64, progress(closest, "minecraft:red_wool").nextTarget());
+        assertEquals(64, progress(closest, "minecraft:white_wool_stairs").nextTarget());
+        assertEquals(256, progress(closest, "minecraft:oak_planks").nextTarget());
+        assertEquals(256, progress(closest, "minecraft:oak_stairs").nextTarget());
+        assertEquals(
+                64, AchievementRules.lastPlaced("minecraft:white_wool", 20, 0).nextTarget());
+        assertEquals(
+                64, AchievementRules.lastPlaced("minecraft:orange_carpet", 64, 1).nextTarget());
+        assertTrue(AchievementRules.closest(
+                        Map.of("minecraft:blue_wool", 64),
+                        Map.of(),
+                        Map.of("minecraft:blue_wool", 1),
+                        Map.of(),
+                        15)
+                .isEmpty());
+    }
+
+    private static AchievementRules.Progress progress(List<AchievementRules.Progress> tracks, String id) {
+        return tracks.stream().filter(track -> id.equals(track.id())).findFirst().orElseThrow();
+    }
+
+    @Test
     void slayerTiers() {
         assertEquals(0, AchievementRules.awardedAfter(0, 24, AchievementRules.SLAYER_THRESHOLDS));
         assertEquals(1, AchievementRules.awardedAfter(0, 25, AchievementRules.SLAYER_THRESHOLDS));

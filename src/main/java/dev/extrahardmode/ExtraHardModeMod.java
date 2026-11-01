@@ -32,6 +32,7 @@ import dev.extrahardmode.item.FragileTools;
 import dev.extrahardmode.feature.FishStocks;
 import dev.extrahardmode.feature.Hunger;
 import dev.extrahardmode.feature.Inhabitants;
+import dev.extrahardmode.feature.LapisPortals;
 import dev.extrahardmode.feature.Players;
 import dev.extrahardmode.feature.Water;
 import dev.extrahardmode.feature.monster.Silverfish;
@@ -121,6 +122,7 @@ public class ExtraHardModeMod implements ModInitializer {
         FEATURES.register(new Tutorial());
         FEATURES.register(new VillagerNerf());
         FEATURES.register(new Inhabitants());
+        FEATURES.register(new LapisPortals());
         ServerLevelEvents.LOAD.register((server, level) -> {
             WorldGate.onLevelLoad(server, level);
             FEATURES.onWorldLoad(level);

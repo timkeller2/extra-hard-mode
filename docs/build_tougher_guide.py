@@ -334,7 +334,7 @@ def build():
             Paragraph("Achievements", s["h"]),
             bullets(
                 [
-                    "Place many of one block, or defeat many of one monster. Each claim gives 75 experience. Everyone can earn every achievement.",
+                    "Place many of one block, or defeat many of one monster. Each claim gives 75 experience. Everyone can earn every achievement. Each wool block, wool slab, wool stair, and wool carpet awards once at 64. Other blocks award at 256, then 512, then 1024.",
                     "The first player on the server to claim one gets 25 extra experience by default.",
                     "You have your experience level as a percent chance to gain a mana level.",
                     "The first visit to a biome is 50 experience, and 100 more if you are first on the server. The first habitable home of a biome within 250 blocks is house points times 3. Another of that biome farther than 250 blocks pays again. The first trip 300 blocks from spawn is 100 experience.",
@@ -343,6 +343,17 @@ def build():
                 s["bullet"],
             ),
         ]),
+        Paragraph("Lapis portals", s["h"]),
+        bullets(
+            [
+                "A door framed in lapis blocks, with a chest on the back wall, is a portal. The floor under the door, the block above it, and the three closed sides are lapis. The side the door faces stays open. Wood and iron doors both open.",
+                "The largest stack of lapis lazuli in the chest is the link. A stack of 3 connects only to another booth whose largest stack is also 3. The lapis is not used up.",
+                "Stand in the doorway and close the open door. That chest pays 1 redstone dust or nether quartz per 100 blocks, rounded up.",
+                "When the chest holds both, the cost is halved, to at least 1. The larger stack is spent first. When they match, nether quartz is spent first.",
+                "A count shared by more than two booths does not link.",
+            ],
+            s["bullet"],
+        ),
         Paragraph("Homes and residents", s["h"]),
         Paragraph(
             "Right-click a bed with a clock to score a room. An enclosed room of 24 to 400 air blocks, with block light 5 on every floor tile, a bed, and a door or fence gate facing outside, "
@@ -352,8 +363,9 @@ def build():
             "Empty eligible homes are checked at dawn. Chance starts at 8% at 12 points and rises with the score. It is halved in blight. "
             "Chests bias a hauler, a kitchen biases a cook, and plants or workstations bias a farmer. "
             "A cauldron favors a brewer, who can come to a 12-point home. "
-            "18 points can bring a loot collector, a wealthy trader, or a jeweler. 24 can bring an armorsmith or a wise teacher. 30 can bring a master armorsmith. "
-            "A council member can appear in any eligible home and is especially likely. New residents prefer a specialty that has not appeared yet.",
+            "18 points can bring a loot collector or a council member. 24 can bring a jeweler, an armorsmith, or a wise teacher. 30 can bring a wealthy trader or a master armorsmith. "
+            "A job with more than twice as many residents as the smallest job that home can host is skipped. Wise teachers and council members are skipped only past three times that number. "
+            "Council members are especially likely. New residents prefer a specialty that has not appeared yet.",
             s["body"],
         ),
         bullets(

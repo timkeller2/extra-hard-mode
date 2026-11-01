@@ -214,10 +214,10 @@ class InhabitantRulesTest {
         assertEquals(InhabitantRules.pickName(0), InhabitantRules.nameForHome(null));
         assertTrue(InhabitantRules.listedName(InhabitantRules.nameForHome("bed-1")));
         assertEquals(
-                List.of("hauler", "cook", "farm", "trader", "council", "brewer"),
+                List.of("hauler", "cook", "farm", "trader", "brewer"),
                 InhabitantRules.unseenSpecialties(List.of(), 12));
         assertEquals(
-                List.of("hauler", "cook", "farm", "bounty", "trader", "wealthy", "jeweler", "council", "brewer"),
+                List.of("hauler", "cook", "farm", "bounty", "trader", "council", "brewer"),
                 InhabitantRules.unseenSpecialties(List.of(), 18));
         assertTrue(InhabitantRules.unseenSpecialties(List.of(), 24).contains(InhabitantRules.ARMORSMITH));
         assertTrue(InhabitantRules.unseenSpecialties(List.of(), 24).contains(InhabitantRules.WISE_TEACHER));
@@ -228,10 +228,15 @@ class InhabitantRulesTest {
         assertTrue(InhabitantRules.specialtyAllowed(InhabitantRules.ARMORSMITH, 24));
         assertFalse(InhabitantRules.specialtyAllowed(InhabitantRules.MASTER_ARMORSMITH, 29));
         assertTrue(InhabitantRules.specialtyAllowed(InhabitantRules.MASTER_ARMORSMITH, 30));
-        assertFalse(InhabitantRules.specialtyAllowed(InhabitantRules.WEALTHY, 17));
-        assertTrue(InhabitantRules.specialtyAllowed(InhabitantRules.WEALTHY, 18));
-        assertFalse(InhabitantRules.specialtyAllowed(InhabitantRules.JEWELER, 17));
-        assertTrue(InhabitantRules.specialtyAllowed(InhabitantRules.JEWELER, 18));
+        assertFalse(InhabitantRules.specialtyAllowed(InhabitantRules.WEALTHY, 29));
+        assertTrue(InhabitantRules.specialtyAllowed(InhabitantRules.WEALTHY, 30));
+        assertFalse(InhabitantRules.specialtyAllowed(InhabitantRules.JEWELER, 23));
+        assertTrue(InhabitantRules.specialtyAllowed(InhabitantRules.JEWELER, 24));
+        assertFalse(InhabitantRules.specialtyAllowed(InhabitantRules.COUNCIL, 17));
+        assertTrue(InhabitantRules.specialtyAllowed(InhabitantRules.COUNCIL, 18));
+        assertTrue(InhabitantRules.unseenSpecialties(List.of(), 24).contains(InhabitantRules.JEWELER));
+        assertFalse(InhabitantRules.unseenSpecialties(List.of(), 24).contains(InhabitantRules.WEALTHY));
+        assertTrue(InhabitantRules.unseenSpecialties(List.of(), 30).contains(InhabitantRules.WEALTHY));
         assertTrue(InhabitantRules.unseenSpecialties(InhabitantRules.SPECIALTIES).isEmpty());
         assertEquals(
                 InhabitantRules.TRADER,
@@ -309,7 +314,8 @@ class InhabitantRulesTest {
             assertFalse(AbilityRules.teacherFlavor(ability).isEmpty());
             assertFalse(AbilityRules.teacherInstruction(ability).isEmpty());
         }
-        assertTrue(InhabitantRules.specialtyAllowed(InhabitantRules.COUNCIL, 12));
+        assertFalse(InhabitantRules.specialtyAllowed(InhabitantRules.COUNCIL, 12));
+        assertTrue(InhabitantRules.specialtyAllowed(InhabitantRules.COUNCIL, 18));
         assertEquals(4, InhabitantRules.defaultTradeTypeCount(InhabitantRules.COUNCIL));
         boolean sawCookAfterAll = false;
         boolean sawBrewerInKitchen = false;
@@ -340,7 +346,7 @@ class InhabitantRulesTest {
         int council = 0;
         for (int roll = 0; roll < 80; roll++) {
             if (InhabitantRules.COUNCIL.equals(
-                    InhabitantRules.pickSpecialty(empty, 12, roll, InhabitantRules.SPECIALTIES))) {
+                    InhabitantRules.pickSpecialty(empty, 18, roll, InhabitantRules.SPECIALTIES))) {
                 council++;
             }
         }
@@ -353,6 +359,57 @@ class InhabitantRulesTest {
             }
         }
         assertFalse(emptyBrewer);
+    }
+
+    @Test
+    void crowdedJobsAreSkippedAndRareJobsGetThreeTimes() {
+        assertFalse(InhabitantRules.crowdedOut(InhabitantRules.TRADER, 4, 2));
+        assertTrue(InhabitantRules.crowdedOut(InhabitantRules.TRADER, 5, 2));
+        assertFalse(InhabitantRules.crowdedOut(InhabitantRules.WISE_TEACHER, 6, 2));
+        assertTrue(InhabitantRules.crowdedOut(InhabitantRules.WISE_TEACHER, 7, 2));
+        assertFalse(InhabitantRules.crowdedOut(InhabitantRules.COUNCIL, 6, 2));
+        assertTrue(InhabitantRules.crowdedOut(InhabitantRules.COUNCIL, 7, 2));
+        assertFalse(InhabitantRules.crowdedOut(InhabitantRules.TRADER, 0, 0));
+        assertTrue(InhabitantRules.crowdedOut(InhabitantRules.COUNCIL, 1, 0));
+        Map<String, Integer> crowdedTrader = Map.of(
+                InhabitantRules.HAULER, 1,
+                InhabitantRules.COOK, 1,
+                InhabitantRules.FARM, 1,
+                InhabitantRules.TRADER, 5,
+                InhabitantRules.BREWER, 1);
+        assertEquals(1, InhabitantRules.lowestPossibleMembers(12, crowdedTrader));
+        assertEquals(
+                5,
+                InhabitantRules.lowestPossibleMembers(
+                        12,
+                        Map.of(
+                                InhabitantRules.HAULER, 5,
+                                InhabitantRules.COOK, 5,
+                                InhabitantRules.FARM, 5,
+                                InhabitantRules.TRADER, 5,
+                                InhabitantRules.BREWER, 5,
+                                InhabitantRules.MASTER_ARMORSMITH, 0)));
+        InhabitantRules.AmenityCounts empty =
+                new InhabitantRules.AmenityCounts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, false);
+        assertEquals(
+                InhabitantRules.HAULER,
+                InhabitantRules.pickSpecialty(empty, 12, 0, InhabitantRules.SPECIALTIES, crowdedTrader));
+        for (int roll = 0; roll < 20; roll++) {
+            assertNotEquals(
+                    InhabitantRules.TRADER,
+                    InhabitantRules.pickSpecialty(empty, 12, roll, InhabitantRules.SPECIALTIES, crowdedTrader));
+        }
+        Map<String, Integer> twiceTrader = new HashMap<>(crowdedTrader);
+        twiceTrader.put(InhabitantRules.TRADER, 2);
+        twiceTrader.put(InhabitantRules.HAULER, 1);
+        assertEquals(
+                InhabitantRules.TRADER,
+                InhabitantRules.pickSpecialty(empty, 12, 0, InhabitantRules.SPECIALTIES, twiceTrader));
+        assertFalse(InhabitantRules.specialtyBag(empty, 18).contains(InhabitantRules.WEALTHY));
+        assertFalse(InhabitantRules.specialtyBag(empty, 18).contains(InhabitantRules.JEWELER));
+        assertTrue(InhabitantRules.specialtyBag(empty, 24).contains(InhabitantRules.JEWELER));
+        assertFalse(InhabitantRules.specialtyBag(empty, 24).contains(InhabitantRules.WEALTHY));
+        assertTrue(InhabitantRules.specialtyBag(empty, 30).contains(InhabitantRules.WEALTHY));
     }
 
     @Test

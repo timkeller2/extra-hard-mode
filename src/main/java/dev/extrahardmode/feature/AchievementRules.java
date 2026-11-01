@@ -12,6 +12,25 @@ import java.util.Set;
  */
 public final class AchievementRules {
     public static final int[] BUILDER_THRESHOLDS = {256, 512, 1024};
+    /** One tier for each color of wool block, wool slab, wool stairs, and wool carpet. */
+    public static final int[] COLOR_BUILDER_THRESHOLDS = {64};
+    private static final Set<String> WOOL_COLORS = Set.of(
+            "white",
+            "orange",
+            "magenta",
+            "light_blue",
+            "yellow",
+            "lime",
+            "pink",
+            "gray",
+            "light_gray",
+            "cyan",
+            "purple",
+            "blue",
+            "brown",
+            "green",
+            "red",
+            "black");
     public static final int[] SLAYER_THRESHOLDS = {25, 50, 100};
     public static final int BREAK_DECREMENT_PERCENT = 75;
     public static final int TICKS_PER_MINUTE = 1200;
@@ -277,8 +296,8 @@ public final class AchievementRules {
             Collection<String> claimed) {
         List<Progress> builders = new ArrayList<>();
         List<Progress> slayers = new ArrayList<>();
-        collect(builders, builderCounts, builderAwarded, true, BUILDER_THRESHOLDS, claimed);
-        collect(slayers, slayerCounts, slayerAwarded, false, SLAYER_THRESHOLDS, claimed);
+        collect(builders, builderCounts, builderAwarded, true, claimed);
+        collect(slayers, slayerCounts, slayerAwarded, false, claimed);
         sortByRemaining(builders);
         sortByRemaining(slayers);
         int slayerCap = Math.min(Math.max(0, slayerLimit), slayers.size());
@@ -320,8 +339,8 @@ public final class AchievementRules {
             Collection<String> claimed) {
         List<Progress> builders = new ArrayList<>();
         List<Progress> slayers = new ArrayList<>();
-        collect(builders, builderCounts, builderAwarded, true, BUILDER_THRESHOLDS, claimed);
-        collect(slayers, slayerCounts, slayerAwarded, false, SLAYER_THRESHOLDS, claimed);
+        collect(builders, builderCounts, builderAwarded, true, claimed);
+        collect(slayers, slayerCounts, slayerAwarded, false, claimed);
         sortByRemaining(builders);
         sortByRemaining(slayers);
         List<Progress> report = new ArrayList<>(WATCH_SLAYER_LIMIT + BUILDER_LIST_LIMIT);
@@ -345,9 +364,10 @@ public final class AchievementRules {
         if (id == null || id.isEmpty()) {
             return null;
         }
-        int next = nextTarget(Math.max(0, count), BUILDER_THRESHOLDS, Math.max(0, awarded), claimed, true, id);
+        int[] thresholds = builderThresholds(id);
+        int next = nextTarget(Math.max(0, count), thresholds, Math.max(0, awarded), claimed, true, id);
         if (next <= 0) {
-            next = BUILDER_THRESHOLDS[BUILDER_THRESHOLDS.length - 1];
+            next = thresholds[thresholds.length - 1];
         }
         return new Progress(id, true, Math.max(0, count), next);
     }
@@ -355,6 +375,45 @@ public final class AchievementRules {
     private static void sortByRemaining(List<Progress> tracks) {
         tracks.sort(Comparator.comparingInt(Progress::remaining)
                 .thenComparing(Progress::id, String.CASE_INSENSITIVE_ORDER));
+    }
+
+    /**
+     * Each color of wool block, wool slab, wool stairs, and wool carpet uses
+     * {@link #COLOR_BUILDER_THRESHOLDS}. Every other block, including other slabs
+     * and stairs, uses {@link #BUILDER_THRESHOLDS}.
+     */
+    public static int[] builderThresholds(String blockId) {
+        return colorBuilderBlock(blockId) ? COLOR_BUILDER_THRESHOLDS : BUILDER_THRESHOLDS;
+    }
+
+    /** True for one color of wool block, wool slab, wool stairs, or wool carpet. */
+    public static boolean colorBuilderBlock(String blockId) {
+        String path = pathOf(blockId);
+        if (path.endsWith("_wool_stairs")) {
+            return woolColor(path, "_wool_stairs");
+        }
+        if (path.endsWith("_wool_slab")) {
+            return woolColor(path, "_wool_slab");
+        }
+        if (path.endsWith("_wool")) {
+            return woolColor(path, "_wool");
+        }
+        if (path.endsWith("_carpet")) {
+            return woolColor(path, "_carpet");
+        }
+        return false;
+    }
+
+    private static boolean woolColor(String path, String suffix) {
+        return WOOL_COLORS.contains(path.substring(0, path.length() - suffix.length()));
+    }
+
+    private static String pathOf(String id) {
+        if (id == null || id.isEmpty()) {
+            return "";
+        }
+        int colon = id.indexOf(':');
+        return colon >= 0 ? id.substring(colon + 1) : id;
     }
 
     public static String prettyId(String id) {
@@ -371,7 +430,6 @@ public final class AchievementRules {
             Map<String, Integer> counts,
             Map<String, Integer> awarded,
             boolean builder,
-            int[] thresholds,
             Collection<String> claimed) {
         if (counts == null || counts.isEmpty()) {
             return;
@@ -383,6 +441,7 @@ public final class AchievementRules {
                 continue;
             }
             int already = awarded == null ? 0 : awarded.getOrDefault(id, 0);
+            int[] thresholds = builder ? builderThresholds(id) : SLAYER_THRESHOLDS;
             int next = nextTarget(value, thresholds, already, claimed, builder, id);
             if (next <= 0) {
                 continue;

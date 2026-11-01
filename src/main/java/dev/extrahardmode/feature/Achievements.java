@@ -92,7 +92,7 @@ public final class Achievements implements FeatureModule {
                 count,
                 key,
                 EhmAttachments.EHM_BLOCK_AWARDED,
-                AchievementRules.BUILDER_THRESHOLDS,
+                AchievementRules.builderThresholds(key),
                 true,
                 block.getName());
     }
@@ -124,7 +124,7 @@ public final class Achievements implements FeatureModule {
                 countOf(player, EhmAttachments.EHM_BLOCK_PLACE_COUNTS, key),
                 key,
                 EhmAttachments.EHM_BLOCK_AWARDED,
-                AchievementRules.BUILDER_THRESHOLDS,
+                AchievementRules.builderThresholds(key),
                 eye.x + look.x * ahead,
                 eye.y + look.y * ahead,
                 eye.z + look.z * ahead);

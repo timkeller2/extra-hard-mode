@@ -501,7 +501,11 @@ public final class Inhabitants implements FeatureModule {
         }
         villager.snapTo(spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5, random.nextFloat() * 360.0F, 0.0F);
         String specialty = InhabitantRules.pickSpecialty(
-                result.amenities(), result.gates().score(), random.nextInt(), data.spawnedSpecialties());
+                result.amenities(),
+                result.gates().score(),
+                random.nextInt(),
+                data.spawnedSpecialties(),
+                data.livingCounts());
         String name = InhabitantRules.pickName(random.nextInt());
         stamp(villager, ResidenceScan.homeId(result.bed()), specialty, name, random);
         if (InhabitantRules.WISE_TEACHER.equals(specialty)) {

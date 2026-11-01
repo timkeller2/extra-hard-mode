@@ -80,7 +80,8 @@ public final class EhmHelp {
                 "furnishings",
                 "residents",
                 "shops",
-                "bounties"));
+                "bounties",
+                "portals"));
         topics.addAll(AbilityRules.abilityTopics());
         return List.copyOf(topics);
     }
@@ -91,7 +92,7 @@ public final class EhmHelp {
                 "tougher.help.overview.",
                 List.of(
                         "Tougher — harder survival. Type /tougher help <topic>, or /tougher ability help.",
-                        "Topics: mining, building, torches, hunger, farming, combat, armor, mana, abilities, achievements, homes.",
+                        "Topics: mining, building, torches, hunger, farming, combat, armor, mana, abilities, achievements, homes, portals.",
                         "Farming subjects: crops, animals, seasons, soil, processing.",
                         "Home subjects: rooms, furnishings, residents, shops, bounties. Checklist: /tougher help homes.",
                         "Mana abilities: /tougher ability help, or /tougher ability help <name>. /tougher me lists your skills.",
@@ -175,6 +176,7 @@ public final class EhmHelp {
                 mana(),
                 abilities(),
                 achievements(),
+                portals(),
                 homes());
     }
 
@@ -195,6 +197,7 @@ public final class EhmHelp {
             case "mana" -> mana();
             case "abilities", "ability" -> abilities();
             case "achievements", "achievement", "achieve" -> achievements();
+            case "portals", "portal" -> portals();
             case "homes", "home", "residence", "residences" -> homes();
             case "rooms", "room" -> Page.of("tougher.help.rooms.", InhabitantRules.homesRoomLines());
             case "furnishings", "furnishing", "furniture" ->
@@ -424,6 +427,7 @@ public final class EhmHelp {
                 "tougher.help.achievements.",
                 List.of(
                         "Achievements: Place many of one block or defeat many of one monster.",
+                        "Achievements: Each wool block, wool slab, wool stair, and wool carpet awards once at 64. Other blocks award at 256, then 512, then 1024.",
                         "Achievements: Each achievement gives 75 experience. Everyone can earn every achievement.",
                         "Achievements: By default the first player to claim one server-wide gets 25 extra experience.",
                         "Achievements: You have (your experience level)% chance to gain a mana level.",
@@ -432,6 +436,19 @@ public final class EhmHelp {
                         "Achievements: The first habitable home in a biome within 250 blocks gains (house points × 3) experience. One farther than 250 blocks pays again.",
                         "Achievements: The first time you travel 300 blocks from spawn you gain 100 experience.",
                         "Achievements: The small brown number shows kills left. Sneak while holding a placeable block to see placements left. It drifts down and left for 3 seconds and hides when finished."));
+    }
+
+    private static Page portals() {
+        return Page.of(
+                "tougher.help.portals.",
+                List.of(
+                        "Portals: Lapis blocks on the floor, above the door, and on the three closed sides at the floor and the door. A chest sits on the back wall.",
+                        "Portals: The largest lapis lazuli stack in the chest picks the link. Two booths with the same count connect.",
+                        "Portals: Any door works, including iron. Stand in the doorway and close the open door.",
+                        "Portals: The chest pays 1 redstone dust or nether quartz per 100 blocks, rounded up.",
+                        "Portals: When the chest holds both redstone dust and nether quartz, the cost is halved, to at least 1.",
+                        "Portals: The larger stack is spent first. Equal stacks spend nether quartz first.",
+                        "Portals: A count shared by more than two booths does not link."));
     }
 
     private static Page homes() {

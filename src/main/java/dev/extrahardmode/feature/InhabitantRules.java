@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
@@ -112,6 +113,13 @@ public final class InhabitantRules {
     public static final int BREWER_INGREDIENT_USES = DEFAULT_TRADE_USES;
     /** Copies in the arrival bag when the home has a cauldron. */
     public static final int BREWER_BAG_COPIES = 3;
+    /**
+     * A job is skipped when it has more living residents than this multiple of the smallest job
+     * this home can host.
+     */
+    public static final int CROWD_MULTIPLE = 2;
+    /** Wise teachers and council members use this higher multiple before they are skipped. */
+    public static final int RARE_CROWD_MULTIPLE = 3;
     private static final List<String> ARMOR_SLOTS = List.of("boots", "helmet", "leggings", "chestplate");
     public static final int WANDER_RANGE = 16;
     public static final int SNAP_HOME_RANGE = 32;
@@ -579,8 +587,10 @@ public final class InhabitantRules {
                 "Residents: Houses in unloaded chunks can still fill. Chance starts at 8% at 12 points and rises with extra points (halved in blight).",
                 "Residents: Chests bias a hauler, a kitchen biases a cook, and plants or workstations bias a farm neighbor.",
                 "Residents: A cauldron favors a brewer, and a brewer can come to a 12-point home.",
-                "Residents: 18 points can attract a loot collector, a wealthy trader, or a jeweler, 24 an armorsmith or a wise teacher, and 30 a master armorsmith.",
-                "Residents: A council member can appear in any eligible home. New residents prefer a type that has not appeared yet.",
+                "Residents: 18 points can attract a loot collector or a council member, 24 a jeweler, an armorsmith, or a wise teacher, and 30 a wealthy trader or a master armorsmith.",
+                "Residents: New residents prefer a type that has not appeared yet.",
+                "Residents: A job with more than twice as many residents as the smallest job this home can host is skipped.",
+                "Residents: Wise teachers and council members are skipped only past three times that number.",
                 "Residents: The house must be able to host that type. Once every type has spawned, the usual furnishing biases apply.",
                 "Residents: Council members are three times as likely as the most common other type. One resident per home.",
                 "Residents: Most residents restock every 14 Minecraft days; armorsmiths restock every 30 days.",
@@ -743,9 +753,9 @@ public final class InhabitantRules {
             return Integer.MAX_VALUE;
         }
         return switch (type) {
-            case MASTER_ARMORSMITH -> MASTER_SCORE;
-            case ARMORSMITH, WISE_TEACHER -> NOTABLE_SCORE;
-            case WEALTHY, BOUNTY, JEWELER -> FINE_SCORE;
+            case MASTER_ARMORSMITH, WEALTHY -> MASTER_SCORE;
+            case ARMORSMITH, WISE_TEACHER, JEWELER -> NOTABLE_SCORE;
+            case BOUNTY, COUNCIL -> FINE_SCORE;
             default -> MIN_SCORE;
         };
     }
@@ -761,17 +771,83 @@ public final class InhabitantRules {
     /**
      * Prefers a specialty that has never spawned and that this house can host.
      * Once every eligible type has appeared, uses the amenity-weighted bag.
+     * A job with more living residents than {@link #CROWD_MULTIPLE} times the smallest eligible job
+     * is left out. Wise teachers and council members use {@link #RARE_CROWD_MULTIPLE}.
      */
     public static String pickSpecialty(
             AmenityCounts counts, int score, int roll, Collection<String> alreadySpawned) {
-        List<String> unseen = unseenSpecialties(alreadySpawned, score);
+        return pickSpecialty(counts, score, roll, alreadySpawned, Map.of());
+    }
+
+    public static String pickSpecialty(
+            AmenityCounts counts,
+            int score,
+            int roll,
+            Collection<String> alreadySpawned,
+            Map<String, Integer> members) {
+        int lowest = lowestPossibleMembers(score, members);
+        List<String> unseen = new ArrayList<>();
+        for (String type : unseenSpecialties(alreadySpawned, score)) {
+            if (!crowdedOut(type, memberCount(members, type), lowest)) {
+                unseen.add(type);
+            }
+        }
         if (!unseen.isEmpty()) {
             return unseen.get(Math.floorMod(roll, unseen.size()));
         }
-        return pickSpecialtyFromBag(counts, score, roll);
+        List<String> open = new ArrayList<>();
+        for (String type : specialtyBag(counts, score)) {
+            if (!crowdedOut(type, memberCount(members, type), lowest)) {
+                open.add(type);
+            }
+        }
+        if (open.isEmpty()) {
+            for (String type : SPECIALTIES) {
+                if (specialtyAllowed(type, score) && !crowdedOut(type, memberCount(members, type), lowest)) {
+                    open.add(type);
+                }
+            }
+        }
+        if (open.isEmpty()) {
+            open = specialtyBag(counts, score);
+        }
+        return open.get(Math.floorMod(roll, open.size()));
     }
 
-    static String pickSpecialtyFromBag(AmenityCounts counts, int score, int roll) {
+    /** Living residents of {@code type}. A missing entry counts as none. */
+    public static int memberCount(Map<String, Integer> members, String type) {
+        if (members == null || type == null) {
+            return 0;
+        }
+        Integer count = members.get(type);
+        return count == null ? 0 : Math.max(0, count);
+    }
+
+    /** Fewest living residents among the jobs this score can host. */
+    public static int lowestPossibleMembers(int score, Map<String, Integer> members) {
+        int lowest = Integer.MAX_VALUE;
+        boolean any = false;
+        for (String type : SPECIALTIES) {
+            if (!specialtyAllowed(type, score)) {
+                continue;
+            }
+            any = true;
+            lowest = Math.min(lowest, memberCount(members, type));
+        }
+        return any ? lowest : 0;
+    }
+
+    /**
+     * True when {@code members} is above twice the smallest eligible job, or above three times
+     * for a wise teacher or a council member.
+     */
+    public static boolean crowdedOut(String type, int members, int lowest) {
+        int multiple = WISE_TEACHER.equals(type) || COUNCIL.equals(type) ? RARE_CROWD_MULTIPLE : CROWD_MULTIPLE;
+        long floor = Math.max(0, lowest);
+        return Math.max(0, members) > floor * multiple;
+    }
+
+    static List<String> specialtyBag(AmenityCounts counts, int score) {
         List<String> bag = new ArrayList<>();
         bag.add(TRADER);
         bag.add(TRADER);
@@ -795,20 +871,20 @@ public final class InhabitantRules {
         }
         if (score >= FINE_SCORE) {
             bag.add(BOUNTY);
-            bag.add(WEALTHY);
-            bag.add(WEALTHY);
-            bag.add(JEWELER);
-            bag.add(JEWELER);
         }
         if (score >= NOTABLE_SCORE) {
             bag.add(BOUNTY);
             bag.add(BOUNTY);
+            bag.add(JEWELER);
+            bag.add(JEWELER);
             bag.add(ARMORSMITH);
             bag.add(ARMORSMITH);
             bag.add(WISE_TEACHER);
             bag.add(WISE_TEACHER);
         }
         if (score >= MASTER_SCORE) {
+            bag.add(WEALTHY);
+            bag.add(WEALTHY);
             bag.add(MASTER_ARMORSMITH);
             bag.add(MASTER_ARMORSMITH);
             bag.add(MASTER_ARMORSMITH);
@@ -827,8 +903,7 @@ public final class InhabitantRules {
                 bag.add(COUNCIL);
             }
         }
-        int index = Math.floorMod(roll, bag.size());
-        return bag.get(index);
+        return bag;
     }
 
     /** Work clothes. Stone or iron rank. */
