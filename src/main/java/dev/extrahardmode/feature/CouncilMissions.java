@@ -1,16 +1,17 @@
 package dev.extrahardmode.feature;
 
+import dev.extrahardmode.ExtraHardModeMod;
+import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.mixin.PhantomAccess;
-import dev.extrahardmode.module.SpawnReplaceService;
 import dev.extrahardmode.network.ClientboundCouncilBountyPayload;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.world.InhabitantData;
 import dev.extrahardmode.world.WorldGate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -18,18 +19,26 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.FluidTags;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Enemy;
+import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.monster.Phantom;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.NaturalSpawner;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.FluidState;
 
 /**
  * Per-player council kill bounties. Each council member can hold one, up to five at a time.
@@ -39,38 +48,13 @@ public final class CouncilMissions {
     private static final int PHANTOM_ANCHOR_ABOVE = 5;
     private static final int PHANTOM_LIFT_MIN = 6;
     private static final int PHANTOM_LIFT_MAX = 24;
-
-    private static boolean spawnReplacementRegistered;
-    /** Server thread only. Set by the roll and consumed by afterSpawn or cancelSpawn. */
-    private static UUID pendingPlayer;
-    private static String pendingGiver;
-    private static String pendingMob;
+    /** Columns tried once a night roll succeeds. A miss spends the roll. */
+    private static final int COLUMN_TRIES = 12;
+    /** Ground search stays with the player: this far down, and {@link #SCAN_UP} above. */
+    private static final int SCAN_DOWN = 24;
+    private static final int SCAN_UP = 16;
 
     private CouncilMissions() {}
-
-    /** One registration. Each open bounty is a separate 10% roll, and the first hit is the only swap. */
-    public static void registerSpawnReplacement() {
-        if (spawnReplacementRegistered) {
-            return;
-        }
-        spawnReplacementRegistered = true;
-        SpawnReplaceService.registerAny(new SpawnReplaceService.ReplaceFn() {
-            @Override
-            public EntityType<?> roll(Mob original, ServerLevel level) {
-                return rollSpawnReplacement(original, level);
-            }
-
-            @Override
-            public void afterSpawn(Mob original, Entity spawned) {
-                finishSpawnReplacement(original, spawned);
-            }
-
-            @Override
-            public void cancelSpawn() {
-                clearPendingReplacement();
-            }
-        });
-    }
 
     public static List<CouncilMissionRules.Mission> boardOf(ServerPlayer player) {
         List<CouncilMissionRules.Mission> stored = player.getAttached(EhmAttachments.EHM_COUNCIL_MISSIONS);
@@ -120,173 +104,298 @@ public final class CouncilMissions {
         if (changed) {
             save(player, next);
         }
+        maybeSpawn(player, today);
+    }
+
+    /** Loaded bounty creatures from an earlier overworld day are removed without drops. */
+    public static void retireNightSpawns(ServerLevel level, long today) {
+        if (level == null) {
+            return;
+        }
+        List<Mob> doomed = new ArrayList<>();
+        for (Entity entity : level.getAllEntities()) {
+            if (!(entity instanceof Mob mob) || !mob.isAlive()) {
+                continue;
+            }
+            long spawned = mob.getAttachedOrElse(EhmAttachments.EHM_BOUNTY_SPAWN_DAY, -1L);
+            if (spawned >= 0L && today > spawned) {
+                doomed.add(mob);
+            }
+        }
+        for (Mob mob : doomed) {
+            mob.discard();
+        }
     }
 
     /**
-     * Bounty creature for this natural hostile spawn, or null to leave it. Friendly categories
-     * (animals, fish, squid, bats) are never swapped. Uses the nearest survival player within
-     * {@link CouncilMissionRules#BOUNTY_SPAWN_NEAR_BLOCKS}. The daily count is not saved here.
-     * {@link #finishSpawnReplacement} saves it once the replacement is alive.
+     * One try per player each second of the overworld night. A hit places one open bounty creature.
+     * If that creature has no legal spot, the other open bounties are tried. The roll is spent either way.
      */
-    public static EntityType<?> rollSpawnReplacement(Mob mob, ServerLevel level) {
-        clearPendingReplacement();
-        if (mob == null || level == null || !WorldGate.isModuleActive(level, Inhabitants.ID)) {
-            return null;
+    private static void maybeSpawn(ServerPlayer player, long today) {
+        if (!(player.level() instanceof ServerLevel level) || !WorldGate.isModuleActive(level, Inhabitants.ID)) {
+            return;
         }
-        if (!CouncilMissionRules.bountyCanReplace(mob.getType().getCategory().getName())) {
-            return null;
+        if (!player.isAlive() || Achievements.skipPlayer(player)) {
+            return;
         }
-        ServerPlayer player = nearestHunter(level, mob);
-        if (player == null) {
-            return null;
+        if (!CouncilMissionRules.night(level.getOverworldClockTime())) {
+            return;
         }
-        long today = AntiFarming.overworldDay(level);
+        List<CouncilMissionRules.Mission> open = openMissions(player, today);
+        if (open.isEmpty()) {
+            return;
+        }
+        RandomSource random = level.getRandom();
+        if (!CouncilMissionRules.nightSpawn(random.nextInt(CouncilMissionRules.NIGHT_SPAWN_ONE_IN))) {
+            return;
+        }
+        int start = CouncilMissionRules.bountyChoice(open.size(), random.nextInt());
+        for (int i = 0; i < open.size(); i++) {
+            if (spawnOne(player, level, open.get((start + i) % open.size()), today, random)) {
+                return;
+            }
+        }
+    }
+
+    private static List<CouncilMissionRules.Mission> openMissions(ServerPlayer player, long today) {
         List<CouncilMissionRules.Mission> open = new ArrayList<>();
         for (CouncilMissionRules.Mission mission : boardOf(player)) {
-            if (mission.active() && !CouncilMissionRules.expired(mission.assignedDay(), today)) {
+            if (mission.active() && !CouncilMissionRules.expired(mission, today)) {
                 open.add(mission);
             }
         }
-        if (open.isEmpty()) {
-            return null;
-        }
-        List<String> ids = new ArrayList<>();
-        boolean[] capped = new boolean[open.size()];
-        for (int i = 0; i < open.size(); i++) {
-            CouncilMissionRules.Mission mission = open.get(i);
-            ids.add(mission.mobId());
-            capped[i] = CouncilMissionRules.spawnCapped(
-                    mission.spawnCountDay(), mission.spawnReplacements(), today);
-        }
-        Identifier spawning = BuiltInRegistries.ENTITY_TYPE.getKey(mob.getType());
-        String spawningId = spawning == null ? "" : spawning.toString();
-        int[] rolls = new int[ids.size()];
-        var random = level.getRandom();
-        for (int i = 0; i < rolls.length; i++) {
-            rolls[i] = random.nextInt(100);
-        }
-        int index = CouncilMissionRules.bountyReplacementIndex(ids, spawningId, rolls, capped);
-        if (index < 0) {
-            return null;
-        }
-        Identifier id = Identifier.tryParse(ids.get(index));
-        if (id == null || !BuiltInRegistries.ENTITY_TYPE.containsKey(id)) {
-            return null;
-        }
-        EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getValue(id);
-        if (type == mob.getType()) {
-            return null;
-        }
-        CouncilMissionRules.Mission chosen = open.get(index);
-        pendingPlayer = player.getUUID();
-        pendingGiver = chosen.giverId() == null ? "" : chosen.giverId();
-        pendingMob = chosen.mobId() == null ? "" : chosen.mobId();
-        return type;
+        return open;
     }
 
-    /**
-     * Counts the replacement only after it is in the world, then keeps it. A monster between 32 and
-     * 128 blocks despawns after about a minute, which was deleting the day's three swaps before a
-     * flying player reached them. A foot-level phantom mostly shows wing spores, so it is lifted.
-     */
-    private static void finishSpawnReplacement(Mob original, Entity spawned) {
-        UUID playerId = pendingPlayer;
-        String giverId = pendingGiver == null ? "" : pendingGiver;
-        String mobId = pendingMob == null ? "" : pendingMob;
-        clearPendingReplacement();
-        if (!(spawned instanceof Mob replacement) || !replacement.isAlive()) {
-            return;
+    private static boolean spawnOne(
+            ServerPlayer player,
+            ServerLevel level,
+            CouncilMissionRules.Mission mission,
+            long today,
+            RandomSource random) {
+        Identifier id = Identifier.tryParse(mission.mobId());
+        if (id == null || !BuiltInRegistries.ENTITY_TYPE.containsKey(id)) {
+            return false;
         }
-        if (!(original.level() instanceof ServerLevel level)) {
-            return;
+        EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getValue(id);
+        BlockPos feet = findSpawn(level, player, type, random);
+        if (feet == null) {
+            return false;
         }
-        if (playerId != null) {
-            ServerPlayer counted = level.getServer().getPlayerList().getPlayer(playerId);
-            if (counted != null) {
-                recordReplacement(counted, giverId, mobId, AntiFarming.overworldDay(level));
+        Entity spawned = type.spawn(level, feet, EntitySpawnReason.EVENT);
+        if (!(spawned instanceof Mob mob) || !mob.isAlive() || mob.isInWall()) {
+            if (spawned != null) {
+                spawned.discard();
             }
+            return false;
         }
-        replacement.setPersistenceRequired();
-        AttributeInstance follow = replacement.getAttribute(Attributes.FOLLOW_RANGE);
+        mob.setPersistenceRequired();
+        mob.setAttached(EhmAttachments.EHM_SPAWN_PROCESSED, Boolean.TRUE);
+        mob.setAttached(EhmAttachments.EHM_LOOTLESS, Boolean.FALSE);
+        mob.setAttached(EhmAttachments.EHM_UNNATURAL_SPAWN, Boolean.FALSE);
+        mob.setAttached(EhmAttachments.EHM_BOUNTY_SPAWN_DAY, today);
+        AttributeInstance follow = mob.getAttribute(Attributes.FOLLOW_RANGE);
         if (follow != null) {
             follow.setBaseValue(CouncilMissionRules.BOUNTY_SPAWN_NEAR_BLOCKS);
         }
-        ServerPlayer hunter = nearestHunter(level, replacement);
-        if (hunter != null) {
-            replacement.setTarget(hunter);
+        mob.setTarget(player);
+        if (mob instanceof Phantom phantom) {
+            ((PhantomAccess) phantom).tougher$setAnchorPoint(mob.blockPosition().above(PHANTOM_ANCHOR_ABOVE));
         }
-        if (replacement instanceof Phantom phantom) {
-            liftPhantom(level, phantom);
+        if (ConfigManager.global().debug()) {
+            ExtraHardModeMod.LOGGER.debug("EHM bounty spawn {} at {}", type, feet);
         }
+        return true;
     }
 
-    private static void recordReplacement(ServerPlayer player, String giverId, String mobId, long today) {
-        List<CouncilMissionRules.Mission> board = boardOf(player);
-        List<CouncilMissionRules.Mission> next = new ArrayList<>();
-        boolean counted = false;
-        for (CouncilMissionRules.Mission mission : board) {
-            String id = mission.giverId() == null ? "" : mission.giverId();
-            if (!counted
-                    && mission.active()
-                    && !CouncilMissionRules.expired(mission.assignedDay(), today)
-                    && id.equals(giverId)
-                    && mobId.equals(mission.mobId())
-                    && !CouncilMissionRules.spawnCapped(
-                            mission.spawnCountDay(), mission.spawnReplacements(), today)) {
-                next.add(mission.withReplacement(today));
-                counted = true;
-            } else {
-                next.add(mission);
+    private static BlockPos findSpawn(ServerLevel level, ServerPlayer player, EntityType<?> type, RandomSource random) {
+        double min = CouncilMissionRules.BOUNTY_SPAWN_MIN_BLOCKS;
+        double max = CouncilMissionRules.BOUNTY_SPAWN_NEAR_BLOCKS;
+        for (int attempt = 0; attempt < COLUMN_TRIES; attempt++) {
+            double angle = random.nextDouble() * Math.PI * 2.0;
+            double radius = Math.sqrt(random.nextDouble() * (max * max - min * min) + min * min);
+            int x = player.getBlockX() + (int) Math.round(Math.cos(angle) * radius);
+            int z = player.getBlockZ() + (int) Math.round(Math.sin(angle) * radius);
+            BlockPos feet = findFeet(level, player, type, x, z, random);
+            if (feet != null) {
+                return feet;
             }
         }
-        if (counted) {
-            save(player, next);
+        return null;
+    }
+
+    /** Closest legal feet to the player's height, down {@link #SCAN_DOWN} and up {@link #SCAN_UP}. */
+    private static BlockPos findFeet(
+            ServerLevel level, ServerPlayer player, EntityType<?> type, int x, int z, RandomSource random) {
+        int origin = player.getBlockY();
+        int minY = Math.max(level.getMinY() + 1, origin - SCAN_DOWN);
+        int maxY = Math.min(level.getMaxY() - 2, origin + SCAN_UP);
+        if (!level.isLoaded(new BlockPos(x, origin, z))) {
+            return null;
         }
-    }
-
-    /** First open column from 6 to 24 blocks up. The anchor moves with it so the circle does not dive. */
-    private static void liftPhantom(ServerLevel level, Phantom phantom) {
-        int base = phantom.getBlockY();
-        int top = Math.min(base + PHANTOM_LIFT_MAX, level.getMaxY() - 2);
-        int x = phantom.getBlockX();
-        int z = phantom.getBlockZ();
-        for (int y = base + PHANTOM_LIFT_MIN; y <= top; y++) {
-            BlockPos feet = new BlockPos(x, y, z);
-            if (!level.isLoaded(feet)) {
-                return;
+        for (int delta = 0; delta <= SCAN_DOWN; delta++) {
+            int down = origin - delta;
+            if (down >= minY && accept(level, player, type, new BlockPos(x, down, z), random)) {
+                return new BlockPos(x, down, z);
             }
-            if (level.getBlockState(feet).isAir() && level.getBlockState(feet.above()).isAir()) {
-                phantom.snapTo(phantom.getX(), y, phantom.getZ(), phantom.getYRot(), phantom.getXRot());
-                ((PhantomAccess) phantom).tougher$setAnchorPoint(feet.above(PHANTOM_ANCHOR_ABOVE));
-                return;
-            }
-        }
-    }
-
-    private static void clearPendingReplacement() {
-        pendingPlayer = null;
-        pendingGiver = null;
-        pendingMob = null;
-    }
-
-    private static ServerPlayer nearestHunter(ServerLevel level, Mob mob) {
-        double limit = (double) CouncilMissionRules.BOUNTY_SPAWN_NEAR_BLOCKS * CouncilMissionRules.BOUNTY_SPAWN_NEAR_BLOCKS;
-        ServerPlayer nearest = null;
-        double best = limit;
-        for (ServerPlayer player : level.players()) {
-            if (!player.isAlive() || Achievements.skipPlayer(player)) {
+            if (delta == 0 || delta > SCAN_UP) {
                 continue;
             }
-            double distance = player.distanceToSqr(mob);
-            if (distance > limit) {
-                continue;
-            }
-            if (nearest == null || distance < best) {
-                best = distance;
-                nearest = player;
+            int up = origin + delta;
+            if (up <= maxY && accept(level, player, type, new BlockPos(x, up, z), random)) {
+                return new BlockPos(x, up, z);
             }
         }
-        return nearest;
+        return null;
+    }
+
+    private static boolean accept(
+            ServerLevel level, ServerPlayer player, EntityType<?> type, BlockPos feet, RandomSource random) {
+        if (!withinRange(player, feet) || !level.getWorldBorder().isWithinBounds(feet)) {
+            return false;
+        }
+        if (flying(type)) {
+            return flyingSpot(level, feet, type, random);
+        }
+        return groundedSpot(level, feet, type, random);
+    }
+
+    private static boolean withinRange(ServerPlayer player, BlockPos feet) {
+        double dx = feet.getX() + 0.5 - player.getX();
+        double dy = feet.getY() - player.getY();
+        double dz = feet.getZ() + 0.5 - player.getZ();
+        double distance = dx * dx + dy * dy + dz * dz;
+        double min = CouncilMissionRules.BOUNTY_SPAWN_MIN_BLOCKS;
+        double max = CouncilMissionRules.BOUNTY_SPAWN_NEAR_BLOCKS;
+        return distance >= min * min && distance <= max * max;
+    }
+
+    /**
+     * Phantoms and ghasts hang in an open column 6 to 24 blocks above a solid floor. Air is not a
+     * spawn block, so the darkness check is separate from the floor rule.
+     */
+    private static boolean flyingSpot(ServerLevel level, BlockPos feet, EntityType<?> type, RandomSource random) {
+        int top = feet.getY() + bodyBlocks(type) - 1;
+        if (top >= level.getMaxY()) {
+            return false;
+        }
+        for (int lift = PHANTOM_LIFT_MIN; lift <= PHANTOM_LIFT_MAX; lift++) {
+            BlockPos floor = feet.below(lift);
+            if (!level.isLoaded(floor)) {
+                return false;
+            }
+            if (!solidFloor(level, floor)) {
+                continue;
+            }
+            boolean open = true;
+            for (int y = floor.getY() + 1; y <= top; y++) {
+                if (!bandClear(level, new BlockPos(feet.getX(), y, feet.getZ()), type)) {
+                    open = false;
+                    break;
+                }
+            }
+            if (open) {
+                return Monster.isDarkEnoughToSpawn(level, feet, random);
+            }
+        }
+        return false;
+    }
+
+    /** Solid floor, or water when that creature can spawn in it. Lava never qualifies. */
+    private static boolean groundedSpot(ServerLevel level, BlockPos feet, EntityType<?> type, RandomSource random) {
+        if (!level.isLoaded(feet)) {
+            return false;
+        }
+        BlockPos floor = feet.below();
+        if (!level.isLoaded(floor)) {
+            return false;
+        }
+        BlockState floorState = level.getBlockState(floor);
+        if (floorState.getFluidState().is(FluidTags.LAVA)) {
+            return false;
+        }
+        boolean fluid = !floorState.getFluidState().isEmpty();
+        if (!fluid && !floorState.isFaceSturdy(level, floor, Direction.UP)) {
+            return false;
+        }
+        if (!columnClear(level, feet, type)) {
+            return false;
+        }
+        return Monster.checkMonsterSpawnRules(mobType(type), level, EntitySpawnReason.NATURAL, feet, random);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static EntityType<? extends Mob> mobType(EntityType<?> type) {
+        return (EntityType<? extends Mob>) type;
+    }
+
+    private static boolean solidFloor(ServerLevel level, BlockPos floor) {
+        BlockState state = level.getBlockState(floor);
+        if (state.getFluidState().is(FluidTags.WATER) || state.getFluidState().is(FluidTags.LAVA)) {
+            return false;
+        }
+        return state.isFaceSturdy(level, floor, Direction.UP);
+    }
+
+    private static boolean columnClear(ServerLevel level, BlockPos feet, EntityType<?> type) {
+        int top = feet.getY() + bodyBlocks(type);
+        for (int y = feet.getY(); y < top; y++) {
+            if (!bandClear(level, new BlockPos(feet.getX(), y, feet.getZ()), type)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean bandClear(ServerLevel level, BlockPos center, EntityType<?> type) {
+        int radius = bodyRadius(type);
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dz = -radius; dz <= radius; dz++) {
+                if (!emptySpawn(level, center.offset(dx, 0, dz), type)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private static boolean emptySpawn(ServerLevel level, BlockPos pos, EntityType<?> type) {
+        if (!level.isLoaded(pos)) {
+            return false;
+        }
+        BlockState state = level.getBlockState(pos);
+        FluidState fluid = state.getFluidState();
+        return NaturalSpawner.isValidEmptySpawnBlock(level, pos, state, fluid, type);
+    }
+
+    private static boolean flying(EntityType<?> type) {
+        return type == EntityTypes.PHANTOM || type == EntityTypes.GHAST;
+    }
+
+    private static int bodyBlocks(EntityType<?> type) {
+        if (type == EntityTypes.GHAST) {
+            return 4;
+        }
+        if (type == EntityTypes.ENDERMAN || type == EntityTypes.RAVAGER || type == EntityTypes.WITHER_SKELETON) {
+            return 3;
+        }
+        if (type == EntityTypes.SILVERFISH
+                || type == EntityTypes.CAVE_SPIDER
+                || type == EntityTypes.SPIDER
+                || type == EntityTypes.PHANTOM) {
+            return 1;
+        }
+        return 2;
+    }
+
+    private static int bodyRadius(EntityType<?> type) {
+        if (type == EntityTypes.GHAST) {
+            return 2;
+        }
+        if (type == EntityTypes.RAVAGER || type == EntityTypes.ELDER_GUARDIAN) {
+            return 1;
+        }
+        return 0;
     }
 
     public static void onKill(LivingEntity entity, DamageSource source) {

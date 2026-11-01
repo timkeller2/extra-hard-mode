@@ -119,75 +119,77 @@ class CouncilMissionRulesTest {
     }
 
     @Test
-    void eachOpenBountyRollsOnceAndTheFirstHitWins() {
-        assertEquals(10, CouncilMissionRules.BOUNTY_SPAWN_PERCENT);
-        assertEquals(3, CouncilMissionRules.BOUNTY_REPLACEMENTS_PER_DAY);
-        assertEquals(128, CouncilMissionRules.BOUNTY_SPAWN_NEAR_BLOCKS);
-        assertEquals(0, CouncilMissionRules.bountyReplacementIndex(List.of("minecraft:skeleton"), "minecraft:zombie", new int[] {9}));
-        assertEquals(-1, CouncilMissionRules.bountyReplacementIndex(List.of("minecraft:skeleton"), "minecraft:zombie", new int[] {10}));
-        assertEquals(-1, CouncilMissionRules.bountyReplacementIndex(List.of("minecraft:skeleton"), "minecraft:zombie", new int[] {99}));
-        assertEquals(0, CouncilMissionRules.bountyReplacementIndex(List.of("minecraft:skeleton"), "minecraft:zombie", new int[] {0}));
-        assertEquals(
-                1,
-                CouncilMissionRules.bountyReplacementIndex(
-                        List.of("minecraft:skeleton", "minecraft:creeper"), "minecraft:zombie", new int[] {10, 0}));
-        assertEquals(
-                0,
-                CouncilMissionRules.bountyReplacementIndex(
-                        List.of("minecraft:skeleton", "minecraft:creeper"), "minecraft:zombie", new int[] {0, 0}));
-        assertEquals(
-                1,
-                CouncilMissionRules.bountyReplacementIndex(
-                        List.of("minecraft:zombie", "minecraft:skeleton"), "minecraft:zombie", new int[] {0, 9}));
-        assertEquals(
-                -1,
-                CouncilMissionRules.bountyReplacementIndex(
-                        List.of("minecraft:zombie", "minecraft:skeleton"), "minecraft:zombie", new int[] {0, 10}));
-        assertEquals(-1, CouncilMissionRules.bountyReplacementIndex(List.of(), "minecraft:zombie", new int[] {0}));
-        assertEquals(-1, CouncilMissionRules.bountyReplacementIndex(null, "minecraft:zombie", new int[] {0}));
-        assertEquals(0, CouncilMissionRules.bountyReplacementIndex(List.of("minecraft:witch"), "minecraft:spider", new int[] {-100}));
-        assertTrue(CouncilMissionRules.bountyCanReplace("monster"));
-        assertFalse(CouncilMissionRules.bountyCanReplace("creature"));
-        assertFalse(CouncilMissionRules.bountyCanReplace("ambient"));
-        assertFalse(CouncilMissionRules.bountyCanReplace("water_creature"));
-        assertFalse(CouncilMissionRules.bountyCanReplace("water_ambient"));
-        assertFalse(CouncilMissionRules.bountyCanReplace("underground_water_creature"));
-        assertFalse(CouncilMissionRules.bountyCanReplace("axolotls"));
-        assertFalse(CouncilMissionRules.bountyCanReplace("misc"));
-        assertFalse(CouncilMissionRules.bountyCanReplace(null));
-        assertFalse(CouncilMissionRules.bountyCanReplace(""));
-        assertEquals(
-                1,
-                CouncilMissionRules.bountyReplacementIndex(
-                        List.of("minecraft:witch", "minecraft:skeleton"),
-                        "minecraft:zombie",
-                        new int[] {0, 9},
-                        new boolean[] {true, false}));
-        assertEquals(
-                -1,
-                CouncilMissionRules.bountyReplacementIndex(
-                        List.of("minecraft:witch", "minecraft:skeleton"),
-                        "minecraft:zombie",
-                        new int[] {0, 0},
-                        new boolean[] {true, true}));
+    void aNightUsuallyBringsOneToThreeBountyCreatures() {
+        assertEquals(13000, CouncilMissionRules.NIGHT_START);
+        assertEquals(23000, CouncilMissionRules.NIGHT_END);
+        assertEquals(20, CouncilMissionRules.NIGHT_SPAWN_TICKS);
+        assertEquals(250, CouncilMissionRules.NIGHT_SPAWN_ONE_IN);
+        assertEquals(8, CouncilMissionRules.BOUNTY_SPAWN_MIN_BLOCKS);
+        assertEquals(48, CouncilMissionRules.BOUNTY_SPAWN_NEAR_BLOCKS);
+        assertTrue(CouncilMissionRules.night(13000));
+        assertTrue(CouncilMissionRules.night(22999));
+        assertFalse(CouncilMissionRules.night(23000));
+        assertFalse(CouncilMissionRules.night(12999));
+        assertFalse(CouncilMissionRules.night(0));
+        assertTrue(CouncilMissionRules.night(13000L + 24000L));
+        assertFalse(CouncilMissionRules.night(-1L));
+        assertEquals(500, CouncilMissionRules.nightAttempts());
+        assertEquals(2.0, CouncilMissionRules.meanNightSpawns(), 1.0e-9);
+        assertTrue(CouncilMissionRules.nightSpawn(0));
+        assertTrue(CouncilMissionRules.nightSpawn(250));
+        assertTrue(CouncilMissionRules.nightSpawn(-250));
+        assertFalse(CouncilMissionRules.nightSpawn(1));
+        assertFalse(CouncilMissionRules.nightSpawn(249));
+        assertEquals(-1, CouncilMissionRules.bountyChoice(0, 3));
+        assertEquals(-1, CouncilMissionRules.bountyChoice(-2, 3));
+        assertEquals(1, CouncilMissionRules.bountyChoice(3, 1));
+        assertEquals(0, CouncilMissionRules.bountyChoice(3, 3));
+        assertEquals(2, CouncilMissionRules.bountyChoice(3, -1));
+
+        int trials = CouncilMissionRules.nightAttempts();
+        double chance = 1.0 / CouncilMissionRules.NIGHT_SPAWN_ONE_IN;
+        double[] probability = binomial(trials, chance);
+        double oneToThree = probability[1] + probability[2] + probability[3];
+        double fourOrMore = 0.0;
+        for (int count = 4; count < probability.length; count++) {
+            fourOrMore += probability[count];
+        }
+        assertTrue(oneToThree > probability[0]);
+        assertTrue(oneToThree > fourOrMore);
+        int mode = 0;
+        for (int count = 1; count < probability.length; count++) {
+            if (probability[count] > probability[mode]) {
+                mode = count;
+            }
+        }
+        assertEquals(2, mode);
+
         CouncilMissionRules.Mission fresh =
                 CouncilMissionRules.assign(CouncilMissionRules.NONE, "a", "Ada", 12, 0, 0, 0);
         assertEquals(-1L, fresh.spawnCountDay());
         assertEquals(0, fresh.spawnReplacements());
-        assertEquals(0, CouncilMissionRules.replacementsToday(fresh.spawnCountDay(), fresh.spawnReplacements(), 4));
-        assertFalse(CouncilMissionRules.spawnCapped(fresh.spawnCountDay(), fresh.spawnReplacements(), 4));
         CouncilMissionRules.Mission third = fresh.withReplacement(4).withReplacement(4).withReplacement(4);
         assertEquals(4L, third.spawnCountDay());
         assertEquals(3, third.spawnReplacements());
-        assertTrue(CouncilMissionRules.spawnCapped(third.spawnCountDay(), third.spawnReplacements(), 4));
-        assertEquals(0, CouncilMissionRules.replacementsToday(third.spawnCountDay(), third.spawnReplacements(), 5));
-        assertFalse(CouncilMissionRules.spawnCapped(third.spawnCountDay(), third.spawnReplacements(), 5));
         assertEquals(1, third.withReplacement(5).spawnReplacements());
         assertEquals(3, third.withKills(2).spawnReplacements());
         assertEquals(4L, third.withKills(2).spawnCountDay());
         assertEquals(0, third.clearHunt().spawnReplacements());
         assertEquals(-1L, third.clearHunt().spawnCountDay());
-        assertEquals(0, CouncilMissionRules.replacementsToday(4, -2, 4));
+    }
+
+    /** P(k) for k = 0..n. Log space keeps the 500-trial night from underflowing. */
+    private static double[] binomial(int trials, double chance) {
+        double[] out = new double[trials + 1];
+        double logMiss = Math.log(1.0 - chance);
+        double logHit = Math.log(chance);
+        double logChoose = 0.0;
+        out[0] = Math.exp(trials * logMiss);
+        for (int count = 1; count <= trials; count++) {
+            logChoose += Math.log(trials - count + 1) - Math.log(count);
+            out[count] = Math.exp(logChoose + count * logHit + (trials - count) * logMiss);
+        }
+        return out;
     }
 
     @Test

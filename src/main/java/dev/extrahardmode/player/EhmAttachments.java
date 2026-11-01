@@ -592,6 +592,11 @@ public final class EhmAttachments {
             ExtraHardModeMod.id("wise_lesson_expire"),
             builder -> builder.persistent(Codec.LONG).initializer(() -> Long.MAX_VALUE));
 
+    /** Overworld day a bounty creature appeared. It leaves once that day has passed. -1 is not one. */
+    public static final AttachmentType<Long> EHM_BOUNTY_SPAWN_DAY = AttachmentRegistry.create(
+            ExtraHardModeMod.id("bounty_spawn_day"),
+            builder -> builder.persistent(Codec.LONG).initializer(() -> -1L));
+
     public static final AttachmentType<UUID> EHM_WISE_LESSON_OWNER = AttachmentRegistry.create(
             ExtraHardModeMod.id("wise_lesson_owner"),
             builder -> builder.persistent(UUIDUtil.CODEC));

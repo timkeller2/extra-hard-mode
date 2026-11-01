@@ -21,12 +21,19 @@ public final class CouncilMissionRules {
     public static final int MAX_TIER = 3;
     public static final int SPAWN_WEIGHT_FACTOR = 3;
     public static final int HUD_GAP = 2;
-    /** Each open bounty, rolled once, in order. A hit replaces the natural spawn and the rest are not rolled. */
-    public static final int BOUNTY_SPAWN_PERCENT = 10;
-    /** Successful replacements of one bounty in one Minecraft day. The next day starts again at zero. */
-    public static final int BOUNTY_REPLACEMENTS_PER_DAY = 3;
-    /** Natural spawns farther than this from the nearest hunting player are left alone. */
-    public static final int BOUNTY_SPAWN_NEAR_BLOCKS = 128;
+    /** Overworld night, matching the hostile night window. A full night is 10,000 ticks. */
+    public static final int NIGHT_START = 13000;
+    public static final int NIGHT_END = 23000;
+    /** One try per second while that night lasts. */
+    public static final int NIGHT_SPAWN_TICKS = 20;
+    /**
+     * One success per this many tries. Five hundred tries in a night makes the mean 2, so 1, 2, or 3
+     * appearances are the common results and 0 or 4 or more are less common.
+     */
+    public static final int NIGHT_SPAWN_ONE_IN = 250;
+    /** The creature is placed at least this far out, and no farther than {@link #BOUNTY_SPAWN_NEAR_BLOCKS}. */
+    public static final int BOUNTY_SPAWN_MIN_BLOCKS = 8;
+    public static final int BOUNTY_SPAWN_NEAR_BLOCKS = 48;
 
     public record Mob(String id, String label, int hp, int tier) {}
 
@@ -151,9 +158,9 @@ public final class CouncilMissionRules {
                     0);
         }
 
-        /** One successful replacement. A new Minecraft day starts the count over at one. */
+        /** Advances the saved replacement count. Night spawns do not call this. */
         public Mission withReplacement(long today) {
-            int used = CouncilMissionRules.replacementsToday(spawnCountDay, spawnReplacements, today) + 1;
+            int used = spawnCountDay == today ? Math.max(0, spawnReplacements) + 1 : 1;
             return new Mission(
                     mobId,
                     label,
@@ -436,58 +443,33 @@ public final class CouncilMissionRules {
         return hudLabel(mission.label(), mission.kills(), mission.target());
     }
 
-    /**
-     * True only for the monster spawn category. Animals, fish, squid, bats, and other friendly
-     * categories stay. Replacing one of those discards it before it fills its own cap, then adds a
-     * hostile that is not counted against the monster cap, so a river of fish becomes a crowd.
-     */
-    public static boolean bountyCanReplace(String spawnCategory) {
-        return "monster".equals(spawnCategory);
+    /** {@code dayTime} is an overworld clock. Night is {@code [13000, 23000)}. */
+    public static boolean night(long dayTime) {
+        long time = Math.floorMod(dayTime, 24000L);
+        return time >= NIGHT_START && time < NIGHT_END;
     }
 
-    /** Replacements already counted on {@code today}. A different day counts as none. */
-    public static int replacementsToday(long countedDay, int count, long today) {
-        if (countedDay != today) {
-            return 0;
-        }
-        return Math.max(0, count);
+    /** Tries during one full night. */
+    public static int nightAttempts() {
+        return (NIGHT_END - NIGHT_START) / NIGHT_SPAWN_TICKS;
     }
 
-    /** True when this bounty has already replaced {@link #BOUNTY_REPLACEMENTS_PER_DAY} mobs today. */
-    public static boolean spawnCapped(long countedDay, int count, long today) {
-        return replacementsToday(countedDay, count, today) >= BOUNTY_REPLACEMENTS_PER_DAY;
+    /** Mean bounty creatures over one full night of tries. */
+    public static double meanNightSpawns() {
+        return nightAttempts() / (double) NIGHT_SPAWN_ONE_IN;
     }
 
-    /**
-     * Index of the first open bounty that replaces {@code spawningMobId}.
-     * Each entry is one d100 roll (0–99 succeeds below {@link #BOUNTY_SPAWN_PERCENT}).
-     * A bounty for the creature that is already spawning is skipped, and the next bounty is still rolled.
-     * A bounty that already replaced its daily share is skipped the same way.
-     * The first success ends the check. A null {@code capped} list leaves every bounty eligible.
-     */
-    public static int bountyReplacementIndex(
-            List<String> bountyMobIds, String spawningMobId, int[] rolls, boolean[] capped) {
-        if (bountyMobIds == null || rolls == null) {
+    /** {@code roll} is {@code 0} through {@link #NIGHT_SPAWN_ONE_IN} minus 1. Only 0 succeeds. */
+    public static boolean nightSpawn(int roll) {
+        return Math.floorMod(roll, NIGHT_SPAWN_ONE_IN) == 0;
+    }
+
+    /** Which open bounty sends the one creature. */
+    public static int bountyChoice(int open, int roll) {
+        if (open <= 0) {
             return -1;
         }
-        int count = Math.min(bountyMobIds.size(), rolls.length);
-        for (int i = 0; i < count; i++) {
-            if (capped != null && i < capped.length && capped[i]) {
-                continue;
-            }
-            String id = bountyMobIds.get(i);
-            if (id == null || id.isEmpty() || id.equals(spawningMobId)) {
-                continue;
-            }
-            if (Math.floorMod(rolls[i], 100) < BOUNTY_SPAWN_PERCENT) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    public static int bountyReplacementIndex(List<String> bountyMobIds, String spawningMobId, int[] rolls) {
-        return bountyReplacementIndex(bountyMobIds, spawningMobId, rolls, null);
+        return Math.floorMod(roll, open);
     }
 
     /** Three times the heaviest other bag weight. */

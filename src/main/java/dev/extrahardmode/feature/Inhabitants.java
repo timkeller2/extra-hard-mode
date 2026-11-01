@@ -80,7 +80,6 @@ public final class Inhabitants implements FeatureModule {
 
     @Override
     public void bootstrap(FeatureBus bus) {
-        CouncilMissions.registerSpawnReplacement();
         bus.listen(UseBlockCallback.EVENT, ID, Inhabitants::onUseBlock);
         bus.listen(UseEntityCallback.EVENT, ID, Inhabitants::onUseEntity);
         bus.listen(ServerLivingEntityEvents.AFTER_DEATH, ID, Inhabitants::onDeath);
@@ -92,6 +91,7 @@ public final class Inhabitants implements FeatureModule {
         if (level.getGameTime() % 20L == 0L) {
             long day = AntiFarming.overworldDay(level);
             WiseLessons.despawnExpired(level, day);
+            CouncilMissions.retireNightSpawns(level, day);
             for (ServerPlayer player : level.players()) {
                 CouncilMissions.tick(player, day);
                 WiseLessons.tick(player, level, day);

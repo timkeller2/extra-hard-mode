@@ -514,6 +514,9 @@ public final class Players implements FeatureModule {
         if (mob instanceof WitherBoss || mob instanceof EnderDragon) {
             return false;
         }
+        if (mob.getAttachedOrElse(EhmAttachments.EHM_BOUNTY_SPAWN_DAY, -1L) >= 0L) {
+            return false;
+        }
         return !Boolean.TRUE.equals(mob.getAttachedOrElse(EhmAttachments.EHM_BIOME_BOSS, Boolean.FALSE));
     }
 
