@@ -47,6 +47,7 @@ public final class PlayerLocator {
         }
         serverPlayer.setAttached(EhmAttachments.EHM_LOCATOR_CARROT, Boolean.TRUE);
         refresh(serverPlayer);
+        WiseLessons.refreshMist(serverPlayer);
     }
 
     public static void refreshAll(ServerLevel level) {
@@ -72,6 +73,9 @@ public final class PlayerLocator {
         boolean armed = LocatorBarRules.armed(wasArmed, false, player.getFoodData().getSaturationLevel());
         if (armed != wasArmed) {
             player.setAttached(EhmAttachments.EHM_LOCATOR_CARROT, armed);
+            if (!armed) {
+                WiseLessons.refreshMist(player);
+            }
         }
         if (apply(player, armed)) {
             keepTransmitting(player);

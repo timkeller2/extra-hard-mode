@@ -256,9 +256,9 @@ public final class AchievementRules {
 
     /**
      * In-progress builder and slayer tracks with at least one action, nearest
-     * next tier first. Fully completed tracks are omitted. At most
-     * {@link #SLAYER_LIST_LIMIT} slayer tracks are mixed in so they cannot
-     * crowd out builder progress.
+     * next tier first. Fully completed tracks are omitted, and so is a builder
+     * track that has finished its only tier. At most {@link #SLAYER_LIST_LIMIT}
+     * slayer tracks are mixed in so they cannot crowd out builder progress.
      */
     public static List<Progress> closest(
             Map<String, Integer> builderCounts, Map<String, Integer> slayerCounts, int limit) {
@@ -312,8 +312,8 @@ public final class AchievementRules {
             Collection<String> claimed) {
         List<Progress> builders = new ArrayList<>();
         List<Progress> slayers = new ArrayList<>();
-        collect(builders, builderCounts, builderAwarded, true, claimed);
-        collect(slayers, slayerCounts, slayerAwarded, false, claimed);
+        collect(builders, builderCounts, builderAwarded, true, claimed, true);
+        collect(slayers, slayerCounts, slayerAwarded, false, claimed, true);
         sortByRemaining(builders);
         sortByRemaining(slayers);
         int slayerCap = Math.min(Math.max(0, slayerLimit), slayers.size());
@@ -386,6 +386,29 @@ public final class AchievementRules {
             next = thresholds[thresholds.length - 1];
         }
         return new Progress(id, true, Math.max(0, count), next);
+    }
+
+    /**
+     * Last-placed line for {@code /tougher achieve}. A block that has finished its only tier is
+     * omitted. {@link #lastPlaced} still reports that final threshold.
+     */
+    public static Progress achieveLastPlaced(String id, int count, int awarded) {
+        if (finishedSingleTier(id, count, awarded)) {
+            return null;
+        }
+        return lastPlaced(id, count, awarded);
+    }
+
+    /**
+     * One-threshold builder track that has reached that threshold, or has already been awarded it.
+     * A later drop in the count does not bring it back.
+     */
+    public static boolean finishedSingleTier(String blockId, int count, int awarded) {
+        int[] thresholds = builderThresholds(blockId);
+        if (thresholds.length != 1) {
+            return false;
+        }
+        return awarded >= thresholds.length || count >= thresholds[0];
     }
 
     private static void sortByRemaining(List<Progress> tracks) {
@@ -484,6 +507,16 @@ public final class AchievementRules {
             Map<String, Integer> awarded,
             boolean builder,
             Collection<String> claimed) {
+        collect(into, counts, awarded, builder, claimed, false);
+    }
+
+    private static void collect(
+            List<Progress> into,
+            Map<String, Integer> counts,
+            Map<String, Integer> awarded,
+            boolean builder,
+            Collection<String> claimed,
+            boolean omitFinishedSingle) {
         if (counts == null || counts.isEmpty()) {
             return;
         }
@@ -494,6 +527,9 @@ public final class AchievementRules {
                 continue;
             }
             int already = awarded == null ? 0 : awarded.getOrDefault(id, 0);
+            if (omitFinishedSingle && builder && finishedSingleTier(id, value, already)) {
+                continue;
+            }
             int[] thresholds = builder ? builderThresholds(id) : SLAYER_THRESHOLDS;
             int next = nextTarget(value, thresholds, already, claimed, builder, id);
             if (next <= 0) {

@@ -401,9 +401,23 @@ public final class WiseLessonRules {
     }
 
     /**
+     * A mark gives off red mist when its owner can see it, still has saturation from a golden carrot,
+     * or Sense Evil is revealing marks.
+     */
+    public static boolean showMist(boolean lineOfSight, boolean goldenCarrotArmed, boolean senseEvilActive) {
+        return lineOfSight || goldenCarrotArmed || senseEvilActive;
+    }
+
+    /** True while the Sense Evil mist window has not reached {@code now}. */
+    public static boolean senseOutlineActive(long until, long now) {
+        return until > now;
+    }
+
+    /**
      * Ordinary-mark health bonus, from {@link #MARK_HEALTH_MIN_PERCENT} through
      * {@link #MARK_HEALTH_MAX_PERCENT} inclusive. {@code roll} may be any int.
      */
+
     public static double markHealthBonus(int roll) {
         int span = MARK_HEALTH_MAX_PERCENT - MARK_HEALTH_MIN_PERCENT + 1;
         int percent = MARK_HEALTH_MIN_PERCENT + Math.floorMod(roll, span);

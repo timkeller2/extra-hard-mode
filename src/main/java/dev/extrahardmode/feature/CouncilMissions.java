@@ -128,8 +128,10 @@ public final class CouncilMissions {
     }
 
     /**
-     * One try per player each second of the overworld night. A hit places one open bounty creature.
-     * If that creature has no legal spot, the other open bounties are tried. The roll is spent either way.
+     * One try per player each second of the overworld night. A hit places a group of one open bounty,
+     * from one eighth of the kills still owed through one quarter, and at least 1. If the first
+     * creature has no legal spot, the other open bounties are tried. A later miss ends the group.
+     * The roll is spent either way.
      */
     private static void maybeSpawn(ServerPlayer player, long today) {
         if (!(player.level() instanceof ServerLevel level) || !WorldGate.isModuleActive(level, Inhabitants.ID)) {
@@ -151,7 +153,16 @@ public final class CouncilMissions {
         }
         int start = CouncilMissionRules.bountyChoice(open.size(), random.nextInt());
         for (int i = 0; i < open.size(); i++) {
-            if (spawnOne(player, level, open.get((start + i) % open.size()), today, random)) {
+            CouncilMissionRules.Mission mission = open.get((start + i) % open.size());
+            int wanted = CouncilMissionRules.bountyGroupSize(mission.remaining(), random.nextInt());
+            int placed = 0;
+            for (int n = 0; n < wanted; n++) {
+                if (!spawnOne(player, level, mission, today, random)) {
+                    break;
+                }
+                placed++;
+            }
+            if (placed > 0) {
                 return;
             }
         }

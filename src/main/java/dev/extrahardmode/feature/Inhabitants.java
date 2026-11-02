@@ -90,6 +90,9 @@ public final class Inhabitants implements FeatureModule {
 
     @Override
     public void serverTick(ServerLevel level) {
+        if (level.getGameTime() % 5L == 0L) {
+            WiseLessons.mist(level);
+        }
         if (level.getGameTime() % 20L == 0L) {
             long day = AntiFarming.overworldDay(level);
             WiseLessons.despawnExpired(level, day);

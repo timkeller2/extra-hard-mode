@@ -251,6 +251,13 @@ class WiseLessonRulesTest {
         assertEquals(100, WiseLessonRules.retryWait(2, 5, 0));
         assertEquals(100, WiseLessonRules.retryWait(0, 5, 0));
         assertEquals(0.8, WiseLessonRules.leadKnockbackResistance());
+        assertTrue(WiseLessonRules.showMist(true, false, false));
+        assertFalse(WiseLessonRules.showMist(false, false, false));
+        assertTrue(WiseLessonRules.showMist(false, true, false));
+        assertTrue(WiseLessonRules.showMist(false, false, true));
+        assertFalse(WiseLessonRules.senseOutlineActive(-1L, 100L));
+        assertFalse(WiseLessonRules.senseOutlineActive(100L, 100L));
+        assertTrue(WiseLessonRules.senseOutlineActive(101L, 100L));
         WiseLessonRules.Lesson hunted = hunt().withSpawn(3, 40, List.of("aaa|13", "bbb|13"), true);
         assertEquals(4, WiseLessonRules.marksLeft(hunted));
         assertEquals(

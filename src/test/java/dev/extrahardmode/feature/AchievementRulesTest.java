@@ -90,6 +90,21 @@ class AchievementRulesTest {
                 64, AchievementRules.lastPlaced("minecraft:white_wool", 20, 0).nextTarget());
         assertEquals(
                 64, AchievementRules.lastPlaced("minecraft:orange_carpet", 64, 1).nextTarget());
+        assertEquals(null, AchievementRules.achieveLastPlaced("minecraft:orange_carpet", 64, 1));
+        assertEquals(null, AchievementRules.achieveLastPlaced("minecraft:orange_carpet", 10, 1));
+        assertEquals(null, AchievementRules.achieveLastPlaced("minecraft:white_wool", 80, 0));
+        assertEquals(
+                64, AchievementRules.achieveLastPlaced("minecraft:red_wool", 63, 0).nextTarget());
+        assertTrue(AchievementRules.finishedSingleTier("minecraft:blue_wool", 64, 0));
+        assertTrue(AchievementRules.finishedSingleTier("minecraft:blue_wool", 10, 1));
+        assertFalse(AchievementRules.finishedSingleTier("minecraft:blue_wool", 63, 0));
+        assertFalse(AchievementRules.finishedSingleTier("minecraft:oak_planks", 256, 1));
+        Map<String, Integer> finishedWool = new LinkedHashMap<>();
+        finishedWool.put("minecraft:white_wool", 80);
+        finishedWool.put("minecraft:oak_planks", 200);
+        List<AchievementRules.Progress> upcoming = AchievementRules.closest(finishedWool, Map.of(), 15);
+        assertEquals(1, upcoming.size());
+        assertEquals("minecraft:oak_planks", upcoming.get(0).id());
         assertTrue(AchievementRules.closest(
                         Map.of("minecraft:blue_wool", 64),
                         Map.of(),

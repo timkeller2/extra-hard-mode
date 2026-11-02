@@ -190,6 +190,11 @@ class AbilityRulesTest {
         assertTrue(senseHelp.contains("250"));
         assertTrue(senseHelp.contains("biome boss"));
         assertEquals(120, AbilityRules.SENSE_EVIL_SPARKLE_TICKS);
+        assertTrue(senseHelp.contains("1 minute times your ability level"));
+        assertEquals(0, AbilityRules.senseMarkOutlineTicks(0));
+        assertEquals(1200, AbilityRules.senseMarkOutlineTicks(1));
+        assertEquals(2400, AbilityRules.senseMarkOutlineTicks(2));
+        assertEquals(2880, AbilityRules.senseMarkOutlineTicks(2.4));
         String smiteHelp = AbilityRules.helpFallback(AbilityRules.SMITE_EVIL);
         assertTrue(smiteHelp.contains("golden sword"));
         assertTrue(smiteHelp.contains("Right-click"));

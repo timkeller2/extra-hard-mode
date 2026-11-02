@@ -440,7 +440,7 @@ public final class Achievements implements FeatureModule {
         if (id == null || id.isEmpty()) {
             return null;
         }
-        return AchievementRules.lastPlaced(
+        return AchievementRules.achieveLastPlaced(
                 id,
                 countOf(player, EhmAttachments.EHM_BLOCK_PLACE_COUNTS, id),
                 countOf(player, EhmAttachments.EHM_BLOCK_AWARDED, id));

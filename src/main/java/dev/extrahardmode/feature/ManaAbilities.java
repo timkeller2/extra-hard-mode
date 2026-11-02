@@ -2048,6 +2048,10 @@ public final class ManaAbilities implements FeatureModule {
         double power = abilityPower(player, AbilityRules.SENSE_EVIL, bonus);
         spend(player, Items.SPIDER_EYE, AbilityRules.SENSE_EVIL);
         tellAbilityUse(player, "tougher.ability.sense_evil", "Sense Evil", power);
+        player.setAttached(
+                EhmAttachments.EHM_MARK_OUTLINE_UNTIL,
+                abilityNow(player) + AbilityRules.senseMarkOutlineTicks(power));
+        WiseLessons.refreshMist(player);
         if (!BiomeBosses.anySpawned(player.level().getServer())) {
             startHealSparkle(player);
             player.sendSystemMessage(Component.translatableWithFallback(

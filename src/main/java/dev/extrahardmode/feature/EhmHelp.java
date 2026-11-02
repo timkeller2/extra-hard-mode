@@ -436,7 +436,7 @@ public final class EhmHelp {
                         "Achievements: Set achievements.victory above 0 and the first player to earn that many tiers wins.",
                         "Achievements: Fireworks play, the credits scroll, and everyone keeps playing. The top left shows your achievements over that goal.",
                         "Achievements: Your experience level is the percent chance of a mana level. It is kept only when a d20 rolls above your mana level before Well Fed and gold.",
-                        "Achievements: /tougher achieve lists the 5 closest builder tracks and at most 3 slayer tracks, plus the last block you placed.",
+                        "Achievements: /tougher achieve lists the 5 closest builder tracks and at most 3 slayer tracks, plus the last block you placed. A finished single tier is left off.",
                         "Achievements: The first time you visit a biome you gain 50 experience, and 100 more if you are the first player to visit it.",
                         "Achievements: The first habitable home in a biome within 250 blocks gains (house points × 3) experience. One farther than 250 blocks pays again.",
                         "Achievements: The first time you travel 300 blocks from spawn you gain 100 experience.",

@@ -11,6 +11,10 @@ import java.util.Map;
 import java.util.UUID;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ColorParticleOption;
+import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -21,7 +25,6 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -47,8 +50,12 @@ public final class WiseLessons {
     private static final Identifier LEAD_SCALE = ExtraHardModeMod.id("wise_lesson_lead_scale");
     private static final Identifier LEAD_KNOCKBACK = ExtraHardModeMod.id("wise_lesson_lead_knockback");
     private static final int EMERALD_STACK = 64;
-    /** Outline lasts this long and is put back while the mark is loaded. */
-    private static final int MARK_GLOW_TICKS = 20 * 60 * 10;
+    /** Soft red dust on the body. Scale is the puff size. */
+    private static final DustParticleOptions MARK_MIST = new DustParticleOptions(0xC41A1A, 1.6F);
+    /** Darker dust a little farther out, so the cloud reads as mist rather than sparks. */
+    private static final DustParticleOptions MARK_HAZE = new DustParticleOptions(0x7A1010, 2.2F);
+    private static final ColorParticleOption MARK_VEIL =
+            ColorParticleOption.create(ParticleTypes.ENTITY_EFFECT, 0.62F, 0.05F, 0.05F);
 
     private WiseLessons() {}
 
@@ -179,6 +186,44 @@ public final class WiseLessons {
         publish(player, next);
     }
 
+    /** Red mist for every player in this level who can currently see his marks. */
+    public static void mist(ServerLevel level) {
+        if (level == null) {
+            return;
+        }
+        for (ServerPlayer player : level.players()) {
+            refreshMist(player);
+        }
+    }
+
+    /** Puts the current mist on this player's loaded marks. A Sense Evil cast uses it at once. */
+    public static void refreshMist(ServerPlayer player) {
+        if (player == null || !(player.level() instanceof ServerLevel level) || level.getServer() == null) {
+            return;
+        }
+        for (WiseLessonRules.Lesson lesson : boardOf(player)) {
+            if (lesson.mobs() == null) {
+                continue;
+            }
+            for (String raw : lesson.mobs()) {
+                WiseLessonRules.Mark mark = WiseLessonRules.parseMark(raw);
+                if (mark == null) {
+                    continue;
+                }
+                UUID id;
+                try {
+                    id = UUID.fromString(mark.uuid());
+                } catch (IllegalArgumentException ex) {
+                    continue;
+                }
+                LivingEntity living = find(level.getServer(), id);
+                if (living != null && living.isAlive() && !living.isRemoved()) {
+                    showMist(living);
+                }
+            }
+        }
+    }
+
     /** Loaded lesson creatures past their third day are removed without drops. */
     public static void despawnExpired(ServerLevel level, long today) {
         if (level == null) {
@@ -194,7 +239,9 @@ public final class WiseLessons {
                 doomed.add(living);
                 continue;
             }
-            showMark(living);
+            if (living.hasEffect(MobEffects.GLOWING)) {
+                living.removeEffect(MobEffects.GLOWING);
+            }
         }
         for (LivingEntity living : doomed) {
             forget(living);
@@ -342,16 +389,64 @@ public final class WiseLessons {
         mob.setHealth(mob.getMaxHealth());
     }
 
-    /** White outline so a hunt creature is not mistaken for an ordinary one. */
-    private static void showMark(LivingEntity living) {
-        if (living == null) {
+    /**
+     * Red mist on and around a hunt creature. Only the owner's line of sight shows it, unless a golden
+     * carrot is still keeping them saturated or Sense Evil is revealing marks.
+     */
+    private static void showMist(LivingEntity living) {
+        if (living == null || !isLessonMob(living)) {
             return;
         }
-        MobEffectInstance current = living.getEffect(MobEffects.GLOWING);
-        if (current != null && current.getDuration() > 200) {
+        if (living.hasEffect(MobEffects.GLOWING)) {
+            living.removeEffect(MobEffects.GLOWING);
+        }
+        if (!(living.level() instanceof ServerLevel level) || level.getServer() == null) {
             return;
         }
-        living.addEffect(new MobEffectInstance(MobEffects.GLOWING, MARK_GLOW_TICKS, 0, false, false, false));
+        UUID ownerId = living.getAttached(EhmAttachments.EHM_WISE_LESSON_OWNER);
+        ServerPlayer owner = ownerId == null ? null : level.getServer().getPlayerList().getPlayer(ownerId);
+        if (owner == null || !owner.isAlive() || owner.level() != level) {
+            return;
+        }
+        boolean carrot = LocatorBarRules.armed(
+                Boolean.TRUE.equals(owner.getAttached(EhmAttachments.EHM_LOCATOR_CARROT)),
+                false,
+                owner.getFoodData().getSaturationLevel());
+        long until = owner.getAttachedOrElse(EhmAttachments.EHM_MARK_OUTLINE_UNTIL, -1L);
+        boolean sense = WiseLessonRules.senseOutlineActive(until, level.getServer().overworld().getGameTime());
+        boolean sight = owner.hasLineOfSight(living);
+        if (!WiseLessonRules.showMist(sight, carrot, sense)) {
+            return;
+        }
+        spawnMist(level, owner, living);
+    }
+
+    /** Dust on the body, a wider darker cloud, and drifting red spores. Sent only to the owner. */
+    private static void spawnMist(ServerLevel level, ServerPlayer owner, LivingEntity living) {
+        double x = living.getX();
+        double y = living.getY() + living.getBbHeight() * 0.55;
+        double z = living.getZ();
+        double body = Math.max(0.3, living.getBbWidth() * 0.45);
+        double around = Math.max(0.55, living.getBbWidth() * 0.85);
+        double lift = Math.max(0.4, living.getBbHeight() * 0.5);
+        puff(level, owner, MARK_MIST, x, y, z, 8, body, lift * 0.7, 0.004);
+        puff(level, owner, MARK_HAZE, x, y, z, 10, around, lift, 0.008);
+        puff(level, owner, ParticleTypes.CRIMSON_SPORE, x, y, z, 5, around * 0.8, lift * 0.6, 0.01);
+        puff(level, owner, MARK_VEIL, x, y, z, 3, body * 0.8, lift * 0.5, 0.0);
+    }
+
+    private static void puff(
+            ServerLevel level,
+            ServerPlayer owner,
+            ParticleOptions particle,
+            double x,
+            double y,
+            double z,
+            int count,
+            double spreadX,
+            double spreadY,
+            double speed) {
+        level.sendParticles(owner, particle, true, false, x, y, z, count, spreadX, spreadY, spreadX, speed);
     }
 
     private static void addBonus(AttributeInstance attribute, Identifier id, double amount) {
@@ -408,7 +503,7 @@ public final class WiseLessons {
         } else {
             bolster(mob, random.nextInt());
         }
-        showMark(mob);
+        showMist(mob);
         long expire = WiseLessonRules.expireDay(today);
         mob.setAttached(EhmAttachments.EHM_WISE_EXPIRE_DAY, expire);
         return WiseLessonRules.mark(mob.getStringUUID(), expire);

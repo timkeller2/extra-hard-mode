@@ -71,6 +71,11 @@ public final class CouncilMissionRules {
             return hasMob() && completed;
         }
 
+        /** Kills still owed on this hunt. */
+        public int remaining() {
+            return Math.max(0, target - Math.max(0, kills));
+        }
+
         public Mission withKills(int next) {
             return new Mission(
                     mobId,
@@ -464,12 +469,41 @@ public final class CouncilMissionRules {
         return Math.floorMod(roll, NIGHT_SPAWN_ONE_IN) == 0;
     }
 
-    /** Which open bounty sends the one creature. */
+    /** Which open bounty sends this group. */
     public static int bountyChoice(int open, int roll) {
         if (open <= 0) {
             return -1;
         }
         return Math.floorMod(roll, open);
+    }
+
+    /**
+     * Smallest group for one night appearance. Floor of one eighth of the kills still owed, and at
+     * least 1 while any remain.
+     */
+    public static int bountyGroupMin(int remaining) {
+        if (remaining <= 0) {
+            return 0;
+        }
+        return Math.max(1, remaining / 8);
+    }
+
+    /** Largest group: floor of one quarter of the kills still owed, and never below the minimum. */
+    public static int bountyGroupMax(int remaining) {
+        if (remaining <= 0) {
+            return 0;
+        }
+        return Math.max(bountyGroupMin(remaining), remaining / 4);
+    }
+
+    /** Inclusive roll from {@link #bountyGroupMin} through {@link #bountyGroupMax}. */
+    public static int bountyGroupSize(int remaining, int roll) {
+        int low = bountyGroupMin(remaining);
+        int high = bountyGroupMax(remaining);
+        if (high <= 0) {
+            return 0;
+        }
+        return low + Math.floorMod(roll, high - low + 1);
     }
 
     /** Three times the heaviest other bag weight. */

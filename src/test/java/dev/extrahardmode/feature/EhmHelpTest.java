@@ -46,6 +46,7 @@ class EhmHelpTest {
         assertFalse(String.join(" ", lines).contains("diversification"));
         assertTrue(String.join(" ", lines).contains("/tougher achieve"));
         assertTrue(String.join(" ", lines).contains("last block you placed"));
+        assertTrue(String.join(" ", lines).contains("A finished single tier is left off"));
         assertFalse(String.join(" ", lines).contains("The clock also lists"));
         assertTrue(String.join(" ", lines).contains("Stone and deepslate"));
         assertFalse(String.join(" ", lines).contains("tuff"));
@@ -306,6 +307,8 @@ class EhmHelpTest {
         assertTrue(all.contains("every 30 Minecraft days"));
         assertTrue(all.contains("near here"));
         assertTrue(all.contains("triple experience"));
+        assertTrue(all.contains("line of sight"));
+        assertTrue(all.contains("1 minute times its level"));
         assertTrue(all.contains("5 times the health"));
         assertTrue(all.contains("10 times the experience"));
         assertTrue(all.contains("emeralds from 10% to 20% of that health"));
@@ -337,7 +340,8 @@ class EhmHelpTest {
         assertTrue(all.contains("usually brings 1, 2, or 3"));
         assertTrue(all.contains("four or more, is less common"));
         assertTrue(all.contains("stays until the next Minecraft day"));
-        assertTrue(all.contains("one creature at a time"));
+        assertTrue(all.contains("from 1/8 of those still to kill"));
+        assertTrue(all.contains("through 1/4"));
         assertTrue(all.contains("not replaced in that conversation"));
         assertTrue(all.contains("name the resident"));
         assertTrue(all.contains("Emerald prices stay the same"));

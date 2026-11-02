@@ -145,6 +145,30 @@ class CouncilMissionRulesTest {
         assertEquals(1, CouncilMissionRules.bountyChoice(3, 1));
         assertEquals(0, CouncilMissionRules.bountyChoice(3, 3));
         assertEquals(2, CouncilMissionRules.bountyChoice(3, -1));
+        assertEquals(0, CouncilMissionRules.bountyGroupMin(0));
+        assertEquals(0, CouncilMissionRules.bountyGroupMax(-3));
+        assertEquals(0, CouncilMissionRules.bountyGroupSize(0, 4));
+        assertEquals(1, CouncilMissionRules.bountyGroupMin(1));
+        assertEquals(1, CouncilMissionRules.bountyGroupMax(1));
+        assertEquals(1, CouncilMissionRules.bountyGroupMin(7));
+        assertEquals(1, CouncilMissionRules.bountyGroupMax(7));
+        assertEquals(1, CouncilMissionRules.bountyGroupMin(8));
+        assertEquals(2, CouncilMissionRules.bountyGroupMax(8));
+        assertEquals(1, CouncilMissionRules.bountyGroupMin(12));
+        assertEquals(3, CouncilMissionRules.bountyGroupMax(12));
+        assertEquals(3, CouncilMissionRules.bountyGroupMin(24));
+        assertEquals(6, CouncilMissionRules.bountyGroupMax(24));
+        assertEquals(1, CouncilMissionRules.bountyGroupSize(12, 0));
+        assertEquals(2, CouncilMissionRules.bountyGroupSize(12, 1));
+        assertEquals(3, CouncilMissionRules.bountyGroupSize(12, 2));
+        assertEquals(1, CouncilMissionRules.bountyGroupSize(12, 3));
+        assertEquals(1, CouncilMissionRules.bountyGroupSize(1, 99));
+        assertEquals(4, CouncilMissionRules.bountyGroupSize(24, 1));
+        CouncilMissionRules.Mission owed =
+                CouncilMissionRules.assign(CouncilMissionRules.NONE, "a", "Ada", 12, 0, 0, 0);
+        assertEquals(owed.target(), owed.remaining());
+        assertEquals(Math.max(0, owed.target() - 3), owed.withKills(3).remaining());
+        assertEquals(0, owed.withKills(owed.target() + 4).remaining());
 
         int trials = CouncilMissionRules.nightAttempts();
         double chance = 1.0 / CouncilMissionRules.NIGHT_SPAWN_ONE_IN;
