@@ -12,7 +12,10 @@ import java.util.Set;
  */
 public final class AchievementRules {
     public static final int[] BUILDER_THRESHOLDS = {256, 512, 1024};
-    /** One tier for each color of wool block, wool slab, wool stairs, and wool carpet. */
+    /**
+     * One tier for wool, glass, glass panes, terracotta, concrete, and concrete powder.
+     * Each block id is its own track.
+     */
     public static final int[] COLOR_BUILDER_THRESHOLDS = {64};
     private static final Set<String> WOOL_COLORS = Set.of(
             "white",
@@ -46,6 +49,8 @@ public final class AchievementRules {
     public static final int REWARD_EXPERIENCE_POINTS = 75;
     /** Extra XP for the first player to claim a given achievement server-wide. */
     public static final int FIRST_CLAIM_BONUS_EXPERIENCE = 25;
+    /** Rockets launched at the player who wins by achievements. */
+    public static final int VICTORY_FIREWORKS = 5;
 
     public static final int CLOSEST_LIST_LIMIT = 15;
     public static final int SLAYER_LIST_LIMIT = 3;
@@ -389,33 +394,70 @@ public final class AchievementRules {
     }
 
     /**
-     * Each color of wool block, wool slab, wool stairs, and wool carpet uses
-     * {@link #COLOR_BUILDER_THRESHOLDS}. Every other block, including other slabs
-     * and stairs, uses {@link #BUILDER_THRESHOLDS}.
+     * Wool, glass, glass panes, terracotta, concrete, and concrete powder use
+     * {@link #COLOR_BUILDER_THRESHOLDS}. Every other block uses {@link #BUILDER_THRESHOLDS}.
      */
     public static int[] builderThresholds(String blockId) {
         return colorBuilderBlock(blockId) ? COLOR_BUILDER_THRESHOLDS : BUILDER_THRESHOLDS;
     }
 
-    /** True for one color of wool block, wool slab, wool stairs, or wool carpet. */
+    /**
+     * True for one dye color of wool (block, slab, stairs, carpet), stained glass,
+     * stained glass panes, terracotta, glazed terracotta, concrete, concrete slabs,
+     * concrete stairs, and concrete powder. Also clear glass, tinted glass, clear
+     * glass panes, and plain terracotta.
+     */
     public static boolean colorBuilderBlock(String blockId) {
         String path = pathOf(blockId);
+        if (path.isEmpty()) {
+            return false;
+        }
+        if ("glass".equals(path)
+                || "tinted_glass".equals(path)
+                || "glass_pane".equals(path)
+                || "terracotta".equals(path)) {
+            return true;
+        }
         if (path.endsWith("_wool_stairs")) {
-            return woolColor(path, "_wool_stairs");
+            return dyeColor(path, "_wool_stairs");
         }
         if (path.endsWith("_wool_slab")) {
-            return woolColor(path, "_wool_slab");
+            return dyeColor(path, "_wool_slab");
         }
         if (path.endsWith("_wool")) {
-            return woolColor(path, "_wool");
+            return dyeColor(path, "_wool");
         }
         if (path.endsWith("_carpet")) {
-            return woolColor(path, "_carpet");
+            return dyeColor(path, "_carpet");
+        }
+        if (path.endsWith("_stained_glass_pane")) {
+            return dyeColor(path, "_stained_glass_pane");
+        }
+        if (path.endsWith("_stained_glass")) {
+            return dyeColor(path, "_stained_glass");
+        }
+        if (path.endsWith("_glazed_terracotta")) {
+            return dyeColor(path, "_glazed_terracotta");
+        }
+        if (path.endsWith("_concrete_powder")) {
+            return dyeColor(path, "_concrete_powder");
+        }
+        if (path.endsWith("_concrete_stairs")) {
+            return dyeColor(path, "_concrete_stairs");
+        }
+        if (path.endsWith("_concrete_slab")) {
+            return dyeColor(path, "_concrete_slab");
+        }
+        if (path.endsWith("_terracotta")) {
+            return dyeColor(path, "_terracotta");
+        }
+        if (path.endsWith("_concrete")) {
+            return dyeColor(path, "_concrete");
         }
         return false;
     }
 
-    private static boolean woolColor(String path, String suffix) {
+    private static boolean dyeColor(String path, String suffix) {
         return WOOL_COLORS.contains(path.substring(0, path.length() - suffix.length()));
     }
 
@@ -459,5 +501,38 @@ public final class AchievementRules {
             }
             into.add(new Progress(id, builder, value, next));
         }
+    }
+
+    /** Sum of awarded builder tiers and slayer tiers. Each tier is one achievement. */
+    public static int earnedAchievements(Map<String, Integer> builderAwarded, Map<String, Integer> slayerAwarded) {
+        return sumAwarded(builderAwarded) + sumAwarded(slayerAwarded);
+    }
+
+    /** A positive goal is on. {@code 0} is off. */
+    public static boolean victoryEnabled(int goal) {
+        return goal > 0;
+    }
+
+    /** True when this total meets a positive goal and nobody has won yet. */
+    public static boolean declaresVictory(int earned, int goal, boolean alreadyWon) {
+        return victoryEnabled(goal) && !alreadyWon && earned >= goal;
+    }
+
+    /** Top-left counter, such as {@code 12/40}. */
+    public static String victoryProgress(int earned, int goal) {
+        return Math.max(0, earned) + "/" + Math.max(0, goal);
+    }
+
+    private static int sumAwarded(Map<String, Integer> awarded) {
+        if (awarded == null || awarded.isEmpty()) {
+            return 0;
+        }
+        int total = 0;
+        for (Integer value : awarded.values()) {
+            if (value != null && value > 0) {
+                total += value;
+            }
+        }
+        return total;
     }
 }

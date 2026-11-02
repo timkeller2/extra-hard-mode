@@ -16,6 +16,8 @@ import dev.extrahardmode.feature.monster.Horses;
 import dev.extrahardmode.module.MessageId;
 import dev.extrahardmode.network.ClientboundAbilityDurationsPayload;
 import dev.extrahardmode.network.ClientboundAchievementFloatPayload;
+import dev.extrahardmode.network.ClientboundAchievementScorePayload;
+import dev.extrahardmode.network.ClientboundCreditsPayload;
 import dev.extrahardmode.network.ClientboundAbilityReadyPayload;
 import dev.extrahardmode.network.ClientboundCompassSpawnPayload;
 import dev.extrahardmode.network.ClientboundCouncilBountyPayload;
@@ -366,6 +368,10 @@ public class ExtraHardModeClient implements ClientModInitializer {
                 client.execute(() -> AchievementFloater.spawn(payload));
             }
         });
+        ClientPlayNetworking.registerGlobalReceiver(
+                ClientboundAchievementScorePayload.TYPE, (payload, context) -> AchievementVictoryHud.onScore(payload));
+        ClientPlayNetworking.registerGlobalReceiver(
+                ClientboundCreditsPayload.TYPE, (payload, context) -> AchievementVictoryHud.showCredits());
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> BriefReconnect.joined());
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             lastSync = null;
@@ -381,6 +387,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
             lastWiseLesson = null;
             compassSpawn = null;
             AchievementFloater.clear();
+            AchievementVictoryHud.clear();
             SeasonAtmosphere.clearClient();
         });
         ManaHud.register();
@@ -392,6 +399,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
         LightLookHud.register();
         AbilityHelp.register();
         AchievementFloater.register();
+        AchievementVictoryHud.register();
         UseEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {
             if (!level.isClientSide() || lastSync == null) {
                 return InteractionResult.PASS;

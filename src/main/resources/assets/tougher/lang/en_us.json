@@ -189,6 +189,7 @@
   "tougher.boss.nether_wastes": "Nether Blaze Lord",
   "tougher.boss.crimson": "Crimson Hoglin",
   "tougher.boss.soul_sand": "Soul Sand Wither Knight",
+  "tougher.chat.achievement_victory": "%s has won the game with %s achievements!",
   "tougher.chat.builder": "%s has achieved the %s builder achievement!",
   "tougher.chat.slayer": "%s has gained the %s slayer achievement!",
   "tougher.chat.mana_grow": "%s grows in special abilities to level %s!",

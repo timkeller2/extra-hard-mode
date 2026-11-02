@@ -33,7 +33,20 @@ class AchievementRulesTest {
                 "minecraft:white_wool_slab",
                 "minecraft:light_blue_wool_slab",
                 "minecraft:orange_wool_stairs",
-                "minecraft:pink_wool_stairs")) {
+                "minecraft:pink_wool_stairs",
+                "minecraft:glass",
+                "minecraft:tinted_glass",
+                "minecraft:glass_pane",
+                "minecraft:white_stained_glass",
+                "minecraft:light_blue_stained_glass",
+                "minecraft:black_stained_glass_pane",
+                "minecraft:terracotta",
+                "minecraft:white_terracotta",
+                "minecraft:orange_glazed_terracotta",
+                "minecraft:white_concrete",
+                "minecraft:cyan_concrete_powder",
+                "minecraft:red_concrete_slab",
+                "minecraft:lime_concrete_stairs")) {
             int[] thresholds = AchievementRules.builderThresholds(id);
             assertEquals(AchievementRules.COLOR_BUILDER_THRESHOLDS, thresholds);
             assertEquals(0, AchievementRules.awardedAfter(0, 63, thresholds));
@@ -46,11 +59,13 @@ class AchievementRulesTest {
         for (String id : List.of(
                 "minecraft:oak_planks",
                 "minecraft:stone",
-                "minecraft:white_concrete",
-                "minecraft:white_stained_glass",
-                "minecraft:white_terracotta",
                 "minecraft:white_bed",
-                "minecraft:glass",
+                "minecraft:white_banner",
+                "minecraft:white_candle",
+                "minecraft:white_shulker_box",
+                "minecraft:spyglass",
+                "minecraft:emerald_glass",
+                "minecraft:badlands_terracotta",
                 "minecraft:oak_slab",
                 "minecraft:smooth_stone_slab",
                 "minecraft:oak_stairs",
@@ -365,5 +380,25 @@ class AchievementRulesTest {
         assertEquals(256, stillListed.get(0).nextTarget());
         assertEquals(
                 256, AchievementRules.lastPlaced("minecraft:oak_planks", 200, 0, claimed).nextTarget());
+    }
+
+    @Test
+    void victoryCountsTiersAndDeclaresTheFirstTime() {
+        assertFalse(AchievementRules.victoryEnabled(0));
+        assertFalse(AchievementRules.declaresVictory(12, 0, false));
+        assertFalse(AchievementRules.declaresVictory(3, 10, false));
+        assertTrue(AchievementRules.declaresVictory(10, 10, false));
+        assertTrue(AchievementRules.declaresVictory(11, 10, false));
+        assertFalse(AchievementRules.declaresVictory(11, 10, true));
+        assertEquals(0, AchievementRules.earnedAchievements(null, null));
+        assertEquals(4, AchievementRules.earnedAchievements(Map.of("minecraft:oak_planks", 3, "minecraft:glass", 1), Map.of()));
+        assertEquals(
+                6,
+                AchievementRules.earnedAchievements(
+                        Map.of("minecraft:glass", 1, "skip", 0, "negative", -2),
+                        Map.of("minecraft:zombie", 2, "minecraft:spider", 3)));
+        assertEquals("12/40", AchievementRules.victoryProgress(12, 40));
+        assertEquals("0/1", AchievementRules.victoryProgress(-4, 1));
+        assertEquals(5, AchievementRules.VICTORY_FIREWORKS);
     }
 }

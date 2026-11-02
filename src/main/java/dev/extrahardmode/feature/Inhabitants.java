@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
+import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.minecraft.core.BlockPos;
@@ -84,6 +85,7 @@ public final class Inhabitants implements FeatureModule {
         bus.listen(UseEntityCallback.EVENT, ID, Inhabitants::onUseEntity);
         bus.listen(ServerLivingEntityEvents.AFTER_DEATH, ID, Inhabitants::onDeath);
         bus.listen(ServerLivingEntityEvents.AFTER_DAMAGE, ID, Inhabitants::onDamage);
+        bus.listen(PlayerBlockBreakEvents.AFTER, ID, PlayerShops::onBreak);
     }
 
     @Override
@@ -1064,6 +1066,9 @@ public final class Inhabitants implements FeatureModule {
         if (home == null) {
             return;
         }
+        if (InhabitantRules.TRADER.equals(home.specialty()) || InhabitantRules.WEALTHY.equals(home.specialty())) {
+            PlayerShops.refresh(villager, serverPlayer);
+        }
         if (InhabitantRules.COUNCIL.equals(home.specialty())) {
             CouncilMissions.onTalk(serverPlayer, level, home);
             return;
@@ -1099,6 +1104,10 @@ public final class Inhabitants implements FeatureModule {
         if (villager == null || !isInhabitant(villager) || villager.level().isClientSide()) {
             return;
         }
+        if (PlayerShops.isShopOffer(traded)) {
+            PlayerShops.settle(villager, traded);
+            return;
+        }
         int xp = tradeXp(villager);
         if (xp < Integer.MAX_VALUE) {
             villager.setAttached(EhmAttachments.EHM_RESIDENT_TRADE_XP, xp + 1);
@@ -1113,7 +1122,7 @@ public final class Inhabitants implements FeatureModule {
      * on every buyback. Vanilla already spent the use on the offer that just traded.
      */
     static void adjustTraderBuys(Villager villager, MerchantOffer traded) {
-        if (!(villager.level() instanceof ServerLevel level)) {
+        if (PlayerShops.isShopOffer(traded) || !(villager.level() instanceof ServerLevel level)) {
             return;
         }
         InhabitantData.Home home = InhabitantData.of(level).byLiving(villager.getUUID());

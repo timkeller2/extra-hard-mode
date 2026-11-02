@@ -4,9 +4,12 @@ import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.module.TutorialCounts;
 import dev.extrahardmode.network.ClientboundAchievementFloatPayload;
+import dev.extrahardmode.network.ClientboundAchievementScorePayload;
+import dev.extrahardmode.network.ClientboundCreditsPayload;
 import dev.extrahardmode.network.ClientboundManaPayload;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.world.AchievementClaimData;
+import dev.extrahardmode.world.AchievementVictoryData;
 import dev.extrahardmode.world.WorldGate;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import java.util.List;
@@ -274,7 +277,70 @@ public final class Achievements implements FeatureModule {
         }
         if (grantedThrough != already) {
             putCount(player, awardedType, key, grantedThrough);
+            sendVictoryHud(player);
+            declareVictory(player);
         }
+    }
+
+    /** Sends the top-left counter, then crowns a player who already has enough. */
+    public static void onPlayerJoin(ServerPlayer player) {
+        sendVictoryHud(player);
+        declareVictory(player);
+    }
+
+    static void sendVictoryHud(ServerPlayer player) {
+        if (player == null) {
+            return;
+        }
+        int goal = victoryGoal(player.level());
+        int earned = earnedAchievements(player);
+        ServerPlayNetworking.send(player, new ClientboundAchievementScorePayload(earned, goal));
+    }
+
+    static void declareVictory(ServerPlayer player) {
+        if (player == null || skipPlayer(player)) {
+            return;
+        }
+        ServerLevel level = player.level();
+        int goal = victoryGoal(level);
+        int earned = earnedAchievements(player);
+        AchievementVictoryData data = AchievementVictoryData.of(level);
+        if (!AchievementRules.declaresVictory(earned, goal, data.won())) {
+            return;
+        }
+        if (!data.tryWin(player.getUUID().toString())) {
+            return;
+        }
+        Component message = Component.translatableWithFallback(
+                "tougher.chat.achievement_victory",
+                "%s has won the game with %s achievements!",
+                player.getName(),
+                Component.literal(Integer.toString(earned)));
+        level.getServer().getPlayerList().broadcastSystemMessage(message, false);
+        for (int i = 0; i < AchievementRules.VICTORY_FIREWORKS; i++) {
+            celebrate(player);
+        }
+        for (ServerPlayer online : level.getServer().getPlayerList().getPlayers()) {
+            ServerPlayNetworking.send(online, ClientboundCreditsPayload.INSTANCE);
+        }
+    }
+
+    static int victoryGoal(ServerLevel level) {
+        if (level == null) {
+            return 0;
+        }
+        ServerLevel overworld = level.getServer().overworld();
+        boolean active = WorldGate.isModuleActive(overworld, ID) || WorldGate.isModuleActive(level, ID);
+        if (!active) {
+            return 0;
+        }
+        return Math.max(0, ConfigManager.world(overworld).achievementVictory());
+    }
+
+    static int earnedAchievements(ServerPlayer player) {
+        return AchievementRules.earnedAchievements(
+                player.getAttachedOrElse(EhmAttachments.EHM_BLOCK_AWARDED, Map.of()),
+                player.getAttachedOrElse(EhmAttachments.EHM_KILL_AWARDED, Map.of()));
     }
 
     static void announce(ServerPlayer player, boolean builder, Component subject) {

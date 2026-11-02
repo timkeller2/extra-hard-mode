@@ -83,7 +83,10 @@ public abstract class SpreadingSnowyBlockMixin {
         if (state.is(Blocks.GRASS_BLOCK)
                 && WorldGate.isModuleActive(level, AntiFarming.ID)
                 && !GrassSpreadRules.allowSpread(
-                        ConfigManager.world(level).grassGrowthPercent(), level.getRandom().nextInt(100))) {
+                        GrassSpreadRules.effectivePercent(
+                                ConfigManager.world(level).grassGrowthPercent(),
+                                AntiFarming.currentSeasonalLossRate(level)),
+                        level.getRandom().nextInt(100))) {
             return false;
         }
         return level.setBlockAndUpdate(pos, state);

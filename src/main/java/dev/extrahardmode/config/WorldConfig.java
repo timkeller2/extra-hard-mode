@@ -25,7 +25,7 @@ import net.minecraft.world.level.storage.LevelResource;
 
 /** Per-dimension TOML, stored under the overworld save and keyed by {@code dimension().identifier()}. */
 public final class WorldConfig {
-    public static final int CONFIG_VERSION = 8;
+    public static final int CONFIG_VERSION = 9;
 
     private final Identifier dimensionId;
     private final Map<Identifier, Boolean> modules = new LinkedHashMap<>();
@@ -37,6 +37,8 @@ public final class WorldConfig {
     private boolean betterTreeFelling = true;
     private boolean f3Enabled = false;
     private boolean competitiveAchievements = true;
+    /** Achievements that win the game. 0 is off. The overworld file is the one that counts. */
+    private int achievementVictory = 0;
     private boolean torchSoftDeny = true;
     private int torchNoPlacementUnderY = 0;
     private boolean torchYDeny = true;
@@ -223,6 +225,10 @@ public final class WorldConfig {
 
     public boolean competitiveAchievements() {
         return competitiveAchievements;
+    }
+
+    public int achievementVictory() {
+        return achievementVictory;
     }
 
     public boolean torchSoftDeny() {
@@ -986,6 +992,11 @@ public final class WorldConfig {
                         true);
                 writeDefaultIfMissing(
                         file,
+                        "achievements.victory",
+                        "How many achievements win the game. Each builder tier and each slayer tier counts as one. 0 is off. The overworld file is the one that counts. The first player to reach it gets fireworks, the credits scroll, and everyone keeps playing.",
+                        0);
+                writeDefaultIfMissing(
+                        file,
                         "torches.noPlacement.enable",
                         "Deny depth-limited lights and campfires below noPlacementUnderY. Disable with this boolean, not Y=0.",
                         true);
@@ -1277,6 +1288,7 @@ public final class WorldConfig {
                 file.set("worldRules.betterTreeFelling", betterTreeFelling);
                 file.set("client.f3Enabled", f3Enabled);
                 file.set("achievements.competitive", competitiveAchievements);
+                file.set("achievements.victory", achievementVictory);
                 file.set("torches.noPlacement.enable", torchYDeny);
                 file.set("torches.noPlacementUnderY", torchNoPlacementUnderY);
                 file.set("torches.noPlacementOnSoft", torchSoftDeny);
@@ -1468,6 +1480,7 @@ public final class WorldConfig {
         betterTreeFelling = file.getOrElse("worldRules.betterTreeFelling", true);
         f3Enabled = file.getOrElse("client.f3Enabled", false);
         competitiveAchievements = file.getOrElse("achievements.competitive", true);
+        achievementVictory = Math.max(0, getInt(file, "achievements.victory", 0));
         torchYDeny = file.getOrElse("torches.noPlacement.enable", true);
         torchNoPlacementUnderY = file.getOrElse("torches.noPlacementUnderY", 0);
         torchSoftDeny = file.getOrElse("torches.noPlacementOnSoft", true);
@@ -1574,7 +1587,7 @@ public final class WorldConfig {
         overgrazingChestRange = OvergrazingRules.clampRange(
                 getInt(file, "farming.overgrazing.chestRange", OvergrazingRules.DEFAULT_CHEST_RANGE));
         cropMatureDurationPercent = Math.max(1, getInt(file, "farming.cropMatureDurationPercent", 300));
-        grassGrowthPercent = clampPercent(
+        grassGrowthPercent = GrassSpreadRules.configuredPercent(
                 getInt(file, "farming.grassGrowthPercent", GrassSpreadRules.DEFAULT_PERCENT));
         animalBreedCooldownMultiplier = Math.max(1, getInt(file, "farming.animalBreedCooldownMultiplier", 6));
         eggLayTimeMultiplier = Math.max(1, getInt(file, "farming.eggLayTimeMultiplier", 6));
@@ -1938,6 +1951,8 @@ public final class WorldConfig {
      * comes from largeMarks and smallMarks.
      * Schema 8: home interior cap 300 → 400, and floor block light 8 → 5.
      * Only a stored 300 or 8 is rewritten, so a custom value is kept.
+     * Schema 9: grass spread default 25 → -1 (75 minus the current crop loss).
+     * Only a stored 25 is rewritten, so a custom value is kept.
      */
     private static void migrate(CommentedFileConfig file) {
         int version = getInt(file, "configVersion", 1);
@@ -1966,6 +1981,14 @@ public final class WorldConfig {
             }
             if (getInt(file, "inhabitants.minLight", 8) == 8) {
                 file.set("inhabitants.minLight", 5);
+            }
+        }
+        if (version < 9) {
+            if (getInt(file, "farming.grassGrowthPercent", 25) == 25) {
+                file.set("farming.grassGrowthPercent", GrassSpreadRules.DEFAULT_PERCENT);
+            }
+            if (file.contains("farming.grassGrowthPercent")) {
+                file.setComment("farming.grassGrowthPercent", GrassSpreadRules.CONFIG_COMMENT);
             }
         }
         if (version < 7) {

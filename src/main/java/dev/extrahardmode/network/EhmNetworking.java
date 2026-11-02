@@ -43,6 +43,10 @@ public final class EhmNetworking {
                 .register(ClientboundCompassSpawnPayload.TYPE, ClientboundCompassSpawnPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay()
                 .register(ClientboundAchievementFloatPayload.TYPE, ClientboundAchievementFloatPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay()
+                .register(ClientboundAchievementScorePayload.TYPE, ClientboundAchievementScorePayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay()
+                .register(ClientboundCreditsPayload.TYPE, ClientboundCreditsPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(ServerboundConfigPayload.TYPE, ServerboundConfigPayload.STREAM_CODEC);
         ServerPlayNetworking.registerGlobalReceiver(ServerboundConfigPayload.TYPE, EhmNetworking::onConfig);
         ServerPlayConnectionEvents.JOIN.register(EhmNetworking::onJoin);
@@ -54,6 +58,7 @@ public final class EhmNetworking {
         ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.register((player, origin, destination) -> {
             sendSync(player);
             ManaAbilities.onJoin(player);
+            Achievements.onPlayerJoin(player);
         });
     }
 
@@ -98,6 +103,7 @@ public final class EhmNetworking {
             MinecraftServer server) {
         sendSync(handler.player);
         Achievements.sendMana(handler.player);
+        Achievements.onPlayerJoin(handler.player);
         sendCompassSpawn(handler.player);
         ManaAbilities.onJoin(handler.player);
         CouncilMissions.sendHud(handler.player);

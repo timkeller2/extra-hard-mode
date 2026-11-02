@@ -5,15 +5,50 @@ import dev.extrahardmode.module.EntityHelper;
 /**
  * How often grass spreads onto dirt. Minecraft-free so JUnit can cover the roll.
  *
- * <p>100 is the usual rate. 0 never spreads. The default is one quarter.
+ * <p>{@code -1} follows the current crop loss. {@code 0} never spreads. A positive
+ * number is that static percent of the usual spread.
  */
 public final class GrassSpreadRules {
-    public static final int DEFAULT_PERCENT = 25;
+    /** Config value that computes the spread from the current crop loss rate. */
+    public static final int FOLLOW_LOSS = -1;
+    public static final int DEFAULT_PERCENT = FOLLOW_LOSS;
+    /** Spread percent when following loss is {@code LOSS_OFFSET} minus that rate, and never below 0. */
+    public static final int LOSS_OFFSET = 75;
 
     public static final String CONFIG_COMMENT =
-            "Grass Growth Rate: 25% of the usual spread of grass onto a dirt block. 100 is the usual rate. 0 never spreads.";
+            "Percent of the usual grass spread onto dirt. -1, the default, is 75 minus the current crop loss rate, and never below 0. 0 never spreads. A positive number is that static percent. 100 is the usual rate.";
 
     private GrassSpreadRules() {}
+
+    /**
+     * Stored config. {@code -1} follows crop loss. Any other value at or below 0
+     * disables spread. A positive value is capped at 100.
+     */
+    public static int configuredPercent(int raw) {
+        if (raw == FOLLOW_LOSS) {
+            return FOLLOW_LOSS;
+        }
+        if (raw <= 0) {
+            return 0;
+        }
+        return Math.min(100, raw);
+    }
+
+    /**
+     * Percent passed to {@link #allowSpread}. {@code -1} is {@link #LOSS_OFFSET}
+     * minus {@code currentLossRate}, rounded, and never below 0.
+     */
+    public static int effectivePercent(int configured, double currentLossRate) {
+        int percent = configuredPercent(configured);
+        if (percent != FOLLOW_LOSS) {
+            return percent;
+        }
+        long spread = Math.round(LOSS_OFFSET - Math.max(0.0, currentLossRate));
+        if (spread <= 0L) {
+            return 0;
+        }
+        return spread >= 100L ? 100 : (int) spread;
+    }
 
     /** {@code roll} is 0–99 from {@code nextInt(100)}. */
     public static boolean allowSpread(int percent, int roll) {

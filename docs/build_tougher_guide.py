@@ -227,7 +227,7 @@ def build():
         bullets(
             [
                 "Animals wait 6 times as long to breed. Chickens lay eggs 6 times as slowly.",
-                "Grass spreads onto dirt at a Grass Growth Rate of 25%. That is farming.grassGrowthPercent. 100 is the usual rate and 0 never spreads. A fence, gate, door, wall, or other block that leaves the top of the grass open does not stop that spread.",
+                "Grass spreads onto dirt from farming.grassGrowthPercent. -1, the default, is 75 minus the current crop loss rate, and never below 0. 0 never spreads. A positive number is that percent of the usual spread, and 100 is the usual rate. A fence, gate, door, wall, or other block that leaves the top of the grass open does not stop that spread.",
                 "Livestock overgraze by eating grass they can walk to within 6 blocks and turning that block into dirt. About 9 grass blocks keep a large animal fed. About 4 keep a chicken or rabbit fed.",
                 "Sheep overgraze too, and wait 6 times as long to eat grass and regrow their wool. farming.sheepWoolGrazeMultiplier of 1 is the usual wool wait.",
                 "If no grass block is in reach, an animal has a 33% chance to eat from a chest or barrel it can reach within 20 blocks. It eats short grass, the item shears collect, before its breeding food. If neither is left, a second 33% chance starves it and it drops no meat.",
@@ -334,8 +334,9 @@ def build():
             Paragraph("Achievements", s["h"]),
             bullets(
                 [
-                    "Place many of one block, or defeat many of one monster. Each claim gives 75 experience. Everyone can earn every achievement. Each wool block, wool slab, wool stair, and wool carpet awards once at 64. Other blocks award at 256, then 512, then 1024.",
+                    "Place many of one block, or defeat many of one monster. Each claim gives 75 experience. Everyone can earn every achievement. Each wool block, wool slab, wool stair, and wool carpet awards once at 64. Glass, tinted glass, stained glass, and glass panes do too. Terracotta, glazed terracotta, concrete, concrete powder, and concrete slabs and stairs do too. Other blocks award at 256, then 512, then 1024.",
                     "The first player on the server to claim one gets 25 extra experience by default.",
+                    "achievements.victory defaults to 0, which is off. Set it higher and the first player to earn that many achievements wins. Each builder tier and each slayer tier counts as one. Fireworks play, the credits scroll, and everyone can keep playing. While it is on, the top left shows how many you have earned out of how many are required.",
                     "Your experience level is the percent chance of a mana level. It is kept only when a d20 rolls above your mana level before Well Fed and gold.",
                     "The first visit to a biome is 50 experience, and 100 more if you are first on the server. The first habitable home of a biome within 250 blocks is house points times 3. Another of that biome farther than 250 blocks pays again. The first trip 300 blocks from spawn is 100 experience.",
                     "Sneak while holding a block you can place to see how many placements remain. Placing it is not required. A kill always shows that number. It drifts down and left for 3 seconds, and stays hidden when that track is finished.",
@@ -377,6 +378,13 @@ def build():
                 "Shop size follows house points. The top of the roll is 50% at 14 points and 175% at 38. Higher scores stay there. The bottom is half of that. Prices do not inflate. A hauler pays 1 emerald for 32 of a block. Each chest, barrel, or shulker box takes 2 off that stack, down to 16.",
                 "A farm neighbor may sell one seed or plantable vegetable for 6 to 16 emeralds. Pumpkin and melon seeds are 6, and nether wart is 4. Glow berries are 3 for 1 emerald.",
                 "A trader also buys each thing he sells. The buy stack is 2 larger and pays the same number of emeralds. Those buys start with no uses. Buying from him adds 1 use to each of them. Selling him anything spends 1 use on each of them.",
+                "A trader or a wealthy trader also offers other players' chests. A sign on the chest that says SELL or BUY is what he reads.",
+                "A SELL chest is read from the top left. An emerald stack sets the price, and the next new item stack sets how many he sells for it.",
+                "Later stacks of that same item are extra stock. He sells those before the stack that set the amount. Your own chest is not offered to you.",
+                "The emeralds from a sale go to the bottom right of that chest. He keeps selling while the chest has enough items and room for the emeralds.",
+                "A BUY chest uses the same prices above the bottom row. The bottom row holds the emeralds he pays with.",
+                "Bought items go on that bottom row, or the row above it. He keeps buying while those emeralds last and the chest has room.",
+                "A trade from another player's chest gives no experience to you or to the resident.",
                 "A jeweler sells a diamond for 8 emeralds, 4 gold ingots for 2, an iron block for 6, and a copper or redstone block for 2. Larger shops add lapis, amethyst, quartz, gold nuggets, ingots, and blocks of gold, lapis, amethyst, quartz, and diamond. A gold block is 6 emeralds and a diamond block is 32.",
                 "An armorsmith sells one heavy iron piece each restock. Which piece can change. The other sales are enchanted iron armor, each a different slot. A larger shop may buy iron. Heavy iron costs 12, 15, 21, or 24 emeralds for boots, a helmet, leggings, or a chestplate. Enchanted iron costs 6, 8, 11, or 12. A master armorsmith does the same with diamond: one heavy piece at four times the iron price, enchanted diamond armor at the heavy iron price, and a larger shop may buy diamonds.",
                 "A brewer sells one level 2 potion each restock. Which potion can change. Up to three other potions cost 1 emerald. A larger shop sells one of each brewing ingredient for 1 emerald, such as nether wart, blaze powder, glowstone, and ghast tears.",

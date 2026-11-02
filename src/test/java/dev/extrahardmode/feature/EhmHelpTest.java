@@ -74,7 +74,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("Pumpkins and melons"));
         assertTrue(String.join(" ", lines).contains("drop no seeds"));
         assertTrue(String.join(" ", lines).contains("6 times as long to breed"));
-        assertTrue(String.join(" ", lines).contains("Grass Growth Rate: 25%"));
+        assertTrue(String.join(" ", lines).contains("75 minus the current loss"));
         assertTrue(String.join(" ", lines).contains("0 never spreads"));
         assertTrue(String.join(" ", lines).contains("fence, gate, door, wall"));
         assertTrue(String.join(" ", lines).contains("Well Fed or ready gold pushes your level past 40"));
@@ -208,6 +208,12 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("300 blocks from spawn"));
         assertTrue(String.join(" ", lines).contains("Everyone can earn every achievement"));
         assertTrue(String.join(" ", lines).contains("awards once at 64"));
+        assertTrue(String.join(" ", lines).contains("stained glass, and glass panes"));
+        assertTrue(String.join(" ", lines).contains("glazed terracotta"));
+        assertTrue(String.join(" ", lines).contains("concrete slabs and stairs"));
+        assertTrue(String.join(" ", lines).contains("achievements.victory above 0"));
+        assertTrue(String.join(" ", lines).contains("the credits scroll"));
+        assertTrue(String.join(" ", lines).contains("top left shows your achievements"));
         assertTrue(String.join(" ", lines).contains("chest sits on the back wall"));
         assertTrue(String.join(" ", lines).contains("largest lapis lazuli stack"));
         assertTrue(String.join(" ", lines).contains("same count connect"));
@@ -288,6 +294,15 @@ class EhmHelpTest {
         assertTrue(all.contains("higher-ranked clothes"));
         assertTrue(all.contains("copper or redstone block"));
         assertTrue(all.contains("A gold block is 6 emeralds and a diamond block is 32"));
+        assertTrue(all.contains("SELL or BUY"));
+        assertTrue(all.contains("extra stock"));
+        assertTrue(all.contains("Your own chest is not offered to you"));
+        assertTrue(all.contains("bottom right of that chest"));
+        assertTrue(all.contains("enough items and room for the emeralds"));
+        assertTrue(all.contains("emeralds he pays with"));
+        assertTrue(all.contains("row above it"));
+        assertTrue(all.contains("while those emeralds last"));
+        assertTrue(all.contains("no experience to you or to the resident"));
         assertTrue(all.contains("every 30 Minecraft days"));
         assertTrue(all.contains("near here"));
         assertTrue(all.contains("triple experience"));
