@@ -21,6 +21,8 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -40,9 +42,13 @@ import net.minecraft.world.level.block.state.BlockState;
  */
 public final class WiseLessons {
     private static final Map<UUID, String> LAST_HUD = new HashMap<>();
+    private static final Identifier MARK_HEALTH = ExtraHardModeMod.id("wise_lesson_mark_health");
     private static final Identifier LEAD_HEALTH = ExtraHardModeMod.id("wise_lesson_lead_health");
     private static final Identifier LEAD_SCALE = ExtraHardModeMod.id("wise_lesson_lead_scale");
+    private static final Identifier LEAD_KNOCKBACK = ExtraHardModeMod.id("wise_lesson_lead_knockback");
     private static final int EMERALD_STACK = 64;
+    /** Outline lasts this long and is put back while the mark is loaded. */
+    private static final int MARK_GLOW_TICKS = 20 * 60 * 10;
 
     private WiseLessons() {}
 
@@ -151,9 +157,15 @@ public final class WiseLessons {
                 WiseLessonRules.Second step = WiseLessonRules.afterSecond(updated, inRange, gate, random.nextInt());
                 updated = step.lesson();
                 if (step.attemptSpawn()) {
-                    boolean lead = WiseLessonRules.leadSpawn(updated.spawned());
-                    String mark = trySpawn(player, level, updated, today, lead);
-                    updated = WiseLessonRules.afterAttempt(updated, mark != null, mark, random.nextInt());
+                    int batch = WiseLessonRules.spawnsThisSecond(updated.spawned(), updated.size());
+                    for (int n = 0; n < batch; n++) {
+                        boolean lead = WiseLessonRules.leadSpawn(updated.spawned());
+                        String mark = trySpawn(player, level, updated, today, lead);
+                        updated = WiseLessonRules.afterAttempt(updated, mark != null, mark, random.nextInt());
+                        if (mark == null) {
+                            break;
+                        }
+                    }
                 }
             }
             if (!updated.equals(lesson)) {
@@ -180,7 +192,9 @@ public final class WiseLessons {
             long expire = living.getAttachedOrElse(EhmAttachments.EHM_WISE_EXPIRE_DAY, Long.MAX_VALUE);
             if (today >= expire) {
                 doomed.add(living);
+                continue;
             }
+            showMark(living);
         }
         for (LivingEntity living : doomed) {
             forget(living);
@@ -311,11 +325,33 @@ public final class WiseLessons {
         }
     }
 
+    /** Ordinary marks gain 50% to 100% health and spawn full. */
+    private static void bolster(Mob mob, int roll) {
+        addBonus(mob.getAttribute(Attributes.MAX_HEALTH), MARK_HEALTH, WiseLessonRules.markHealthBonus(roll));
+        mob.setHealth(mob.getMaxHealth());
+    }
+
     private static void promoteLead(Mob mob) {
         mob.setAttached(EhmAttachments.EHM_WISE_LESSON_LEAD, Boolean.TRUE);
         addBonus(mob.getAttribute(Attributes.MAX_HEALTH), LEAD_HEALTH, WiseLessonRules.leadHealthBonus());
         addBonus(mob.getAttribute(Attributes.SCALE), LEAD_SCALE, WiseLessonRules.leadScaleBonus());
+        addFlat(
+                mob.getAttribute(Attributes.KNOCKBACK_RESISTANCE),
+                LEAD_KNOCKBACK,
+                WiseLessonRules.leadKnockbackResistance());
         mob.setHealth(mob.getMaxHealth());
+    }
+
+    /** White outline so a hunt creature is not mistaken for an ordinary one. */
+    private static void showMark(LivingEntity living) {
+        if (living == null) {
+            return;
+        }
+        MobEffectInstance current = living.getEffect(MobEffects.GLOWING);
+        if (current != null && current.getDuration() > 200) {
+            return;
+        }
+        living.addEffect(new MobEffectInstance(MobEffects.GLOWING, MARK_GLOW_TICKS, 0, false, false, false));
     }
 
     private static void addBonus(AttributeInstance attribute, Identifier id, double amount) {
@@ -324,6 +360,13 @@ public final class WiseLessons {
         }
         attribute.addPermanentModifier(
                 new AttributeModifier(id, amount, AttributeModifier.Operation.ADD_MULTIPLIED_BASE));
+    }
+
+    private static void addFlat(AttributeInstance attribute, Identifier id, double amount) {
+        if (attribute == null || attribute.hasModifier(id) || amount == 0.0) {
+            return;
+        }
+        attribute.addPermanentModifier(new AttributeModifier(id, amount, AttributeModifier.Operation.ADD_VALUE));
     }
 
     private static String trySpawn(
@@ -362,7 +405,10 @@ public final class WiseLessons {
         mob.setAttached(EhmAttachments.EHM_WISE_LESSON_OWNER, player.getUUID());
         if (lead) {
             promoteLead(mob);
+        } else {
+            bolster(mob, random.nextInt());
         }
+        showMark(mob);
         long expire = WiseLessonRules.expireDay(today);
         mob.setAttached(EhmAttachments.EHM_WISE_EXPIRE_DAY, expire);
         return WiseLessonRules.mark(mob.getStringUUID(), expire);
@@ -448,7 +494,8 @@ public final class WiseLessons {
                 player.getX(),
                 player.getZ(),
                 lesson.distance());
-        return WiseLessonRules.statusLine(lesson.teacherName(), lesson.size(), lesson.plural(), lesson.direction(), near);
+        return WiseLessonRules.statusLine(
+                lesson.teacherName(), WiseLessonRules.marksLeft(lesson), lesson.plural(), lesson.direction(), near);
     }
 
     private static void publish(ServerPlayer player, List<WiseLessonRules.Lesson> lessons) {

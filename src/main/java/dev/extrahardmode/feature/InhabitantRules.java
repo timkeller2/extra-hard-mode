@@ -603,11 +603,11 @@ public final class InhabitantRules {
                 "Lessons: Speak to a wise teacher and he tells of a hunt every 30 Minecraft days.",
                 "Lessons: The pack is 3 to 8, from the home and his experience, times 1 plus lessons and mana he has given you.",
                 "Lessons: The first hunts are easier creatures. Later hunts are harder. It lies 200 to 500 blocks north, south, east, or west.",
-                "Lessons: His name, the pack, and the direction show on your screen. At that distance the direction becomes near here.",
+                "Lessons: His name, how many are left, and the direction show on your screen. That number falls as you kill them. At that distance it says near here.",
                 "Lessons: Come back closer than that distance and the direction returns.",
-                "Lessons: After 2 minutes out there, on land, at night or below ground, one spawns every 5 to 15 seconds within 20 to 40 blocks.",
-                "Lessons: Those creatures give triple experience and double loot, and they always drop both. They vanish after 3 Minecraft days.",
-                "Lessons: The first creature is slightly larger and has 5 times the health.",
+                "Lessons: After 2 minutes out there, on land, at night or below ground, half appear within a few seconds. The rest spawn every 5 to 15 seconds, 20 to 40 blocks out.",
+                "Lessons: Each mark glows and has 50% to 100% more health. They give triple experience and double loot, and they always drop both. They vanish after 3 Minecraft days.",
+                "Lessons: The first creature is slightly larger, has 5 times the health, and resists knockback.",
                 "Lessons: It drops 10 times the experience and 3 times the loot, plus one diamond and emeralds from 10% to 20% of that health.",
                 "Lessons: An unfinished hunt ends after 14 Minecraft days. Each wise teacher can give you a different hunt, and each player has his own.");
     }

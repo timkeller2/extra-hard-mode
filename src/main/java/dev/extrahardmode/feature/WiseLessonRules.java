@@ -23,12 +23,19 @@ public final class WiseLessonRules {
     public static final int TICKS_PER_SECOND = 20;
     public static final int SPAWN_WAIT_MIN = 100;
     public static final int SPAWN_WAIT_MAX = 300;
+    /** Opening half of the pack, counted from the first creature, finishes inside this many seconds. */
+    public static final int BURST_SECONDS = 3;
+    /** Added with ADD_VALUE. 1 is immune to knockback. */
+    public static final double LEAD_KNOCKBACK_RESISTANCE = 0.8;
     public static final int SPAWN_RADIUS_MIN = 20;
     public static final int SPAWN_RADIUS_MAX = 40;
     public static final int TIER_EVERY = 3;
     public static final int MAX_TIER = 3;
     public static final int XP_FACTOR = 3;
-    /** The first creature of a hunt. Later creatures keep the ordinary factors. */
+    /** Ordinary marks. 50 is 1.5 times health and 100 is twice, added with ADD_MULTIPLIED_BASE. */
+    public static final int MARK_HEALTH_MIN_PERCENT = 50;
+    public static final int MARK_HEALTH_MAX_PERCENT = 100;
+    /** The first creature of a hunt. Later creatures keep the ordinary factors, including the health band. */
     public static final double LEAD_SCALE = 1.25;
     public static final int LEAD_HEALTH_FACTOR = 5;
     public static final int LEAD_XP_FACTOR = 10;
@@ -301,7 +308,17 @@ public final class WiseLessonRules {
         String who = nameplate == null || nameplate.isBlank() ? "Traveler" : nameplate;
         String creatures = plural == null || plural.isBlank() ? "creatures" : plural;
         String where = near ? NEAR : (direction == null || direction.isBlank() ? "north" : direction);
-        return who + ": " + Math.max(0, size) + " " + creatures + " " + where;
+        return who + ": " + Math.max(0, size) + " " + creatures + " left " + where;
+    }
+
+    /** Pack size minus creatures already removed. Unspawned marks still count. */
+    public static int marksLeft(Lesson lesson) {
+        if (lesson == null) {
+            return 0;
+        }
+        int living = lesson.mobs() == null ? 0 : lesson.mobs().size();
+        int gone = Math.max(0, lesson.spawned() - living);
+        return Math.max(0, lesson.size() - gone);
     }
 
     public static List<String> hudLines(List<Lesson> lessons, String playerDimension, double x, double z) {
@@ -315,9 +332,54 @@ public final class WiseLessonRules {
             }
             boolean near = atRange(
                     lesson.dimension(), playerDimension, lesson.originX(), lesson.originZ(), x, z, lesson.distance());
-            lines.add(statusLine(lesson.teacherName(), lesson.size(), lesson.plural(), lesson.direction(), near));
+            lines.add(statusLine(
+                    lesson.teacherName(), marksLeft(lesson), lesson.plural(), lesson.direction(), near));
         }
         return lines;
+    }
+
+    /** Half the pack, at least one when the pack exists. The rest keep the 5 to 15 second gap. */
+    public static int burstCount(int size) {
+        if (size <= 0) {
+            return 0;
+        }
+        return Math.max(1, size / 2);
+    }
+
+    /**
+     * How many creatures to place on this spawn second. The opening half is split across
+     * {@link #BURST_SECONDS} seconds starting with the first. Later seconds place one.
+     */
+    public static int spawnsThisSecond(int alreadySpawned, int size) {
+        int total = Math.max(0, size);
+        int spawned = Math.max(0, alreadySpawned);
+        if (spawned >= total) {
+            return 0;
+        }
+        int burst = Math.min(burstCount(total), total);
+        if (spawned >= burst) {
+            return 1;
+        }
+        int base = burst / BURST_SECONDS;
+        int extra = burst % BURST_SECONDS;
+        int cursor = 0;
+        for (int second = 0; second < BURST_SECONDS; second++) {
+            int wave = base + (second < extra ? 1 : 0);
+            int end = cursor + wave;
+            if (spawned < end) {
+                return end - spawned;
+            }
+            cursor = end;
+        }
+        return 1;
+    }
+
+    /** One second while the opening half is still arriving. Otherwise the usual 5 to 15 seconds. */
+    public static int retryWait(int spawned, int size, int rolledWait) {
+        if (spawned > 0 && spawned < burstCount(size)) {
+            return TICKS_PER_SECOND;
+        }
+        return spawnInterval(rolledWait);
     }
 
     /** True for the creature spawned while none of this hunt have spawned yet. */
@@ -338,9 +400,24 @@ public final class WiseLessonRules {
         return LEAD_HEALTH_FACTOR - 1.0;
     }
 
+    /**
+     * Ordinary-mark health bonus, from {@link #MARK_HEALTH_MIN_PERCENT} through
+     * {@link #MARK_HEALTH_MAX_PERCENT} inclusive. {@code roll} may be any int.
+     */
+    public static double markHealthBonus(int roll) {
+        int span = MARK_HEALTH_MAX_PERCENT - MARK_HEALTH_MIN_PERCENT + 1;
+        int percent = MARK_HEALTH_MIN_PERCENT + Math.floorMod(roll, span);
+        return percent / 100.0;
+    }
+
     /** Added with ADD_MULTIPLIED_BASE so the creature is {@link #LEAD_SCALE} times normal size. */
     public static double leadScaleBonus() {
         return LEAD_SCALE - 1.0;
+    }
+
+    /** Added with ADD_VALUE on top of whatever knockback resistance the creature already has. */
+    public static double leadKnockbackResistance() {
+        return LEAD_KNOCKBACK_RESISTANCE;
     }
 
     public static int scaledXp(int xp) {
@@ -412,6 +489,8 @@ public final class WiseLessonRules {
      * One real second. Out of range clears the wait. In range, the two minutes keep
      * counting even in water. Spawning waits until that time is up, then 5 to 15 seconds,
      * and only while {@code spawnGate} is true. The interval freezes when the gate is shut.
+     * After the first creature, half the pack finishes within a few seconds. The rest
+     * keep the 5 to 15 second gap.
      */
     public static Second afterSecond(Lesson lesson, boolean inRange, boolean spawnGate, int rolledWait) {
         if (lesson == null || !lesson.active()) {
@@ -454,19 +533,19 @@ public final class WiseLessonRules {
         return new Second(lesson.withDwell(DWELL_TICKS, 0), true);
     }
 
-    /** After a spawn attempt. Failure spends no creature. Either way the next gap is rolled. */
+    /** After a spawn attempt. Failure spends no creature. The opening half retries in one second. */
     public static Lesson afterAttempt(Lesson lesson, boolean spawnedOne, String mark, int rolledWait) {
         if (lesson == null) {
             return null;
         }
-        int wait = spawnInterval(rolledWait);
         if (!spawnedOne) {
-            return lesson.withDwell(lesson.dwellTicks(), wait);
+            return lesson.withDwell(lesson.dwellTicks(), retryWait(lesson.spawned(), lesson.size(), rolledWait));
         }
         List<String> mobs = new ArrayList<>(lesson.mobs() == null ? List.of() : lesson.mobs());
         if (mark != null && !mark.isEmpty()) {
             mobs.add(mark);
         }
-        return lesson.withSpawn(lesson.spawned() + 1, wait, mobs, lesson.active());
+        int spawned = lesson.spawned() + 1;
+        return lesson.withSpawn(spawned, retryWait(spawned, lesson.size(), rolledWait), mobs, lesson.active());
     }
 }
