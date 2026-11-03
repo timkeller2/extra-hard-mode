@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:smithing_transform",
+  "addition": "#minecraft:netherite_tool_materials",
+  "base": "tougher:heavy_diamond_axe",
+  "result": {
+    "id": "tougher:heavy_netherite_axe"
+  },
+  "template": "minecraft:netherite_upgrade_smithing_template"
+}

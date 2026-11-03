@@ -51,6 +51,9 @@ class AbilityRulesTest {
         assertEquals(AbilityRules.SLOW, AbilityRules.abilityForItem("minecraft:string"));
         assertEquals(AbilityRules.SENSE_EVIL, AbilityRules.abilityForItem("minecraft:spider_eye"));
         assertEquals(AbilityRules.SMITE_EVIL, AbilityRules.abilityForItem("minecraft:golden_sword"));
+        assertEquals(AbilityRules.SMITE_EVIL, AbilityRules.abilityForItem("tougher:heavy_golden_sword"));
+        assertEquals(null, AbilityRules.abilityForItem("tougher:heavy_golden_axe"));
+        assertEquals(null, AbilityRules.abilityForItem("tougher:heavy_iron_sword"));
         assertEquals(null, AbilityRules.abilityForItem("minecraft:iron_sword"));
         assertEquals(null, AbilityRules.abilityForItem("minecraft:coal"));
         assertEquals(null, AbilityRules.abilityForItem("minecraft:torch"));
@@ -95,6 +98,7 @@ class AbilityRulesTest {
             "minecraft:string",
             "minecraft:spider_eye",
             "minecraft:golden_sword",
+            "tougher:heavy_golden_sword",
             "minecraft:redstone",
             "minecraft:quartz_block",
             "minecraft:lapis_lazuli",
@@ -197,6 +201,7 @@ class AbilityRulesTest {
         assertEquals(2880, AbilityRules.senseMarkOutlineTicks(2.4));
         String smiteHelp = AbilityRules.helpFallback(AbilityRules.SMITE_EVIL);
         assertTrue(smiteHelp.contains("golden sword"));
+        assertTrue(smiteHelp.contains("heavy golden sword"));
         assertTrue(smiteHelp.contains("Right-click"));
         assertTrue(smiteHelp.contains("1/4 mana"));
         assertTrue(smiteHelp.contains("at least 1 mana"));
@@ -285,7 +290,7 @@ class AbilityRulesTest {
         assertTrue(AbilityRules.indexHelpFallback().contains("Compass: Detect ore"));
         assertTrue(AbilityRules.indexHelpFallback().contains("String: Slow"));
         assertTrue(AbilityRules.indexHelpFallback().contains("Spider eye: Sense Evil"));
-        assertTrue(AbilityRules.indexHelpFallback().contains("Golden sword: Smite Evil"));
+        assertTrue(AbilityRules.indexHelpFallback().contains("Golden sword or heavy golden sword: Smite Evil"));
         assertTrue(AbilityRules.indexHelpFallback().contains("Clay brick: Master Builder"));
         assertTrue(AbilityRules.indexHelpFallback().contains("Redstone dust: Empower"));
         assertTrue(AbilityRules.indexHelpFallback().contains("Quartz block: Battery"));
@@ -397,6 +402,8 @@ class AbilityRulesTest {
         assertEquals(0, AbilityRules.charcoalArrowBonus(false));
         assertEquals(2, AbilityRules.charcoalArrowBonus(true));
         assertEquals(0, AbilityRules.supplyBonus(AbilityRules.SMITE_EVIL, "minecraft:golden_sword", 1, false, 0));
+        assertEquals(0, AbilityRules.supplyBonus(AbilityRules.SMITE_EVIL, "minecraft:golden_sword", 2, false, 0));
+        assertEquals(0, AbilityRules.supplyBonus(AbilityRules.SMITE_EVIL, "tougher:heavy_golden_sword", 1, false, 0));
         assertEquals(0, AbilityRules.supplyBonus(AbilityRules.SMITE_EVIL, "minecraft:golden_sword", 1, true, 0));
         assertEquals(2, AbilityRules.supplyBonus(AbilityRules.MAGIC_ARROW, "minecraft:arrow", 2, false, 0));
         assertEquals(2, AbilityRules.supplyBonus(AbilityRules.MASTER_BUILDER, "minecraft:brick", 2, false, 0));
@@ -415,6 +422,9 @@ class AbilityRulesTest {
         assertFalse(AbilityRules.isHeldGoldenItem("minecraft:gold_nugget"));
         assertTrue(AbilityRules.isHeldGoldenItem("minecraft:golden_hoe"));
         assertTrue(AbilityRules.isHeldGoldenItem("minecraft:golden_sword"));
+        assertTrue(AbilityRules.isHeldGoldenItem("tougher:heavy_golden_sword"));
+        assertTrue(AbilityRules.isHeldGoldenItem("tougher:heavy_golden_axe"));
+        assertFalse(AbilityRules.isHeldGoldenItem("tougher:heavy_iron_sword"));
         assertTrue(AbilityRules.isGoldArmor("minecraft:golden_chestplate"));
         assertFalse(AbilityRules.isGoldArmor("minecraft:golden_hoe"));
         assertEquals(0, AbilityRules.goldAbilityBonus(0, false));

@@ -370,7 +370,7 @@ class EhmHelpTest {
         assertTrue(lines.getFirst().startsWith("Base power:"));
         String index = String.join(" ", lines);
         assertTrue(index.contains("Paper: Healing"));
-        assertTrue(index.contains("Golden sword: Smite Evil"));
+        assertTrue(index.contains("Golden sword or heavy golden sword: Smite Evil"));
         assertTrue(index.contains("/tougher ability help <name>"));
         assertTrue(index.contains("house points plus his trading experience"));
         assertTrue(lines.stream().noneMatch(line -> line.startsWith("Healing:")));

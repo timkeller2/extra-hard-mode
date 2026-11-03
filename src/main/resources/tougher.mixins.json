@@ -131,6 +131,7 @@
     "client.CompassSpawnTargetMixin",
     "client.GuiMixin",
     "client.HudMixin",
+    "client.InventoryScreenMixin",
     "client.MinecraftMixin",
     "client.KeyboardHandlerMixin",
     "client.SoundEngineMixin"

@@ -3,10 +3,14 @@
   "values": [
     "minecraft:diamond_sword",
     "minecraft:diamond_axe",
+    "tougher:heavy_diamond_sword",
+    "tougher:heavy_diamond_axe",
     "minecraft:diamond_pickaxe",
     "minecraft:diamond_shovel",
     "minecraft:netherite_sword",
     "minecraft:netherite_axe",
+    "tougher:heavy_netherite_sword",
+    "tougher:heavy_netherite_axe",
     "minecraft:netherite_pickaxe",
     "minecraft:netherite_shovel"
   ]

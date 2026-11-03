@@ -95,6 +95,7 @@ public final class AbilityRules {
     public static final String NETHERITE_HOE_ID = "minecraft:netherite_hoe";
     public static final String SPIDER_EYE_ID = "minecraft:spider_eye";
     public static final String GOLDEN_SWORD_ID = "minecraft:golden_sword";
+    public static final String HEAVY_GOLDEN_SWORD_ID = "tougher:heavy_golden_sword";
     /** Clay brick item, not the bricks block and not stone bricks. */
     public static final String BRICK_ID = "minecraft:brick";
     /** Master Builder lasts this many seconds per point of effective ability level. */
@@ -192,7 +193,7 @@ public final class AbilityRules {
         if (SPIDER_EYE_ID.equals(itemId)) {
             return SENSE_EVIL;
         }
-        if (GOLDEN_SWORD_ID.equals(itemId)) {
+        if (isSmiteSword(itemId)) {
             return SMITE_EVIL;
         }
         if (BRICK_ID.equals(itemId)) {
@@ -214,6 +215,11 @@ public final class AbilityRules {
             return WRITE_TOME;
         }
         return null;
+    }
+
+    /** A normal golden sword or a heavy golden sword. Both cast Smite Evil. */
+    public static boolean isSmiteSword(String itemId) {
+        return GOLDEN_SWORD_ID.equals(itemId) || HEAVY_GOLDEN_SWORD_ID.equals(itemId);
     }
 
     public static boolean isGrowHoe(String itemId) {
@@ -278,7 +284,9 @@ public final class AbilityRules {
     /** A crafted golden item, such as a golden hoe. Not gold itself. */
     public static boolean isHeldGoldenItem(String itemId) {
         String path = itemPath(itemId);
-        return path.startsWith("golden_");
+        return path.startsWith("golden_")
+                || path.equals("heavy_golden_sword")
+                || path.equals("heavy_golden_axe");
     }
 
     public static boolean isGoldArmor(String itemId) {
@@ -496,7 +504,7 @@ public final class AbilityRules {
             case DETECT_ORE -> "The ground is talkative, if you hold a compass still.";
             case SLOW -> "Haste is a habit. String can interrupt it.";
             case SENSE_EVIL -> "Large hungers leave a smell on the wind.";
-            case SMITE_EVIL -> "A golden sword is a polite way to end a monster.";
+            case SMITE_EVIL -> "A golden sword, heavy or not, is a polite way to end a monster.";
             case MASTER_BUILDER -> "Stone will hold for a while, even where the ground does not agree.";
             case DIAMOND_SKIN -> "A diamond can be asked to stand between you and the blow.";
             case EMPOWER -> "Redstone will lend its strength to the next working.";
@@ -528,7 +536,7 @@ public final class AbilityRules {
             case SLOW -> "Hold string and right-click. A web flies out and bursts on a creature or a solid block.";
             case SENSE_EVIL -> "Hold a spider eye and right-click. You turn toward a living biome boss, if one is out.";
             case SMITE_EVIL ->
-                "Hold a golden sword and right-click. It strikes a creature along your aim. With at least 1 mana the crosshair turns gold on one in reach. It costs 1/4 mana.";
+                "Hold a golden sword or a heavy golden sword and right-click. It strikes along your aim. With at least 1 mana the crosshair turns gold on one in reach. It costs 1/4 mana.";
             case MASTER_BUILDER ->
                 "Hold a clay brick and right-click. Right-click again to cancel. It costs 1 mana.";
             case DIAMOND_SKIN ->
@@ -674,7 +682,7 @@ public final class AbilityRules {
                     "Sense Evil: If none are spawned, you sparkle as with Healing. One spider eye is consumed. Two in hand consume both and add +2.",
                     "Sense Evil: Wise-teacher marks give off a red mist for 1 minute times your ability level, even when you are not looking at them.");
             case SMITE_EVIL -> List.of(
-                    "Smite Evil: Right-click while holding a golden sword. Costs 1/4 mana.",
+                    "Smite Evil: Right-click while holding a golden sword or a heavy golden sword. Costs 1/4 mana.",
                     "Smite Evil: Strikes a creature along your aim up to your ability level in blocks with a normal melee attack from that sword.",
                     "Smite Evil: With at least 1 mana, the crosshair turns gold on a creature within that reach.",
                     "Smite Evil: The strike includes enchantments, durability, and attack cooldown. Undead take extra damage equal to your ability level.",
@@ -816,7 +824,7 @@ public final class AbilityRules {
                 "Compass: Detect ore",
                 "String: Slow",
                 "Spider eye: Sense Evil",
-                "Golden sword: Smite Evil",
+                "Golden sword or heavy golden sword: Smite Evil",
                 "Clay brick: Master Builder",
                 "Diamond: Diamond Skin",
                 "Redstone dust: Empower",
@@ -1037,7 +1045,7 @@ public final class AbilityRules {
         if (POWER_MINE.equals(ability)) {
             return bonus + pickaxeBonus(heldItemId);
         }
-        if (DETECT_ORE.equals(ability)) {
+        if (DETECT_ORE.equals(ability) || SMITE_EVIL.equals(ability)) {
             return bonus;
         }
         return bonus + catalystBonus(heldCount);

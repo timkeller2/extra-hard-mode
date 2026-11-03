@@ -189,7 +189,7 @@ public final class ManaAbilities implements FeatureModule {
             if (serverPlayer.getMainHandItem().is(Items.SPIDER_EYE) && trySenseEvil(serverPlayer)) {
                 return InteractionResult.FAIL;
             }
-            if (serverPlayer.getMainHandItem().is(Items.GOLDEN_SWORD) && trySmiteEvil(serverPlayer, null)) {
+            if (isSmiteSword(serverPlayer.getMainHandItem()) && trySmiteEvil(serverPlayer, null)) {
                 return InteractionResult.FAIL;
             }
             if (serverPlayer.getMainHandItem().is(Items.BRICK) && tryMasterBuilder(serverPlayer)) {
@@ -305,7 +305,7 @@ public final class ManaAbilities implements FeatureModule {
                 && player instanceof ServerPlayer serverPlayer
                 && level instanceof ServerLevel serverLevel
                 && WorldGate.isModuleActive(serverLevel, ID)
-                && serverPlayer.getMainHandItem().is(Items.GOLDEN_SWORD)
+                && isSmiteSword(serverPlayer.getMainHandItem())
                 && trySmiteEvil(serverPlayer, null)) {
             return InteractionResult.FAIL;
         }
@@ -375,7 +375,7 @@ public final class ManaAbilities implements FeatureModule {
                 && player instanceof ServerPlayer serverPlayer
                 && level instanceof ServerLevel serverLevel
                 && WorldGate.isModuleActive(serverLevel, ID)
-                && serverPlayer.getMainHandItem().is(Items.GOLDEN_SWORD)
+                && isSmiteSword(serverPlayer.getMainHandItem())
                 && trySmiteEvil(serverPlayer, entity instanceof LivingEntity living ? living : null)) {
             return InteractionResult.FAIL;
         }
@@ -1770,7 +1770,7 @@ public final class ManaAbilities implements FeatureModule {
     }
 
     static boolean trySmiteEvil(ServerPlayer player, LivingEntity clicked) {
-        if (!player.getMainHandItem().is(Items.GOLDEN_SWORD) || Achievements.skipPlayer(player)) {
+        if (!isSmiteSword(player.getMainHandItem()) || Achievements.skipPlayer(player)) {
             return false;
         }
         if (alreadyHandled(player, (ServerLevel) player.level())) {
@@ -2564,7 +2564,7 @@ public final class ManaAbilities implements FeatureModule {
                 || held.is(Items.FEATHER)
                 || held.is(Items.ARROW)
                 || held.is(Items.STRING)
-                || held.is(Items.GOLDEN_SWORD)
+                || isSmiteSword(held)
                 || held.is(Items.BRICK)
                 || held.is(Items.DIAMOND)
                 || held.is(Items.REDSTONE)
@@ -3155,6 +3155,10 @@ public final class ManaAbilities implements FeatureModule {
                 ColorParticleOption.create(ParticleTypes.ENTITY_EFFECT, 0.55F, 0.35F, 0.85F));
     }
 
+    public static boolean isSmiteSword(ItemStack stack) {
+        return AbilityRules.isSmiteSword(heldItemId(stack));
+    }
+
     static String abilityForHeld(ItemStack held) {
         if (held == null || held.isEmpty()) {
             return null;
@@ -3186,7 +3190,7 @@ public final class ManaAbilities implements FeatureModule {
         if (held.is(Items.SPIDER_EYE)) {
             return AbilityRules.SENSE_EVIL;
         }
-        if (held.is(Items.GOLDEN_SWORD)) {
+        if (isSmiteSword(held)) {
             return AbilityRules.SMITE_EVIL;
         }
         if (held.is(Items.BRICK)) {

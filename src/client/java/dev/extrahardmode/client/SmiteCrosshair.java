@@ -6,7 +6,6 @@ import dev.extrahardmode.feature.SmiteCrosshairRules;
 import dev.extrahardmode.network.ClientboundAbilityReadyPayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.EntityHitResult;
 
 /** Gold crosshair while a golden sword is on a creature Smite Evil can reach. */
@@ -21,7 +20,7 @@ public final class SmiteCrosshair {
         if (minecraft == null || minecraft.player == null) {
             return false;
         }
-        if (!minecraft.player.getMainHandItem().is(Items.GOLDEN_SWORD)) {
+        if (!ManaAbilities.isSmiteSword(minecraft.player.getMainHandItem())) {
             return false;
         }
         var mana = ExtraHardModeClient.lastMana();

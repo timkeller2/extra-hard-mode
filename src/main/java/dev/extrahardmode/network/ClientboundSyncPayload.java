@@ -4,9 +4,11 @@ import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.api.EhmApi;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.config.GlobalConfig;
+import dev.extrahardmode.config.PlayerSettings;
 import dev.extrahardmode.config.WorldConfig;
 import dev.extrahardmode.feature.AntiFarming;
 import dev.extrahardmode.feature.Dragon;
+import dev.extrahardmode.feature.Players;
 import dev.extrahardmode.feature.HardenedStone;
 import dev.extrahardmode.feature.TorchLifetimeRules;
 import dev.extrahardmode.feature.monster.Horses;
@@ -162,7 +164,15 @@ public record ClientboundSyncPayload(
                         new DisplayExtras.SeasonBits(
                                 WorldGate.isModuleActive(level, AntiFarming.ID),
                                 config.lossRate(),
-                                config.changingSeasons())));
+                                config.changingSeasons()),
+                        weightBits(level, config)));
+    }
+
+    private static DisplayExtras.WeightBits weightBits(ServerLevel level, WorldConfig config) {
+        PlayerSettings player = config.player();
+        boolean enabled = WorldGate.isModuleActive(level, Players.ID) && player.weightEnable();
+        return new DisplayExtras.WeightBits(
+                enabled, player.maxPoints(), player.armorPiece(), player.stack(), player.tool());
     }
 
     private Flags flags() {
@@ -227,7 +237,8 @@ public record ClientboundSyncPayload(
             boolean debug,
             int tutorialMaxShows,
             boolean f3Enabled,
-            SeasonBits season) {
+            SeasonBits season,
+            WeightBits weight) {
         static final DisplayExtras INACTIVE = new DisplayExtras(
                 true,
                 true,
@@ -238,9 +249,14 @@ public record ClientboundSyncPayload(
                 false,
                 GlobalConfig.DEFAULT_TUTORIAL_MAX_SHOWS,
                 true,
-                SeasonBits.INACTIVE);
+                SeasonBits.INACTIVE,
+                WeightBits.COMPATIBLE_DEFAULT);
 
-        static final StreamCodec<ByteBuf, DisplayExtras> STREAM_CODEC = StreamCodec.composite(
+        /**
+         * Older servers stop after {@link #season()}. A missing weight tail means the default cap.
+         * {@code worldActive()} still decides whether the inventory label is drawn.
+         */
+        private static final StreamCodec<ByteBuf, DisplayExtras> BODY = StreamCodec.composite(
                 ByteBufCodecs.BOOL,
                 DisplayExtras::checkPermission,
                 ByteBufCodecs.BOOL,
@@ -261,7 +277,60 @@ public record ClientboundSyncPayload(
                 DisplayExtras::f3Enabled,
                 SeasonBits.STREAM_CODEC,
                 DisplayExtras::season,
-                DisplayExtras::new);
+                DisplayExtras::withoutWeight);
+
+        static final StreamCodec<ByteBuf, DisplayExtras> STREAM_CODEC = StreamCodec.of(
+                (buf, value) -> {
+                    BODY.encode(buf, value);
+                    WeightBits.STREAM_CODEC.encode(buf, value.weight());
+                },
+                buf -> {
+                    DisplayExtras body = BODY.decode(buf);
+                    if (buf.readableBytes() < WeightBits.ENCODED_BYTES) {
+                        return body;
+                    }
+                    return body.withWeight(WeightBits.STREAM_CODEC.decode(buf));
+                });
+
+        private static DisplayExtras withoutWeight(
+                boolean checkPermission,
+                boolean creativeBypasses,
+                boolean operatorsBypass,
+                boolean torchFizz,
+                boolean creeperTntWarning,
+                boolean enabledByDefault,
+                boolean debug,
+                int tutorialMaxShows,
+                boolean f3Enabled,
+                SeasonBits season) {
+            return new DisplayExtras(
+                    checkPermission,
+                    creativeBypasses,
+                    operatorsBypass,
+                    torchFizz,
+                    creeperTntWarning,
+                    enabledByDefault,
+                    debug,
+                    tutorialMaxShows,
+                    f3Enabled,
+                    season,
+                    WeightBits.COMPATIBLE_DEFAULT);
+        }
+
+        private DisplayExtras withWeight(WeightBits weight) {
+            return new DisplayExtras(
+                    checkPermission,
+                    creativeBypasses,
+                    operatorsBypass,
+                    torchFizz,
+                    creeperTntWarning,
+                    enabledByDefault,
+                    debug,
+                    tutorialMaxShows,
+                    f3Enabled,
+                    season,
+                    weight);
+        }
 
         public record SeasonBits(boolean antiFarming, int lossRate, boolean changingSeasons) {
             static final SeasonBits INACTIVE = new SeasonBits(false, 25, true);
@@ -274,6 +343,26 @@ public record ClientboundSyncPayload(
                     ByteBufCodecs.BOOL,
                     SeasonBits::changingSeasons,
                     SeasonBits::new);
+        }
+
+        public record WeightBits(boolean enabled, double maxPoints, double armorPiece, double stack, double tool) {
+            /** Defaults, and the stand-in when an older server omits this record. */
+            static final WeightBits COMPATIBLE_DEFAULT = new WeightBits(true, 18.0, 2.0, 1.0, 0.5);
+            /** One boolean plus four doubles. */
+            static final int ENCODED_BYTES = 1 + 8 * 4;
+
+            static final StreamCodec<ByteBuf, WeightBits> STREAM_CODEC = StreamCodec.composite(
+                    ByteBufCodecs.BOOL,
+                    WeightBits::enabled,
+                    ByteBufCodecs.DOUBLE,
+                    WeightBits::maxPoints,
+                    ByteBufCodecs.DOUBLE,
+                    WeightBits::armorPiece,
+                    ByteBufCodecs.DOUBLE,
+                    WeightBits::stack,
+                    ByteBufCodecs.DOUBLE,
+                    WeightBits::tool,
+                    WeightBits::new);
         }
     }
 

@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "tougher:heavy_copper_sword",
+    "tougher:heavy_iron_sword",
+    "tougher:heavy_golden_sword",
+    "tougher:heavy_diamond_sword",
+    "tougher:heavy_netherite_sword"
+  ]
+}

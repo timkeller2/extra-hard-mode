@@ -16,6 +16,7 @@ import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 
@@ -74,7 +75,12 @@ public final class WeightCheckTask {
         ((dev.extrahardmode.mixin.EntityHurtAccess) player).tougher$markHurt();
     }
 
-    public static double inventoryWeight(ServerPlayer player, PlayerSettings settings) {
+    public static double inventoryWeight(Player player, PlayerSettings settings) {
+        return inventoryWeight(player, settings.armorPiece(), settings.stack(), settings.tool());
+    }
+
+    /** Same count the swim check uses. The client passes the synced piece weights. */
+    public static double inventoryWeight(Player player, double armorPiece, double stackWeight, double toolWeight) {
         int armorPieces = 0;
         for (EquipmentSlot slot : ARMOR_SLOTS) {
             if (!player.getItemBySlot(slot).isEmpty()) {
@@ -102,8 +108,7 @@ public final class WeightCheckTask {
                 stackUnits += offhand.getCount() / (double) Math.max(1, offhand.getMaxStackSize());
             }
         }
-        return WeightFormula.weight(
-                armorPieces, stackUnits, tools, settings.armorPiece(), settings.stack(), settings.tool());
+        return WeightFormula.weight(armorPieces, stackUnits, tools, armorPiece, stackWeight, toolWeight);
     }
 
     static boolean isTool(ItemStack stack) {

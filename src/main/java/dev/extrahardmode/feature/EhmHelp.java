@@ -72,6 +72,7 @@ public final class EhmHelp {
                 "processing",
                 "combat",
                 "armor",
+                "weapons",
                 "mana",
                 "abilities",
                 "achievements",
@@ -92,7 +93,7 @@ public final class EhmHelp {
                 "tougher.help.overview.",
                 List.of(
                         "Tougher — harder survival. Type /tougher help <topic>, or /tougher ability help.",
-                        "Topics: mining, building, torches, hunger, farming, combat, armor, mana, abilities, achievements, homes, portals.",
+                        "Topics: mining, building, torches, hunger, farming, combat, armor, weapons, mana, abilities, achievements, homes, portals.",
                         "Farming subjects: crops, animals, seasons, soil, processing.",
                         "Home subjects: rooms, furnishings, residents, shops, bounties. Checklist: /tougher help homes.",
                         "Mana abilities: /tougher ability help, or /tougher ability help <name>. /tougher me lists your skills.",
@@ -173,6 +174,7 @@ public final class EhmHelp {
                 processing(),
                 combat(),
                 armor(),
+                weapons(),
                 mana(),
                 abilities(),
                 achievements(),
@@ -194,6 +196,7 @@ public final class EhmHelp {
             case "farming", "farm" -> Page.concat(crops(), animals(), seasons(), soil(), processing());
             case "combat", "mobs", "shields", "bosses" -> combat();
             case "armor" -> armor();
+            case "weapons", "weapon" -> weapons();
             case "mana" -> mana();
             case "abilities", "ability" -> abilities();
             case "achievements", "achievement", "achieve" -> achievements();
@@ -376,6 +379,16 @@ public final class EhmHelp {
                         "Armor: Healing and food regen fill every heart, not just the first ten."));
     }
 
+    private static Page weapons() {
+        return Page.of(
+                "tougher.help.weapons.",
+                List.of(
+                        "Weapons: Heavy swords and axes of copper, iron, gold, and diamond use the normal recipe with blocks instead of ingots.",
+                        "Weapons: They last three times as long and deal 2 more damage. Repair them with those blocks.",
+                        "Weapons: Smith the heavy diamond sword or axe with a netherite upgrade template and a netherite ingot. That ingot repairs it.",
+                        "Weapons: A heavy golden sword casts Smite Evil, the same as a golden sword."));
+    }
+
     private static Page mana() {
         return Page.of(
                 "tougher.help.mana.",
@@ -393,7 +406,7 @@ public final class EhmHelp {
                 List.of(
                         "Abilities: Hold the catalyst and right-click. Let it grow on a plant.",
                         "Abilities: An arrow casts Magic arrow. Charcoal in your inventory adds +2 and the burn, and one is consumed. Iron ingot: Iron Heart. Golden sword: Smite Evil.",
-                        "Abilities: Smite Evil costs 1/4 mana. With at least 1 mana, the crosshair turns gold on a creature in reach.",
+                        "Abilities: A heavy golden sword also casts Smite Evil. It costs 1/4 mana. With at least 1 mana, the crosshair turns gold on a creature in reach.",
                         "Abilities: A clay brick casts Master Builder. It renews like Iron Heart until you run out of mana.",
                         "Abilities: Diamonds right-clicked cast Diamond Skin. It costs 2 mana, divides health damage by its level, and renews while you have mana.",
                         "Abilities: Diamond Skin's level is at least 2. Each point of health damage it prevents shortens it by 3 seconds.",
