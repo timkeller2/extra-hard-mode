@@ -255,7 +255,8 @@ def build():
         KeepTogether([
             Paragraph("Biome bosses", s["h"]),
             Paragraph(
-            "A strong boss can appear far from spawn, once per biome family. After it is defeated it does not return in that game. "
+            "A strong boss can appear far from spawn, once for each of 17 biome families. "
+            "That boss does not return in that game, including after it is defeated and including in another biome of the same family. "
             "Bosses do not spawn within 80 blocks of a player or a chest. "
             "Within 64 blocks, a biome boss shows a health bar with its name. "
             "A brood mother keeps chasing when hit, and every few seconds spits for half her bite damage and a brief blindness. "
@@ -267,6 +268,36 @@ def build():
             s["body"],
             ),
         ]),
+        Paragraph(
+            "A game can hold 17 different biome bosses, one for each family. Several biomes share one boss.",
+            s["body"],
+        ),
+        bullets(
+            [
+                "Lush Cave Broodmother: Lush Caves.",
+                "Sulfur Magma Titan: Sulfur Caves.",
+                "Dripstone Drowned: Dripstone Caves.",
+                "Dark Forest Horde King: Dark Forest and Pale Garden.",
+                "Jungle Brood Spider: Jungle, Sparse Jungle, and Bamboo Jungle.",
+                "Desert Husk Champion: Desert, Badlands, Eroded Badlands, and Wooded Badlands.",
+                "Swamp Hex Witch: Swamp and Mangrove Swamp.",
+                "Mushroom Horde King: Mushroom Fields.",
+                "Ocean Guardian: Ocean, Cold Ocean, Lukewarm Ocean, Warm Ocean, Frozen Ocean, and all four deep oceans.",
+                "Savanna Ravager: Savanna, Savanna Plateau, and Windswept Savanna.",
+                "Plains Ravager: Plains, Sunflower Plains, and Meadow.",
+                "Cold Stray Sniper: Snowy Plains, Ice Spikes, Taiga, Snowy Taiga, both old-growth taigas, Grove, Snowy Slopes, Frozen Peaks, Jagged Peaks, Stony Peaks, Windswept Hills, and Windswept Gravelly Hills.",
+                "River Drowned: River, Frozen River, Beach, Snowy Beach, and Stony Shore.",
+                "Forest Broodmother: Forest, Flower Forest, Birch Forest, Old Growth Birch Forest, Cherry Grove, and Windswept Forest.",
+                "Nether Blaze Lord: Nether Wastes.",
+                "Crimson Hoglin: Crimson Forest.",
+                "Soul Sand Wither Knight: Soul Sand Valley.",
+            ],
+            s["bullet"],
+        ),
+        Paragraph(
+            "These biomes never spawn a biome boss: Deep Dark, Dappled Forest, Warped Forest, Basalt Deltas, The Void, and every End biome.",
+            s["body"],
+        ),
         Paragraph("Armor", s["h"]),
         Paragraph(
             "A full set of heavy copper, iron, diamond, or netherite armor adds 5, 10, 20, or 30 hearts. "
@@ -379,13 +410,14 @@ def build():
                 "Shop size follows house points. The top of the roll is 50% at 14 points and 175% at 38. Higher scores stay there. The bottom is half of that. Prices do not inflate. A hauler pays 1 emerald for 32 of a block. Each chest, barrel, or shulker box takes 2 off that stack, down to 16.",
                 "A farm neighbor may sell one seed or plantable vegetable for 6 to 16 emeralds. Pumpkin and melon seeds are 6, and nether wart is 4. Glow berries are 3 for 1 emerald.",
                 "A trader also buys each thing he sells. The buy stack is 2 larger and pays the same number of emeralds. Those buys start with no uses. Buying from him adds 1 use to each of them. Selling him anything spends 1 use on each of them.",
-                "A trader or a wealthy trader also offers other players' chests. A sign on the chest that says SELL or BUY is what he reads.",
-                "A SELL chest is read from the top left. An emerald stack sets the price, and the next new item stack sets how many he sells for it.",
-                "Later stacks of that same item are extra stock. He sells those before the stack that set the amount. Your own chest is not offered to you.",
-                "The emeralds from a sale go to the bottom right of that chest. He keeps selling while the chest has enough items and room for the emeralds.",
-                "A BUY chest uses the same prices above the bottom row. The bottom row holds the emeralds he pays with.",
-                "Bought items go on that bottom row, or the row above it. He keeps buying while those emeralds last and the chest has room.",
-                "A trade from another player's chest gives no experience to you or to the resident.",
+                "A trader or a wealthy trader offers other players' chests after his own trades. Put a sign on a chest, including a trapped chest, whose first matching line is SELL or BUY. A double chest is one shop. Barrels, ender chests, and shulker boxes are not.",
+                "The sign can be on the side of the chest, standing on top of it, or hanging under it. Blank lines are skipped. The player who finishes the sign owns the shop, and a new sign on that chest replaces the old one. Your own chest is not offered to you. The chest can be anywhere, including another dimension, and it does not have to stay loaded.",
+                "A SELL chest is read from the top left, across each row, including the bottom row. Items before the first emeralds are not for sale. An emerald stack sets the price, from 1 to 64, for the items after it. A later emerald stack sets a new price.",
+                "The first stack of an item sets how many he sells in one trade. Later stacks of that same item are extra stock, and he sells those first. They are not a second offer. Emeralds themselves are never sold. Five emeralds, then 16 iron, then 64 more iron, sells 16 iron for 5 emeralds.",
+                "The emeralds you pay go to the bottom row, into an empty slot or an emerald stack, starting at the bottom right. He keeps selling while the chest has enough of the item and room there for the emeralds. There is no other limit.",
+                "A BUY chest is read the same way, but only above the bottom row. An emerald stack there sets the price, and the next new item is the sample: what he buys, and how many. That sample stays in the chest. A later stack of the same item is not another offer.",
+                "The bottom row is the wallet. He spends those emeralds from the right. Bought items land on the bottom row first, then on the row above, past the sample. Eight emeralds and then 16 wheat, above that wallet, means he buys 16 wheat for 8 emeralds.",
+                "He keeps buying while the wallet can pay and those rows have room. There is no other limit. A trade from another player's chest gives no experience to you or to the resident.",
                 "A jeweler sells a diamond for 8 emeralds, 4 gold ingots for 2, an iron block for 6, and a copper or redstone block for 2. Larger shops add lapis, amethyst, quartz, gold nuggets, ingots, and blocks of gold, lapis, amethyst, quartz, and diamond. A gold block is 6 emeralds and a diamond block is 32.",
                 "An armorsmith sells one heavy iron piece each restock. Which piece can change. The other sales are enchanted iron armor, each a different slot. A larger shop may buy iron. Heavy iron costs 12, 15, 21, or 24 emeralds for boots, a helmet, leggings, or a chestplate. Enchanted iron costs 6, 8, 11, or 12. A master armorsmith does the same with diamond: one heavy piece at four times the iron price, enchanted diamond armor at the heavy iron price, and a larger shop may buy diamonds.",
                 "A brewer sells one level 2 potion each restock. Which potion can change. Up to three other potions cost 1 emerald. A larger shop sells one of each brewing ingredient for 1 emerald, such as nether wart, blaze powder, glowstone, and ghast tears.",
