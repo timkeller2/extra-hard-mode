@@ -680,7 +680,7 @@ public final class AbilityRules {
                     "Sense Evil: If a biome boss is spawned, you turn toward the nearest one and sparkle with a creepy aura for 6 seconds.",
                     "Sense Evil: If it is within 250 × ability level blocks, you also learn the rough distance.",
                     "Sense Evil: If none are spawned, you sparkle as with Healing. One spider eye is consumed. Two in hand consume both and add +2.",
-                    "Sense Evil: Wise-teacher marks give off a red mist for 1 minute times your ability level, even when you are not looking at them.");
+                    "Sense Evil: Wise-teacher marks give off a red mist and a white outline through blocks for 1 minute times your ability level.");
             case SMITE_EVIL -> List.of(
                     "Smite Evil: Right-click while holding a golden sword or a heavy golden sword. Costs 1/4 mana.",
                     "Smite Evil: Strikes a creature along your aim up to your ability level in blocks with a normal melee attack from that sword.",

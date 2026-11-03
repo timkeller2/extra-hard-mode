@@ -25,6 +25,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -49,6 +50,10 @@ public final class WiseLessons {
     private static final Identifier LEAD_HEALTH = ExtraHardModeMod.id("wise_lesson_lead_health");
     private static final Identifier LEAD_SCALE = ExtraHardModeMod.id("wise_lesson_lead_scale");
     private static final Identifier LEAD_KNOCKBACK = ExtraHardModeMod.id("wise_lesson_lead_knockback");
+    private static final Identifier FINAL_HEALTH = ExtraHardModeMod.id("wise_lesson_final_health");
+    private static final Identifier FINAL_DAMAGE = ExtraHardModeMod.id("wise_lesson_final_damage");
+    /** Long enough that the five-tick refresh does not let the outline blink off. */
+    private static final int OUTLINE_TICKS = 40;
     private static final int EMERALD_STACK = 64;
     /** Soft red dust on the body. Scale is the puff size. */
     private static final DustParticleOptions MARK_MIST = new DustParticleOptions(0xC41A1A, 1.6F);
@@ -68,6 +73,12 @@ public final class WiseLessons {
     public static boolean isLead(LivingEntity entity) {
         return isLessonMob(entity)
                 && Boolean.TRUE.equals(entity.getAttachedOrElse(EhmAttachments.EHM_WISE_LESSON_LEAD, Boolean.FALSE));
+    }
+
+    /** The last creature of its hunt. */
+    public static boolean isFinal(LivingEntity entity) {
+        return isLessonMob(entity)
+                && Boolean.TRUE.equals(entity.getAttachedOrElse(EhmAttachments.EHM_WISE_LESSON_FINAL, Boolean.FALSE));
     }
 
     public static void onTalk(ServerPlayer player, Villager villager, ServerLevel level, InhabitantData.Home home) {
@@ -167,7 +178,8 @@ public final class WiseLessons {
                     int batch = WiseLessonRules.spawnsThisSecond(updated.spawned(), updated.size());
                     for (int n = 0; n < batch; n++) {
                         boolean lead = WiseLessonRules.leadSpawn(updated.spawned());
-                        String mark = trySpawn(player, level, updated, today, lead);
+                        boolean last = WiseLessonRules.finalSpawn(updated.spawned(), updated.size());
+                        String mark = trySpawn(player, level, updated, today, lead, last);
                         updated = WiseLessonRules.afterAttempt(updated, mark != null, mark, random.nextInt());
                         if (mark == null) {
                             break;
@@ -237,10 +249,6 @@ public final class WiseLessons {
             long expire = living.getAttachedOrElse(EhmAttachments.EHM_WISE_EXPIRE_DAY, Long.MAX_VALUE);
             if (today >= expire) {
                 doomed.add(living);
-                continue;
-            }
-            if (living.hasEffect(MobEffects.GLOWING)) {
-                living.removeEffect(MobEffects.GLOWING);
             }
         }
         for (LivingEntity living : doomed) {
@@ -356,12 +364,22 @@ public final class WiseLessons {
         return lesson.withSpawn(lesson.spawned(), lesson.spawnWait(), kept, active);
     }
 
-    /** One diamond, and emeralds from 10% through 20% of this creature's health. */
-    public static void dropLeadTreasure(LivingEntity mob, ServerLevel level) {
-        if (mob == null || level == null || !isLead(mob)) {
+    /**
+     * The first creature drops one diamond. The first and the last drop emeralds from 10% through
+     * 20% of that creature's own health.
+     */
+    public static void dropBonusTreasure(LivingEntity mob, ServerLevel level) {
+        if (mob == null || level == null) {
             return;
         }
-        mob.spawnAtLocation(level, new ItemStack(Items.DIAMOND));
+        boolean lead = isLead(mob);
+        boolean finale = isFinal(mob);
+        if (WiseLessonRules.dropsDiamond(lead)) {
+            mob.spawnAtLocation(level, new ItemStack(Items.DIAMOND));
+        }
+        if (!WiseLessonRules.dropsEmeralds(lead, finale)) {
+            return;
+        }
         int emeralds = WiseLessonRules.leadEmeralds(
                 WiseLessonRules.wholeHealth(mob.getMaxHealth()), level.getRandom().nextInt());
         int left = emeralds;
@@ -375,6 +393,14 @@ public final class WiseLessons {
     /** Ordinary marks gain 50% to 100% health and spawn full. */
     private static void bolster(Mob mob, int roll) {
         addBonus(mob.getAttribute(Attributes.MAX_HEALTH), MARK_HEALTH, WiseLessonRules.markHealthBonus(roll));
+        mob.setHealth(mob.getMaxHealth());
+    }
+
+    /** The last creature has twice the first creature's health and hits 50% harder. */
+    private static void promoteFinal(Mob mob) {
+        mob.setAttached(EhmAttachments.EHM_WISE_LESSON_FINAL, Boolean.TRUE);
+        addBonus(mob.getAttribute(Attributes.MAX_HEALTH), FINAL_HEALTH, WiseLessonRules.finalHealthBonus());
+        addBonus(mob.getAttribute(Attributes.ATTACK_DAMAGE), FINAL_DAMAGE, WiseLessonRules.finalDamageBonus());
         mob.setHealth(mob.getMaxHealth());
     }
 
@@ -397,15 +423,14 @@ public final class WiseLessons {
         if (living == null || !isLessonMob(living)) {
             return;
         }
-        if (living.hasEffect(MobEffects.GLOWING)) {
-            living.removeEffect(MobEffects.GLOWING);
-        }
         if (!(living.level() instanceof ServerLevel level) || level.getServer() == null) {
+            clearOutline(living);
             return;
         }
         UUID ownerId = living.getAttached(EhmAttachments.EHM_WISE_LESSON_OWNER);
         ServerPlayer owner = ownerId == null ? null : level.getServer().getPlayerList().getPlayer(ownerId);
         if (owner == null || !owner.isAlive() || owner.level() != level) {
+            clearOutline(living);
             return;
         }
         boolean carrot = LocatorBarRules.armed(
@@ -415,10 +440,21 @@ public final class WiseLessons {
         long until = owner.getAttachedOrElse(EhmAttachments.EHM_MARK_OUTLINE_UNTIL, -1L);
         boolean sense = WiseLessonRules.senseOutlineActive(until, level.getServer().overworld().getGameTime());
         boolean sight = owner.hasLineOfSight(living);
-        if (!WiseLessonRules.showMist(sight, carrot, sense)) {
-            return;
+        if (WiseLessonRules.showMist(sight, carrot, sense)) {
+            spawnMist(level, owner, living);
         }
-        spawnMist(level, owner, living);
+        if (WiseLessonRules.showOutline(carrot, sense)) {
+            living.addEffect(new MobEffectInstance(MobEffects.GLOWING, OUTLINE_TICKS, 0, false, false));
+        } else {
+            clearOutline(living);
+        }
+    }
+
+    /** The glowing effect is the white outline drawn through blocks. */
+    private static void clearOutline(LivingEntity living) {
+        if (living.hasEffect(MobEffects.GLOWING)) {
+            living.removeEffect(MobEffects.GLOWING);
+        }
     }
 
     /** Dust on the body, a wider darker cloud, and drifting red spores. Sent only to the owner. */
@@ -465,7 +501,12 @@ public final class WiseLessons {
     }
 
     private static String trySpawn(
-            ServerPlayer player, ServerLevel level, WiseLessonRules.Lesson lesson, long today, boolean lead) {
+            ServerPlayer player,
+            ServerLevel level,
+            WiseLessonRules.Lesson lesson,
+            long today,
+            boolean lead,
+            boolean last) {
         RandomSource random = level.getRandom();
         int radius = WiseLessonRules.spawnRadius(random.nextInt());
         double angle = random.nextFloat() * Math.PI * 2.0;
@@ -500,6 +541,8 @@ public final class WiseLessons {
         mob.setAttached(EhmAttachments.EHM_WISE_LESSON_OWNER, player.getUUID());
         if (lead) {
             promoteLead(mob);
+        } else if (last) {
+            promoteFinal(mob);
         } else {
             bolster(mob, random.nextInt());
         }

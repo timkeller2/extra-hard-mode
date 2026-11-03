@@ -595,6 +595,11 @@ public final class EhmAttachments {
             ExtraHardModeMod.id("wise_lesson_lead"),
             builder -> builder.persistent(Codec.BOOL).initializer(() -> Boolean.FALSE));
 
+    /** The last creature of that hunt: twice the first creature's health, 50% more damage, and its loot without the diamond. */
+    public static final AttachmentType<Boolean> EHM_WISE_LESSON_FINAL = AttachmentRegistry.create(
+            ExtraHardModeMod.id("wise_lesson_final"),
+            builder -> builder.persistent(Codec.BOOL).initializer(() -> Boolean.FALSE));
+
     public static final AttachmentType<Long> EHM_WISE_EXPIRE_DAY = AttachmentRegistry.create(
             ExtraHardModeMod.id("wise_lesson_expire"),
             builder -> builder.persistent(Codec.LONG).initializer(() -> Long.MAX_VALUE));

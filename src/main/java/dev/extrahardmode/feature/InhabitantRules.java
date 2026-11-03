@@ -608,8 +608,10 @@ public final class InhabitantRules {
                 "Lessons: After 2 minutes out there, on land, at night or below ground, half appear within a few seconds. The rest spawn every 5 to 15 seconds, 20 to 40 blocks out.",
                 "Lessons: Each mark has 50% to 100% more health. They give triple experience and double loot, and they always drop both. They vanish after 3 Minecraft days.",
                 "Lessons: A mark in your line of sight gives off a red mist. A golden carrot mists every mark until you are not saturated. Sense Evil does that for 1 minute times its level.",
+                "Lessons: A golden carrot or Sense Evil also shows a white outline through blocks.",
                 "Lessons: The first creature is slightly larger, has 5 times the health, and resists knockback.",
                 "Lessons: It drops 10 times the experience and 3 times the loot, plus one diamond and emeralds from 10% to 20% of that health.",
+                "Lessons: The last creature has twice the first creature's health and hits 50% harder. It drops 3 times the loot, without the diamond, and emeralds from 10% to 20% of its health.",
                 "Lessons: An unfinished hunt ends after 14 Minecraft days. Each wise teacher can give you a different hunt, and each player has his own.");
     }
 

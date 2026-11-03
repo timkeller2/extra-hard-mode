@@ -90,20 +90,20 @@ class WiseLessonRulesTest {
     @Test
     void statusLineNamesThePackAndFlipsWhenCloseEnough() {
         assertEquals(
-                "Alden the Wise Teacher: 5 zombies left east",
+                "Alden the Wise Teacher: 5 zombies east",
                 WiseLessonRules.statusLine("Alden the Wise Teacher", 5, "zombies", "east", false));
         assertEquals(
-                "Alden the Wise Teacher: 5 zombies left near here",
+                "Alden the Wise Teacher: 5 zombies near here",
                 WiseLessonRules.statusLine("Alden the Wise Teacher", 5, "zombies", "east", true));
         assertTrue(WiseLessonRules.atRange("minecraft:overworld", "minecraft:overworld", 0, 0, 200, 0, 200));
         assertFalse(WiseLessonRules.atRange("minecraft:overworld", "minecraft:overworld", 0, 0, 199, 0, 200));
         assertFalse(WiseLessonRules.atRange("minecraft:overworld", "minecraft:the_nether", 0, 0, 500, 0, 200));
         WiseLessonRules.Lesson lesson = hunt();
         assertEquals(
-                List.of("Alden the Wise Teacher: 5 zombies left east"),
+                List.of("Alden the Wise Teacher: 5 zombies east"),
                 WiseLessonRules.hudLines(List.of(lesson), "minecraft:overworld", 0, 0));
         assertEquals(
-                List.of("Alden the Wise Teacher: 5 zombies left near here"),
+                List.of("Alden the Wise Teacher: 5 zombies near here"),
                 WiseLessonRules.hudLines(List.of(lesson), "minecraft:overworld", 250, 0));
         WiseLessonRules.Lesson done = lesson.withActive(false);
         assertTrue(WiseLessonRules.hudLines(List.of(done), "minecraft:overworld", 250, 0).isEmpty());
@@ -146,11 +146,11 @@ class WiseLessonRulesTest {
                 List.of());
         assertEquals(
                 List.of(
-                        "Alden the Wise Teacher: 5 zombies left east",
-                        "Bran the Wise Teacher: 4 skeletons left west"),
+                        "Alden the Wise Teacher: 5 zombies east",
+                        "Bran the Wise Teacher: 4 skeletons west"),
                 WiseLessonRules.hudLines(List.of(open, other), "minecraft:overworld", 0, 0));
         assertEquals(
-                List.of("Bran the Wise Teacher: 4 skeletons left west"),
+                List.of("Bran the Wise Teacher: 4 skeletons west"),
                 WiseLessonRules.hudLines(List.of(ended, other), "minecraft:overworld", 0, 0));
         assertFalse(WiseLessonRules.nightTime(12999));
         assertTrue(WiseLessonRules.nightTime(13000));
@@ -212,14 +212,30 @@ class WiseLessonRulesTest {
         assertEquals(10, WiseLessonRules.xpFactor(true));
         assertEquals(2, WiseLessonRules.lootRolls(false));
         assertEquals(3, WiseLessonRules.lootRolls(true));
+        assertEquals(2, WiseLessonRules.lootRolls(false, false));
+        assertEquals(3, WiseLessonRules.lootRolls(false, true));
+        assertEquals(3, WiseLessonRules.lootRolls(true, false));
+        assertTrue(WiseLessonRules.dropsDiamond(true));
+        assertFalse(WiseLessonRules.dropsDiamond(false));
+        assertTrue(WiseLessonRules.dropsEmeralds(true, false));
+        assertTrue(WiseLessonRules.dropsEmeralds(false, true));
+        assertFalse(WiseLessonRules.dropsEmeralds(false, false));
         assertTrue(WiseLessonRules.leadSpawn(0));
         assertFalse(WiseLessonRules.leadSpawn(1));
+        assertFalse(WiseLessonRules.finalSpawn(0, 1));
+        assertFalse(WiseLessonRules.finalSpawn(0, 8));
+        assertTrue(WiseLessonRules.finalSpawn(7, 8));
+        assertFalse(WiseLessonRules.finalSpawn(6, 8));
+        assertTrue(WiseLessonRules.finalSpawn(1, 2));
         assertEquals(0.5, WiseLessonRules.markHealthBonus(0));
         assertEquals(0.75, WiseLessonRules.markHealthBonus(25));
         assertEquals(1.0, WiseLessonRules.markHealthBonus(50));
         assertEquals(0.5, WiseLessonRules.markHealthBonus(51));
         assertEquals(1.0, WiseLessonRules.markHealthBonus(-1));
         assertEquals(4.0, WiseLessonRules.leadHealthBonus());
+        assertEquals(10, WiseLessonRules.FINAL_HEALTH_FACTOR);
+        assertEquals(9.0, WiseLessonRules.finalHealthBonus());
+        assertEquals(0.5, WiseLessonRules.finalDamageBonus());
         assertEquals(0.25, WiseLessonRules.leadScaleBonus());
         assertEquals(100, WiseLessonRules.wholeHealth(100.2));
         assertEquals(0, WiseLessonRules.wholeHealth(0));
@@ -233,6 +249,9 @@ class WiseLessonRulesTest {
         assertEquals(26, WiseLessonRules.leadEmeralds(130, 13));
         assertEquals(0, WiseLessonRules.leadEmeralds(0, 4));
         assertEquals(0, WiseLessonRules.leadEmeralds(-5, 1));
+        assertEquals(20, WiseLessonRules.leadEmeralds(200, 0));
+        assertEquals(40, WiseLessonRules.leadEmeralds(200, 20));
+        assertEquals(20, WiseLessonRules.leadEmeralds(200, 21));
         assertEquals(0, WiseLessonRules.burstCount(0));
         assertEquals(1, WiseLessonRules.burstCount(3));
         assertEquals(2, WiseLessonRules.burstCount(5));
@@ -255,13 +274,16 @@ class WiseLessonRulesTest {
         assertFalse(WiseLessonRules.showMist(false, false, false));
         assertTrue(WiseLessonRules.showMist(false, true, false));
         assertTrue(WiseLessonRules.showMist(false, false, true));
+        assertFalse(WiseLessonRules.showOutline(false, false));
+        assertTrue(WiseLessonRules.showOutline(true, false));
+        assertTrue(WiseLessonRules.showOutline(false, true));
         assertFalse(WiseLessonRules.senseOutlineActive(-1L, 100L));
         assertFalse(WiseLessonRules.senseOutlineActive(100L, 100L));
         assertTrue(WiseLessonRules.senseOutlineActive(101L, 100L));
         WiseLessonRules.Lesson hunted = hunt().withSpawn(3, 40, List.of("aaa|13", "bbb|13"), true);
         assertEquals(4, WiseLessonRules.marksLeft(hunted));
         assertEquals(
-                List.of("Alden the Wise Teacher: 4 zombies left east"),
+                List.of("Alden the Wise Teacher: 4 zombies east"),
                 WiseLessonRules.hudLines(List.of(hunted), "minecraft:overworld", 0, 0));
         WiseLessonRules.Lesson oneLess = hunted.withoutMob("aaa");
         assertEquals(3, WiseLessonRules.marksLeft(oneLess));

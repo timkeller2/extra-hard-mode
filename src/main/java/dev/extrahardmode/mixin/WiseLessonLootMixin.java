@@ -18,8 +18,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
  * Lesson creatures drop twice and grant triple experience, including kills with no player blow.
- * The first creature of a hunt drops three times, grants ten times the experience, and adds a diamond
- * and emeralds. The guard is set before the inner calls so those rolls are not multiplied again.
+ * The first creature drops three times, grants ten times the experience, and adds a diamond and emeralds.
+ * The last creature drops three times and adds emeralds from the same share of its own health.
+ * The guard is set before the inner calls so those rolls are not multiplied again.
  */
 @Mixin(LivingEntity.class)
 public abstract class WiseLessonLootMixin {
@@ -40,18 +41,19 @@ public abstract class WiseLessonLootMixin {
             return;
         }
         boolean lead = WiseLessons.isLead(self);
+        boolean finale = WiseLessons.isFinal(self);
         ci.cancel();
         MULTIPLYING.set(Boolean.TRUE);
         try {
-            int rolls = WiseLessonRules.lootRolls(lead);
+            int rolls = WiseLessonRules.lootRolls(lead, finale);
             for (int i = 0; i < rolls; i++) {
                 self.dropFromLootTable(level, source, true, table);
             }
         } finally {
             MULTIPLYING.set(Boolean.FALSE);
         }
-        if (lead) {
-            WiseLessons.dropLeadTreasure(self, level);
+        if (lead || finale) {
+            WiseLessons.dropBonusTreasure(self, level);
         }
     }
 

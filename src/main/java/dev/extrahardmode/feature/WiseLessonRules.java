@@ -35,9 +35,12 @@ public final class WiseLessonRules {
     /** Ordinary marks. 50 is 1.5 times health and 100 is twice, added with ADD_MULTIPLIED_BASE. */
     public static final int MARK_HEALTH_MIN_PERCENT = 50;
     public static final int MARK_HEALTH_MAX_PERCENT = 100;
-    /** The first creature of a hunt. Later creatures keep the ordinary factors, including the health band. */
+    /** The first creature of a hunt. Creatures between the first and the last keep the ordinary factors. */
     public static final double LEAD_SCALE = 1.25;
     public static final int LEAD_HEALTH_FACTOR = 5;
+    /** The last creature has twice the first creature's health, hits 50% harder, and shares its loot without the diamond. */
+    public static final int FINAL_HEALTH_FACTOR = LEAD_HEALTH_FACTOR * 2;
+    public static final double FINAL_DAMAGE_BONUS = 0.5;
     public static final int LEAD_XP_FACTOR = 10;
     public static final int LOOT_ROLLS = 2;
     public static final int LEAD_LOOT_ROLLS = 3;
@@ -308,7 +311,7 @@ public final class WiseLessonRules {
         String who = nameplate == null || nameplate.isBlank() ? "Traveler" : nameplate;
         String creatures = plural == null || plural.isBlank() ? "creatures" : plural;
         String where = near ? NEAR : (direction == null || direction.isBlank() ? "north" : direction);
-        return who + ": " + Math.max(0, size) + " " + creatures + " left " + where;
+        return who + ": " + Math.max(0, size) + " " + creatures + " " + where;
     }
 
     /** Pack size minus creatures already removed. Unspawned marks still count. */
@@ -387,17 +390,50 @@ public final class WiseLessonRules {
         return alreadySpawned <= 0;
     }
 
+    /**
+     * True for the last creature of a hunt that has more than one. A hunt of one stays the first
+     * creature only.
+     */
+    public static boolean finalSpawn(int alreadySpawned, int size) {
+        return size > 1 && alreadySpawned == size - 1;
+    }
+
     public static int xpFactor(boolean lead) {
         return lead ? LEAD_XP_FACTOR : XP_FACTOR;
     }
 
     public static int lootRolls(boolean lead) {
-        return lead ? LEAD_LOOT_ROLLS : LOOT_ROLLS;
+        return lootRolls(lead, false);
+    }
+
+    /** Three rolls for the first creature and the last. Two for the ones between. */
+    public static int lootRolls(boolean lead, boolean finale) {
+        return lead || finale ? LEAD_LOOT_ROLLS : LOOT_ROLLS;
+    }
+
+    /** Only the first creature drops a diamond. */
+    public static boolean dropsDiamond(boolean lead) {
+        return lead;
+    }
+
+    /** The first and the last drop emeralds. The ones between do not. */
+    public static boolean dropsEmeralds(boolean lead, boolean finale) {
+        return lead || finale;
     }
 
     /** Added with ADD_MULTIPLIED_BASE so max health becomes {@link #LEAD_HEALTH_FACTOR} times the base. */
     public static double leadHealthBonus() {
         return LEAD_HEALTH_FACTOR - 1.0;
+    }
+
+    /** Added with ADD_MULTIPLIED_BASE so max health is twice the first creature's. */
+    public static double finalHealthBonus() {
+        return FINAL_HEALTH_FACTOR - 1.0;
+    }
+
+    /** Added with ADD_MULTIPLIED_BASE so attack damage is 50% higher. */
+    public static double finalDamageBonus() {
+        return FINAL_DAMAGE_BONUS;
     }
 
     /**
@@ -411,6 +447,11 @@ public final class WiseLessonRules {
     /** True while the Sense Evil mist window has not reached {@code now}. */
     public static boolean senseOutlineActive(long until, long now) {
         return until > now;
+    }
+
+    /** White outline through blocks while a golden carrot or Sense Evil is revealing marks. */
+    public static boolean showOutline(boolean goldenCarrotArmed, boolean senseEvilActive) {
+        return goldenCarrotArmed || senseEvilActive;
     }
 
     /**
@@ -461,8 +502,8 @@ public final class WiseLessonRules {
     }
 
     /**
-     * Emeralds for the first creature: a whole number from 10% through 20% of its health, inclusive.
-     * {@code roll} may be any int.
+     * Emeralds for the first or last creature: a whole number from 10% through 20% of that creature's
+     * own health, inclusive. {@code roll} may be any int.
      */
     public static int leadEmeralds(int finalHealth, int roll) {
         int min = healthShare(finalHealth, LEAD_EMERALD_MIN_PERCENT);
