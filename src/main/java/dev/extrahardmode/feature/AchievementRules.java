@@ -202,12 +202,31 @@ public final class AchievementRules {
     /** Faces on the die rolled after {@link #manaFromExperience} succeeds. */
     public static final int MANA_DIE_SIDES = 20;
 
+    /** Added to that die for each mana level a wise teacher has granted. */
+    public static final int WISE_MANA_DIE_BONUS_PER_LEVEL = 2;
+
+    /** {@code 2 ×} wise-teacher mana levels. A missing or negative count adds nothing. */
+    public static int wiseManaDieBonus(int wiseManaLevels) {
+        if (wiseManaLevels <= 0) {
+            return 0;
+        }
+        return wiseManaLevels * WISE_MANA_DIE_BONUS_PER_LEVEL;
+    }
+
     /**
      * The experience roll offered a mana level. {@code die} is 1–20 and must be strictly higher
      * than the stored mana level. Well Fed and ready gold are not part of that level.
      */
     public static boolean manaDieBeatsBaseLevel(int baseManaLevel, int die) {
-        return die > Math.max(0, baseManaLevel);
+        return manaDieBeatsBaseLevel(baseManaLevel, die, 0);
+    }
+
+    /**
+     * Same check, with {@link #wiseManaDieBonus(int)} added to the die. The bonus raises how high
+     * the stored mana level can be and still lose to the roll.
+     */
+    public static boolean manaDieBeatsBaseLevel(int baseManaLevel, int die, int wiseManaLevels) {
+        return die + wiseManaDieBonus(wiseManaLevels) > Math.max(0, baseManaLevel);
     }
 
     /** {@code b:minecraft:oak_planks:0} / {@code s:minecraft:zombie:1}. */

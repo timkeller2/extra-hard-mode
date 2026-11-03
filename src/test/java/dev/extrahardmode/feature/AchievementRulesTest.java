@@ -208,6 +208,16 @@ class AchievementRulesTest {
         assertTrue(AchievementRules.manaDieBeatsBaseLevel(19, 20));
         assertFalse(AchievementRules.manaDieBeatsBaseLevel(20, 20));
         assertFalse(AchievementRules.manaDieBeatsBaseLevel(21, 20));
+        assertEquals(2, AchievementRules.WISE_MANA_DIE_BONUS_PER_LEVEL);
+        assertEquals(0, AchievementRules.wiseManaDieBonus(0));
+        assertEquals(0, AchievementRules.wiseManaDieBonus(-3));
+        assertEquals(6, AchievementRules.wiseManaDieBonus(3));
+        assertFalse(AchievementRules.manaDieBeatsBaseLevel(20, 18, 1));
+        assertTrue(AchievementRules.manaDieBeatsBaseLevel(20, 19, 1));
+        assertFalse(AchievementRules.manaDieBeatsBaseLevel(22, 20, 1));
+        assertTrue(AchievementRules.manaDieBeatsBaseLevel(23, 20, 2));
+        assertFalse(AchievementRules.manaDieBeatsBaseLevel(24, 20, 2));
+        assertFalse(AchievementRules.manaDieBeatsBaseLevel(20, 20, 0));
     }
 
     @Test

@@ -378,9 +378,15 @@ public final class Achievements implements FeatureModule {
             return;
         }
         int die = player.getRandom().nextInt(AchievementRules.MANA_DIE_SIDES) + 1;
-        if (AchievementRules.manaDieBeatsBaseLevel(storedManaLevel(player), die)) {
+        if (AchievementRules.manaDieBeatsBaseLevel(storedManaLevel(player), die, wiseManaLevels(player))) {
             grantMana(player, 1);
         }
+    }
+
+    /** Mana levels granted by wise teachers, one per teacher. */
+    static int wiseManaLevels(ServerPlayer player) {
+        List<String> taught = player.getAttachedOrElse(EhmAttachments.EHM_WISE_MANA, List.of());
+        return taught == null ? 0 : taught.size();
     }
 
     public static void grantMana(ServerPlayer player, int levels) {
