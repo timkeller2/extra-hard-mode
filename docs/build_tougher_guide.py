@@ -163,10 +163,11 @@ def build():
         ),
         Paragraph("Well Fed", s["h"]),
         Paragraph(
-            "After those seven different meals, each longer run of different foods raises Well Fed by one. "
-            "Eight different meals in a row is Well Fed 1. Twelve is Well Fed 5. It can go higher. "
-            "At Well Fed 3 the game looks at your last 13 meals and allows 3 repeats before the level drops. "
+            "After those seven different meals, every two more different meals raise Well Fed by one. "
+            "Nine different meals in a row is Well Fed 1. Thirteen is Well Fed 3. It can go higher. "
+            "At Well Fed 3 the game looks at your last 16 meals and allows 3 repeats before the level drops. "
             "That grace grows with every level. The same-food penalty also waits one extra repeat per level. "
+            "Dying clears the meal history, so Well Fed starts over. "
             "Losing a level removes exactly that level's benefits. Health and hunger clamp down. The mana level leaves, but mana you already hold is kept. That is not an extra hit.",
             s["body"],
         ),

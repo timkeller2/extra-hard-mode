@@ -39,7 +39,19 @@ public final class WellFed {
             clampFood(player, WellFedRules.BASE_FOOD);
             return;
         }
-        applyModifiers(player, level(player));
+        List<String> history = player.getAttachedOrElse(EhmAttachments.EHM_FOOD_HISTORY, List.of());
+        update(player, history);
+    }
+
+    /** Death wipes the diet. The next life starts at Well Fed 0 with an empty meal history. */
+    public static void forget(ServerPlayer player) {
+        if (player == null) {
+            return;
+        }
+        player.setAttached(EhmAttachments.EHM_FOOD_HISTORY, List.of());
+        player.setAttached(EhmAttachments.EHM_WELL_FED, 0);
+        applyModifiers(player, 0);
+        clampFood(player, WellFedRules.BASE_FOOD);
     }
 
     /** Call after the meal is recorded. Fills new health and hunger. Mana level is not filled. */
@@ -54,6 +66,7 @@ public final class WellFed {
         } else {
             applyModifiers(player, next);
         }
+        clampFood(player, WellFedRules.foodMax(next));
         return next;
     }
 

@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
@@ -26,6 +27,8 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Input;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodData;
@@ -62,6 +65,7 @@ public final class Hunger implements FeatureModule {
     @Override
     public void bootstrap(FeatureBus bus) {
         bus.listen(ServerPlayConnectionEvents.DISCONNECT, ID, (handler, server) -> clear(handler.player.getUUID()));
+        bus.listen(ServerLivingEntityEvents.AFTER_DEATH, ID, Hunger::onDeath);
         bus.listen(PlayerBlockBreakEvents.AFTER, ID, (level, player, pos, state, blockEntity) -> noteActivity(player));
         bus.listen(UseBlockCallback.EVENT, ID, (player, level, hand, hit) -> {
             noteActivity(player);
@@ -85,6 +89,16 @@ public final class Hunger implements FeatureModule {
             applyExtraExhaustion(player, tick);
             WellFed.maintain(player);
         }
+    }
+
+    static void onDeath(LivingEntity entity, DamageSource source) {
+        if (!(entity instanceof ServerPlayer player) || !(player.level() instanceof ServerLevel level)) {
+            return;
+        }
+        if (!WorldGate.isModuleActive(level, ID)) {
+            return;
+        }
+        WellFed.forget(player);
     }
 
     /** Movement packets, swings, and other player actions. */

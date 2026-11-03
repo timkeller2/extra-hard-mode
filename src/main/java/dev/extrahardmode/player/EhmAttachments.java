@@ -168,15 +168,15 @@ public final class EhmAttachments {
     public static final AttachmentType<java.util.UUID> EHM_RESIDENT_ATTACKER = AttachmentRegistry.create(
             ExtraHardModeMod.id("resident_attacker"));
 
-    /** Well Fed level earned from a long varied diet. Drops when the diet narrows. */
+    /** Well Fed level earned from a long varied diet. Drops when the diet narrows. Death clears it. */
     public static final AttachmentType<Integer> EHM_WELL_FED = AttachmentRegistry.create(
             ExtraHardModeMod.id("well_fed"),
-            builder -> builder.persistent(Codec.INT).copyOnDeath().initializer(() -> 0));
+            builder -> builder.persistent(Codec.INT).initializer(() -> 0));
 
-    /** Persistent FIFO of recently eaten food item ids for the variety bonus. */
+    /** Persistent FIFO of recently eaten food item ids for the variety bonus. Death clears it. */
     public static final AttachmentType<List<String>> EHM_FOOD_HISTORY = AttachmentRegistry.create(
             ExtraHardModeMod.id("food_history"),
-            builder -> builder.persistent(Codec.STRING.listOf()).copyOnDeath().initializer(List::of));
+            builder -> builder.persistent(Codec.STRING.listOf()).initializer(List::of));
 
     /**
      * Golden carrot has opened the locator bar, and saturation has not hit zero since.

@@ -10,9 +10,35 @@ import org.junit.jupiter.api.Test;
 
 class WellFedRulesTest {
     @Test
-    void eightDifferentMealsReachLevelOneAndOneRepeatHolds() {
+    void twoExtraDifferentMealsMakeOneLevel() {
         List<String> meals = new ArrayList<>();
         for (int i = 0; i < 8; i++) {
+            meals.add("food" + i);
+        }
+        assertEquals(0, WellFedRules.nextLevel(meals, 0));
+        meals.add("food8");
+        assertEquals(1, WellFedRules.nextLevel(meals, 0));
+        meals.add("food9");
+        assertEquals(1, WellFedRules.nextLevel(meals, 1));
+        meals.add("food10");
+        assertEquals(2, WellFedRules.nextLevel(meals, 1));
+        assertEquals(1, WellFedRules.nextLevel(meals.subList(0, 9), 2));
+        assertEquals(9, WellFedRules.gainWindow(1));
+        assertEquals(10, WellFedRules.holdWindow(1));
+        assertEquals(13, WellFedRules.gainWindow(3));
+        assertEquals(16, WellFedRules.holdWindow(3));
+        assertEquals(28, WellFedRules.MAX_LEVEL);
+        List<String> full = new ArrayList<>();
+        for (int i = 0; i < WellFedRules.HISTORY_CAP; i++) {
+            full.add("food" + i);
+        }
+        assertEquals(WellFedRules.MAX_LEVEL, WellFedRules.nextLevel(full, 0));
+    }
+
+    @Test
+    void oneRepeatHoldsTheLowerLevel() {
+        List<String> meals = new ArrayList<>();
+        for (int i = 0; i < 9; i++) {
             meals.add("food" + i);
         }
         assertEquals(1, WellFedRules.nextLevel(meals, 0));
@@ -32,7 +58,7 @@ class WellFedRulesTest {
         assertEquals(1, WellFedRules.meleeBonus(8));
         assertEquals(1, WellFedRules.meleeBonus(15));
         assertEquals(2, WellFedRules.meleeBonus(16));
-        assertEquals(7, WellFedRules.meleeBonus(57));
+        assertEquals(3, WellFedRules.meleeBonus(WellFedRules.MAX_LEVEL));
         assertEquals(0.95F, WellFedRules.saturationMultiplier(5), 0.001F);
         assertEquals(0.91F, WellFedRules.saturationMultiplier(9), 0.001F);
         assertEquals(0.70F, WellFedRules.saturationMultiplier(30), 0.001F);
@@ -52,8 +78,8 @@ class WellFedRulesTest {
         assertEquals(80, WellFedRules.regenTicks(80, 0));
         assertEquals(0, WellFedRules.repeatPenalty(5, 1));
         assertEquals(1, WellFedRules.repeatPenalty(6, 1));
-        assertEquals(17, WellFedRules.holdWindow(5));
-        assertEquals(23, WellFedRules.holdWindow(8));
+        assertEquals(22, WellFedRules.holdWindow(5));
+        assertEquals(31, WellFedRules.holdWindow(8));
     }
 
     @Test

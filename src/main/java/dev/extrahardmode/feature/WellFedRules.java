@@ -6,17 +6,20 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Well Fed from meals past the first seven different foods. Minecraft-free.
- * Mana rises by 1 for every 3 levels. Melee rises by 1 for every 8 levels.
+ * Well Fed from meals past the first seven different foods. Two of those meals make one level.
+ * Minecraft-free. Mana rises by 1 for every 3 levels. Melee rises by 1 for every 8 levels.
  * Food regen is 1 second faster for every 3 levels, and never faster than every 5 seconds.
  * Saturation drain falls 1% per level, up to 30%.
  */
 public final class WellFedRules {
     public static final int BASE_MEALS = HungerRules.DEFAULT_FOOD_HISTORY;
-    /** Stored meals. Well Fed cannot grow past this minus {@link #BASE_MEALS}. */
+    /** All-different meals past the first seven that make one Well Fed level. */
+    public static final int MEALS_PER_LEVEL = 2;
+    /** Stored meals. The level cannot grow past half of this minus the first seven. */
     public static final int HISTORY_CAP = 64;
+    public static final int MAX_LEVEL = (HISTORY_CAP - BASE_MEALS) / MEALS_PER_LEVEL;
     public static final int BASE_FOOD = 20;
-    public static final int FOOD_CAP = BASE_FOOD + (HISTORY_CAP - BASE_MEALS);
+    public static final int FOOD_CAP = BASE_FOOD + MAX_LEVEL;
     /** Food regen never runs more often than once every 5 seconds. */
     public static final int MIN_REGEN_TICKS = 5 * HungerRules.TICKS_PER_SECOND;
     /** One mana level for every this many Well Fed levels, rounded down. */
@@ -32,9 +35,9 @@ public final class WellFedRules {
 
     private WellFedRules() {}
 
-    /** Meals that must all be different to reach this Well Fed level. */
+    /** Meals that must all be different to reach this Well Fed level. Two past the first seven per level. */
     public static int gainWindow(int level) {
-        return BASE_MEALS + Math.max(0, level);
+        return BASE_MEALS + MEALS_PER_LEVEL * Math.max(0, level);
     }
 
     /**
@@ -51,11 +54,10 @@ public final class WellFedRules {
 
     public static int nextLevel(List<String> recent, int previous) {
         int level = Math.max(0, previous);
-        int cap = HISTORY_CAP - BASE_MEALS;
         while (level > 0 && !holds(recent, level)) {
             level--;
         }
-        while (level < cap && FoodHistory.lastAreAllDifferent(recent, gainWindow(level) + 1)) {
+        while (level < MAX_LEVEL && FoodHistory.lastAreAllDifferent(recent, gainWindow(level + 1))) {
             level++;
         }
         return level;
