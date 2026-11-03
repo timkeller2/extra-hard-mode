@@ -56,22 +56,30 @@ class LapisPortalRulesTest {
     }
 
     @Test
-    void costIsOnePerHundredBlocksAndHalvesWhenBothFuelsArePresent() {
+    void eachFuelKindAddsOneHundredBlocksAndTheCostIsAtLeastOne() {
         assertEquals(100, LapisPortalRules.BLOCKS_PER_FUEL);
-        assertEquals(0, LapisPortalRules.travelCost(0, false));
-        assertEquals(0, LapisPortalRules.travelCost(0, true));
-        assertEquals(0, LapisPortalRules.travelCost(-5, false));
-        assertEquals(1, LapisPortalRules.travelCost(1, false));
-        assertEquals(1, LapisPortalRules.travelCost(100, false));
-        assertEquals(2, LapisPortalRules.travelCost(100.0001, false));
-        assertEquals(2, LapisPortalRules.travelCost(101, false));
-        assertEquals(2, LapisPortalRules.travelCost(200, false));
-        assertEquals(1, LapisPortalRules.travelCost(1, true));
-        assertEquals(1, LapisPortalRules.travelCost(100, true));
-        assertEquals(1, LapisPortalRules.travelCost(200, true));
-        assertEquals(1, LapisPortalRules.travelCost(300, true));
-        assertEquals(2, LapisPortalRules.travelCost(400, true));
-        assertEquals(2, LapisPortalRules.travelCost(500, true));
+        assertEquals(100, LapisPortalRules.blocksPerFuel(0));
+        assertEquals(100, LapisPortalRules.blocksPerFuel(1));
+        assertEquals(200, LapisPortalRules.blocksPerFuel(2));
+        assertEquals(300, LapisPortalRules.blocksPerFuel(3));
+        assertEquals(300, LapisPortalRules.blocksPerFuel(9));
+        assertEquals(0, LapisPortalRules.travelCost(0, 3));
+        assertEquals(0, LapisPortalRules.travelCost(-5, 1));
+        assertEquals(1, LapisPortalRules.travelCost(1, 1));
+        assertEquals(1, LapisPortalRules.travelCost(100, 1));
+        assertEquals(2, LapisPortalRules.travelCost(100.0001, 1));
+        assertEquals(2, LapisPortalRules.travelCost(101, 1));
+        assertEquals(2, LapisPortalRules.travelCost(200, 1));
+        assertEquals(1, LapisPortalRules.travelCost(1, 2));
+        assertEquals(1, LapisPortalRules.travelCost(200, 2));
+        assertEquals(2, LapisPortalRules.travelCost(200.0001, 2));
+        assertEquals(2, LapisPortalRules.travelCost(201, 2));
+        assertEquals(3, LapisPortalRules.travelCost(500, 2));
+        assertEquals(1, LapisPortalRules.travelCost(1, 3));
+        assertEquals(1, LapisPortalRules.travelCost(300, 3));
+        assertEquals(2, LapisPortalRules.travelCost(301, 3));
+        assertEquals(2, LapisPortalRules.travelCost(600, 3));
+        assertEquals(1, LapisPortalRules.travelCost(1, 0));
         assertEquals(1.0, LapisPortalRules.travelDistance(false, 0), 0.0);
         assertEquals(0.0, LapisPortalRules.travelDistance(true, 0), 0.0);
         assertEquals(80.0, LapisPortalRules.travelDistance(false, 80), 0.0);
@@ -81,49 +89,59 @@ class LapisPortalRulesTest {
     }
 
     @Test
-    void paymentTakesTheLargerTotalThenQuartzWhenTheyMatch() {
+    void paymentAlternatesKindsFromTheLargestStack() {
         List<Stack> slots = List.of(
                 new Stack(0, LapisPortalRules.REDSTONE, 10),
                 new Stack(1, LapisPortalRules.REDSTONE, 2),
                 new Stack(2, LapisPortalRules.QUARTZ, 8),
                 new Stack(3, LapisPortalRules.LAPIS_LAZULI, 3),
-                new Stack(4, "minecraft:dirt", 64));
-        assertTrue(LapisPortalRules.bothFuels(slots));
-        assertNull(LapisPortalRules.pay(slots, 21));
+                new Stack(4, "minecraft:dirt", 64),
+                new Stack(5, LapisPortalRules.AMETHYST, 1));
+        assertEquals(3, LapisPortalRules.fuelKinds(slots));
+        assertEquals(
+                List.of(LapisPortalRules.REDSTONE, LapisPortalRules.QUARTZ, LapisPortalRules.AMETHYST),
+                LapisPortalRules.fuelOrder(slots));
+        assertNull(LapisPortalRules.pay(slots, 22));
         assertEquals(10, slots.get(0).count());
         List<Stack> paid = LapisPortalRules.pay(slots, 5);
-        assertEquals(6, count(paid, 0));
+        assertEquals(8, count(paid, 0));
         assertEquals(2, count(paid, 1));
-        assertEquals(7, count(paid, 2));
+        assertEquals(6, count(paid, 2));
         assertEquals(3, count(paid, 3));
         assertEquals(64, count(paid, 4));
-        assertEquals(4, LapisPortalRules.total(slots, LapisPortalRules.REDSTONE) - LapisPortalRules.total(paid, LapisPortalRules.REDSTONE));
-        assertEquals(1, LapisPortalRules.total(slots, LapisPortalRules.QUARTZ) - LapisPortalRules.total(paid, LapisPortalRules.QUARTZ));
+        assertEquals(0, count(paid, 5));
+        assertEquals(2, LapisPortalRules.total(slots, LapisPortalRules.REDSTONE) - LapisPortalRules.total(paid, LapisPortalRules.REDSTONE));
+        assertEquals(2, LapisPortalRules.total(slots, LapisPortalRules.QUARTZ) - LapisPortalRules.total(paid, LapisPortalRules.QUARTZ));
+        assertEquals(1, LapisPortalRules.total(slots, LapisPortalRules.AMETHYST) - LapisPortalRules.total(paid, LapisPortalRules.AMETHYST));
     }
 
     @Test
-    void equalTotalsSpendQuartzFirstAndTiesUseTheLowestSlot() {
+    void equalLargestStacksStartWithQuartzAndATieUsesTheLowestSlot() {
         List<Stack> equal = List.of(
                 new Stack(0, LapisPortalRules.REDSTONE, 10),
-                new Stack(3, LapisPortalRules.QUARTZ, 5),
-                new Stack(1, LapisPortalRules.QUARTZ, 5));
+                new Stack(3, LapisPortalRules.QUARTZ, 10),
+                new Stack(1, LapisPortalRules.AMETHYST, 10));
+        assertEquals(
+                List.of(LapisPortalRules.QUARTZ, LapisPortalRules.REDSTONE, LapisPortalRules.AMETHYST),
+                LapisPortalRules.fuelOrder(equal));
         List<Stack> one = LapisPortalRules.pay(equal, 1);
         assertEquals(10, count(one, 0));
-        assertEquals(4, count(one, 1));
-        assertEquals(5, count(one, 3));
-        List<Stack> three = LapisPortalRules.pay(equal, 3);
-        assertEquals(9, count(three, 0));
-        assertEquals(4, count(three, 1));
-        assertEquals(4, count(three, 3));
+        assertEquals(9, count(one, 3));
+        assertEquals(10, count(one, 1));
+        List<Stack> four = LapisPortalRules.pay(equal, 4);
+        assertEquals(9, count(four, 0));
+        assertEquals(8, count(four, 3));
+        assertEquals(9, count(four, 1));
 
-        List<Stack> split = List.of(
+        List<Stack> smallerStack = List.of(
                 new Stack(1, LapisPortalRules.REDSTONE, 3),
                 new Stack(2, LapisPortalRules.REDSTONE, 3),
                 new Stack(0, LapisPortalRules.QUARTZ, 5));
-        List<Stack> fromTotal = LapisPortalRules.pay(split, 1);
-        assertEquals(2, count(fromTotal, 1));
-        assertEquals(3, count(fromTotal, 2));
-        assertEquals(5, count(fromTotal, 0));
+        assertEquals(List.of(LapisPortalRules.QUARTZ, LapisPortalRules.REDSTONE), LapisPortalRules.fuelOrder(smallerStack));
+        List<Stack> fromStack = LapisPortalRules.pay(smallerStack, 1);
+        assertEquals(4, count(fromStack, 0));
+        assertEquals(3, count(fromStack, 1));
+        assertEquals(3, count(fromStack, 2));
 
         List<Stack> tied = List.of(new Stack(5, LapisPortalRules.REDSTONE, 4), new Stack(2, LapisPortalRules.REDSTONE, 4));
         List<Stack> lowest = LapisPortalRules.pay(tied, 1);
@@ -132,13 +150,22 @@ class LapisPortalRulesTest {
     }
 
     @Test
-    void oneFuelSpendsThatFuelAndAShortChestPaysNothing() {
-        assertFalse(LapisPortalRules.bothFuels(List.of(new Stack(0, LapisPortalRules.REDSTONE, 4))));
-        assertFalse(LapisPortalRules.bothFuels(List.of(new Stack(0, LapisPortalRules.QUARTZ, 4))));
+    void oneFuelSpendsThatFuelAndASpentKindIsSkipped() {
+        assertEquals(1, LapisPortalRules.fuelKinds(List.of(new Stack(0, LapisPortalRules.REDSTONE, 4))));
+        assertEquals(1, LapisPortalRules.fuelKinds(List.of(new Stack(0, LapisPortalRules.AMETHYST, 4))));
+        assertEquals(0, LapisPortalRules.fuelKinds(List.of(new Stack(0, LapisPortalRules.LAPIS_LAZULI, 64))));
         List<Stack> dust = LapisPortalRules.pay(List.of(new Stack(0, LapisPortalRules.REDSTONE, 4)), 3);
         assertEquals(1, count(dust, 0));
         List<Stack> quartz = LapisPortalRules.pay(List.of(new Stack(0, LapisPortalRules.QUARTZ, 3)), 2);
         assertEquals(1, count(quartz, 0));
+        List<Stack> mixed = List.of(
+                new Stack(0, LapisPortalRules.QUARTZ, 1),
+                new Stack(1, LapisPortalRules.REDSTONE, 4),
+                new Stack(2, LapisPortalRules.AMETHYST, 4));
+        List<Stack> skipped = LapisPortalRules.pay(mixed, 4);
+        assertEquals(0, count(skipped, 0));
+        assertEquals(2, count(skipped, 1));
+        assertEquals(3, count(skipped, 2));
         assertNull(LapisPortalRules.pay(List.of(new Stack(0, LapisPortalRules.QUARTZ, 1)), 2));
         assertNull(LapisPortalRules.pay(List.of(new Stack(0, LapisPortalRules.LAPIS_LAZULI, 64)), 1));
         List<Stack> free = LapisPortalRules.pay(List.of(new Stack(0, LapisPortalRules.REDSTONE, 4)), 0);
@@ -147,11 +174,15 @@ class LapisPortalRulesTest {
 
     @Test
     void spentPhraseNamesWhatTheChestLost() {
-        assertEquals("3 redstone dust and 2 nether quartz", LapisPortalRules.spentPhrase(3, 2));
-        assertEquals("3 redstone dust", LapisPortalRules.spentPhrase(3, 0));
-        assertEquals("2 nether quartz", LapisPortalRules.spentPhrase(0, 2));
-        assertEquals("1 redstone dust and 1 nether quartz", LapisPortalRules.spentPhrase(1, 1));
-        assertEquals("", LapisPortalRules.spentPhrase(0, 0));
+        assertEquals("2 nether quartz and 3 redstone dust", LapisPortalRules.spentPhrase(3, 2, 0));
+        assertEquals("3 redstone dust", LapisPortalRules.spentPhrase(3, 0, 0));
+        assertEquals("2 nether quartz", LapisPortalRules.spentPhrase(0, 2, 0));
+        assertEquals("1 nether quartz and 1 redstone dust", LapisPortalRules.spentPhrase(1, 1, 0));
+        assertEquals("1 amethyst shard", LapisPortalRules.spentPhrase(0, 0, 1));
+        assertEquals(
+                "2 nether quartz, 3 redstone dust, and 4 amethyst shards",
+                LapisPortalRules.spentPhrase(3, 2, 4));
+        assertEquals("", LapisPortalRules.spentPhrase(0, 0, 0));
     }
 
     @Test

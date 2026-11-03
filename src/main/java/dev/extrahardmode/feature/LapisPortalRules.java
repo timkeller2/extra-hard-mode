@@ -9,14 +9,18 @@ import java.util.List;
  * <p>A booth is a door with lapis blocks under it, above it, and on the three
  * sides other than the way the door faces. The chest sits one block behind the
  * top half of the door. The largest lapis lazuli stack is the channel. Fuel is
- * redstone dust and nether quartz from that chest.
+ * redstone dust, nether quartz, and amethyst shards from that chest.
  */
 public final class LapisPortalRules {
     public static final String LAPIS_LAZULI = "minecraft:lapis_lazuli";
     public static final String REDSTONE = "minecraft:redstone";
     public static final String QUARTZ = "minecraft:quartz";
+    public static final String AMETHYST = "minecraft:amethyst_shard";
 
-    /** One fuel item per this many blocks, rounded up. */
+    /** Tie order when the largest stacks match: nether quartz, redstone dust, amethyst shards. */
+    public static final List<String> FUELS = List.of(QUARTZ, REDSTONE, AMETHYST);
+
+    /** Blocks one fuel item covers when the chest holds one fuel kind. */
     public static final int BLOCKS_PER_FUEL = 100;
 
     public static final int PARTNER_NONE = -1;
@@ -108,9 +112,21 @@ public final class LapisPortalRules {
         return sum;
     }
 
-    /** Both fuels are present before anything is spent. */
-    public static boolean bothFuels(List<Stack> slots) {
-        return total(slots, REDSTONE) >= 1 && total(slots, QUARTZ) >= 1;
+    /** Fuel kinds in the chest before anything is spent. Lapis is not a kind. */
+    public static int fuelKinds(List<Stack> slots) {
+        int kinds = 0;
+        for (String fuel : FUELS) {
+            if (total(slots, fuel) >= 1) {
+                kinds++;
+            }
+        }
+        return kinds;
+    }
+
+    /** 100 blocks for one kind, 200 for two, and 300 for all three. An empty chest still prices at 100. */
+    public static int blocksPerFuel(int kinds) {
+        int present = Math.max(1, Math.min(FUELS.size(), kinds));
+        return BLOCKS_PER_FUEL * present;
     }
 
     public static double distance(int x1, int y1, int z1, int x2, int y2, int z2) {
@@ -132,28 +148,42 @@ public final class LapisPortalRules {
     }
 
     /**
-     * {@code ceil(distance / 100)}. When both fuels are present the cost is
-     * integer-halved, and that half is at least 1.
+     * {@code ceil(distance / blocksPerFuel(kinds))}, and at least 1 when the distance is positive.
+     * {@code kinds} is how many fuel kinds are already in the chest.
      */
-    public static int travelCost(double distance, boolean bothFuels) {
+    public static int travelCost(double distance, int kinds) {
         if (distance <= 0.0) {
             return 0;
         }
-        int full = (int) Math.ceil(distance / (double) BLOCKS_PER_FUEL);
-        if (full < 1) {
-            full = 1;
-        }
-        if (!bothFuels) {
-            return full;
-        }
-        return Math.max(1, full / 2);
+        int cost = (int) Math.ceil(distance / (double) blocksPerFuel(kinds));
+        return Math.max(1, cost);
     }
 
     /**
-     * Spend {@code cost} fuel items. The material with the higher remaining total
-     * is used. Equal totals spend nether quartz. Each item comes off the largest
-     * stack of that material, and a tie uses the lowest slot. Returns null when
-     * the chest cannot pay. Does not change {@code slots}.
+     * Present fuels, largest stack first. Equal stacks follow {@link #FUELS}: nether quartz, then
+     * redstone dust, then amethyst shards.
+     */
+    public static List<String> fuelOrder(List<Stack> slots) {
+        List<String> present = new ArrayList<>();
+        for (String fuel : FUELS) {
+            if (total(slots, fuel) >= 1) {
+                present.add(fuel);
+            }
+        }
+        present.sort((left, right) -> {
+            int byStack = Integer.compare(largestCount(slots, right), largestCount(slots, left));
+            if (byStack != 0) {
+                return byStack;
+            }
+            return Integer.compare(FUELS.indexOf(left), FUELS.indexOf(right));
+        });
+        return List.copyOf(present);
+    }
+
+    /**
+     * Spend {@code cost} fuel items, alternating kinds in {@link #fuelOrder}. A kind that runs out
+     * is skipped. Each item comes off the largest stack of that kind, and a tie uses the lowest
+     * slot. Returns null when the chest cannot pay. Does not change {@code slots}.
      */
     public static List<Stack> pay(List<Stack> slots, int cost) {
         List<Stack> working = new ArrayList<>();
@@ -167,36 +197,49 @@ public final class LapisPortalRules {
         if (cost <= 0) {
             return List.copyOf(working);
         }
-        if (total(working, REDSTONE) + total(working, QUARTZ) < cost) {
+        int held = 0;
+        for (String fuel : FUELS) {
+            held += total(working, fuel);
+        }
+        if (held < cost) {
             return null;
         }
+        List<String> order = new ArrayList<>(fuelOrder(working));
+        int cursor = 0;
         for (int left = cost; left > 0; left--) {
-            int redstone = total(working, REDSTONE);
-            int quartz = total(working, QUARTZ);
-            String take = redstone > quartz ? REDSTONE : QUARTZ;
-            int index = largest(working, take);
+            String take = nextFuel(working, order, cursor);
+            int index = take == null ? -1 : largest(working, take);
             if (index < 0) {
                 return null;
             }
             Stack chosen = working.get(index);
             working.set(index, new Stack(chosen.index(), chosen.itemId(), chosen.count() - 1));
+            cursor = (order.indexOf(take) + 1) % order.size();
         }
         return List.copyOf(working);
     }
 
-    public static String spentPhrase(int redstone, int quartz) {
-        boolean dust = redstone > 0;
-        boolean gems = quartz > 0;
-        if (dust && gems) {
-            return redstone + " redstone dust and " + quartz + " nether quartz";
+    public static String spentPhrase(int redstone, int quartz, int amethyst) {
+        List<String> parts = new ArrayList<>();
+        if (quartz > 0) {
+            parts.add(quartz + " nether quartz");
         }
-        if (dust) {
-            return redstone + " redstone dust";
+        if (redstone > 0) {
+            parts.add(redstone + " redstone dust");
         }
-        if (gems) {
-            return quartz + " nether quartz";
+        if (amethyst > 0) {
+            parts.add(amethyst + (amethyst == 1 ? " amethyst shard" : " amethyst shards"));
         }
-        return "";
+        if (parts.isEmpty()) {
+            return "";
+        }
+        if (parts.size() == 1) {
+            return parts.get(0);
+        }
+        if (parts.size() == 2) {
+            return parts.get(0) + " and " + parts.get(1);
+        }
+        return parts.get(0) + ", " + parts.get(1) + ", and " + parts.get(2);
     }
 
     /**
@@ -284,6 +327,32 @@ public final class LapisPortalRules {
         } catch (NumberFormatException ex) {
             return null;
         }
+    }
+
+    private static String nextFuel(List<Stack> slots, List<String> order, int start) {
+        if (order.isEmpty()) {
+            return null;
+        }
+        for (int step = 0; step < order.size(); step++) {
+            String fuel = order.get(Math.floorMod(start + step, order.size()));
+            if (total(slots, fuel) > 0) {
+                return fuel;
+            }
+        }
+        return null;
+    }
+
+    private static int largestCount(List<Stack> slots, String itemId) {
+        int best = 0;
+        if (slots == null) {
+            return 0;
+        }
+        for (Stack slot : slots) {
+            if (slot != null && itemId.equals(slot.itemId()) && slot.count() > best) {
+                best = slot.count();
+            }
+        }
+        return best;
     }
 
     private static int largest(List<Stack> slots, String itemId) {

@@ -13,6 +13,8 @@ public final class CouncilMissionRules {
     public static final int MISSION_DAYS = 14;
     /** Days after a bounty is given before that resident may give another. The previous one must be finished. */
     public static final int COOLDOWN_DAYS = 7;
+    /** Added to that wait for each bounty this resident has already finished with this player. */
+    public static final int COOLDOWN_STEP_DAYS = 3;
     /** Active hunts plus bounties waiting for their emerald payout. */
     public static final int MAX_OPEN_MISSIONS = 5;
     public static final int XP_FLAT = 25;
@@ -27,10 +29,11 @@ public final class CouncilMissionRules {
     /** One try per second while that night lasts. */
     public static final int NIGHT_SPAWN_TICKS = 20;
     /**
-     * One success per this many tries. Five hundred tries in a night makes the mean 2, so 1, 2, or 3
-     * appearances are the common results and 0 or 4 or more are less common.
+     * One success per this many tries, rolled separately for each open bounty. Five hundred tries in a
+     * night makes the mean about 1.43 groups from one bounty, so 1 or 2 are the common results.
+     * Several open bounties multiply the encounters.
      */
-    public static final int NIGHT_SPAWN_ONE_IN = 250;
+    public static final int NIGHT_SPAWN_ONE_IN = 350;
     /** The creature is placed at least this far out, and no farther than {@link #BOUNTY_SPAWN_NEAR_BLOCKS}. */
     public static final int BOUNTY_SPAWN_MIN_BLOCKS = 8;
     public static final int BOUNTY_SPAWN_NEAR_BLOCKS = 48;
@@ -296,12 +299,25 @@ public final class CouncilMissionRules {
         return today >= assignedDay + MISSION_DAYS;
     }
 
+    /**
+     * Wait after a bounty is given, before that resident may give another. Seven days, plus three for
+     * each bounty already finished with this player. A hunt that expires does not add a step.
+     */
+    public static int cooldownDays(int completedCount) {
+        int done = Math.max(0, completedCount);
+        long days = (long) COOLDOWN_DAYS + (long) COOLDOWN_STEP_DAYS * done;
+        if (days > Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        }
+        return (int) days;
+    }
+
     /** Days until that resident may give another bounty. Zero means the wait is over. */
-    public static int daysUntilNextMission(long lastAssignedDay, long today) {
+    public static int daysUntilNextMission(long lastAssignedDay, long today, int completedCount) {
         if (lastAssignedDay < 0L) {
             return 0;
         }
-        long wait = lastAssignedDay + COOLDOWN_DAYS - today;
+        long wait = lastAssignedDay + cooldownDays(completedCount) - today;
         if (wait <= 0L) {
             return 0;
         }
@@ -322,7 +338,7 @@ public final class CouncilMissionRules {
         if (previous.active() || previous.awaitingTurnIn()) {
             return false;
         }
-        return daysUntilNextMission(previous.assignedDay(), today) == 0;
+        return daysUntilNextMission(previous.assignedDay(), today, previous.completedCount()) == 0;
     }
 
     /** A saved single bounty from before residents each kept their own. */
@@ -459,7 +475,7 @@ public final class CouncilMissionRules {
         return (NIGHT_END - NIGHT_START) / NIGHT_SPAWN_TICKS;
     }
 
-    /** Mean bounty creatures over one full night of tries. */
+    /** Mean groups from one open bounty over one full night. Each other open bounty adds this many. */
     public static double meanNightSpawns() {
         return nightAttempts() / (double) NIGHT_SPAWN_ONE_IN;
     }
@@ -467,14 +483,6 @@ public final class CouncilMissionRules {
     /** {@code roll} is {@code 0} through {@link #NIGHT_SPAWN_ONE_IN} minus 1. Only 0 succeeds. */
     public static boolean nightSpawn(int roll) {
         return Math.floorMod(roll, NIGHT_SPAWN_ONE_IN) == 0;
-    }
-
-    /** Which open bounty sends this group. */
-    public static int bountyChoice(int open, int roll) {
-        if (open <= 0) {
-            return -1;
-        }
-        return Math.floorMod(roll, open);
     }
 
     /**

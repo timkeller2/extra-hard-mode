@@ -163,7 +163,7 @@
   "tougher.message.portal_no_lapis": "The chest needs a stack of lapis lazuli.",
   "tougher.message.portal_none": "No other portal has a stack of %s lapis lazuli.",
   "tougher.message.portal_many": "More than one other portal has a stack of %s lapis lazuli.",
-  "tougher.message.portal_cost": "The chest needs %s redstone dust or nether quartz.",
+  "tougher.message.portal_cost": "The chest needs %s redstone dust, nether quartz, or amethyst shards.",
   "tougher.message.portal_paid": "The portal takes %s.",
   "tougher.chat.biome_boss_defeat": "%s has been defeated! Bosses vanquished: %s",
   "tougher.chat.third_boss": "The third boss is vanquished!  Your fame is growing!",

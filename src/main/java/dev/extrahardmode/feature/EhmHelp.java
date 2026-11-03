@@ -450,9 +450,9 @@ public final class EhmHelp {
                         "Portals: Lapis blocks on the floor, above the door, and on the three closed sides at the floor and the door. A chest sits on the back wall.",
                         "Portals: The largest lapis lazuli stack in the chest picks the link. Two booths with the same count connect.",
                         "Portals: Any door works, including iron. Stand in the doorway and close the open door.",
-                        "Portals: The chest pays 1 redstone dust or nether quartz per 100 blocks, rounded up.",
-                        "Portals: When the chest holds both redstone dust and nether quartz, the cost is halved, to at least 1.",
-                        "Portals: The larger stack is spent first. Equal stacks spend nether quartz first.",
+                        "Portals: Fuel is redstone dust, nether quartz, and amethyst shards. One kind covers 100 blocks per item, rounded up, and at least 1.",
+                        "Portals: Two kinds cover 200 blocks per item. All three cover 300. The kinds in the chest set that range.",
+                        "Portals: Payment alternates across those kinds, largest stack first. Ties start with nether quartz, then redstone dust, then amethyst shards.",
                         "Portals: A count shared by more than two booths does not link."));
     }
 

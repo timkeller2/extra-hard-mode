@@ -37,7 +37,7 @@ import net.minecraft.world.phys.BlockHitResult;
 /**
  * Lapis booths that pair by the largest lapis lazuli stack in the chest.
  * Closing the open door while standing in it spends redstone dust, nether
- * quartz, or both, from that chest.
+ * quartz, and amethyst shards from that chest.
  */
 public final class LapisPortals implements FeatureModule {
     public static final Identifier ID = ExtraHardModeMod.id("lapis_portals");
@@ -51,7 +51,7 @@ public final class LapisPortals implements FeatureModule {
     private static final String MANY_KEY = "tougher.message.portal_many";
     private static final String MANY = "More than one other portal has a stack of %s lapis lazuli.";
     private static final String COST_KEY = "tougher.message.portal_cost";
-    private static final String COST = "The chest needs %s redstone dust or nether quartz.";
+    private static final String COST = "The chest needs %s redstone dust, nether quartz, or amethyst shards.";
     private static final String PAID_KEY = "tougher.message.portal_paid";
     private static final String PAID = "The portal takes %s.";
 
@@ -224,7 +224,7 @@ public final class LapisPortals implements FeatureModule {
         boolean same = dimension(level).equals(dimension(dest.level));
         double travelled = LapisPortalRules.travelDistance(
                 same, LapisPortalRules.distance(lower.getX(), lower.getY(), lower.getZ(), dest.pos.getX(), dest.pos.getY(), dest.pos.getZ()));
-        int cost = LapisPortalRules.travelCost(travelled, LapisPortalRules.bothFuels(slots));
+        int cost = LapisPortalRules.travelCost(travelled, LapisPortalRules.fuelKinds(slots));
         if (cost <= 0) {
             return;
         }
@@ -256,7 +256,10 @@ public final class LapisPortals implements FeatureModule {
                 - LapisPortalRules.total(paid, LapisPortalRules.REDSTONE);
         int spentQuartz = LapisPortalRules.total(slots, LapisPortalRules.QUARTZ)
                 - LapisPortalRules.total(paid, LapisPortalRules.QUARTZ);
-        tell(player, PAID_KEY, PAID, Component.literal(LapisPortalRules.spentPhrase(spentRedstone, spentQuartz)));
+        int spentAmethyst = LapisPortalRules.total(slots, LapisPortalRules.AMETHYST)
+                - LapisPortalRules.total(paid, LapisPortalRules.AMETHYST);
+        tell(player, PAID_KEY, PAID, Component.literal(
+                LapisPortalRules.spentPhrase(spentRedstone, spentQuartz, spentAmethyst)));
     }
 
     private static boolean frameValid(ServerLevel level, BlockPos lower) {

@@ -72,13 +72,23 @@ class CouncilMissionRulesTest {
     void huntsExpireAfterFourteenDaysAndTheNextWaitIsSeven() {
         assertEquals(14, CouncilMissionRules.MISSION_DAYS);
         assertEquals(7, CouncilMissionRules.COOLDOWN_DAYS);
+        assertEquals(3, CouncilMissionRules.COOLDOWN_STEP_DAYS);
         assertEquals(5, CouncilMissionRules.MAX_OPEN_MISSIONS);
+        assertEquals(7, CouncilMissionRules.cooldownDays(0));
+        assertEquals(7, CouncilMissionRules.cooldownDays(-2));
+        assertEquals(10, CouncilMissionRules.cooldownDays(1));
+        assertEquals(13, CouncilMissionRules.cooldownDays(2));
+        assertEquals(16, CouncilMissionRules.cooldownDays(3));
         assertFalse(CouncilMissionRules.expired(10, 23));
         assertTrue(CouncilMissionRules.expired(10, 24));
         assertFalse(CouncilMissionRules.expired(-1, 99));
-        assertEquals(7, CouncilMissionRules.daysUntilNextMission(10, 10));
-        assertEquals(1, CouncilMissionRules.daysUntilNextMission(10, 16));
-        assertEquals(0, CouncilMissionRules.daysUntilNextMission(10, 17));
+        assertEquals(7, CouncilMissionRules.daysUntilNextMission(10, 10, 0));
+        assertEquals(1, CouncilMissionRules.daysUntilNextMission(10, 16, 0));
+        assertEquals(0, CouncilMissionRules.daysUntilNextMission(10, 17, 0));
+        assertEquals(10, CouncilMissionRules.daysUntilNextMission(10, 10, 1));
+        assertEquals(1, CouncilMissionRules.daysUntilNextMission(10, 19, 1));
+        assertEquals(0, CouncilMissionRules.daysUntilNextMission(10, 20, 1));
+        assertEquals(13, CouncilMissionRules.daysUntilNextMission(10, 10, 2));
         CouncilMissionRules.Mission active =
                 CouncilMissionRules.assign(CouncilMissionRules.NONE, "home-a", "Ada", 12, 10, 0, 0);
         assertTrue(active.active());
@@ -94,6 +104,18 @@ class CouncilMissionRulesTest {
         assertEquals("home-a", cleared.giverId());
         assertFalse(CouncilMissionRules.canTakeNext(cleared, 16));
         assertTrue(CouncilMissionRules.canTakeNext(cleared, 17));
+        CouncilMissionRules.Mission finished =
+                active.withKills(active.target()).asCompleted(85, 8).clearHunt();
+        assertEquals(1, finished.completedCount());
+        assertFalse(CouncilMissionRules.canTakeNext(finished, 19));
+        assertTrue(CouncilMissionRules.canTakeNext(finished, 20));
+        CouncilMissionRules.Mission twice = CouncilMissionRules.assign(finished, "home-a", "Ada", 12, 20, 0, 0)
+                .withKills(7)
+                .asCompleted(85, 8)
+                .clearHunt();
+        assertEquals(2, twice.completedCount());
+        assertFalse(CouncilMissionRules.canTakeNext(twice, 32));
+        assertTrue(CouncilMissionRules.canTakeNext(twice, 33));
         assertTrue(CouncilMissionRules.canTakeNext(null, 10));
         assertTrue(CouncilMissionRules.canTakeNext(CouncilMissionRules.NONE, 10));
         CouncilMissionRules.Mission unpaid = active.withKills(6).asCompleted(85, 8);
@@ -119,11 +141,11 @@ class CouncilMissionRulesTest {
     }
 
     @Test
-    void aNightUsuallyBringsOneToThreeBountyCreatures() {
+    void eachOpenBountyUsuallyBringsOneOrTwoGroups() {
         assertEquals(13000, CouncilMissionRules.NIGHT_START);
         assertEquals(23000, CouncilMissionRules.NIGHT_END);
         assertEquals(20, CouncilMissionRules.NIGHT_SPAWN_TICKS);
-        assertEquals(250, CouncilMissionRules.NIGHT_SPAWN_ONE_IN);
+        assertEquals(350, CouncilMissionRules.NIGHT_SPAWN_ONE_IN);
         assertEquals(8, CouncilMissionRules.BOUNTY_SPAWN_MIN_BLOCKS);
         assertEquals(48, CouncilMissionRules.BOUNTY_SPAWN_NEAR_BLOCKS);
         assertTrue(CouncilMissionRules.night(13000));
@@ -134,17 +156,13 @@ class CouncilMissionRulesTest {
         assertTrue(CouncilMissionRules.night(13000L + 24000L));
         assertFalse(CouncilMissionRules.night(-1L));
         assertEquals(500, CouncilMissionRules.nightAttempts());
-        assertEquals(2.0, CouncilMissionRules.meanNightSpawns(), 1.0e-9);
+        assertEquals(500.0 / 350.0, CouncilMissionRules.meanNightSpawns(), 1.0e-9);
         assertTrue(CouncilMissionRules.nightSpawn(0));
-        assertTrue(CouncilMissionRules.nightSpawn(250));
-        assertTrue(CouncilMissionRules.nightSpawn(-250));
+        assertTrue(CouncilMissionRules.nightSpawn(350));
+        assertTrue(CouncilMissionRules.nightSpawn(-350));
         assertFalse(CouncilMissionRules.nightSpawn(1));
-        assertFalse(CouncilMissionRules.nightSpawn(249));
-        assertEquals(-1, CouncilMissionRules.bountyChoice(0, 3));
-        assertEquals(-1, CouncilMissionRules.bountyChoice(-2, 3));
-        assertEquals(1, CouncilMissionRules.bountyChoice(3, 1));
-        assertEquals(0, CouncilMissionRules.bountyChoice(3, 3));
-        assertEquals(2, CouncilMissionRules.bountyChoice(3, -1));
+        assertFalse(CouncilMissionRules.nightSpawn(349));
+        assertFalse(CouncilMissionRules.nightSpawn(250));
         assertEquals(0, CouncilMissionRules.bountyGroupMin(0));
         assertEquals(0, CouncilMissionRules.bountyGroupMax(-3));
         assertEquals(0, CouncilMissionRules.bountyGroupSize(0, 4));
@@ -173,20 +191,25 @@ class CouncilMissionRulesTest {
         int trials = CouncilMissionRules.nightAttempts();
         double chance = 1.0 / CouncilMissionRules.NIGHT_SPAWN_ONE_IN;
         double[] probability = binomial(trials, chance);
-        double oneToThree = probability[1] + probability[2] + probability[3];
         double fourOrMore = 0.0;
         for (int count = 4; count < probability.length; count++) {
             fourOrMore += probability[count];
         }
-        assertTrue(oneToThree > probability[0]);
-        assertTrue(oneToThree > fourOrMore);
+        double oneOrTwo = probability[1] + probability[2];
+        double threeOrMore = 0.0;
+        for (int count = 3; count < probability.length; count++) {
+            threeOrMore += probability[count];
+        }
+        assertTrue(oneOrTwo > probability[0]);
+        assertTrue(oneOrTwo > threeOrMore);
+        assertTrue(fourOrMore < probability[0]);
         int mode = 0;
         for (int count = 1; count < probability.length; count++) {
             if (probability[count] > probability[mode]) {
                 mode = count;
             }
         }
-        assertEquals(2, mode);
+        assertEquals(1, mode);
 
         CouncilMissionRules.Mission fresh =
                 CouncilMissionRules.assign(CouncilMissionRules.NONE, "a", "Ada", 12, 0, 0, 0);

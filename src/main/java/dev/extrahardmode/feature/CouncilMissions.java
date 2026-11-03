@@ -128,10 +128,9 @@ public final class CouncilMissions {
     }
 
     /**
-     * One try per player each second of the overworld night. A hit places a group of one open bounty,
-     * from one eighth of the kills still owed through one quarter, and at least 1. If the first
-     * creature has no legal spot, the other open bounties are tried. A later miss ends the group.
-     * The roll is spent either way.
+     * One try per open bounty each second of the overworld night. A hit places a group of that bounty,
+     * from one eighth of the kills still owed through one quarter, and at least 1. A later miss ends
+     * that group. The other open bounties still roll on their own.
      */
     private static void maybeSpawn(ServerPlayer player, long today) {
         if (!(player.level() instanceof ServerLevel level) || !WorldGate.isModuleActive(level, Inhabitants.ID)) {
@@ -148,22 +147,15 @@ public final class CouncilMissions {
             return;
         }
         RandomSource random = level.getRandom();
-        if (!CouncilMissionRules.nightSpawn(random.nextInt(CouncilMissionRules.NIGHT_SPAWN_ONE_IN))) {
-            return;
-        }
-        int start = CouncilMissionRules.bountyChoice(open.size(), random.nextInt());
-        for (int i = 0; i < open.size(); i++) {
-            CouncilMissionRules.Mission mission = open.get((start + i) % open.size());
+        for (CouncilMissionRules.Mission mission : open) {
+            if (!CouncilMissionRules.nightSpawn(random.nextInt(CouncilMissionRules.NIGHT_SPAWN_ONE_IN))) {
+                continue;
+            }
             int wanted = CouncilMissionRules.bountyGroupSize(mission.remaining(), random.nextInt());
-            int placed = 0;
             for (int n = 0; n < wanted; n++) {
                 if (!spawnOne(player, level, mission, today, random)) {
                     break;
                 }
-                placed++;
-            }
-            if (placed > 0) {
-                return;
             }
         }
     }
@@ -504,7 +496,8 @@ public final class CouncilMissions {
             return;
         }
         if (slot != null && !CouncilMissionRules.canTakeNext(slot, today)) {
-            int wait = CouncilMissionRules.daysUntilNextMission(slot.assignedDay(), today);
+            int wait = CouncilMissionRules.daysUntilNextMission(
+                    slot.assignedDay(), today, slot.completedCount());
             if (wait > 0) {
                 player.sendSystemMessage(Component.translatableWithFallback(
                         "tougher.message.council_mission_wait",
