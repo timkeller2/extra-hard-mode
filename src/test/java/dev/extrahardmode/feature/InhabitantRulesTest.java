@@ -1134,6 +1134,13 @@ class InhabitantRulesTest {
         assertFalse(InhabitantRules.shouldAttemptDawn(4, 5, false));
         assertTrue(InhabitantRules.shouldAttemptDawn(4, 5, true));
         assertTrue(InhabitantRules.shouldAttemptDawn(-1, 0, true));
+        assertTrue(InhabitantRules.houseScanDue(0L, 0));
+        assertFalse(InhabitantRules.houseScanDue(1L, 0));
+        assertTrue(InhabitantRules.houseScanDue(1200L, 0));
+        assertFalse(InhabitantRules.houseScanDue(0L, 1));
+        assertTrue(InhabitantRules.houseScanDue(1199L, 1));
+        assertTrue(InhabitantRules.houseScanDue(0L, 1200));
+        assertFalse(InhabitantRules.houseScanDue(-1L, 0));
     }
 
     @Test

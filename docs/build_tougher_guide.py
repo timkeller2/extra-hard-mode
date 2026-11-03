@@ -435,7 +435,7 @@ def build():
                 "Each trade adds 1 to that resident's trading experience. When their stock changes, the square root of that experience is added to the house points for the new shop.",
                 "That stock change also rolls item amounts once from -25% to +25% and adds 0 to 25 from the house and trading experience. Buying gives that many more items. Selling to the resident asks for that many fewer. Emerald prices stay the same.",
                 "Residents have 40 health plus their house points, and regain 1 health a minute. Looking at one shows hearts, one per 10 health, beside the restock time.",
-                "They shoot mobs that come within 12 blocks and are after them. The bow hits 3 harder than a normal arrow. A close attack makes them switch to an iron sword.",
+                "After a mob hits them, they shoot mobs within 12 blocks that are after them. The bow hits 3 harder than a normal arrow. A close attack makes them switch to an iron sword.",
                 "A zombie cannot turn a resident unless the hit that kills them starts while they are already below 5 health.",
                 "A home stops listing a resident who has died or is no longer around the bed.",
                 "A loot collector warns you when a biome boss is out, and names the compass direction from that resident. East is where the sun rises.",

@@ -86,6 +86,12 @@ public final class Overgrazing implements FeatureModule {
         if (!isLivestock(animal)) {
             return;
         }
+        // Grass spreads only on a block random tick. Loaded chunks past simulation
+        // distance still hold these animals, and eating there strips a pasture
+        // that cannot regrow until the player comes back.
+        if (!level.shouldTickBlocksAt(animal.blockPosition())) {
+            return;
+        }
         int interval = OvergrazingRules.eatIntervalTicks(
                 isSmallLivestock(animal), config.overgrazingLargeBlocks(), config.overgrazingSmallBlocks());
         long now = level.getGameTime();
@@ -94,6 +100,12 @@ public final class Overgrazing implements FeatureModule {
             if (OvergrazingRules.scheduledSoon(now, scheduled, interval)) {
                 return;
             }
+            animal.setAttached(
+                    EhmAttachments.EHM_OVERGRAZE_AT,
+                    OvergrazingRules.firstCheckAt(now, interval, level.getRandom().nextInt()));
+            return;
+        }
+        if (OvergrazingRules.staleBite(now, scheduled)) {
             animal.setAttached(
                     EhmAttachments.EHM_OVERGRAZE_AT,
                     OvergrazingRules.firstCheckAt(now, interval, level.getRandom().nextInt()));

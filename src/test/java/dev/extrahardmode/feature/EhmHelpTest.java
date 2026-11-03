@@ -290,6 +290,7 @@ class EhmHelpTest {
         assertTrue(all.contains("waiting to restock"));
         assertTrue(all.contains("40 health"));
         assertTrue(all.contains("below 5 health"));
+        assertTrue(all.contains("After a mob hits them"));
         assertTrue(all.contains("has not appeared yet"));
         assertTrue(all.contains("wealthy trader"));
         assertTrue(all.contains("a jeweler, an armorsmith"));

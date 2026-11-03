@@ -309,7 +309,10 @@ public final class Inhabitants implements FeatureModule {
 
     static void maintainOccupied(ServerLevel level, InhabitantData data, long day) {
         WorldConfig cfg = ConfigManager.world(level);
+        long now = level.getGameTime();
+        int homeIndex = 0;
         for (InhabitantData.Home home : List.copyOf(data.homes())) {
+            int phase = homeIndex++;
             if (home.living().isEmpty()) {
                 continue;
             }
@@ -328,6 +331,9 @@ public final class Inhabitants implements FeatureModule {
                 if (isInhabitant(villager)) {
                     ResidentDefense.tick(level, villager, home.score());
                 }
+            }
+            if (!InhabitantRules.houseScanDue(now, phase)) {
+                continue;
             }
             ResidenceScan.Result result = ResidenceScan.inspect(
                     level, home.bed(), occupiedBeds(level, home.id()), cfg.inhabitantMinLight(), cfg.inhabitantSpacing());

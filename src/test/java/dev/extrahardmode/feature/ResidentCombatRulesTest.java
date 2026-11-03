@@ -29,5 +29,10 @@ class ResidentCombatRulesTest {
         assertFalse(ResidentCombatRules.canZombify(40.0F));
         assertTrue(ResidentCombatRules.canZombify(4.9F));
         assertEquals(3.0F, ResidentCombatRules.BOW_BONUS);
+        assertFalse(ResidentCombatRules.recentlyHit(-1L, 100L));
+        assertTrue(ResidentCombatRules.recentlyHit(100L, 100L));
+        assertTrue(ResidentCombatRules.recentlyHit(100L, 300L));
+        assertFalse(ResidentCombatRules.recentlyHit(100L, 301L));
+        assertFalse(ResidentCombatRules.recentlyHit(100L, 99L));
     }
 }

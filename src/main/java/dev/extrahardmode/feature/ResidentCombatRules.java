@@ -34,4 +34,9 @@ public final class ResidentCombatRules {
     public static boolean canZombify(float healthBeforeHit) {
         return healthBeforeHit < ZOMBIE_BELOW;
     }
+
+    /** True for {@link #MELEE_WINDOW} ticks after a mob hit, including the tick of the hit. */
+    public static boolean recentlyHit(long markedTick, long now) {
+        return markedTick >= 0L && now >= markedTick && now - markedTick <= MELEE_WINDOW;
+    }
 }

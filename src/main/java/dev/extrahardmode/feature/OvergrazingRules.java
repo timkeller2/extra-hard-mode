@@ -126,6 +126,16 @@ public final class OvergrazingRules {
         return scheduled > 0L && now >= scheduled;
     }
 
+    /**
+     * A due bite that missed at least one scan. While blocks keep ticking, the
+     * check runs every {@link #TICK_STRIDE} ticks, so a live bite is at most
+     * {@code TICK_STRIDE - 1} ticks late. Anything later was unloaded, or sat
+     * where grass cannot grow, and must not be eaten on the way back in.
+     */
+    public static boolean staleBite(long now, long scheduled) {
+        return isDue(now, scheduled) && now - scheduled >= TICK_STRIDE;
+    }
+
     /** True when {@code scheduled} is still inside this animal's bite interval. */
     public static boolean scheduledSoon(long now, long scheduled, int interval) {
         return scheduled > now && scheduled <= now + (long) clampInterval(interval);

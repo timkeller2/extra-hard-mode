@@ -597,7 +597,7 @@ public final class InhabitantRules {
                 "Residents: Look at a resident who is waiting to restock to see how long is left, in days and hours like a torch.",
                 "Residents: They have 40 health plus their house points, and regain 1 health each minute.",
                 "Residents: Looking at one shows hearts, one per 10 health, beside the restock time.",
-                "Residents: They shoot mobs that come within 12 blocks and are after them. The bow hits 3 harder than a normal arrow.",
+                "Residents: After a mob hits them, they shoot mobs within 12 blocks that are after them. The bow hits 3 harder than a normal arrow.",
                 "Residents: A close attack makes them switch to an iron sword. A zombie cannot turn them unless they are already below 5 health.",
                 "Residents: A home stops listing someone who has died or is no longer around the bed.",
                 "Lessons: Speak to a wise teacher and he tells of a hunt every 30 Minecraft days.",
@@ -1858,6 +1858,14 @@ public final class InhabitantRules {
      */
     public static boolean shouldAttemptDawn(long lastDawnDay, long day, boolean anySurvivalPlayer) {
         return lastDawnDay != day && anySurvivalPlayer;
+    }
+
+    /** One real minute. Each loaded home is rescanned on its own tick inside this window. */
+    public static final int HOUSE_SCAN_TICKS = 1200;
+
+    public static boolean houseScanDue(long gameTime, int homeIndex) {
+        int phase = Math.max(0, homeIndex);
+        return Math.floorMod(gameTime + phase, HOUSE_SCAN_TICKS) == 0;
     }
 
     /** Two walkable cells (feet and head) over a solid block. */

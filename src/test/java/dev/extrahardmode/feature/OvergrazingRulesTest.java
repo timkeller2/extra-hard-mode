@@ -69,6 +69,12 @@ class OvergrazingRulesTest {
         assertTrue(OvergrazingRules.scheduledSoon(10L, 20L, 5000));
         assertFalse(OvergrazingRules.scheduledSoon(10L, 5011L, 5000));
         assertFalse(OvergrazingRules.scheduledSoon(10L, 10L, 5000));
+        assertFalse(OvergrazingRules.staleBite(100L, 0L));
+        assertFalse(OvergrazingRules.staleBite(50L, 100L));
+        assertFalse(OvergrazingRules.staleBite(100L, 100L));
+        assertFalse(OvergrazingRules.staleBite(119L, 100L));
+        assertTrue(OvergrazingRules.staleBite(120L, 100L));
+        assertTrue(OvergrazingRules.staleBite(5000L, 100L));
         assertEquals(100, OvergrazingRules.FOOD_FLOAT_TICKS);
     }
 }

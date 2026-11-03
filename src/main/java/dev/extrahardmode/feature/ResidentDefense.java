@@ -41,6 +41,10 @@ public final class ResidentDefense {
             return;
         }
         hold(villager, Items.BOW);
+        long marked = villager.getAttachedOrElse(EhmAttachments.EHM_RESIDENT_MELEE, -1L);
+        if (!ResidentCombatRules.recentlyHit(marked, level.getGameTime())) {
+            return;
+        }
         Mob shooterTarget = shootTarget(level, villager);
         if (shooterTarget != null) {
             villager.getLookControl().setLookAt(shooterTarget, 30.0F, 30.0F);
