@@ -129,7 +129,7 @@ public final class CouncilMissions {
 
     /**
      * One try per open bounty each second of the overworld night. A hit places a group of that bounty,
-     * from one eighth of the kills still owed through one quarter, and at least 1. A later miss ends
+     * from one sixth of the kills still owed through one third, and at least 1. A later miss ends
      * that group. The other open bounties still roll on their own.
      */
     private static void maybeSpawn(ServerPlayer player, long today) {

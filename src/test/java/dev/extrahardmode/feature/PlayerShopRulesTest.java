@@ -116,9 +116,25 @@ class PlayerShopRulesTest {
     }
 
     @Test
-    void fullBottomRowStopsTheSale() {
+    void fullBottomRowPutsTheEmeraldsInAnEmptySlotAboveIt() {
         List<Slot> slots = chest(slot(0, PlayerShopRules.EMERALD, 1), slot(1, IRON, 4));
         for (int i = 18; i <= 26; i++) {
+            slots.set(i, slot(i, "minecraft:cobble", 1));
+        }
+        Listing iron = PlayerShopRules.listings(slots, true).get(0);
+        assertEquals(1, PlayerShopRules.sellUses(slots, iron));
+        List<Slot> sold = PlayerShopRules.afterSell(slots, iron);
+        assertEquals(1, count(sold, 0));
+        assertEquals(PlayerShopRules.EMERALD, sold.get(0).itemId());
+        assertEquals(0, count(sold, 1));
+        assertEquals(1, count(sold, 17));
+        assertEquals(PlayerShopRules.EMERALD, sold.get(17).itemId());
+    }
+
+    @Test
+    void aFullChestWithNoEmptySlotCannotSell() {
+        List<Slot> slots = chest(slot(0, PlayerShopRules.EMERALD, 1), slot(1, IRON, 4));
+        for (int i = 2; i <= 26; i++) {
             slots.set(i, slot(i, "minecraft:cobble", 1));
         }
         assertEquals(0, PlayerShopRules.sellUses(slots, PlayerShopRules.listings(slots, true).get(0)));

@@ -339,14 +339,14 @@ class EhmHelpTest {
         assertTrue(all.contains("within 48 blocks"));
         assertTrue(all.contains("on or above a solid block"));
         assertTrue(all.contains("dark enough for a monster"));
-        assertTrue(all.contains("1 in 350"));
+        assertTrue(all.contains("1 in 250"));
         assertTrue(all.contains("usually brings 1 or 2"));
         assertTrue(all.contains("3 or more, is less common"));
         assertTrue(all.contains("plus 3 per finished bounty"));
         assertTrue(all.contains("rolls on its own"));
         assertTrue(all.contains("stays until the next Minecraft day"));
-        assertTrue(all.contains("from 1/8 of those still to kill"));
-        assertTrue(all.contains("through 1/4"));
+        assertTrue(all.contains("from 1/6 of those still to kill"));
+        assertTrue(all.contains("through 1/3"));
         assertTrue(all.contains("not replaced in that conversation"));
         assertTrue(all.contains("name the resident"));
         assertTrue(all.contains("Emerald prices stay the same"));

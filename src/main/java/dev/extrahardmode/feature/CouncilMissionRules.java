@@ -30,10 +30,10 @@ public final class CouncilMissionRules {
     public static final int NIGHT_SPAWN_TICKS = 20;
     /**
      * One success per this many tries, rolled separately for each open bounty. Five hundred tries in a
-     * night makes the mean about 1.43 groups from one bounty, so 1 or 2 are the common results.
+     * night makes the mean 2 groups from one bounty, so 1 or 2 are the common results.
      * Several open bounties multiply the encounters.
      */
-    public static final int NIGHT_SPAWN_ONE_IN = 350;
+    public static final int NIGHT_SPAWN_ONE_IN = 250;
     /** The creature is placed at least this far out, and no farther than {@link #BOUNTY_SPAWN_NEAR_BLOCKS}. */
     public static final int BOUNTY_SPAWN_MIN_BLOCKS = 8;
     public static final int BOUNTY_SPAWN_NEAR_BLOCKS = 48;
@@ -486,22 +486,22 @@ public final class CouncilMissionRules {
     }
 
     /**
-     * Smallest group for one night appearance. Floor of one eighth of the kills still owed, and at
+     * Smallest group for one night appearance. Floor of one sixth of the kills still owed, and at
      * least 1 while any remain.
      */
     public static int bountyGroupMin(int remaining) {
         if (remaining <= 0) {
             return 0;
         }
-        return Math.max(1, remaining / 8);
+        return Math.max(1, remaining / 6);
     }
 
-    /** Largest group: floor of one quarter of the kills still owed, and never below the minimum. */
+    /** Largest group: floor of one third of the kills still owed, and never below the minimum. */
     public static int bountyGroupMax(int remaining) {
         if (remaining <= 0) {
             return 0;
         }
-        return Math.max(bountyGroupMin(remaining), remaining / 4);
+        return Math.max(bountyGroupMin(remaining), remaining / 3);
     }
 
     /** Inclusive roll from {@link #bountyGroupMin} through {@link #bountyGroupMax}. */
