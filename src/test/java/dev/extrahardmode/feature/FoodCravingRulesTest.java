@@ -1,0 +1,82 @@
+package dev.extrahardmode.feature;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.ArrayList;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+
+class FoodCravingRulesTest {
+    @Test
+    void aNewDietCravesLightlyAndHidesNonFood() {
+        assertEquals(FoodCraving.SLIGHT, FoodCravingRules.classify(List.of(), 0, "minecraft:apple"));
+        assertEquals(FoodCraving.SLIGHT, FoodCravingRules.classify(null, 0, "minecraft:apple"));
+        assertEquals(FoodCraving.NORMAL, FoodCravingRules.classify(List.of("minecraft:apple"), 0, ""));
+        assertEquals(FoodCraving.NORMAL, FoodCravingRules.classify(List.of("minecraft:apple"), 0, null));
+    }
+
+    @Test
+    void recentFoodIsPlainUnlessItKeepsOrLengthensTheStreak() {
+        List<String> seven = List.of("a", "b", "c", "d", "e", "f", "g");
+        assertEquals(FoodCraving.NORMAL, FoodCravingRules.classify(seven, 0, "d"));
+        assertEquals(FoodCraving.CRAVING, FoodCravingRules.classify(seven, 0, "a"));
+        assertEquals(FoodCraving.GREAT, FoodCravingRules.classify(seven, 0, "h"));
+        assertEquals(FoodCraving.SLIGHT, FoodCravingRules.classify(List.of("a", "b", "c"), 0, "d"));
+        assertEquals(FoodCraving.GREAT, FoodCravingRules.classify(List.of("a", "b", "c", "d", "e", "f"), 0, "g"));
+        assertEquals(FoodCraving.NORMAL, FoodCravingRules.classify(List.of("a", "b", "c", "d", "e", "f"), 0, "f"));
+    }
+
+    @Test
+    void sickOutlinesFollowThePenaltyAndWellFedDelaysThem() {
+        List<String> four = List.of("a", "a", "a", "a", "b", "b");
+        assertEquals(FoodCraving.SICK, FoodCravingRules.classify(four, 0, "a"));
+        assertEquals(FoodCraving.NORMAL, FoodCravingRules.classify(four, 0, "b"));
+        List<String> six = List.of("a", "a", "a", "a", "a", "a");
+        assertEquals(FoodCraving.VERY_SICK, FoodCravingRules.classify(six, 0, "a"));
+        assertEquals(FoodCraving.SICK, FoodCravingRules.classify(six, 1, "a"));
+        assertEquals(FoodCraving.VERY_SICK, FoodCravingRules.classify(List.of("a", "a", "a", "a", "a", "a", "a"), 0, "a"));
+    }
+
+    @Test
+    void wellFedSplitsSlightCravingFromALongerStreak() {
+        List<String> ten = List.of("a", "b", "c", "d", "e", "f", "g", "h", "i", "j");
+        assertEquals(FoodCraving.GREAT, FoodCravingRules.classify(ten, 1, "k"));
+        assertEquals(FoodCraving.CRAVING, FoodCravingRules.classify(ten, 1, "a"));
+        assertEquals(FoodCraving.SLIGHT, FoodCravingRules.classify(ten, 1, "b"));
+        assertEquals(FoodCraving.NORMAL, FoodCravingRules.classify(ten, 1, "j"));
+        List<String> broken = List.of("a", "b", "c", "d", "e", "f", "g", "h", "h", "h");
+        assertEquals(FoodCraving.SLIGHT, FoodCravingRules.classify(broken, 1, "a"));
+        assertEquals(FoodCraving.CRAVING, FoodCravingRules.classify(broken, 1, "z"));
+    }
+
+    @Test
+    void aPenaltyBeatsAFoodThatWouldAlsoExtendTheStreak() {
+        List<String> meals = new ArrayList<>();
+        for (int i = 0; i < 8; i++) {
+            meals.add("apple");
+        }
+        for (int i = 0; i < 8; i++) {
+            meals.add("f" + i);
+        }
+        assertEquals(FoodCraving.SICK, FoodCravingRules.classify(meals, 3, "apple"));
+        assertTrue(FoodCravingRules.trailingDifferent(meals) >= FoodCravingRules.VARIETY_WINDOW);
+    }
+
+    @Test
+    void outlinedCravingsUseDistinctColors() {
+        assertEquals(0, FoodCravingRules.outlineArgb(FoodCraving.NORMAL));
+        assertEquals(0, FoodCravingRules.outlineArgb(null));
+        assertNotEquals(0, FoodCravingRules.outlineArgb(FoodCraving.VERY_SICK));
+        assertNotEquals(
+                FoodCravingRules.outlineArgb(FoodCraving.VERY_SICK),
+                FoodCravingRules.outlineArgb(FoodCraving.SICK));
+        assertNotEquals(
+                FoodCravingRules.outlineArgb(FoodCraving.SLIGHT),
+                FoodCravingRules.outlineArgb(FoodCraving.GREAT));
+        assertNotEquals(
+                FoodCravingRules.outlineArgb(FoodCraving.CRAVING),
+                FoodCravingRules.outlineArgb(FoodCraving.GREAT));
+    }
+}

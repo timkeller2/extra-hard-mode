@@ -343,6 +343,18 @@ public final class EhmAttachments {
     public static final AttachmentType<Long> EHM_HEAL_SPARKLE_UNTIL = AttachmentRegistry.create(
             ExtraHardModeMod.id("heal_sparkle_until"),
             builder -> builder.persistent(Codec.LONG).initializer(() -> -1L));
+    /** Overworld game time when the next innate-mana shimmer may start. 0 means not scheduled yet. */
+    public static final AttachmentType<Long> EHM_MANA_SPARKLE_NEXT = AttachmentRegistry.create(
+            ExtraHardModeMod.id("mana_sparkle_next"), builder -> builder.initializer(() -> 0L));
+    /** Overworld game time when the current innate-mana shimmer ends. -1 means none. */
+    public static final AttachmentType<Long> EHM_MANA_SPARKLE_UNTIL = AttachmentRegistry.create(
+            ExtraHardModeMod.id("mana_sparkle_until"), builder -> builder.initializer(() -> -1L));
+    /** Whole mana points this shimmer will show. */
+    public static final AttachmentType<Integer> EHM_MANA_SPARKLE_TOTAL = AttachmentRegistry.create(
+            ExtraHardModeMod.id("mana_sparkle_total"), builder -> builder.initializer(() -> 0));
+    /** Length of the current shimmer, in ticks. */
+    public static final AttachmentType<Integer> EHM_MANA_SPARKLE_BURST = AttachmentRegistry.create(
+            ExtraHardModeMod.id("mana_sparkle_burst"), builder -> builder.initializer(() -> 0));
     /** Health still owed by a Healing cast, paid out across the sparkle. */
     public static final AttachmentType<Float> EHM_HEAL_REMAINING = AttachmentRegistry.create(
             ExtraHardModeMod.id("heal_remaining"),

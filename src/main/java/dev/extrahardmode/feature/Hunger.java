@@ -4,6 +4,7 @@ import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.api.EhmApi;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.config.WorldConfig;
+import dev.extrahardmode.network.ClientboundFoodCravingPayload;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.player.FoodHistory;
 import dev.extrahardmode.world.WorldGate;
@@ -17,6 +18,7 @@ import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -52,6 +54,10 @@ public final class Hunger implements FeatureModule {
     private static final Map<UUID, Long> LAST_ACTIVITY_TICK = new ConcurrentHashMap<>();
     /** Hunger and saturation from just before this meal, captured before vanilla adds the food. */
     private static final Map<UUID, MealStart> MEAL_START = new ConcurrentHashMap<>();
+    /** Last craving packet, so a tick does not send the same meals again. */
+    private static final Map<UUID, CravingSync> CRAVING_SYNC = new ConcurrentHashMap<>();
+
+    private record CravingSync(boolean active, int wellFed, List<String> history) {}
 
     private record Pose(double x, double y, double z, float yaw, float pitch) {}
 
@@ -88,6 +94,7 @@ public final class Hunger implements FeatureModule {
             sampleActivity(player, tick);
             applyExtraExhaustion(player, tick);
             WellFed.maintain(player);
+            sendFoodCraving(player);
         }
     }
 
@@ -99,6 +106,7 @@ public final class Hunger implements FeatureModule {
             return;
         }
         WellFed.forget(player);
+        sendFoodCraving(player);
     }
 
     /** Movement packets, swings, and other player actions. */
@@ -163,6 +171,7 @@ public final class Hunger implements FeatureModule {
         LAST_POSE.remove(id);
         LAST_ACTIVITY_TICK.remove(id);
         MEAL_START.remove(id);
+        CRAVING_SYNC.remove(id);
     }
 
     /** Call at the start of eating, before hunger and saturation change. */
@@ -246,6 +255,7 @@ public final class Hunger implements FeatureModule {
         }
         WellFed.clampFood(serverPlayer, maxFood);
         Achievements.sendMana(serverPlayer);
+        sendFoodCraving(serverPlayer);
     }
 
     static void applyUniqueWindowBonus(FoodData food, int maxFood) {
@@ -358,7 +368,28 @@ public final class Hunger implements FeatureModule {
         }
     }
 
-    static String itemId(ItemStack stack) {
+    /** Meal history for the food outlines. Hidden for spectators and players who bypass hunger. */
+    public static void sendFoodCraving(ServerPlayer player) {
+        if (player == null) {
+            return;
+        }
+        boolean active = player.level() instanceof ServerLevel level
+                && WorldGate.isModuleActive(level, ID)
+                && !EhmApi.playerBypasses(player)
+                && !player.isSpectator();
+        List<String> history = active
+                ? player.getAttachedOrElse(EhmAttachments.EHM_FOOD_HISTORY, List.of())
+                : List.of();
+        int wellFed = active ? WellFed.level(player) : 0;
+        CravingSync next = new CravingSync(active, wellFed, history);
+        if (next.equals(CRAVING_SYNC.get(player.getUUID()))) {
+            return;
+        }
+        CRAVING_SYNC.put(player.getUUID(), next);
+        ServerPlayNetworking.send(player, ClientboundFoodCravingPayload.of(active, wellFed, history));
+    }
+
+    public static String itemId(ItemStack stack) {
         if (stack == null || stack.isEmpty()) {
             return null;
         }

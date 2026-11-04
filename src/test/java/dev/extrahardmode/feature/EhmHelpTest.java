@@ -23,9 +23,12 @@ class EhmHelpTest {
         }
         assertTrue(String.join(" ", lines).contains("1/4"));
         assertTrue(String.join(" ", lines).contains("/ 200 per minute"));
+        assertTrue(String.join(" ", lines).contains("One sparkle appears for each point of mana"));
         assertTrue(String.join(" ", lines).contains("saturation"));
         assertTrue(String.join(" ", lines).contains("Well Fed"));
         assertTrue(String.join(" ", lines).contains("at least 1 hunger"));
+        assertTrue(String.join(" ", lines).contains("thin outline"));
+        assertTrue(String.join(" ", lines).contains("Gold lengthens a streak"));
         assertTrue(String.join(" ", lines).contains("saturation does not fall"));
         assertTrue(String.join(" ", lines).contains("Below 18"));
         assertTrue(String.join(" ", lines).contains("does not consume saturation"));

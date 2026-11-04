@@ -304,5 +304,10 @@
   "tougher.message.food_sick": "You are getting sick of %s!",
   "tougher.message.well_fed": "Well Fed %s.",
   "tougher.message.well_fed_drop": "Well Fed drops to %s.",
-  "tougher.message.well_fed_gone": "You are no longer well fed."
+  "tougher.message.well_fed_gone": "You are no longer well fed.",
+  "tougher.tooltip.food_very_sick": "Very sick of this",
+  "tougher.tooltip.food_sick": "Sick of this",
+  "tougher.tooltip.food_slight": "Slight craving",
+  "tougher.tooltip.food_craving": "Craving",
+  "tougher.tooltip.food_great": "Great craving"
 }

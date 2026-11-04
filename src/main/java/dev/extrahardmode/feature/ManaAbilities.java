@@ -141,6 +141,7 @@ public final class ManaAbilities implements FeatureModule {
             tickPlayerLight(player);
             tickAbilityHint(player);
             tickHealSparkle(player);
+            tickManaSparkle(player);
             tickIronHeart(player);
             tickIronHeartSparkle(player);
             tickMasterBuilder(player);
@@ -560,6 +561,76 @@ public final class ManaAbilities implements FeatureModule {
     private static void clearHealSparkle(ServerPlayer player) {
         player.setAttached(EhmAttachments.EHM_HEAL_SPARKLE_UNTIL, -1L);
         player.setAttached(EhmAttachments.EHM_HEAL_REMAINING, 0.0F);
+    }
+
+    /**
+     * A short blue shimmer while current mana is above 3. Everyone nearby sees one sparkle
+     * per whole point, spread across a second or two, then nothing for 30 to 60 seconds.
+     */
+    static void tickManaSparkle(ServerPlayer player) {
+        if (player == null || !player.isAlive() || player.isSpectator()) {
+            return;
+        }
+        ServerLevel level = (ServerLevel) player.level();
+        if (level.getServer() == null) {
+            return;
+        }
+        long now = abilityNow(player);
+        long until = player.getAttachedOrElse(EhmAttachments.EHM_MANA_SPARKLE_UNTIL, -1L);
+        if (until > now) {
+            int total = player.getAttachedOrElse(EhmAttachments.EHM_MANA_SPARKLE_TOTAL, 0);
+            int burst = player.getAttachedOrElse(EhmAttachments.EHM_MANA_SPARKLE_BURST, 0);
+            int index = (int) (now - (until - burst));
+            int count = ManaSparkleRules.sparklesOnTick(total, burst, index);
+            if (count > 0 && ManaSparkleRules.sparkleCount(Achievements.currentMana(player)) > 0) {
+                spawnManaSparkle(player, level, count);
+            }
+            return;
+        }
+        if (until >= 0L) {
+            player.setAttached(EhmAttachments.EHM_MANA_SPARKLE_UNTIL, -1L);
+        }
+        long next = player.getAttachedOrElse(EhmAttachments.EHM_MANA_SPARKLE_NEXT, 0L);
+        if (next <= 0L || next > now) {
+            if (next <= 0L) {
+                player.setAttached(
+                        EhmAttachments.EHM_MANA_SPARKLE_NEXT, now + ManaSparkleRules.gapTicks(level.getRandom().nextInt()));
+            }
+            return;
+        }
+        int wait = ManaSparkleRules.gapTicks(level.getRandom().nextInt());
+        int total = ManaSparkleRules.sparkleCount(Achievements.currentMana(player));
+        if (total <= 0) {
+            player.setAttached(EhmAttachments.EHM_MANA_SPARKLE_NEXT, now + wait);
+            return;
+        }
+        int burst = ManaSparkleRules.burstTicks(level.getRandom().nextInt());
+        player.setAttached(EhmAttachments.EHM_MANA_SPARKLE_TOTAL, total);
+        player.setAttached(EhmAttachments.EHM_MANA_SPARKLE_BURST, burst);
+        player.setAttached(EhmAttachments.EHM_MANA_SPARKLE_UNTIL, now + burst);
+        player.setAttached(EhmAttachments.EHM_MANA_SPARKLE_NEXT, now + burst + wait);
+        int first = ManaSparkleRules.sparklesOnTick(total, burst, 0);
+        if (first > 0) {
+            spawnManaSparkle(player, level, first);
+        }
+    }
+
+    /** Same blue motes as Healing, visible to nearby players, and only {@code count} of them. */
+    static void spawnManaSparkle(ServerPlayer target, ServerLevel level, int count) {
+        double x = target.getX();
+        double y = target.getY() + target.getBbHeight() * 0.6;
+        double z = target.getZ();
+        level.sendParticles(ParticleTypes.GLOW, x, y, z, count, 0.28, 0.4, 0.28, 0.0);
+        level.sendParticles(
+                ColorParticleOption.create(ParticleTypes.ENTITY_EFFECT, 0.3F, 0.55F, 1.0F),
+                x,
+                y,
+                z,
+                count,
+                0.22,
+                0.32,
+                0.22,
+                0.0);
     }
 
     static void spawnHealSparkle(ServerPlayer target, ServerLevel level) {

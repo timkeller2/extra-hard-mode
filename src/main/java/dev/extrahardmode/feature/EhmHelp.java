@@ -263,6 +263,10 @@ public final class EhmHelp {
                         "Hunger: A food not in your last 7 eaten gives +1 hunger, or +1 saturation if you are already full.",
                         "Hunger: Seven different foods in the last 7 meals gives an extra +1 hunger and saturation and 3 experience.",
                         "Hunger: The same food 5 times in the last 7 meals restores less; 7 of the last 7 restores even less. A meal still gives at least 1 hunger, and saturation does not fall.",
+                        "Hunger: Foods in an inventory or chest show a thin outline. Black means very sick of it, brown means sick of it, and a food from your last 7 meals has none.",
+                        "Hunger: Yellow is a slight craving, not eaten in those 7 meals.",
+                        "Hunger: Green is a craving: outside your Well Fed meals, or the food that keeps the streak. Gold lengthens a streak of 6 or more different meals.",
+                        "Hunger: Black and brown follow that same-food penalty, including the extra repeats Well Fed allows.",
                         "Hunger: After those seven, every 2 more different meals raise Well Fed by one. Nine in a row is Well Fed 1.",
                         "Hunger: Dying clears your meal history, so Well Fed starts over.",
                         "Hunger: Well Fed allows that many repeated meals in a longer window before the level drops.",
@@ -395,6 +399,7 @@ public final class EhmHelp {
                 "tougher.help.mana.",
                 List.of(
                         "Mana: Cyan crystals. You regen (mana level + current mana) / 200 per minute.",
+                        "Mana: Above 3 mana, blue sparkles show for a second or two every 30 to 60 seconds. One sparkle appears for each point of mana.",
                         "Mana: Saturation of 18 or more doubles your mana regen. Below 18 that bonus stops.",
                         "Mana: That doubled regen does not consume saturation.",
                         "Mana: Past your level you regen at 1/4 speed. The ceiling of 40 mana rises when Well Fed or ready gold pushes your level past 40. Achievements can raise your mana level.",

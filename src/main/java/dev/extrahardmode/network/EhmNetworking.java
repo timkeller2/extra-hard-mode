@@ -4,6 +4,7 @@ import dev.extrahardmode.command.EhmPermissions;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.config.WorldConfig;
 import dev.extrahardmode.feature.Achievements;
+import dev.extrahardmode.feature.Hunger;
 import dev.extrahardmode.feature.CouncilMissions;
 import dev.extrahardmode.feature.ManaAbilities;
 import dev.extrahardmode.feature.WiseLessons;
@@ -47,6 +48,8 @@ public final class EhmNetworking {
                 .register(ClientboundAchievementScorePayload.TYPE, ClientboundAchievementScorePayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay()
                 .register(ClientboundCreditsPayload.TYPE, ClientboundCreditsPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay()
+                .register(ClientboundFoodCravingPayload.TYPE, ClientboundFoodCravingPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(ServerboundConfigPayload.TYPE, ServerboundConfigPayload.STREAM_CODEC);
         ServerPlayNetworking.registerGlobalReceiver(ServerboundConfigPayload.TYPE, EhmNetworking::onConfig);
         ServerPlayConnectionEvents.JOIN.register(EhmNetworking::onJoin);
@@ -103,6 +106,7 @@ public final class EhmNetworking {
             MinecraftServer server) {
         sendSync(handler.player);
         Achievements.sendMana(handler.player);
+        Hunger.sendFoodCraving(handler.player);
         Achievements.onPlayerJoin(handler.player);
         sendCompassSpawn(handler.player);
         ManaAbilities.onJoin(handler.player);

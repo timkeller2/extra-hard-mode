@@ -157,6 +157,7 @@ def build():
             "and it can happen again on later meals that keep that streak. "
             "The same food 5 times in the last 7 meals restores less; 7 of the last 7 restores even less. "
             "A meal still gives at least 1 hunger, and saturation does not fall. "
+            "Inventory and chest foods show a thin outline. Black means you would get very sick of it, and brown means sick of it. Those follow the same-food penalty, so Well Fed delays them. No outline means you ate it in the last 7 meals. Yellow is a slight craving. Green is a craving: it is outside your Well Fed meals, or it is the food that keeps the streak. Gold means it would lengthen a streak of 6 or more different meals. "
             "The locator bar is off until you eat a golden carrot. It stays on until your saturation is gone. "
             "Another player sees you only while their own bar is on too.",
             s["body"],
@@ -320,6 +321,7 @@ def build():
         Paragraph("Mana", s["h"]),
         Paragraph(
             "Mana is shown as cyan crystals. Two mana points fill one crystal. "
+            "Above 3 mana, blue sparkles show for a second or two every 30 to 60 seconds, one for each point of mana. "
             "You regenerate (mana level + current mana) / 200 per minute. "
             "Saturation of 18 or more doubles that regen and is not consumed. Below 18 the bonus stops. "
             "A quartz block right-clicked in the air casts Battery. It costs no mana. "
