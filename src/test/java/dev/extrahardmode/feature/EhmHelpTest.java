@@ -28,8 +28,10 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("Well Fed"));
         assertTrue(String.join(" ", lines).contains("at least 1 hunger"));
         assertTrue(String.join(" ", lines).contains("small mark in the top right"));
-        assertTrue(String.join(" ", lines).contains("steel-blue up mark is a slight craving"));
-        assertTrue(String.join(" ", lines).contains("gold diamond lengthens a streak"));
+        assertTrue(String.join(" ", lines).contains("stack on the cursor"));
+        assertTrue(String.join(" ", lines).contains("small steel-blue up mark is a slight craving"));
+        assertTrue(String.join(" ", lines).contains("grace still allows that Well Fed repeat"));
+        assertTrue(String.join(" ", lines).contains("gold up mark lengthens a streak"));
         assertTrue(String.join(" ", lines).contains("inside a bundle"));
         assertTrue(String.join(" ", lines).contains("or a shop"));
         assertTrue(String.join(" ", lines).contains("saturation does not fall"));

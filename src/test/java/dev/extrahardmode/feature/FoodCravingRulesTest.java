@@ -44,8 +44,16 @@ class FoodCravingRulesTest {
         List<String> ten = List.of("a", "b", "c", "d", "e", "f", "g", "h", "i", "j");
         assertEquals(FoodCraving.GREAT, FoodCravingRules.classify(ten, 1, "k"));
         assertEquals(FoodCraving.CRAVING, FoodCravingRules.classify(ten, 1, "a"));
-        assertEquals(FoodCraving.SLIGHT, FoodCravingRules.classify(ten, 1, "b"));
+        assertEquals(FoodCraving.GRACE, FoodCravingRules.classify(ten, 1, "b"));
         assertEquals(FoodCraving.NORMAL, FoodCravingRules.classify(ten, 1, "j"));
+        assertEquals(FoodCraving.SLIGHT, FoodCravingRules.classify(ten, 0, "b"));
+        List<String> spared = List.of("a", "b", "c", "d", "e", "f", "g", "h", "i", "a");
+        assertEquals(FoodCraving.CRAVING, FoodCravingRules.classify(spared, 1, "b"));
+        assertEquals(FoodCraving.GRACE, FoodCravingRules.classify(spared, 1, "c"));
+        List<String> tight = List.of("x", "a", "b", "c", "d", "e", "f", "g", "h", "a");
+        assertEquals(FoodCraving.CRAVING, FoodCravingRules.classify(tight, 1, "b"));
+        List<String> over = List.of("z", "x", "b", "c", "d", "e", "f", "g", "h", "a", "a");
+        assertEquals(FoodCraving.SLIGHT, FoodCravingRules.classify(over, 1, "b"));
         List<String> broken = List.of("a", "b", "c", "d", "e", "f", "g", "h", "h", "h");
         assertEquals(FoodCraving.SLIGHT, FoodCravingRules.classify(broken, 1, "a"));
         assertEquals(FoodCraving.CRAVING, FoodCravingRules.classify(broken, 1, "z"));
@@ -72,6 +80,9 @@ class FoodCravingRulesTest {
         assertNotEquals(
                 FoodCravingRules.outlineArgb(FoodCraving.VERY_SICK),
                 FoodCravingRules.outlineArgb(FoodCraving.SICK));
+        assertNotEquals(
+                FoodCravingRules.outlineArgb(FoodCraving.SLIGHT),
+                FoodCravingRules.outlineArgb(FoodCraving.GRACE));
         assertNotEquals(
                 FoodCravingRules.outlineArgb(FoodCraving.SLIGHT),
                 FoodCravingRules.outlineArgb(FoodCraving.GREAT));

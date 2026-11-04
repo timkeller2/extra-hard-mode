@@ -1,9 +1,11 @@
 package dev.extrahardmode.mixin.client;
 
 import dev.extrahardmode.client.ExtraHardModeClient;
+import dev.extrahardmode.client.FoodCravingOutline;
 import dev.extrahardmode.client.SmiteCrosshair;
 import dev.extrahardmode.feature.HudCapacityRules;
 import dev.extrahardmode.feature.WellFedRules;
+import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.Hud;
@@ -12,6 +14,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -145,5 +148,18 @@ public abstract class HudMixin {
                 graphics.blitSprite(RenderPipelines.GUI_TEXTURED, fill, x, iconY, 9, 9);
             }
         }
+    }
+
+    @Inject(method = "extractSlot", at = @At("TAIL"))
+    private void tougher$hotbarFoodCraving(
+            GuiGraphicsExtractor graphics,
+            int x,
+            int y,
+            DeltaTracker deltaTracker,
+            Player player,
+            ItemStack stack,
+            int seed,
+            CallbackInfo ci) {
+        FoodCravingOutline.drawOnItem(graphics, stack, x, y);
     }
 }

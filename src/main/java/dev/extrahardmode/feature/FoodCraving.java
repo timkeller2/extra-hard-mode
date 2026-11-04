@@ -6,6 +6,7 @@ public enum FoodCraving {
     SICK,
     NORMAL,
     SLIGHT,
+    GRACE,
     CRAVING,
     GREAT
 }

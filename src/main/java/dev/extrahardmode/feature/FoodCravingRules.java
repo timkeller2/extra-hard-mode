@@ -19,7 +19,8 @@ public final class FoodCravingRules {
      * What eating {@code foodId} next would mean.
      * Black and brown use the same-food penalty, so Well Fed delays them.
      * Gold lengthens a run of 6 or more different meals. Green is a food outside the Well Fed
-     * window, or the oldest meal of a run that is already 7 or longer. Steel blue is only novel.
+     * window, or the oldest meal of a run that is already 7 or longer. Full steel blue is a repeat
+     * inside that window that grace still allows. The small steel-blue mark is only novel.
      */
     public static FoodCraving classify(List<String> history, int wellFed, String foodId) {
         if (foodId == null || foodId.isEmpty()) {
@@ -41,6 +42,9 @@ public final class FoodCravingRules {
         if (isDue(recent, foodId, trailing) || outsideWellFedStreak(recent, foodId, level)) {
             return FoodCraving.CRAVING;
         }
+        if (withinGrace(recent, foodId, level)) {
+            return FoodCraving.GRACE;
+        }
         if (FoodHistory.isNovelInLast(recent, foodId, VARIETY_WINDOW)) {
             return FoodCraving.SLIGHT;
         }
@@ -56,6 +60,7 @@ public final class FoodCravingRules {
             case VERY_SICK -> 0xF0141414;
             case SICK -> 0xF06B3E22;
             case SLIGHT -> 0xF07AA0B8;
+            case GRACE -> 0xF0B7D0E0;
             case CRAVING -> 0xF03E8A48;
             case GREAT -> 0xF0D4A017;
             case NORMAL -> 0;
@@ -99,6 +104,24 @@ public final class FoodCravingRules {
             return false;
         }
         return foodId.equals(recent.get(recent.size() - trailing));
+    }
+
+    /**
+     * Not in the last 7 meals, but already inside the Well Fed window, and one more copy still
+     * fits the duplicate allowance. Level 0 has no longer window and no grace.
+     */
+    static boolean withinGrace(List<String> recent, String foodId, int level) {
+        if (level <= 0 || foodId == null || foodId.isEmpty()) {
+            return false;
+        }
+        if (!FoodHistory.isNovelInLast(recent, foodId, VARIETY_WINDOW)) {
+            return false;
+        }
+        if (FoodHistory.isNovelInLast(recent, foodId, WellFedRules.holdWindow(level))) {
+            return false;
+        }
+        List<String> after = FoodHistory.record(recent, foodId, WellFedRules.HISTORY_CAP);
+        return WellFedRules.holds(after, level);
     }
 
     /** Absent from the Well Fed hold window. Level 0 has no window longer than the last 7. */

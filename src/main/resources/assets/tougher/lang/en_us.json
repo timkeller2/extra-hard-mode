@@ -308,6 +308,7 @@
   "tougher.tooltip.food_very_sick": "Very sick of this",
   "tougher.tooltip.food_sick": "Sick of this",
   "tougher.tooltip.food_slight": "Slight craving",
+  "tougher.tooltip.food_grace": "Within grace",
   "tougher.tooltip.food_craving": "Craving",
   "tougher.tooltip.food_great": "Great craving"
 }

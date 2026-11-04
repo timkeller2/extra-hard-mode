@@ -44,8 +44,9 @@ public final class FoodCravingOutline {
             case VERY_SICK -> icon(graphics, left, top, 0xFFE6E6E6, 0xFF141414, "#...#", ".#.#.", "..#..", ".#.#.", "#...#");
             case SICK -> icon(graphics, left, top, 0xFF3A2418, 0xFFC4956A, ".....", "#...#", ".#.#.", "..#..", ".....");
             case SLIGHT -> icon(graphics, left, top, 0xFF1A242C, 0xFFB7D0E0, ".....", "..#..", ".#.#.", ".....", ".....");
+            case GRACE -> icon(graphics, left, top, 0xFF1A242C, 0xFFB7D0E0, "..#..", ".#.#.", "#...#", ".....", ".....");
             case CRAVING -> icon(graphics, left, top, 0xFF102418, 0xFF7DCEA0, "..#..", ".#.#.", "#...#", ".....", ".....");
-            case GREAT -> icon(graphics, left, top, 0xFF2A220C, 0xFFF0C14A, "..#..", ".###.", "#####", ".###.", "..#..");
+            case GREAT -> icon(graphics, left, top, 0xFF2A220C, 0xFFF0C14A, "..#..", ".#.#.", "#...#", ".....", ".....");
             case NORMAL -> {
                 // No mark.
             }
@@ -118,6 +119,7 @@ public final class FoodCravingOutline {
             case VERY_SICK -> "tougher.tooltip.food_very_sick";
             case SICK -> "tougher.tooltip.food_sick";
             case SLIGHT -> "tougher.tooltip.food_slight";
+            case GRACE -> "tougher.tooltip.food_grace";
             case CRAVING -> "tougher.tooltip.food_craving";
             case GREAT -> "tougher.tooltip.food_great";
             case NORMAL -> null;
@@ -129,6 +131,7 @@ public final class FoodCravingOutline {
             case VERY_SICK -> "Very sick of this";
             case SICK -> "Sick of this";
             case SLIGHT -> "Slight craving";
+            case GRACE -> "Within grace";
             case CRAVING -> "Craving";
             case GREAT -> "Great craving";
             case NORMAL -> "";
@@ -141,6 +144,7 @@ public final class FoodCravingOutline {
             case VERY_SICK -> 0xB4B4B4;
             case SICK -> 0xC4956A;
             case SLIGHT -> 0xB7D0E0;
+            case GRACE -> 0xB7D0E0;
             case CRAVING -> 0x7DCEA0;
             case GREAT -> 0xF0C14A;
             case NORMAL -> 0xFFFFFF;
