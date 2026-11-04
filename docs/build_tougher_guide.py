@@ -157,7 +157,7 @@ def build():
             "and it can happen again on later meals that keep that streak. "
             "The same food 5 times in the last 7 meals restores less; 7 of the last 7 restores even less. "
             "A meal still gives at least 1 hunger, and saturation does not fall. "
-            "Foods in an inventory or chest, including food inside a bundle, show a small mark in the top right corner. A black X means you would get very sick of it, and a brown down mark means sick of it. Those follow the same-food penalty, so Well Fed delays them. No mark means you ate it in the last 7 meals. A steel-blue up mark is a slight craving. A green up mark is a craving: it is outside your Well Fed meals, or it is the food that keeps the streak. A gold diamond means it would lengthen a streak of 6 or more different meals. "
+            "Foods in an inventory or chest, including food inside a bundle or a shop, show a small mark in the top right corner. A black X means you would get very sick of it, and a brown down mark means sick of it. Those follow the same-food penalty, so Well Fed delays them. No mark means you ate it in the last 7 meals. A steel-blue up mark is a slight craving. A green up mark is a craving: it is outside your Well Fed meals, or it is the food that keeps the streak. A gold diamond means it would lengthen a streak of 6 or more different meals. "
             "The locator bar is off until you eat a golden carrot. It stays on until your saturation is gone. "
             "Another player sees you only while their own bar is on too.",
             s["body"],

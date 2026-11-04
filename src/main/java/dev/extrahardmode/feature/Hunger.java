@@ -56,8 +56,17 @@ public final class Hunger implements FeatureModule {
     private static final Map<UUID, MealStart> MEAL_START = new ConcurrentHashMap<>();
     /** Last craving packet, so a tick does not send the same meals again. */
     private static final Map<UUID, CravingSync> CRAVING_SYNC = new ConcurrentHashMap<>();
+    /**
+     * After a join, send the snapshot again for a few seconds. The first packet can
+     * arrive before the client stores it, and a matching cache would never retry.
+     */
+    private static final Map<UUID, CravingRetry> CRAVING_RETRY = new ConcurrentHashMap<>();
+    private static final int CRAVING_RETRY_EVERY = 20;
+    private static final int CRAVING_RETRY_FOR = 100;
 
     private record CravingSync(boolean active, int wellFed, List<String> history) {}
+
+    private record CravingRetry(long until, long nextSend) {}
 
     private record Pose(double x, double y, double z, float yaw, float pitch) {}
 
@@ -172,6 +181,25 @@ public final class Hunger implements FeatureModule {
         LAST_ACTIVITY_TICK.remove(id);
         MEAL_START.remove(id);
         CRAVING_SYNC.remove(id);
+        CRAVING_RETRY.remove(id);
+    }
+
+    /** Keep resending the meal snapshot for a few seconds so a rejoin cannot drop it. */
+    public static void onJoin(ServerPlayer player) {
+        if (player != null) {
+            long time = now(player);
+            CRAVING_RETRY.put(player.getUUID(), new CravingRetry(time + CRAVING_RETRY_FOR, time));
+        }
+        sendFoodCraving(player);
+    }
+
+    /** Client asked because it has no snapshot. Sends even when the cache matches. */
+    public static void resendFoodCraving(ServerPlayer player) {
+        if (player == null) {
+            return;
+        }
+        CRAVING_SYNC.remove(player.getUUID());
+        sendFoodCraving(player);
     }
 
     /** Call at the start of eating, before hunger and saturation change. */
@@ -381,12 +409,52 @@ public final class Hunger implements FeatureModule {
                 ? player.getAttachedOrElse(EhmAttachments.EHM_FOOD_HISTORY, List.of())
                 : List.of();
         int wellFed = active ? WellFed.level(player) : 0;
-        CravingSync next = new CravingSync(active, wellFed, history);
-        if (next.equals(CRAVING_SYNC.get(player.getUUID()))) {
+        List<String> meals = history == null || history.isEmpty() ? List.of() : List.copyOf(history);
+        CravingSync next = new CravingSync(active, wellFed, meals);
+        long time = now(player);
+        boolean retryDue = retryDue(player.getUUID(), time);
+        if (!retryDue && next.equals(CRAVING_SYNC.get(player.getUUID()))) {
+            return;
+        }
+        if (!ServerPlayNetworking.canSend(player, ClientboundFoodCravingPayload.TYPE)) {
             return;
         }
         CRAVING_SYNC.put(player.getUUID(), next);
-        ServerPlayNetworking.send(player, ClientboundFoodCravingPayload.of(active, wellFed, history));
+        ServerPlayNetworking.send(player, ClientboundFoodCravingPayload.of(active, wellFed, meals));
+        advanceRetry(player.getUUID(), time);
+    }
+
+    private static long now(ServerPlayer player) {
+        if (!(player.level() instanceof ServerLevel level) || level.getServer() == null) {
+            return 0L;
+        }
+        ServerLevel overworld = level.getServer().overworld();
+        return overworld == null ? level.getGameTime() : overworld.getGameTime();
+    }
+
+    private static boolean retryDue(UUID id, long time) {
+        CravingRetry retry = CRAVING_RETRY.get(id);
+        if (retry == null) {
+            return false;
+        }
+        if (time > retry.until) {
+            CRAVING_RETRY.remove(id);
+            return false;
+        }
+        return time >= retry.nextSend;
+    }
+
+    private static void advanceRetry(UUID id, long time) {
+        CravingRetry retry = CRAVING_RETRY.get(id);
+        if (retry == null) {
+            return;
+        }
+        long next = time + CRAVING_RETRY_EVERY;
+        if (next > retry.until) {
+            CRAVING_RETRY.remove(id);
+        } else {
+            CRAVING_RETRY.put(id, new CravingRetry(retry.until, next));
+        }
     }
 
     public static String itemId(ItemStack stack) {

@@ -51,7 +51,11 @@ public final class EhmNetworking {
         PayloadTypeRegistry.clientboundPlay()
                 .register(ClientboundFoodCravingPayload.TYPE, ClientboundFoodCravingPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(ServerboundConfigPayload.TYPE, ServerboundConfigPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay()
+                .register(ServerboundFoodCravingRequestPayload.TYPE, ServerboundFoodCravingRequestPayload.STREAM_CODEC);
         ServerPlayNetworking.registerGlobalReceiver(ServerboundConfigPayload.TYPE, EhmNetworking::onConfig);
+        ServerPlayNetworking.registerGlobalReceiver(
+                ServerboundFoodCravingRequestPayload.TYPE, EhmNetworking::onFoodCravingRequest);
         ServerPlayConnectionEvents.JOIN.register(EhmNetworking::onJoin);
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             ManaAbilities.clearPlayerLight(handler.player);
@@ -106,13 +110,18 @@ public final class EhmNetworking {
             MinecraftServer server) {
         sendSync(handler.player);
         Achievements.sendMana(handler.player);
-        Hunger.sendFoodCraving(handler.player);
+        Hunger.onJoin(handler.player);
         Achievements.onPlayerJoin(handler.player);
         sendCompassSpawn(handler.player);
         ManaAbilities.onJoin(handler.player);
         CouncilMissions.sendHud(handler.player);
         WiseLessons.sendHud(handler.player);
         WorldGate.onPlayerJoin(handler.player);
+    }
+
+    private static void onFoodCravingRequest(
+            ServerboundFoodCravingRequestPayload payload, ServerPlayNetworking.Context context) {
+        Hunger.resendFoodCraving(context.player());
     }
 
     private static void onConfig(ServerboundConfigPayload payload, ServerPlayNetworking.Context context) {

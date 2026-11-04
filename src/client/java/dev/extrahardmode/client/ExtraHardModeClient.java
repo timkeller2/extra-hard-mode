@@ -386,6 +386,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
             CopperLanterns.setClientActive(false);
             lastMana = null;
             lastFoodCraving = null;
+            FoodCravingClient.disconnected();
             lastFlight = null;
             lastPowerMine = null;
             lastDurations = null;
@@ -407,6 +408,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
         SoilLookHud.register();
         LightLookHud.register();
         AbilityHelp.register();
+        FoodCravingClient.register();
         AchievementFloater.register();
         AchievementVictoryHud.register();
         UseEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {

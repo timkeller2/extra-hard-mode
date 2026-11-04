@@ -264,7 +264,7 @@ public final class EhmHelp {
                         "Hunger: A food not in your last 7 eaten gives +1 hunger, or +1 saturation if you are already full.",
                         "Hunger: Seven different foods in the last 7 meals gives an extra +1 hunger and saturation and 3 experience.",
                         "Hunger: The same food 5 times in the last 7 meals restores less; 7 of the last 7 restores even less. A meal still gives at least 1 hunger, and saturation does not fall.",
-                        "Hunger: Foods in an inventory or chest, including inside a bundle, show a small mark in the top right.",
+                        "Hunger: Foods in an inventory or chest, including inside a bundle or a shop, show a small mark in the top right.",
                         "Hunger: A black X means very sick of it, a brown down mark means sick of it, and a food from your last 7 meals has none.",
                         "Hunger: A steel-blue up mark is a slight craving, not eaten in those 7 meals.",
                         "Hunger: A green up mark is a craving: outside your Well Fed meals, or the food that keeps the streak.",

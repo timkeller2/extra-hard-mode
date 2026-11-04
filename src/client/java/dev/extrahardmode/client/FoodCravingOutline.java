@@ -5,8 +5,12 @@ import dev.extrahardmode.feature.FoodCravingRules;
 import dev.extrahardmode.feature.Hunger;
 import dev.extrahardmode.network.ClientboundFoodCravingPayload;
 import dev.extrahardmode.network.ClientboundSyncPayload;
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.Slot;
@@ -46,6 +50,20 @@ public final class FoodCravingOutline {
                 // No mark.
             }
         }
+    }
+
+    /** Item tooltip plus the craving line. Used for shop offers, which do not go through a slot. */
+    public static void showTooltip(GuiGraphicsExtractor graphics, Font font, ItemStack stack, int mouseX, int mouseY) {
+        if (graphics == null || font == null || stack == null) {
+            return;
+        }
+        List<Component> lines = new ArrayList<>(Screen.getTooltipFromItem(Minecraft.getInstance(), stack));
+        Component craving = tooltip(stack);
+        if (craving != null) {
+            lines.add(craving);
+        }
+        graphics.setTooltipForNextFrame(
+                font, lines, stack.getTooltipImage(), mouseX, mouseY, stack.get(DataComponents.TOOLTIP_STYLE), true);
     }
 
     public static Component tooltip(ItemStack stack) {

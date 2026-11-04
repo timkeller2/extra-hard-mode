@@ -31,6 +31,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("steel-blue up mark is a slight craving"));
         assertTrue(String.join(" ", lines).contains("gold diamond lengthens a streak"));
         assertTrue(String.join(" ", lines).contains("inside a bundle"));
+        assertTrue(String.join(" ", lines).contains("or a shop"));
         assertTrue(String.join(" ", lines).contains("saturation does not fall"));
         assertTrue(String.join(" ", lines).contains("Below 18"));
         assertTrue(String.join(" ", lines).contains("does not consume saturation"));

@@ -130,6 +130,8 @@
     "client.ClientInventorySlotMixin",
     "client.ContainerFoodCravingMixin",
     "client.BundleFoodCravingMixin",
+    "client.MerchantFoodCravingMixin",
+    "client.MerchantOfferFoodCravingMixin",
     "client.CompassSpawnTargetMixin",
     "client.GuiMixin",
     "client.HudMixin",
