@@ -28,6 +28,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("Well Fed"));
         assertTrue(String.join(" ", lines).contains("at least 1 hunger"));
         assertTrue(String.join(" ", lines).contains("thin outline"));
+        assertTrue(String.join(" ", lines).contains("Steel blue is a slight craving"));
         assertTrue(String.join(" ", lines).contains("Gold lengthens a streak"));
         assertTrue(String.join(" ", lines).contains("saturation does not fall"));
         assertTrue(String.join(" ", lines).contains("Below 18"));
@@ -443,6 +444,7 @@ class EhmHelpTest {
         assertEquals(null, EhmHelp.resolve("  "));
         var mining = EhmHelp.resolve("mining");
         assertFalse(String.join(" ", mining.lines()).contains("overgraze"));
+        assertTrue(String.join(" ", mining.lines()).contains("out to 50 blocks"));
         for (String topic : EhmHelp.topicSuggestions()) {
             var page = EhmHelp.resolve(topic);
             assertTrue(page != null && !page.lines().isEmpty(), topic);

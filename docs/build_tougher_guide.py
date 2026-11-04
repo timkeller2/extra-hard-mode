@@ -115,7 +115,7 @@ def build():
         Paragraph("Mining and tools", s["h"]),
         bullets(
             [
-                "Stone and deepslate need an iron pickaxe or better. Breaking nearby coal or ore can soften stone.",
+                "Stone and deepslate need an iron pickaxe or better. Breaking coal or ore softens nearby stone. Unsupported stone keeps falling, out to 50 blocks, one step at a time. Dirt and cobble fall the same way.",
                 "Wood, stone, and copper tools last one-third as long as usual.",
             ],
             s["bullet"],
@@ -157,7 +157,7 @@ def build():
             "and it can happen again on later meals that keep that streak. "
             "The same food 5 times in the last 7 meals restores less; 7 of the last 7 restores even less. "
             "A meal still gives at least 1 hunger, and saturation does not fall. "
-            "Inventory and chest foods show a thin outline. Black means you would get very sick of it, and brown means sick of it. Those follow the same-food penalty, so Well Fed delays them. No outline means you ate it in the last 7 meals. Yellow is a slight craving. Green is a craving: it is outside your Well Fed meals, or it is the food that keeps the streak. Gold means it would lengthen a streak of 6 or more different meals. "
+            "Inventory and chest foods show a thin outline. Black means you would get very sick of it, and brown means sick of it. Those follow the same-food penalty, so Well Fed delays them. No outline means you ate it in the last 7 meals. Steel blue is a slight craving. Green is a craving: it is outside your Well Fed meals, or it is the food that keeps the streak. Gold means it would lengthen a streak of 6 or more different meals. "
             "The locator bar is off until you eat a golden carrot. It stays on until your saturation is gone. "
             "Another player sees you only while their own bar is on too.",
             s["body"],

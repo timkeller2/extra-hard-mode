@@ -105,7 +105,7 @@ public final class FoodCravingOutline {
         return switch (craving) {
             case VERY_SICK -> 0xB4B4B4;
             case SICK -> 0xC4956A;
-            case SLIGHT -> 0xE6D36A;
+            case SLIGHT -> 0xB7D0E0;
             case CRAVING -> 0x7DCEA0;
             case GREAT -> 0xF0C14A;
             case NORMAL -> 0xFFFFFF;

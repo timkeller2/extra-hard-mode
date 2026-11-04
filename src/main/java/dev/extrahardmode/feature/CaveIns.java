@@ -72,7 +72,51 @@ public final class CaveIns implements FeatureModule {
             if (to == null) {
                 continue;
             }
-            PhysicsQueue.of(level).enqueueConvert(level, neighbor, from, to, config.caveInsApplyPhysics());
+            PhysicsQueue.of(level).enqueueConvert(level, neighbor, from, to, config.caveInsApplyPhysics(), pos, 0, true);
+        }
+    }
+
+    /**
+     * After a cave-in block starts falling, unsupported stone around that hole softens too.
+     * The walk stops {@link PhysicsChainRules#MAX_RANGE} blocks from the ore or blast.
+     */
+    public static void spread(ServerLevel level, BlockPos pos, BlockPos origin) {
+        if (!enabled(level) || origin == null) {
+            return;
+        }
+        if (!PhysicsChainRules.withinRange(
+                origin.getX(), origin.getY(), origin.getZ(), pos.getX(), pos.getY(), pos.getZ())) {
+            return;
+        }
+        WorldConfig config = ConfigManager.world(level);
+        for (Direction direction : Direction.values()) {
+            BlockPos neighbor = pos.relative(direction);
+            if (!PhysicsChainRules.withinRange(
+                    origin.getX(), origin.getY(), origin.getZ(),
+                    neighbor.getX(), neighbor.getY(), neighbor.getZ())) {
+                continue;
+            }
+            if (PhysicsSkip.notReady(level, neighbor) || PhysicsSkip.never(level, neighbor)) {
+                continue;
+            }
+            BlockState from = level.getBlockState(neighbor);
+            if (from.is(EhmTags.PHYSICS_PROTECTED)) {
+                continue;
+            }
+            BlockState to = soften(config, from);
+            if (to == null || !PhysicsQueue.canFall(level, neighbor)) {
+                continue;
+            }
+            PhysicsQueue.of(level)
+                    .enqueueConvert(
+                            level,
+                            neighbor,
+                            from,
+                            to,
+                            config.caveInsApplyPhysics(),
+                            origin,
+                            PhysicsChainRules.HOP_DELAY_TICKS,
+                            true);
         }
     }
 

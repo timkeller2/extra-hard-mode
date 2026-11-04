@@ -217,7 +217,8 @@ public final class EhmHelp {
         return Page.of(
                 "tougher.help.mining.",
                 List.of(
-                        "Mining: Stone and deepslate need an iron or better pickaxe. Breaking nearby coal or ore can soften stone.",
+                        "Mining: Stone and deepslate need an iron or better pickaxe. Breaking coal or ore softens nearby stone, and that collapse can keep going out to 50 blocks.",
+                        "Mining: Dirt and cobble fall when nothing is under them, and that collapse stops at 50 blocks too.",
                         "Mining: Wood, stone, and copper tools last one-third as long."));
     }
 
@@ -264,7 +265,7 @@ public final class EhmHelp {
                         "Hunger: Seven different foods in the last 7 meals gives an extra +1 hunger and saturation and 3 experience.",
                         "Hunger: The same food 5 times in the last 7 meals restores less; 7 of the last 7 restores even less. A meal still gives at least 1 hunger, and saturation does not fall.",
                         "Hunger: Foods in an inventory or chest show a thin outline. Black means very sick of it, brown means sick of it, and a food from your last 7 meals has none.",
-                        "Hunger: Yellow is a slight craving, not eaten in those 7 meals.",
+                        "Hunger: Steel blue is a slight craving, not eaten in those 7 meals.",
                         "Hunger: Green is a craving: outside your Well Fed meals, or the food that keeps the streak. Gold lengthens a streak of 6 or more different meals.",
                         "Hunger: Black and brown follow that same-food penalty, including the extra repeats Well Fed allows.",
                         "Hunger: After those seven, every 2 more different meals raise Well Fed by one. Nine in a row is Well Fed 1.",

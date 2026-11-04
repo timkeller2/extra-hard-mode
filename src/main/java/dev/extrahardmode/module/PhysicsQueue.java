@@ -67,16 +67,43 @@ public final class PhysicsQueue {
 
     public void enqueueConvert(
             ServerLevel level, BlockPos pos, BlockState from, BlockState to, boolean applyPhysics) {
-        enqueue(level, pos, from, to, applyPhysics, 0, null, 0.0, 0.0);
+        enqueueConvert(level, pos, from, to, applyPhysics, pos, 0, false);
+    }
+
+    /**
+     * @param chainOrigin block that started this collapse; the chain stops 50 blocks from it
+     * @param caveIn unsupported stone around the hole softens too
+     */
+    public void enqueueConvert(
+            ServerLevel level,
+            BlockPos pos,
+            BlockState from,
+            BlockState to,
+            boolean applyPhysics,
+            BlockPos chainOrigin,
+            int delayTicks,
+            boolean caveIn) {
+        enqueue(level, pos, from, to, applyPhysics, delayTicks, null, 0.0, 0.0, chainOrigin, caveIn);
     }
 
     public void enqueueFalling(ServerLevel level, BlockPos pos, BlockState from, BlockState to) {
-        enqueue(level, pos, from, to, true, 0, null, 0.0, 0.0);
+        enqueueFalling(level, pos, from, to, 0, pos, false);
     }
 
     public void enqueueFalling(
             ServerLevel level, BlockPos pos, BlockState from, BlockState to, int delayTicks) {
-        enqueue(level, pos, from, to, true, delayTicks, null, 0.0, 0.0);
+        enqueueFalling(level, pos, from, to, delayTicks, pos, false);
+    }
+
+    public void enqueueFalling(
+            ServerLevel level,
+            BlockPos pos,
+            BlockState from,
+            BlockState to,
+            int delayTicks,
+            BlockPos chainOrigin,
+            boolean caveIn) {
+        enqueue(level, pos, from, to, true, delayTicks, null, 0.0, 0.0, chainOrigin, caveIn);
     }
 
     /** Flying explosion debris. Budgeted like other conversions; live-cap overflow becomes air. */
@@ -87,7 +114,7 @@ public final class PhysicsQueue {
             Vec3 origin,
             double upVelocity,
             double spreadVelocity) {
-        enqueue(level, pos, state, state, true, 0, origin, upVelocity, spreadVelocity);
+        enqueue(level, pos, state, state, true, 0, origin, upVelocity, spreadVelocity, pos, false);
     }
 
     public void markLanded(FallingBlockEntity entity) {
@@ -114,7 +141,9 @@ public final class PhysicsQueue {
             int delayTicks,
             Vec3 flyOrigin,
             double upVelocity,
-            double spreadVelocity) {
+            double spreadVelocity,
+            BlockPos chainOrigin,
+            boolean caveIn) {
         if (PhysicsSkip.never(level, pos)) {
             return;
         }
@@ -137,8 +166,18 @@ public final class PhysicsQueue {
                         global.maxQueueDepth());
             }
         }
+        BlockPos origin = chainOrigin == null ? pos.immutable() : chainOrigin.immutable();
         queue.addLast(new FallRequest(
-                pos.immutable(), from, to, spawnEntity, Math.max(0, delayTicks), flyOrigin, upVelocity, spreadVelocity));
+                pos.immutable(),
+                from,
+                to,
+                spawnEntity,
+                Math.max(0, delayTicks),
+                flyOrigin,
+                upVelocity,
+                spreadVelocity,
+                origin,
+                caveIn));
         if (ConfigManager.global().debug()) {
             ExtraHardModeMod.LOGGER.debug("EHM physics enqueue {} -> {} {} delay={}", from, to, pos, delayTicks);
         }
@@ -148,6 +187,11 @@ public final class PhysicsQueue {
         conversionsLastTick = 0;
         pruneLive();
         GlobalConfig global = ConfigManager.global();
+        // A full sky of falling blocks used to freeze the rest in place and end the collapse.
+        // Wait until some land, then keep walking outward.
+        if (PhysicsBudget.overflowToSetBlock(live.size(), global.maxLiveEhmFallingEntities())) {
+            return;
+        }
         int budget = global.budgetConversionsPerTick();
         int snapshot = queue.size();
         int visited = 0;
@@ -200,9 +244,11 @@ public final class PhysicsQueue {
         if (PhysicsBudget.overflowToSetBlock(live.size(), global.maxLiveEhmFallingEntities())) {
             if (request.flyOrigin != null) {
                 level.setBlock(request.pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
-                FallingBlocks.onBeganFalling(level, request.pos);
+                FallingBlocks.onBeganFalling(level, request.pos, request.origin, false);
             } else {
-                level.setBlock(request.pos, place, Block.UPDATE_ALL);
+                request.delayTicks = 0;
+                requeue(request);
+                return false;
             }
             return true;
         }
@@ -213,6 +259,8 @@ public final class PhysicsQueue {
         // entity (the block under them is air), so those logs must drop as items.
         entity.dropItem = config.fallingDropAsItemWhenBlocked() || place.is(EhmTags.FELLABLE_LOGS);
         entity.setAttached(EhmAttachments.EHM_OURS, Boolean.TRUE);
+        entity.setAttached(EhmAttachments.EHM_CHAIN_ORIGIN, request.origin.asLong());
+        entity.setAttached(EhmAttachments.EHM_CAVE_IN_CHAIN, request.caveIn);
         int amount = Math.max(0, config.fallingDamage());
         if (amount > 0) {
             entity.setHurtsEntities(amount, amount);
@@ -222,7 +270,7 @@ public final class PhysicsQueue {
             entity.setAttached(EhmAttachments.EHM_FLY_ORIGIN, request.flyOrigin);
         }
         live.put(entity.getUUID(), entity);
-        FallingBlocks.onBeganFalling(level, request.pos);
+        FallingBlocks.onBeganFalling(level, request.pos, request.origin, request.caveIn);
         return true;
     }
 
@@ -268,6 +316,8 @@ public final class PhysicsQueue {
         private final Vec3 flyOrigin;
         private final double upVelocity;
         private final double spreadVelocity;
+        private final BlockPos origin;
+        private final boolean caveIn;
 
         private FallRequest(
                 BlockPos pos,
@@ -277,7 +327,9 @@ public final class PhysicsQueue {
                 int delayTicks,
                 Vec3 flyOrigin,
                 double upVelocity,
-                double spreadVelocity) {
+                double spreadVelocity,
+                BlockPos origin,
+                boolean caveIn) {
             this.pos = pos;
             this.from = from;
             this.to = to;
@@ -286,6 +338,8 @@ public final class PhysicsQueue {
             this.flyOrigin = flyOrigin;
             this.upVelocity = upVelocity;
             this.spreadVelocity = spreadVelocity;
+            this.origin = origin;
+            this.caveIn = caveIn;
         }
     }
 }

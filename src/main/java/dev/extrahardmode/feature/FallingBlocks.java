@@ -52,7 +52,8 @@ public final class FallingBlocks implements FeatureModule {
         if (!enabled(level)) {
             return;
         }
-        enqueueIfFalling(level, context.getClickedPos());
+        BlockPos placed = context.getClickedPos();
+        enqueueIfFalling(level, placed, placed, 0, false);
     }
 
     public static void onRemoved(FallingBlockEntity entity) {
@@ -69,27 +70,33 @@ public final class FallingBlocks implements FeatureModule {
         }
         WorldConfig config = ConfigManager.world(level);
         BlockPos pos = entity.blockPosition();
+        BlockPos chainOrigin = chainOrigin(entity, pos);
+        boolean caveIn = Boolean.TRUE.equals(entity.getAttachedOrElse(EhmAttachments.EHM_CAVE_IN_CHAIN, Boolean.FALSE));
         if (config.fallingBreakTorches()) {
             breakColumn(level, pos);
         }
         if (config.fallingCascade()) {
-            cascade(level, pos);
+            cascade(level, pos, chainOrigin, caveIn);
         }
     }
 
     /**
-     * A hole just opened (EHM falling entity spawned). Adjacent {@code #extra_falling}
-     * blocks that are now unsupported are queued, which can chain as those convert.
+     * A hole just opened. Adjacent loose blocks, and stone when this fall is a cave-in,
+     * are queued a few ticks later. The walk stops 50 blocks from {@code chainOrigin}.
      */
-    public static void onBeganFalling(ServerLevel level, BlockPos origin) {
-        RealisticChopping.dropUnsupportedLogs(level, origin);
+    public static void onBeganFalling(ServerLevel level, BlockPos pos, BlockPos chainOrigin, boolean caveIn) {
+        RealisticChopping.dropUnsupportedLogs(level, pos);
+        BlockPos origin = chainOrigin == null ? pos : chainOrigin;
+        if (caveIn) {
+            CaveIns.spread(level, pos, origin);
+        }
         if (!ConfigManager.world(level).fallingCascade()) {
             return;
         }
         if (!enabled(level) && !CaveIns.enabled(level)) {
             return;
         }
-        enqueueAround(level, origin);
+        enqueueAround(level, pos, origin, PhysicsChainRules.HOP_DELAY_TICKS, caveIn);
     }
 
     public static void applyConfiguredDamage(FallingBlockEntity entity, double fallDistance) {
@@ -162,31 +169,39 @@ public final class FallingBlocks implements FeatureModule {
         if (!ConfigManager.world(level).fallingEnable()) {
             return;
         }
-        enqueueAround(level, pos);
+        enqueueAround(level, pos, pos, 0, false);
     }
 
-    private static void enqueueAround(ServerLevel level, BlockPos origin) {
+    private static void enqueueAround(
+            ServerLevel level, BlockPos pos, BlockPos origin, int delayTicks, boolean caveIn) {
         GlobalConfig global = ConfigManager.global();
         int remaining = global.maxFloodFillPerConversion();
         for (Direction direction : Direction.values()) {
             if (remaining <= 0) {
                 break;
             }
-            if (enqueueIfFalling(level, origin.relative(direction))) {
+            BlockPos neighbor = pos.relative(direction);
+            if (!PhysicsChainRules.withinRange(
+                    origin.getX(), origin.getY(), origin.getZ(),
+                    neighbor.getX(), neighbor.getY(), neighbor.getZ())) {
+                continue;
+            }
+            if (enqueueIfFalling(level, neighbor, origin, delayTicks, caveIn)) {
                 remaining--;
             }
         }
     }
 
-    private static void cascade(ServerLevel level, BlockPos origin) {
+    private static void cascade(ServerLevel level, BlockPos pos, BlockPos origin, boolean caveIn) {
         if (!enabled(level)) {
             return;
         }
-        enqueueAround(level, origin);
+        enqueueAround(level, pos, origin, PhysicsChainRules.HOP_DELAY_TICKS, caveIn);
     }
 
-    private static boolean enqueueIfFalling(ServerLevel level, BlockPos pos) {
-        if (PhysicsSkip.never(level, pos)) {
+    private static boolean enqueueIfFalling(
+            ServerLevel level, BlockPos pos, BlockPos origin, int delayTicks, boolean caveIn) {
+        if (PhysicsSkip.notReady(level, pos) || PhysicsSkip.never(level, pos)) {
             return false;
         }
         BlockState state = level.getBlockState(pos);
@@ -197,8 +212,17 @@ public final class FallingBlocks implements FeatureModule {
             return false;
         }
         WorldConfig config = ConfigManager.world(level);
-        PhysicsQueue.of(level).enqueueFalling(level, pos, state, fallingState(config, state));
+        PhysicsQueue.of(level)
+                .enqueueFalling(level, pos, state, fallingState(config, state), delayTicks, origin, caveIn);
         return true;
+    }
+
+    private static BlockPos chainOrigin(FallingBlockEntity entity, BlockPos fallback) {
+        Long packed = entity.getAttached(EhmAttachments.EHM_CHAIN_ORIGIN);
+        if (packed == null) {
+            return fallback;
+        }
+        return BlockPos.of(packed);
     }
 
     private static void breakColumn(ServerLevel level, BlockPos start) {

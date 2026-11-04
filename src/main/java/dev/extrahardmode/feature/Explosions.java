@@ -250,6 +250,7 @@ public final class Explosions implements FeatureModule {
         WorldConfig world = ConfigManager.world(level);
         List<OreBreak> ores = pendingOres(level);
         ores.clear();
+        BlockPos origin = BlockPos.containing(explosion.center());
         Iterator<BlockPos> iterator = positions.iterator();
         while (iterator.hasNext()) {
             BlockPos pos = iterator.next();
@@ -263,7 +264,8 @@ public final class Explosions implements FeatureModule {
             if (config.turnStoneToCobble()) {
                 BlockState cobble = CaveIns.soften(world, state);
                 if (cobble != null) {
-                    PhysicsQueue.of(level).enqueueConvert(level, pos, state, cobble, world.caveInsApplyPhysics());
+                    PhysicsQueue.of(level)
+                            .enqueueConvert(level, pos, state, cobble, world.caveInsApplyPhysics(), origin, 0, true);
                     iterator.remove();
                     continue;
                 }
