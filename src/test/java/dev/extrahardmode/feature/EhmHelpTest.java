@@ -209,6 +209,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("triple experience"));
         assertTrue(String.join(" ", lines).contains("5 times the health"));
         assertTrue(String.join(" ", lines).contains("white outline through blocks"));
+        assertTrue(String.join(" ", lines).contains("outlined through solid blocks"));
         assertTrue(String.join(" ", lines).contains("twice the first creature's health"));
         assertTrue(String.join(" ", lines).contains("emeralds from 10% to 20% of its health"));
         assertTrue(String.join(" ", lines).contains("10 times the experience"));
@@ -313,7 +314,8 @@ class EhmHelpTest {
         assertTrue(all.contains("SELL or BUY"));
         assertTrue(all.contains("extra stock"));
         assertTrue(all.contains("Your own chest is not offered to you"));
-        assertTrue(all.contains("bottom right of that chest"));
+        assertTrue(all.contains("do not set a price"));
+        assertTrue(all.contains("bottom-right empty slot"));
         assertTrue(all.contains("enough items and room for the emeralds"));
         assertTrue(all.contains("emeralds he pays with"));
         assertTrue(all.contains("row above it"));

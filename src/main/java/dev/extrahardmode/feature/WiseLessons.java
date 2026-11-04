@@ -44,9 +44,12 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.monster.Enemy;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 
 /**
  * Hunts offered by wise teachers. Each player keeps his own list, one lesson per teacher.
@@ -215,7 +218,38 @@ public final class WiseLessons {
         }
         for (ServerPlayer player : level.players()) {
             refreshMist(player);
+            outlineHostiles(player);
         }
+    }
+
+    /**
+     * White outline on hostile mobs within 8 blocks times the cast's Sense Evil level.
+     * The glowing effect is drawn through solid blocks. It is refreshed while the cast lasts.
+     */
+    public static void outlineHostiles(ServerPlayer player) {
+        if (player == null || !player.isAlive() || !(player.level() instanceof ServerLevel level) || level.getServer() == null) {
+            return;
+        }
+        long until = player.getAttachedOrElse(EhmAttachments.EHM_MARK_OUTLINE_UNTIL, -1L);
+        if (!WiseLessonRules.senseOutlineActive(until, level.getServer().overworld().getGameTime())) {
+            return;
+        }
+        double power = player.getAttachedOrElse(EhmAttachments.EHM_SENSE_OUTLINE_POWER, 0.0);
+        double range = AbilityRules.senseHostileRange(power);
+        if (range <= 0.0) {
+            return;
+        }
+        AABB box = player.getBoundingBox().inflate(range);
+        for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, box, WiseLessons::senseHostile)) {
+            if (AbilityRules.senseHostileInRange(player.distanceToSqr(living), power)) {
+                living.addEffect(new MobEffectInstance(MobEffects.GLOWING, OUTLINE_TICKS, 0, false, false));
+            }
+        }
+    }
+
+    /** Hostile mobs, not players. */
+    private static boolean senseHostile(LivingEntity living) {
+        return living instanceof Enemy && !(living instanceof Player) && living.isAlive() && !living.isRemoved();
     }
 
     /** Puts the current mist on this player's loaded marks. A Sense Evil cast uses it at once. */

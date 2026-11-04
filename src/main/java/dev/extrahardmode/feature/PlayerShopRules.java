@@ -14,8 +14,10 @@ import java.util.Map;
  * trade. Later stacks of that item are stock and are sold first. BUY uses the
  * same prices above the bottom row. The bottom row is the emerald wallet.
  * There is no separate use cap: a deal stays up for as many trades as the
- * chest can pay for and still hold. Sale emeralds fill the bottom row from
- * the right, then empty slots above it.
+ * chest can pay for and still hold. Sale emeralds join emerald stacks in the
+ * bottom two rows, from the bottom right. If those stacks are full or missing,
+ * the emeralds fill the bottom-right empty slot. Emeralds in those two rows
+ * do not set a SELL price.
  */
 public final class PlayerShopRules {
     public static final String EMERALD = "minecraft:emerald";
@@ -213,6 +215,9 @@ public final class PlayerShopRules {
                 continue;
             }
             if (EMERALD.equals(slot.itemId())) {
+                if (sell && i >= aboveStart(slots.size())) {
+                    continue;
+                }
                 price = Math.clamp(slot.count(), 1, STACK);
                 continue;
             }
@@ -283,9 +288,10 @@ public final class PlayerShopRules {
 
     /**
      * Removes {@code quantity} of the item, stock stacks first and the defining
-     * stack last, then places {@code price} emeralds. The bottom row is filled
-     * from the right, including emerald stacks there. A full bottom row uses
-     * empty slots above it and does not add to a price stack.
+     * stack last, then places {@code price} emeralds. Emerald stacks in the
+     * bottom two rows are filled from the bottom right. If none has room, the
+     * bottom-right empty slot is used. Price stacks above those rows are left
+     * alone.
      */
     public static List<Slot> afterSell(List<Slot> slots, Listing listing, int quantity, int price) {
         if (!canSell(slots, listing, quantity, price)) {
@@ -317,18 +323,24 @@ public final class PlayerShopRules {
             return null;
         }
         int pay = price;
-        int bottom = bottomStart(next.size());
+        int wallet = aboveStart(next.size());
+        for (int i = next.size() - 1; i >= wallet && pay > 0; i--) {
+            Slot slot = next.get(i);
+            if (empty(slot) || !EMERALD.equals(slot.itemId()) || slot.count() >= STACK) {
+                continue;
+            }
+            int put = Math.min(pay, STACK - slot.count());
+            next.set(i, slot.withCount(slot.count() + put));
+            pay -= put;
+        }
         for (int i = next.size() - 1; i >= 0 && pay > 0; i--) {
             Slot slot = next.get(i);
-            if (empty(slot)) {
-                int put = Math.min(pay, STACK);
-                next.set(i, new Slot(i, EMERALD, put));
-                pay -= put;
-            } else if (i >= bottom && EMERALD.equals(slot.itemId()) && slot.count() < STACK) {
-                int put = Math.min(pay, STACK - slot.count());
-                next.set(i, slot.withCount(slot.count() + put));
-                pay -= put;
+            if (!empty(slot)) {
+                continue;
             }
+            int put = Math.min(pay, STACK);
+            next.set(i, new Slot(i, EMERALD, put));
+            pay -= put;
         }
         if (pay > 0) {
             return null;
@@ -379,12 +391,12 @@ public final class PlayerShopRules {
             return 0;
         }
         int room = 0;
-        int bottom = bottomStart(slots.size());
+        int wallet = aboveStart(slots.size());
         for (int i = 0; i < slots.size(); i++) {
             Slot slot = slots.get(i);
             if (empty(slot)) {
                 room += STACK;
-            } else if (i >= bottom && EMERALD.equals(slot.itemId())) {
+            } else if (i >= wallet && EMERALD.equals(slot.itemId())) {
                 room += Math.max(0, STACK - slot.count());
             }
         }

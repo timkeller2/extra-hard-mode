@@ -427,12 +427,19 @@ public final class EhmAttachments {
     public static final AttachmentType<Long> EHM_SENSE_SPARKLE_UNTIL = AttachmentRegistry.create(
             ExtraHardModeMod.id("sense_sparkle_until"), builder -> builder.initializer(() -> -1L));
     /**
-     * Overworld game time until Sense Evil keeps a red mist on wise-teacher marks. {@code -1} is off.
+     * Overworld game time until Sense Evil outlines wise-teacher marks and nearby hostiles. {@code -1} is off.
      * Death clears it. A relog inside the minute keeps it.
      */
     public static final AttachmentType<Long> EHM_MARK_OUTLINE_UNTIL = AttachmentRegistry.create(
             ExtraHardModeMod.id("mark_outline_until"),
             builder -> builder.persistent(Codec.LONG).initializer(() -> -1L));
+    /**
+     * Effective Sense Evil level saved with {@link #EHM_MARK_OUTLINE_UNTIL}. Hostile outline range is 8 blocks times this.
+     * Death clears it.
+     */
+    public static final AttachmentType<Double> EHM_SENSE_OUTLINE_POWER = AttachmentRegistry.create(
+            ExtraHardModeMod.id("sense_outline_power"),
+            builder -> builder.persistent(Codec.DOUBLE).initializer(() -> 0.0));
     public static final AttachmentType<Integer> EHM_LIGHT_REMAINING = AttachmentRegistry.create(
             ExtraHardModeMod.id("light_remaining"),
             builder -> builder.persistent(Codec.INT).initializer(() -> 0));

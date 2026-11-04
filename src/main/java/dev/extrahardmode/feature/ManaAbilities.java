@@ -2051,7 +2051,9 @@ public final class ManaAbilities implements FeatureModule {
         player.setAttached(
                 EhmAttachments.EHM_MARK_OUTLINE_UNTIL,
                 abilityNow(player) + AbilityRules.senseMarkOutlineTicks(power));
+        player.setAttached(EhmAttachments.EHM_SENSE_OUTLINE_POWER, power);
         WiseLessons.refreshMist(player);
+        WiseLessons.outlineHostiles(player);
         if (!BiomeBosses.anySpawned(player.level().getServer())) {
             startHealSparkle(player);
             player.sendSystemMessage(Component.translatableWithFallback(

@@ -122,13 +122,15 @@ public final class AbilityRules {
     /** Distance at which Sense Evil reports a rough range: 250 × ability level. */
     public static final double SENSE_EVIL_RANGE_PER_POWER = 250.0;
     public static final int SENSE_EVIL_SPARKLE_TICKS = 120;
-    /** Wise-teacher marks give off red mist this many seconds per point of effective Sense Evil level. */
+    /** Wise-teacher marks and nearby hostiles stay outlined this many seconds per point of effective Sense Evil level. */
     public static final int SENSE_OUTLINE_SECONDS_PER_POWER = 60;
+    /** Hostile mobs within this many blocks per point of effective Sense Evil level are outlined. */
+    public static final double SENSE_HOSTILE_BLOCKS_PER_POWER = 8.0;
     public static final int GROW_RANGE = 2;
     public static final int GROW_HOE_DAMAGE = 3;
     public static final int POWER_MINE_SECONDS_PER_POWER = 12;
-    /** Reach before the ore's difficulty is subtracted. */
-    public static final int DETECT_ORE_BASE_RANGE = 4;
+    /** Added to the rounded ability level before the ore's difficulty is subtracted. */
+    public static final int DETECT_ORE_BASE_RANGE = 0;
     public static final int DETECT_ORE_RANGE_PER_POWER = 1;
     /** First search this many blocks above and below the player before looking farther up or down. */
     public static final int DETECT_ORE_LEVEL_BAND = 2;
@@ -666,9 +668,9 @@ public final class AbilityRules {
             case DETECT_ORE -> List.of(
                     "Detect ore: Right-click while holding a compass. The compass is kept. Costs 1 mana. Nether quartz is not required.",
                     "Detect ore: The largest nether quartz stack in your hotbar or inventory, not a bundle, adds the square root of its count, rounded. That many quartz are consumed from that stack.",
-                    "Detect ore: Ores within 2 blocks of your height come first, then farther up or down, out to 4 + ability level minus the ore difficulty, through walls.",
+                    "Detect ore: Ores within 2 blocks of your height come first, then farther up or down, out to your rounded ability level minus the ore difficulty, through walls.",
                     "Detect ore: It tells you the ore and approximate distance. You only sense ores at or below your ability level.",
-                    "Detect ore: coal 1, quartz 2, copper 3, iron 4, redstone 5, lapis 6, gold 7, emerald 8, diamond 9, ancient debris 10.");
+                    "Detect ore: coal 1, quartz 2, copper 3, iron 4, redstone 6, lapis 7, gold 8, emerald 9, diamond 11, ancient debris 13.");
             case SLOW -> List.of(
                     "Slow: Right-click while holding string. Costs 1 mana. Throws a web up to (ability level × 2 + 4) blocks.",
                     "Slow: It bursts on a creature or a solid block and slows creatures within (ability level) blocks of the landing.",
@@ -680,7 +682,8 @@ public final class AbilityRules {
                     "Sense Evil: If a biome boss is spawned, you turn toward the nearest one and sparkle with a creepy aura for 6 seconds.",
                     "Sense Evil: If it is within 250 × ability level blocks, you also learn the rough distance.",
                     "Sense Evil: If none are spawned, you sparkle as with Healing. One spider eye is consumed. Two in hand consume both and add +2.",
-                    "Sense Evil: Wise-teacher marks give off a red mist and a white outline through blocks for 1 minute times your ability level.");
+                    "Sense Evil: Wise-teacher marks give off a red mist and a white outline through blocks for 1 minute times your ability level.",
+                    "Sense Evil: Hostile mobs within 8 blocks times your ability level are outlined through solid blocks for 1 minute times that level.");
             case SMITE_EVIL -> List.of(
                     "Smite Evil: Right-click while holding a golden sword or a heavy golden sword. Costs 1/4 mana.",
                     "Smite Evil: Strikes a creature along your aim up to your ability level in blocks with a normal melee attack from that sword.",
@@ -1299,9 +1302,23 @@ public final class AbilityRules {
         return Math.max(0, (int) Math.round(Math.max(0.0, power) * LAPIS_SHIELD_SECONDS_PER_POWER * 20.0));
     }
 
-    /** Ticks a Sense Evil cast keeps every wise-teacher mark in red mist: 1 minute per effective level. */
+    /** Ticks a Sense Evil cast keeps marks and nearby hostiles outlined: 1 minute per effective level. */
     public static int senseMarkOutlineTicks(double power) {
         return Math.max(0, (int) Math.round(Math.max(0.0, power) * SENSE_OUTLINE_SECONDS_PER_POWER * 20.0));
+    }
+
+    /** Reach of the Sense Evil hostile outline: 8 blocks per effective level. */
+    public static double senseHostileRange(double power) {
+        return SENSE_HOSTILE_BLOCKS_PER_POWER * Math.max(0.0, power);
+    }
+
+    /** True when a hostile this far away, as a squared distance, is inside {@link #senseHostileRange}. */
+    public static boolean senseHostileInRange(double distanceSquared, double power) {
+        if (distanceSquared < 0.0) {
+            return false;
+        }
+        double range = senseHostileRange(power);
+        return range > 0.0 && distanceSquared <= range * range;
     }
 
     /**
@@ -1452,8 +1469,8 @@ public final class AbilityRules {
     }
 
     /**
-     * Cube reach for one ore: {@link #DETECT_ORE_BASE_RANGE} plus rounded ability
-     * level, minus that ore's difficulty. Never negative.
+     * Cube reach for one ore: rounded ability level, minus that ore's difficulty.
+     * Never negative.
      */
     public static int detectOreRange(double power, int difficulty) {
         int range = DETECT_ORE_BASE_RANGE
@@ -1673,8 +1690,8 @@ public final class AbilityRules {
      */
     /**
      * Minimum rounded Detect ore skill to sense this ore. 0 means not an ore.
-     * Coal 1, quartz 2, copper 3, iron 4, redstone 5, lapis 6, gold 7, emerald 8,
-     * diamond 9, ancient debris 10.
+     * Coal 1, quartz 2, copper 3, iron 4, redstone 6, lapis 7, gold 8, emerald 9,
+     * diamond 11, ancient debris 13.
      */
     public static int oreDetectLevel(String blockId) {
         return switch (oreFamily(blockId)) {
@@ -1682,12 +1699,12 @@ public final class AbilityRules {
             case "quartz" -> 2;
             case "copper" -> 3;
             case "iron" -> 4;
-            case "redstone" -> 5;
-            case "lapis" -> 6;
-            case "gold" -> 7;
-            case "emerald" -> 8;
-            case "diamond" -> 9;
-            case "ancient_debris" -> 10;
+            case "redstone" -> 6;
+            case "lapis" -> 7;
+            case "gold" -> 8;
+            case "emerald" -> 9;
+            case "diamond" -> 11;
+            case "ancient_debris" -> 13;
             default -> 0;
         };
     }

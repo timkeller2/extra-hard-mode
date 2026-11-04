@@ -142,6 +142,91 @@ class PlayerShopRulesTest {
     }
 
     @Test
+    void bottomTwoRowsDoNotPriceASellChest() {
+        List<Slot> pricedOnlyBelow = chest(
+                slot(1, IRON, 4),
+                slot(10, PlayerShopRules.EMERALD, 9),
+                slot(26, PlayerShopRules.EMERALD, 3));
+        assertTrue(PlayerShopRules.listings(pricedOnlyBelow, true).isEmpty());
+
+        List<Slot> slots = chest(
+                slot(0, PlayerShopRules.EMERALD, 2),
+                slot(1, IRON, 4),
+                slot(10, PlayerShopRules.EMERALD, 9),
+                slot(12, GOLD, 1));
+        List<Listing> listings = PlayerShopRules.listings(slots, true);
+        assertEquals(2, listings.size());
+        assertEquals(2, listings.get(0).price());
+        assertEquals(IRON, listings.get(0).itemId());
+        assertEquals(2, listings.get(1).price());
+        assertEquals(GOLD, listings.get(1).itemId());
+    }
+
+    @Test
+    void saleEmeraldsFillBottomRightStacksBeforeEmptySlots() {
+        List<Slot> slots = chest(
+                slot(0, PlayerShopRules.EMERALD, 2),
+                slot(1, IRON, 1),
+                slot(20, PlayerShopRules.EMERALD, 10),
+                slot(26, PlayerShopRules.EMERALD, 60));
+        Listing iron = PlayerShopRules.listings(slots, true).get(0);
+        List<Slot> sold = PlayerShopRules.afterSell(slots, iron);
+        assertEquals(62, count(sold, 26));
+        assertEquals(10, count(sold, 20));
+        assertEquals(0, count(sold, 25));
+        assertEquals(2, count(sold, 0));
+
+        slots.set(26, slot(26, PlayerShopRules.EMERALD, 63));
+        sold = PlayerShopRules.afterSell(slots, iron);
+        assertEquals(64, count(sold, 26));
+        assertEquals(11, count(sold, 20));
+        assertEquals(0, count(sold, 25));
+
+        slots.set(26, slot(26, PlayerShopRules.EMERALD, 64));
+        slots.set(20, slot(20, PlayerShopRules.EMERALD, 64));
+        sold = PlayerShopRules.afterSell(slots, iron);
+        assertEquals(2, count(sold, 25));
+        assertEquals(PlayerShopRules.EMERALD, sold.get(25).itemId());
+        assertEquals(2, count(sold, 0));
+    }
+
+    @Test
+    void saleEmeraldsDoNotJoinAPriceStack() {
+        List<Slot> slots = chest(slot(0, PlayerShopRules.EMERALD, 3), slot(1, IRON, 1));
+        for (int i = 9; i <= 26; i++) {
+            slots.set(i, slot(i, "minecraft:cobble", 1));
+        }
+        List<Slot> sold = PlayerShopRules.afterSell(slots, PlayerShopRules.listings(slots, true).get(0));
+        assertEquals(3, count(sold, 0));
+        assertEquals(3, count(sold, 8));
+        assertEquals(PlayerShopRules.EMERALD, sold.get(8).itemId());
+    }
+
+    @Test
+    void doubleChestKeepsPricesAboveTheBottomTwoRows() {
+        List<Slot> slots = new ArrayList<>();
+        for (int i = 0; i < 54; i++) {
+            slots.add(new Slot(i, "", 0));
+        }
+        slots.set(0, slot(0, PlayerShopRules.EMERALD, 4));
+        slots.set(1, slot(1, IRON, 2));
+        slots.set(35, slot(35, PlayerShopRules.EMERALD, 6));
+        slots.set(36, slot(36, GOLD, 1));
+        slots.set(40, slot(40, PlayerShopRules.EMERALD, 12));
+        slots.set(53, slot(53, PlayerShopRules.EMERALD, 7));
+        List<Listing> listings = PlayerShopRules.listings(slots, true);
+        assertEquals(2, listings.size());
+        assertEquals(4, listings.get(0).price());
+        assertEquals(6, listings.get(1).price());
+        assertEquals(GOLD, listings.get(1).itemId());
+        List<Slot> sold = PlayerShopRules.afterSell(slots, listings.get(0));
+        assertEquals(11, count(sold, 53));
+        assertEquals(12, count(sold, 40));
+        assertEquals(4, count(sold, 0));
+        assertEquals(6, count(sold, 35));
+    }
+
+    @Test
     void buyPaysFromTheBottomRowAndKeepsTheSample() {
         List<Slot> slots = chest(
                 slot(0, PlayerShopRules.EMERALD, 3),
