@@ -414,6 +414,8 @@ class EhmHelpTest {
         assertTrue(EhmHelp.resolve("detect ore").lines().stream().anyMatch(line -> line.startsWith("Detect ore:")));
         assertTrue(EhmHelp.resolve("slow").lines().stream().anyMatch(line -> line.startsWith("Slow:")));
         assertTrue(EhmHelp.resolve("sense evil").lines().stream().anyMatch(line -> line.startsWith("Sense Evil:")));
+        assertTrue(String.join(" ", EhmHelp.resolve("sense evil").lines()).contains("Hold the click to eat it instead"));
+        assertTrue(String.join(" ", EhmHelp.resolve("abilities").lines()).contains("Hold the click to eat it"));
         assertTrue(EhmHelp.resolve("smite evil").lines().stream().anyMatch(line -> line.startsWith("Smite Evil:")));
         assertEquals(null, EhmHelp.resolve("light"));
         assertEquals(null, EhmHelp.resolve("let there be light"));

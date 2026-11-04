@@ -536,7 +536,8 @@ public final class AbilityRules {
             case DETECT_ORE ->
                 "Hold a compass and right-click. You turn toward the best ore you are skilled enough to sense, preferring ore within 2 blocks of your height.";
             case SLOW -> "Hold string and right-click. A web flies out and bursts on a creature or a solid block.";
-            case SENSE_EVIL -> "Hold a spider eye and right-click. You turn toward a living biome boss, if one is out.";
+            case SENSE_EVIL ->
+                "Right-click a spider eye. Hold the click to eat it instead. You turn toward a living biome boss, if one is out.";
             case SMITE_EVIL ->
                 "Hold a golden sword or a heavy golden sword and right-click. It strikes along your aim. With at least 1 mana the crosshair turns gold on one in reach. It costs 1/4 mana.";
             case MASTER_BUILDER ->
@@ -678,12 +679,13 @@ public final class AbilityRules {
                     "Slow: Above 100 health, both the slow and the duration are multiplied by 100 divided by that health.",
                     "Slow: It does not affect you, or any player closer to you than the hit. One string is consumed. Two in hand consume both and add +2.");
             case SENSE_EVIL -> List.of(
-                    "Sense Evil: Right-click while holding a spider eye. Costs 1 mana.",
+                    "Sense Evil: Right-click a spider eye to cast. Hold the click to eat it instead. Costs 1 mana.",
                     "Sense Evil: If a biome boss is spawned, you turn toward the nearest one and sparkle with a creepy aura for 6 seconds.",
                     "Sense Evil: If it is within 250 × ability level blocks, you also learn the rough distance.",
                     "Sense Evil: If none are spawned, you sparkle as with Healing. One spider eye is consumed. Two in hand consume both and add +2.",
                     "Sense Evil: Wise-teacher marks give off a red mist and a white outline through blocks for 1 minute times your ability level.",
-                    "Sense Evil: Hostile mobs within 8 blocks times your ability level are outlined through solid blocks for 1 minute times that level.");
+                    "Sense Evil: Hostile mobs within 8 blocks times your ability level are outlined through solid blocks for 1 minute times that level.",
+                    "Sense Evil: The outline time shows as a spider eye with your other ability durations.");
             case SMITE_EVIL -> List.of(
                     "Smite Evil: Right-click while holding a golden sword or a heavy golden sword. Costs 1/4 mana.",
                     "Smite Evil: Strikes a creature along your aim up to your ability level in blocks with a normal melee attack from that sword.",

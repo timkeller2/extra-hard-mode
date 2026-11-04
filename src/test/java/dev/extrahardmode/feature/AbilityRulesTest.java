@@ -193,6 +193,9 @@ class AbilityRulesTest {
         String senseHelp = AbilityRules.helpFallback(AbilityRules.SENSE_EVIL);
         assertTrue(senseHelp.contains("spider eye"));
         assertTrue(senseHelp.contains("Right-click"));
+        assertTrue(senseHelp.contains("Hold the click to eat it instead"));
+        assertTrue(senseHelp.contains("other ability durations"));
+        assertTrue(AbilityRules.teacherInstruction(AbilityRules.SENSE_EVIL).contains("Hold the click to eat it instead"));
         assertTrue(senseHelp.contains("250"));
         assertTrue(senseHelp.contains("biome boss"));
         assertEquals(120, AbilityRules.SENSE_EVIL_SPARKLE_TICKS);

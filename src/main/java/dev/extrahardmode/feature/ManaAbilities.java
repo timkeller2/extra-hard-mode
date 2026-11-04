@@ -67,6 +67,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.BundleContents;
+import net.minecraft.world.item.component.Consumable;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.component.ItemLore;
 import net.minecraft.world.item.component.WrittenBookContent;
@@ -93,6 +94,8 @@ public final class ManaAbilities implements FeatureModule {
     private static final int LAPIS_EXPIRE = 2;
     private static final int LAPIS_BROKE = 3;
     private static final Map<UUID, Identifier> SLOWED = new ConcurrentHashMap<>();
+    /** Players whose Sense Evil outline was on the duration bar, so expiry can clear the icon once. */
+    private static final Set<UUID> SENSE_OUTLINE_VISIBLE = ConcurrentHashMap.newKeySet();
 
     @Override
     public Identifier id() {
@@ -110,6 +113,7 @@ public final class ManaAbilities implements FeatureModule {
             if (handler.player instanceof ServerPlayer player) {
                 endOutgoingLapisShield(player, LAPIS_SILENT);
                 endLapisShieldOn(player, LAPIS_SILENT);
+                SENSE_OUTLINE_VISIBLE.remove(player.getUUID());
             }
         });
     }
@@ -148,6 +152,7 @@ public final class ManaAbilities implements FeatureModule {
             tickDiamondSkin(player);
             tickDiamondSkinSparkle(player);
             tickSenseSparkle(player);
+            tickSenseOutlineHud(player);
             maybeSendAbilityDurations(player);
             syncStrongCastHud(player, false);
         }
@@ -187,7 +192,7 @@ public final class ManaAbilities implements FeatureModule {
             if (serverPlayer.getMainHandItem().is(Items.STRING) && trySlow(serverPlayer)) {
                 return InteractionResult.FAIL;
             }
-            if (serverPlayer.getMainHandItem().is(Items.SPIDER_EYE) && trySenseEvil(serverPlayer)) {
+            if (serverPlayer.getMainHandItem().is(Items.SPIDER_EYE) && castSenseEvilUnlessEating(serverPlayer)) {
                 return InteractionResult.FAIL;
             }
             if (isSmiteSword(serverPlayer.getMainHandItem()) && trySmiteEvil(serverPlayer, null)) {
@@ -299,7 +304,7 @@ public final class ManaAbilities implements FeatureModule {
                 && level instanceof ServerLevel serverLevel
                 && WorldGate.isModuleActive(serverLevel, ID)
                 && serverPlayer.getMainHandItem().is(Items.SPIDER_EYE)
-                && trySenseEvil(serverPlayer)) {
+                && castSenseEvilUnlessEating(serverPlayer)) {
             return InteractionResult.FAIL;
         }
         if (hand == InteractionHand.MAIN_HAND
@@ -2104,6 +2109,37 @@ public final class ManaAbilities implements FeatureModule {
         return true;
     }
 
+    /**
+     * A spider eye that can be eaten is left for vanilla. Releasing that eat within the click window
+     * casts. A player who cannot eat, because they are not hungry, casts on the press.
+     */
+    static boolean castSenseEvilUnlessEating(ServerPlayer player) {
+        if (!SenseEvilUseRules.castOnPress(canEatSpiderEye(player))) {
+            return false;
+        }
+        return trySenseEvil(player);
+    }
+
+    /** Called when a main-hand spider eye eat is released early. A finished eat does not come here. */
+    public static void onSpiderEyeReleased(ServerPlayer player, int heldTicks) {
+        if (player == null || !SenseEvilUseRules.castOnRelease(true, heldTicks)) {
+            return;
+        }
+        trySenseEvil(player);
+    }
+
+    static boolean canEatSpiderEye(ServerPlayer player) {
+        if (player == null) {
+            return false;
+        }
+        ItemStack stack = player.getMainHandItem();
+        if (stack == null || stack.isEmpty() || !stack.is(Items.SPIDER_EYE)) {
+            return false;
+        }
+        Consumable consumable = stack.get(DataComponents.CONSUMABLE);
+        return consumable != null && consumable.canConsume(player, stack);
+    }
+
     static boolean trySenseEvil(ServerPlayer player) {
         if (!player.getMainHandItem().is(Items.SPIDER_EYE) || Achievements.skipPlayer(player)) {
             return false;
@@ -2123,6 +2159,8 @@ public final class ManaAbilities implements FeatureModule {
                 EhmAttachments.EHM_MARK_OUTLINE_UNTIL,
                 abilityNow(player) + AbilityRules.senseMarkOutlineTicks(power));
         player.setAttached(EhmAttachments.EHM_SENSE_OUTLINE_POWER, power);
+        SENSE_OUTLINE_VISIBLE.add(player.getUUID());
+        sendAbilityDurations(player);
         WiseLessons.refreshMist(player);
         WiseLessons.outlineHostiles(player);
         if (!BiomeBosses.anySpawned(player.level().getServer())) {
@@ -2177,6 +2215,35 @@ public final class ManaAbilities implements FeatureModule {
             return;
         }
         spawnCreepySparkle(player, level);
+    }
+
+    /** Clears the duration icon the tick the outline ends. Later ticks do not send again. */
+    static void tickSenseOutlineHud(ServerPlayer player) {
+        if (player == null) {
+            return;
+        }
+        boolean active = remainingSenseOutline(player) > 0;
+        if (active) {
+            SENSE_OUTLINE_VISIBLE.add(player.getUUID());
+            return;
+        }
+        if (SENSE_OUTLINE_VISIBLE.remove(player.getUUID())) {
+            sendAbilityDurations(player);
+        }
+    }
+
+    static int remainingSenseOutline(ServerPlayer player) {
+        if (player == null || player.level().getServer() == null) {
+            return 0;
+        }
+        Long until = player.getAttachedOrElse(EhmAttachments.EHM_MARK_OUTLINE_UNTIL, -1L);
+        return SenseEvilUseRules.remainingTicks(until == null ? -1L : until, abilityNow(player));
+    }
+
+    static int senseOutlineBarMax(ServerPlayer player, int remaining) {
+        Double power = player.getAttachedOrElse(EhmAttachments.EHM_SENSE_OUTLINE_POWER, 0.0);
+        int duration = AbilityRules.senseMarkOutlineTicks(power == null ? 0.0 : power);
+        return SenseEvilUseRules.barMax(remaining, duration);
     }
 
     static void spawnCreepySparkle(ServerPlayer target, ServerLevel level) {
@@ -2643,6 +2710,7 @@ public final class ManaAbilities implements FeatureModule {
                 || held.is(Items.REDSTONE)
                 || held.is(Items.QUARTZ_BLOCK)
                 || held.is(Items.LAPIS_LAZULI)
+                || held.is(Items.SPIDER_EYE)
                 || held.is(Items.BOOK)
                 || tomeXp(held) > 0) {
             if (hoeBonus > 0) {
@@ -2781,6 +2849,7 @@ public final class ManaAbilities implements FeatureModule {
         int empower = remainingEmpower(player);
         int battery = remainingBattery(player);
         int lapis = lapisHudTicks(player);
+        int sense = remainingSenseOutline(player);
         int warn = AbilityDurationRules.WARN_TICKS;
         return inDurationWindow(flight, warn)
                 || inDurationWindow(mine, warn)
@@ -2789,7 +2858,8 @@ public final class ManaAbilities implements FeatureModule {
                 || inDurationWindow(skin, warn)
                 || inDurationWindow(empower, warn)
                 || inDurationWindow(battery, warn)
-                || inDurationWindow(lapis, warn);
+                || inDurationWindow(lapis, warn)
+                || inDurationWindow(sense, warn);
     }
 
     static boolean inDurationWindow(int remaining, int warn) {
@@ -2859,6 +2929,13 @@ public final class ManaAbilities implements FeatureModule {
                 AbilityRules.LAPIS_SHIELD,
                 lapisHudTicks(player),
                 player.getAttachedOrElse(EhmAttachments.EHM_LAPIS_SHIELD_BAR_MAX, 0),
+                false);
+        int sense = remainingSenseOutline(player);
+        addDuration(
+                effects,
+                AbilityRules.SENSE_EVIL,
+                sense,
+                senseOutlineBarMax(player, sense),
                 false);
         ServerPlayNetworking.send(
                 player,
@@ -2988,6 +3065,9 @@ public final class ManaAbilities implements FeatureModule {
         }
         if (lapisHudTicks(player) > 0) {
             active.add(AbilityRules.LAPIS_SHIELD);
+        }
+        if (remainingSenseOutline(player) > 0) {
+            active.add(AbilityRules.SENSE_EVIL);
         }
         return active;
     }

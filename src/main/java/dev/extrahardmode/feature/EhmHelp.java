@@ -416,7 +416,7 @@ public final class EhmHelp {
                         "Abilities: Hold the catalyst and right-click. Let it grow on a plant.",
                         "Abilities: An arrow casts Magic arrow. Charcoal in your inventory adds +2 and the burn, and one is consumed. Iron ingot: Iron Heart. Golden sword: Smite Evil.",
                         "Abilities: A heavy golden sword also casts Smite Evil. It costs 1/4 mana. With at least 1 mana, the crosshair turns gold on a creature in reach.",
-                        "Abilities: A spider eye casts Sense Evil. Hostile mobs within 8 blocks times its level are outlined through solid blocks for 1 minute times that level.",
+                        "Abilities: Click a spider eye to cast Sense Evil. Hold the click to eat it. Hostiles within 8 blocks times its level are outlined through solid blocks for 1 minute times its level.",
                         "Abilities: A clay brick casts Master Builder. It renews like Iron Heart until you run out of mana.",
                         "Abilities: Diamonds right-clicked cast Diamond Skin. It costs 2 mana, divides health damage by its level, and renews while you have mana.",
                         "Abilities: Diamond Skin's level is at least 2. Each point of health damage it prevents shortens it by 3 seconds.",

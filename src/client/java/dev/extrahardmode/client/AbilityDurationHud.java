@@ -104,6 +104,9 @@ public final class AbilityDurationHud {
         if (AbilityRules.LAPIS_SHIELD.equals(ability)) {
             return 0x10182E;
         }
+        if (AbilityRules.SENSE_EVIL.equals(ability)) {
+            return 0x241428;
+        }
         return 0x2A2418;
     }
 
@@ -129,6 +132,9 @@ public final class AbilityDurationHud {
         if (AbilityRules.LAPIS_SHIELD.equals(ability)) {
             return 0x3B5BDB;
         }
+        if (AbilityRules.SENSE_EVIL.equals(ability)) {
+            return 0xC45BD0;
+        }
         return 0xE8D56A;
     }
 
@@ -153,6 +159,9 @@ public final class AbilityDurationHud {
         }
         if (AbilityRules.LAPIS_SHIELD.equals(ability)) {
             return new ItemStack(Items.LAPIS_LAZULI);
+        }
+        if (AbilityRules.SENSE_EVIL.equals(ability)) {
+            return new ItemStack(Items.SPIDER_EYE);
         }
         return new ItemStack(Items.FEATHER);
     }

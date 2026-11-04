@@ -65,6 +65,7 @@
     "LightEngineAccess",
     "LlamaSpitMixin",
     "LivingEntityLootMixin",
+    "LivingEntityReleaseMixin",
     "LootlessMixin",
     "MobAiStepMixin",
     "MobFinalizeSpawnMixin",
