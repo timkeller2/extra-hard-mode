@@ -34,7 +34,7 @@ public final class AchievementRules {
             "green",
             "red",
             "black");
-    public static final int[] SLAYER_THRESHOLDS = {25, 50, 100};
+    public static final int[] SLAYER_THRESHOLDS = {25, 50, 100, 175, 275, 425, 600};
     public static final int BREAK_DECREMENT_PERCENT = 75;
     public static final int TICKS_PER_MINUTE = 1200;
     /** Base regen per Minecraft minute is {@code (manaLevel + currentMana) / REGEN_DIVISOR}. */
@@ -188,7 +188,7 @@ public final class AchievementRules {
     /**
      * Emeralds for completing {@code tierIndex} (0-based) on a track of
      * {@code tierCount} tiers. One tier pays {@link #SINGLE_TIER_EMERALDS}.
-     * Three tiers pay 1, then 2, then 3.
+     * A longer track pays the tier number: the first pays 1, and the 7th slayer tier pays 7.
      */
     public static int rewardEmeralds(int tierIndex, int tierCount) {
         if (tierIndex < 0 || tierIndex >= tierCount) {

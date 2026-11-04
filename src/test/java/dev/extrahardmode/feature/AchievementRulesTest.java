@@ -125,6 +125,12 @@ class AchievementRulesTest {
         assertEquals(2, AchievementRules.awardedAfter(0, 50, AchievementRules.SLAYER_THRESHOLDS));
         assertEquals(2, AchievementRules.awardedAfter(0, 99, AchievementRules.SLAYER_THRESHOLDS));
         assertEquals(3, AchievementRules.awardedAfter(0, 100, AchievementRules.SLAYER_THRESHOLDS));
+        assertEquals(3, AchievementRules.awardedAfter(0, 174, AchievementRules.SLAYER_THRESHOLDS));
+        assertEquals(4, AchievementRules.awardedAfter(0, 175, AchievementRules.SLAYER_THRESHOLDS));
+        assertEquals(5, AchievementRules.awardedAfter(0, 275, AchievementRules.SLAYER_THRESHOLDS));
+        assertEquals(6, AchievementRules.awardedAfter(0, 425, AchievementRules.SLAYER_THRESHOLDS));
+        assertEquals(6, AchievementRules.awardedAfter(0, 599, AchievementRules.SLAYER_THRESHOLDS));
+        assertEquals(7, AchievementRules.awardedAfter(0, 600, AchievementRules.SLAYER_THRESHOLDS));
         assertEquals(1, AchievementRules.awardedAfter(1, 25, AchievementRules.SLAYER_THRESHOLDS));
     }
 
@@ -197,6 +203,7 @@ class AchievementRulesTest {
         assertEquals(1, AchievementRules.rewardEmeralds(0, 3));
         assertEquals(2, AchievementRules.rewardEmeralds(1, 3));
         assertEquals(3, AchievementRules.rewardEmeralds(2, 3));
+        assertEquals(7, AchievementRules.rewardEmeralds(6, AchievementRules.SLAYER_THRESHOLDS.length));
         assertEquals(0, AchievementRules.rewardEmeralds(-1, 3));
         assertEquals(0, AchievementRules.rewardEmeralds(3, 3));
         assertEquals(0, AchievementRules.manaChancePercent(0));
@@ -240,6 +247,9 @@ class AchievementRulesTest {
         assertEquals(1024, AchievementRules.nextTarget(200, AchievementRules.BUILDER_THRESHOLDS, 2));
         assertEquals(0, AchievementRules.nextTarget(200, AchievementRules.BUILDER_THRESHOLDS, 3));
         assertEquals(50, AchievementRules.nextTarget(10, AchievementRules.SLAYER_THRESHOLDS, 1));
+        assertEquals(175, AchievementRules.nextTarget(100, AchievementRules.SLAYER_THRESHOLDS, 3));
+        assertEquals(600, AchievementRules.nextTarget(500, AchievementRules.SLAYER_THRESHOLDS, 6));
+        assertEquals(0, AchievementRules.nextTarget(600, AchievementRules.SLAYER_THRESHOLDS, 7));
     }
 
     @Test
@@ -346,7 +356,7 @@ class AchievementRulesTest {
         assertEquals("minecraft:oak_planks", watch.get(1).id());
         assertEquals(1, watch.get(1).remaining());
         List<AchievementRules.Progress> awarded = AchievementRules.closestWatch(
-                builders, slayers, Map.of(), Map.of("minecraft:zombie", 3));
+                builders, slayers, Map.of(), Map.of("minecraft:zombie", AchievementRules.SLAYER_THRESHOLDS.length));
         assertEquals(1, awarded.size());
         assertTrue(awarded.get(0).builder());
     }

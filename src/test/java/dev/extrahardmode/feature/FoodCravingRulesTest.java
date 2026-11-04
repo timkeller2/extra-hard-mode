@@ -52,6 +52,8 @@ class FoodCravingRulesTest {
         assertEquals(FoodCraving.GRACE, FoodCravingRules.classify(spared, 1, "c"));
         List<String> tight = List.of("x", "a", "b", "c", "d", "e", "f", "g", "h", "a");
         assertEquals(FoodCraving.CRAVING, FoodCravingRules.classify(tight, 1, "b"));
+        assertEquals(FoodCraving.GRACE, FoodCravingRules.classify(tight, 1, "x"));
+        assertEquals(FoodCraving.GREAT, FoodCravingRules.classify(tight, 0, "x"));
         List<String> over = List.of("z", "x", "b", "c", "d", "e", "f", "g", "h", "a", "a");
         assertEquals(FoodCraving.SLIGHT, FoodCravingRules.classify(over, 1, "b"));
         List<String> broken = List.of("a", "b", "c", "d", "e", "f", "g", "h", "h", "h");

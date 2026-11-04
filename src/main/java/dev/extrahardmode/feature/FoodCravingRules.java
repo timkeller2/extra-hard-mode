@@ -18,7 +18,8 @@ public final class FoodCravingRules {
     /**
      * What eating {@code foodId} next would mean.
      * Black and brown use the same-food penalty, so Well Fed delays them.
-     * Gold lengthens a run of 6 or more different meals. Green is a food outside the Well Fed
+     * Gold lengthens a run of 6 or more different meals, and only when that food is outside the
+     * Well Fed window and outside the last 7 meals. Green is a food outside the Well Fed
      * window, or the oldest meal of a run that is already 7 or longer. Full steel blue is a repeat
      * inside that window that grace still allows. The small steel-blue mark is only novel.
      */
@@ -36,7 +37,7 @@ public final class FoodCravingRules {
             return FoodCraving.SICK;
         }
         int trailing = trailingDifferent(recent);
-        if (extendsRewardedStreak(recent, foodId, trailing)) {
+        if (extendsRewardedStreak(recent, foodId, trailing) && outsideLastMealsAndWellFed(recent, foodId, level)) {
             return FoodCraving.GREAT;
         }
         if (isDue(recent, foodId, trailing) || outsideWellFedStreak(recent, foodId, level)) {
@@ -88,6 +89,20 @@ public final class FoodCravingRules {
             count++;
         }
         return count;
+    }
+
+    /**
+     * Absent from the last 7 meals and from the Well Fed window. At level 0 that window is the
+     * same 7 meals.
+     */
+    static boolean outsideLastMealsAndWellFed(List<String> recent, String foodId, int level) {
+        if (foodId == null || foodId.isEmpty()) {
+            return false;
+        }
+        if (!FoodHistory.isNovelInLast(recent, foodId, VARIETY_WINDOW)) {
+            return false;
+        }
+        return FoodHistory.isNovelInLast(recent, foodId, WellFedRules.holdWindow(level));
     }
 
     /** This meal is not in the current run, and the run would then be at least 7. */
