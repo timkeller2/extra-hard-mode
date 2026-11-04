@@ -16,9 +16,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
-/** Small craving mark in the top-right corner of a food icon, plus one tooltip line. */
+/** Tiny craving mark in the top-right corner of a food icon, plus one tooltip line. */
 public final class FoodCravingOutline {
     private static final int MARK = 5;
+    /** The 5-pixel glyph is drawn at half size so it stays in the corner. */
+    private static final float MARK_SCALE = 0.5F;
 
     private FoodCravingOutline() {}
 
@@ -38,18 +40,24 @@ public final class FoodCravingOutline {
         if (craving == null || craving == FoodCraving.NORMAL) {
             return;
         }
-        int left = x + 16 - MARK;
-        int top = y;
-        switch (craving) {
-            case VERY_SICK -> icon(graphics, left, top, 0xFFE6E6E6, 0xFF141414, "#...#", ".#.#.", "..#..", ".#.#.", "#...#");
-            case SICK -> icon(graphics, left, top, 0xFF3A2418, 0xFFC4956A, ".....", "#...#", ".#.#.", "..#..", ".....");
-            case SLIGHT -> icon(graphics, left, top, 0xFF1A242C, 0xFFB7D0E0, ".....", "..#..", ".#.#.", ".....", ".....");
-            case GRACE -> icon(graphics, left, top, 0xFF1A242C, 0xFFB7D0E0, "..#..", ".#.#.", "#...#", ".....", ".....");
-            case CRAVING -> icon(graphics, left, top, 0xFF102418, 0xFF7DCEA0, "..#..", ".#.#.", "#...#", ".....", ".....");
-            case GREAT -> icon(graphics, left, top, 0xFF2A220C, 0xFFF0C14A, "..#..", ".#.#.", "#...#", ".....", ".....");
-            case NORMAL -> {
-                // No mark.
+        var pose = graphics.pose();
+        pose.pushMatrix();
+        try {
+            pose.translate(x + 16.0F, y);
+            pose.scale(MARK_SCALE, MARK_SCALE);
+            switch (craving) {
+                case VERY_SICK -> icon(graphics, -MARK, 0, 0xFFE6E6E6, 0xFF141414, "#...#", ".#.#.", "..#..", ".#.#.", "#...#");
+                case SICK -> icon(graphics, -MARK, 0, 0xFF3A2418, 0xFFC4956A, ".....", "#...#", ".#.#.", "..#..", ".....");
+                case SLIGHT -> icon(graphics, -MARK, 0, 0xFF1A242C, 0xFFB7D0E0, ".....", "..#..", ".#.#.", ".....", ".....");
+                case GRACE -> icon(graphics, -MARK, 0, 0xFF1A242C, 0xFFB7D0E0, "..#..", ".#.#.", "#...#", ".....", ".....");
+                case CRAVING -> icon(graphics, -MARK, 0, 0xFF102418, 0xFF7DCEA0, "..#..", ".#.#.", "#...#", ".....", ".....");
+                case GREAT -> icon(graphics, -MARK, 0, 0xFF2A220C, 0xFFF0C14A, "..#..", ".#.#.", "#...#", ".....", ".....");
+                case NORMAL -> {
+                    // No mark.
+                }
             }
+        } finally {
+            pose.popMatrix();
         }
     }
 
