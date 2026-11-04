@@ -129,6 +129,7 @@
     "client.DebugScreenOverlayMixin",
     "client.ClientInventorySlotMixin",
     "client.ContainerFoodCravingMixin",
+    "client.BundleFoodCravingMixin",
     "client.CompassSpawnTargetMixin",
     "client.GuiMixin",
     "client.HudMixin",

@@ -11,14 +11,10 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import org.joml.Matrix3x2fStack;
 
-/** Thin craving frame around a food slot, plus one tooltip line that names it. */
+/** Small craving mark in the top-right corner of a food icon, plus one tooltip line. */
 public final class FoodCravingOutline {
-    /** One scaled pixel, so the frame is a little under a full GUI pixel. */
-    private static final float STROKE = 0.8F;
-    /** 16 GUI pixels divided by {@link #STROKE}. */
-    private static final int SPAN = 20;
+    private static final int MARK = 5;
 
     private FoodCravingOutline() {}
 
@@ -26,21 +22,29 @@ public final class FoodCravingOutline {
         if (graphics == null || slot == null || !slot.hasItem()) {
             return;
         }
-        int color = FoodCravingRules.outlineArgb(craving(slot.getItem()));
-        if (color == 0) {
+        drawOnItem(graphics, slot.getItem(), slot.x, slot.y);
+    }
+
+    /** {@code x} and {@code y} are the top-left of the 16-pixel item icon. */
+    public static void drawOnItem(GuiGraphicsExtractor graphics, ItemStack stack, int x, int y) {
+        if (graphics == null) {
             return;
         }
-        Matrix3x2fStack pose = graphics.pose();
-        pose.pushMatrix();
-        try {
-            pose.translate(slot.x, slot.y);
-            pose.scale(STROKE, STROKE);
-            graphics.fill(0, 0, SPAN, 1, color);
-            graphics.fill(0, SPAN - 1, SPAN, SPAN, color);
-            graphics.fill(0, 1, 1, SPAN - 1, color);
-            graphics.fill(SPAN - 1, 1, SPAN, SPAN - 1, color);
-        } finally {
-            pose.popMatrix();
+        FoodCraving craving = craving(stack);
+        if (craving == null || craving == FoodCraving.NORMAL) {
+            return;
+        }
+        int left = x + 16 - MARK;
+        int top = y;
+        switch (craving) {
+            case VERY_SICK -> icon(graphics, left, top, 0xFFE6E6E6, 0xFF141414, "#...#", ".#.#.", "..#..", ".#.#.", "#...#");
+            case SICK -> icon(graphics, left, top, 0xFF3A2418, 0xFFC4956A, ".....", "#...#", ".#.#.", "..#..", ".....");
+            case SLIGHT -> icon(graphics, left, top, 0xFF1A242C, 0xFFB7D0E0, ".....", "..#..", ".#.#.", ".....", ".....");
+            case CRAVING -> icon(graphics, left, top, 0xFF102418, 0xFF7DCEA0, "..#..", ".#.#.", "#...#", ".....", ".....");
+            case GREAT -> icon(graphics, left, top, 0xFF2A220C, 0xFFF0C14A, "..#..", ".###.", "#####", ".###.", "..#..");
+            case NORMAL -> {
+                // No mark.
+            }
         }
     }
 
@@ -76,6 +80,19 @@ public final class FoodCravingOutline {
             return false;
         }
         return sync == null || !sync.extras().creativeBypasses() || !minecraft.player.isCreative();
+    }
+
+    private static void icon(
+            GuiGraphicsExtractor graphics, int x, int y, int plate, int ink, String... rows) {
+        graphics.fill(x, y, x + MARK, y + MARK, plate);
+        for (int row = 0; row < rows.length && row < MARK; row++) {
+            String line = rows[row];
+            for (int col = 0; col < line.length() && col < MARK; col++) {
+                if (line.charAt(col) == '#') {
+                    graphics.fill(x + col, y + row, x + col + 1, y + row + 1, ink);
+                }
+            }
+        }
     }
 
     private static String tooltipKey(FoodCraving craving) {

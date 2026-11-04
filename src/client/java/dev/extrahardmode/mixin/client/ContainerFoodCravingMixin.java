@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/** Craving outline and tooltip on food in survival inventories, chests, and other containers. */
+/** Craving mark and tooltip on food in survival inventories, chests, and other containers. */
 @Mixin(AbstractContainerScreen.class)
 public abstract class ContainerFoodCravingMixin {
     @Inject(method = "extractSlot", at = @At("TAIL"))
