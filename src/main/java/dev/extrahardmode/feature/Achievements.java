@@ -25,6 +25,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Prediction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -273,7 +274,7 @@ public final class Achievements implements FeatureModule {
             announce(player, builder, subject);
             celebrate(player);
             boolean firstClaim = competitive && first;
-            giveReward(player, firstClaim);
+            giveReward(player, firstClaim, i, thresholds.length);
         }
         if (grantedThrough != already) {
             putCount(player, awardedType, key, grantedThrough);
@@ -372,8 +373,13 @@ public final class Achievements implements FeatureModule {
                         player.level(), player.getX(), player.getY() + 1.0, player.getZ(), rocket));
     }
 
-    static void giveReward(ServerPlayer player, boolean firstClaim) {
+    static void giveReward(ServerPlayer player, boolean firstClaim, int tierIndex, int tierCount) {
         player.giveExperiencePoints(AchievementRules.rewardExperience(firstClaim));
+        int emeralds = AchievementRules.rewardEmeralds(tierIndex, tierCount);
+        if (emeralds > 0) {
+            player.getInventory()
+                    .placeItemBackInInventory(new ItemStack(Items.EMERALD, emeralds), Prediction.SERVER_ONLY);
+        }
         if (!AchievementRules.manaFromExperience(player.experienceLevel, player.getRandom().nextInt(100))) {
             return;
         }

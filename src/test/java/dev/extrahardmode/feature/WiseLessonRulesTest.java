@@ -300,6 +300,74 @@ class WiseLessonRulesTest {
         assertTrue(clear.mobs().isEmpty());
     }
 
+    @Test
+    void bossHintsStayWithTheTeacherUntilTheNextHunt() {
+        assertEquals("", WiseLessonRules.joinNames(null));
+        assertEquals("", WiseLessonRules.joinNames(List.of()));
+        assertEquals("Plains", WiseLessonRules.joinNames(List.of("Plains")));
+        assertEquals("Plains and Forest", WiseLessonRules.joinNames(List.of("Plains", "Forest")));
+        assertEquals(
+                "Plains, Forest, and Desert",
+                WiseLessonRules.joinNames(List.of("Plains", "Forest", "Desert")));
+
+        List<String> two = List.of("minecraft:plains", "minecraft:forest");
+        WiseLessonRules.BossHint shortList = WiseLessonRules.nextBossHint(null, "teacher", 10L, two, 99);
+        assertFalse(shortList.chosen());
+        assertEquals(two, shortList.biomes());
+        assertFalse(WiseLessonRules.choosesBossHint(null, "teacher", 10L, 3));
+        assertFalse(WiseLessonRules.choosesBossHint(shortList, "teacher", 10L, 2));
+
+        List<String> three = List.of("a", "b", "c");
+        WiseLessonRules.BossHint exact = WiseLessonRules.nextBossHint(null, "teacher", 10L, three, 7);
+        assertFalse(exact.chosen());
+        assertEquals(three, exact.biomes());
+        WiseLessonRules.BossHint shrunk = WiseLessonRules.nextBossHint(exact, "teacher", 10L, List.of("a", "c"), 7);
+        assertFalse(shrunk.chosen());
+        assertEquals(List.of("a", "c"), shrunk.biomes());
+
+        List<String> five = List.of("a", "b", "c", "d", "e");
+        assertTrue(WiseLessonRules.choosesBossHint(shortList, "teacher", 10L, five.size()));
+        WiseLessonRules.BossHint picked = WiseLessonRules.nextBossHint(null, "teacher", 10L, five, 0);
+        assertTrue(picked.chosen());
+        assertEquals(10L, picked.assignedDay());
+        assertEquals(List.of("c", "b", "a"), picked.biomes());
+        assertFalse(WiseLessonRules.choosesBossHint(picked, "teacher", 10L, five.size()));
+        assertEquals(picked.biomes(), WiseLessonRules.nextBossHint(picked, "teacher", 10L, five, 1).biomes());
+
+        WiseLessonRules.BossHint grown = WiseLessonRules.nextBossHint(shortList, "teacher", 10L, five, 0);
+        assertTrue(grown.chosen());
+        assertEquals(List.of("c", "b", "a"), grown.biomes());
+
+        List<String> withoutMiddle = List.of("a", "c", "d", "e", "f");
+        WiseLessonRules.BossHint dropped = WiseLessonRules.nextBossHint(picked, "teacher", 10L, withoutMiddle, 99);
+        assertTrue(dropped.chosen());
+        assertEquals(List.of("c", "a"), dropped.biomes());
+
+        List<String> others = List.of("x", "y", "z", "w");
+        WiseLessonRules.BossHint emptied = WiseLessonRules.nextBossHint(picked, "teacher", 10L, others, 3);
+        assertTrue(emptied.chosen());
+        assertTrue(emptied.biomes().isEmpty());
+        assertFalse(WiseLessonRules.choosesBossHint(emptied, "teacher", 10L, others.size()));
+        WiseLessonRules.BossHint stillEmpty = WiseLessonRules.nextBossHint(emptied, "teacher", 10L, others, 4);
+        assertTrue(stillEmpty.chosen());
+        assertTrue(stillEmpty.biomes().isEmpty());
+
+        assertTrue(WiseLessonRules.choosesBossHint(picked, "teacher", 40L, five.size()));
+        WiseLessonRules.BossHint later = WiseLessonRules.nextBossHint(picked, "teacher", 40L, five, 1);
+        assertTrue(later.chosen());
+        assertEquals(List.of("d", "c", "a"), later.biomes());
+
+        assertTrue(WiseLessonRules.choosesBossHint(picked, "other", 10L, five.size()));
+        WiseLessonRules.BossHint otherTeacher = WiseLessonRules.nextBossHint(picked, "other", 10L, five, 1);
+        assertEquals("other", otherTeacher.teacherId());
+        assertEquals(List.of("d", "c", "a"), otherTeacher.biomes());
+
+        WiseLessonRules.BossHint none = WiseLessonRules.nextBossHint(null, null, 10L, null, 0);
+        assertFalse(none.chosen());
+        assertEquals("", none.teacherId());
+        assertTrue(none.biomes().isEmpty());
+    }
+
     private static WiseLessonRules.Lesson hunt() {
         return new WiseLessonRules.Lesson(
                 "teacher",

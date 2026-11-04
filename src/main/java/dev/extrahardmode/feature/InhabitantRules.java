@@ -580,6 +580,9 @@ public final class InhabitantRules {
     public static List<String> homesResidentLines() {
         return List.of(
                 "Residents: The name over their head is their name and occupation, such as Alden the Jeweler.",
+                "Residents: Clock a resident, then clock another. They trade homes at once. Each refuses a home below their job.",
+                "Residents: A loot collector or council member needs 18. A jeweler, armorsmith, or wise teacher needs 24. A wealthy trader or master armorsmith needs 30. Everyone else needs 12.",
+                "Residents: The trade costs half the points of the finer home, rounded down, in emeralds. Their shop stays until the next restock.",
                 "Residents: Clothes are a villager outfit, so two jewelers may differ. Finer residents wear higher-ranked clothes.",
                 "Residents: A resident will not appear within 35 blocks of a villager. Other residents do not count.",
                 "Residents: Eligible loaded homes are checked at dawn. An empty eligible home is timestamped the day it becomes inhabitable.",
@@ -601,6 +604,7 @@ public final class InhabitantRules {
                 "Residents: A close attack makes them switch to an iron sword. A zombie cannot turn them unless they are already below 5 health.",
                 "Residents: A home stops listing someone who has died or is no longer around the bed.",
                 "Lessons: Speak to a wise teacher and he tells of a hunt every 30 Minecraft days.",
+                "Lessons: While he waits to give another hunt, he names up to 3 explored biomes that can still spawn a boss. If more than 3 can, he picks 3 and keeps them until that wait ends.",
                 "Lessons: The pack is 3 to 8, from the home and his experience, times 1 plus lessons and mana he has given you.",
                 "Lessons: The first hunts are easier creatures. Later hunts are harder. It lies 200 to 500 blocks north, south, east, or west.",
                 "Lessons: His name, how many are left, and the direction show on your screen. That number falls as you kill them. At that distance it says near here.",
@@ -773,6 +777,14 @@ public final class InhabitantRules {
 
     public static boolean specialtyAllowed(String type, int score) {
         return score >= minScoreForSpecialty(type);
+    }
+
+    /**
+     * Emeralds to trade two residents' homes. Half the finer home's points, rounded down.
+     */
+    public static int movingFee(int sourceScore, int destinationScore) {
+        int finer = Math.max(0, Math.max(sourceScore, destinationScore));
+        return finer / 2;
     }
 
     public static String pickSpecialty(AmenityCounts counts, int score, int roll) {

@@ -182,6 +182,24 @@ public final class AchievementRules {
         return REWARD_EXPERIENCE_POINTS + (firstClaim ? FIRST_CLAIM_BONUS_EXPERIENCE : 0);
     }
 
+    /** Emeralds for a track that awards only once, such as a block placed 64 times. */
+    public static final int SINGLE_TIER_EMERALDS = 2;
+
+    /**
+     * Emeralds for completing {@code tierIndex} (0-based) on a track of
+     * {@code tierCount} tiers. One tier pays {@link #SINGLE_TIER_EMERALDS}.
+     * Three tiers pay 1, then 2, then 3.
+     */
+    public static int rewardEmeralds(int tierIndex, int tierCount) {
+        if (tierIndex < 0 || tierIndex >= tierCount) {
+            return 0;
+        }
+        if (tierCount == 1) {
+            return SINGLE_TIER_EMERALDS;
+        }
+        return tierIndex + 1;
+    }
+
     /** Experience-level percent chance of a bonus mana level, 0–100. */
     public static int manaChancePercent(int experienceLevel) {
         return Math.min(100, Math.max(0, experienceLevel));

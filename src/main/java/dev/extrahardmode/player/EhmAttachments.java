@@ -83,6 +83,10 @@ public final class EhmAttachments {
     public static final AttachmentType<String> EHM_INHABITANT_HOME = AttachmentRegistry.create(
             ExtraHardModeMod.id("inhabitant_home"),
             builder -> builder.persistent(Codec.STRING).initializer(() -> ""));
+    /** Home id of the resident this player has clocked and not yet traded. */
+    public static final AttachmentType<String> EHM_PENDING_MOVE = AttachmentRegistry.create(
+            ExtraHardModeMod.id("pending_move"),
+            builder -> builder.persistent(Codec.STRING).initializer(() -> ""));
     /** Saved villager costume: profession, biome style, and rank. Rolled once. */
     public static final AttachmentType<String> EHM_RESIDENT_OUTFIT = AttachmentRegistry.create(
             ExtraHardModeMod.id("resident_outfit"),
@@ -578,6 +582,28 @@ public final class EhmAttachments {
     public static final AttachmentType<List<WiseLessonRules.Lesson>> EHM_WISE_LESSONS = AttachmentRegistry.create(
             ExtraHardModeMod.id("wise_lessons"),
             builder -> builder.persistent(WISE_LESSON_CODEC.listOf())
+                    .copyOnDeath()
+                    .initializer(ArrayList::new));
+
+    public static final Codec<WiseLessonRules.BossHint> WISE_BOSS_HINT_CODEC = RecordCodecBuilder.create(
+            instance -> instance.group(
+                            Codec.STRING
+                                    .optionalFieldOf("teacher_id", "")
+                                    .forGetter(WiseLessonRules.BossHint::teacherId),
+                            Codec.LONG
+                                    .optionalFieldOf("assigned_day", -1L)
+                                    .forGetter(WiseLessonRules.BossHint::assignedDay),
+                            Codec.BOOL.optionalFieldOf("chosen", false).forGetter(WiseLessonRules.BossHint::chosen),
+                            Codec.STRING
+                                    .listOf()
+                                    .optionalFieldOf("biomes", List.of())
+                                    .forGetter(WiseLessonRules.BossHint::biomes))
+                    .apply(instance, WiseLessonRules.BossHint::new));
+
+    /** One sticky biome list per wise teacher, kept until that teacher's next hunt. */
+    public static final AttachmentType<List<WiseLessonRules.BossHint>> EHM_WISE_BOSS_HINTS = AttachmentRegistry.create(
+            ExtraHardModeMod.id("wise_boss_hints"),
+            builder -> builder.persistent(WISE_BOSS_HINT_CODEC.listOf())
                     .copyOnDeath()
                     .initializer(ArrayList::new));
 

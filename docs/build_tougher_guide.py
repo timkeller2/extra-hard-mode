@@ -312,7 +312,9 @@ def build():
             "with blocks in place of ingots. They last three times as long and deal 2 more damage. "
             "Repair them with those blocks. Smith the heavy diamond sword or axe with a netherite upgrade template "
             "and a netherite ingot. That ingot repairs the netherite weapon. "
-            "A heavy golden sword casts Smite Evil, the same as a golden sword.",
+            "A heavy golden sword casts Smite Evil, the same as a golden sword. "
+            "A slain biome boss can also drop an enchanted heavy sword or axe. "
+            "The chance starts at 25% and rises as that boss is richer.",
             s["body"],
         ),
         Paragraph("Mana", s["h"]),
@@ -362,6 +364,7 @@ def build():
                 "Learning that ability counts as using it once for each house point and each point of his trading experience.",
                 "Sneak with a diamond block and a lapis lazuli block and that teacher raises your permanent mana by 1, once per teacher. Each of those levels adds 2 to the achievement die.",
                 "Speak to a wise teacher and he tells of a hunt every 30 Minecraft days. The pack is 3 to 8, from the home and his experience, times 1 plus the lessons and mana he has given you.",
+                "While he waits to give another hunt, he names up to 3 explored biomes that can still spawn a boss. If more than 3 can, he picks 3 and keeps them until that wait ends.",
                 "The first hunts are easier creatures. Later hunts are harder. The hunt lies 200 to 500 blocks north, south, east, or west of that teacher.",
                 "His name, how many are left, and the direction show on your screen. That number falls as you kill them. At that distance the direction becomes near here. Come back closer and the direction returns.",
                 "After 2 minutes out there, on land, at night or below ground, half the pack appears within a few seconds, 20 to 40 blocks away. The rest still arrive one at a time, every 5 to 15 seconds.",
@@ -375,7 +378,7 @@ def build():
             Paragraph("Achievements", s["h"]),
             bullets(
                 [
-                    "Place many of one block, or defeat many of one monster. Each claim gives 75 experience. Everyone can earn every achievement. Each wool block, wool slab, wool stair, and wool carpet awards once at 64. Glass, tinted glass, stained glass, and glass panes do too. Terracotta, glazed terracotta, concrete, concrete powder, and concrete slabs and stairs do too. Other blocks award at 256, then 512, then 1024.",
+                    "Place many of one block, or defeat many of one monster. Each claim gives 75 experience. A three-tier track pays 1 emerald, then 2, then 3. A block that awards once at 64 pays 2 emeralds. Everyone can earn every achievement. Each wool block, wool slab, wool stair, and wool carpet awards once at 64. Glass, tinted glass, stained glass, and glass panes do too. Terracotta, glazed terracotta, concrete, concrete powder, and concrete slabs and stairs do too. Other blocks award at 256, then 512, then 1024.",
                     "The first player on the server to claim one gets 25 extra experience by default.",
                     "achievements.victory defaults to 0, which is off. Set it higher and the first player to earn that many achievements wins. Each builder tier and each slayer tier counts as one. Fireworks play, the credits scroll, and everyone can keep playing. While it is on, the top left shows how many you have earned out of how many are required.",
                     "The command /tougher achieve lists the closest unfinished tracks. A block that has finished its single tier of 64 is left off, including when it is the last block you placed.",
@@ -415,6 +418,7 @@ def build():
             [
                 "A resident will not appear within 35 blocks of a villager. Other residents do not count.",
                 "The name over a resident is their name and occupation, such as Alden the Jeweler.",
+                "Clock a resident, then clock another. They trade homes at once. Each refuses a home below their job. A loot collector or council member needs 18. A jeweler, armorsmith, or wise teacher needs 24. A wealthy trader or master armorsmith needs 30. Everyone else needs 12. The trade costs half the points of the finer home, rounded down, in emeralds. Their shop stays until the next restock.",
                 "Clothes are a villager outfit, so two of one occupation may look different. A jeweler, wealthy trader, or loot collector wears a finer coat. An armorsmith or wise teacher ranks higher, and a master armorsmith or council member wears the highest rank.",
                 "Most residents restock every 14 Minecraft days. Armorsmiths restock every 30. Look at one who is waiting to see the time left, in days and hours.",
                 "Shop size follows house points. The top of the roll is 50% at 14 points and 175% at 38. Higher scores stay there. The bottom is half of that. Prices do not inflate. A hauler pays 1 emerald for 32 of a block. Each chest, barrel, or shulker box takes 2 off that stack, down to 16.",

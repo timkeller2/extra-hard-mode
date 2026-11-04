@@ -31,6 +31,7 @@ class BiomeBossesRulesTest {
         assertTrue(BiomeBossesRules.spawnRoll(0, 1));
         assertFalse(BiomeBossesRules.spawnRoll(1, 1));
         assertTrue(BiomeBossesRules.spawnRoll(99, 100));
+        assertEquals(25, BiomeBossesRules.DEFAULT_HEAVY_WEAPON_DROP_PERCENT);
     }
 
     @Test

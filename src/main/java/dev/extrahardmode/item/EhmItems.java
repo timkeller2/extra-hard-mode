@@ -192,6 +192,25 @@ public final class EhmItems {
         return pieces.get(random.nextInt(pieces.size()));
     }
 
+    public static List<Item> allWeapons() {
+        return List.of(
+                HEAVY_COPPER_SWORD,
+                HEAVY_COPPER_AXE,
+                HEAVY_IRON_SWORD,
+                HEAVY_IRON_AXE,
+                HEAVY_GOLDEN_SWORD,
+                HEAVY_GOLDEN_AXE,
+                HEAVY_DIAMOND_SWORD,
+                HEAVY_DIAMOND_AXE,
+                HEAVY_NETHERITE_SWORD,
+                HEAVY_NETHERITE_AXE);
+    }
+
+    public static Item randomWeapon(RandomSource random) {
+        List<Item> weapons = allWeapons();
+        return weapons.get(random.nextInt(weapons.size()));
+    }
+
     private static Item copper(String path, ArmorType type) {
         return armor(
                 path,

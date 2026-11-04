@@ -234,6 +234,13 @@ class InhabitantRulesTest {
         assertTrue(InhabitantRules.specialtyAllowed(InhabitantRules.JEWELER, 24));
         assertFalse(InhabitantRules.specialtyAllowed(InhabitantRules.COUNCIL, 17));
         assertTrue(InhabitantRules.specialtyAllowed(InhabitantRules.COUNCIL, 18));
+        assertEquals(15, InhabitantRules.movingFee(12, 30));
+        assertEquals(15, InhabitantRules.movingFee(30, 12));
+        assertEquals(12, InhabitantRules.movingFee(24, 24));
+        assertEquals(6, InhabitantRules.movingFee(13, 12));
+        assertEquals(0, InhabitantRules.movingFee(0, 1));
+        assertEquals(1, InhabitantRules.movingFee(-4, 3));
+        assertEquals(0, InhabitantRules.movingFee(-8, -2));
         assertTrue(InhabitantRules.unseenSpecialties(List.of(), 24).contains(InhabitantRules.JEWELER));
         assertFalse(InhabitantRules.unseenSpecialties(List.of(), 24).contains(InhabitantRules.WEALTHY));
         assertTrue(InhabitantRules.unseenSpecialties(List.of(), 30).contains(InhabitantRules.WEALTHY));

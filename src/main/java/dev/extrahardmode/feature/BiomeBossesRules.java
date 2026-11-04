@@ -17,6 +17,8 @@ public final class BiomeBossesRules {
     public static final int DEFAULT_HEALTH_MULTIPLIER_MAX = 12;
     public static final double DEFAULT_ATTACK_MULTIPLIER = 1.75;
     public static final int DEFAULT_HEAVY_ARMOR_DROP_PERCENT = 25;
+    /** Chance a slain boss drops one enchanted heavy sword or axe. Treasure can raise it. */
+    public static final int DEFAULT_HEAVY_WEAPON_DROP_PERCENT = 25;
     public static final int DEFAULT_BONUS_XP = 40;
     /** Leather, chain, gold, iron, diamond. */
     public static final int ARMOR_TIER_COUNT = 5;

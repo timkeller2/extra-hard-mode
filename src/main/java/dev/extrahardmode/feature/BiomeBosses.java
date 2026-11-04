@@ -858,6 +858,17 @@ public final class BiomeBosses implements FeatureModule {
                 entity.spawnAtLocation(level, new ItemStack(EhmItems.randomPiece(random)));
             }
         }
+        if (BiomeBossesRules.spawnRoll(
+                random.nextInt(100),
+                BiomeBossesRules.scalePercent(BiomeBossesRules.DEFAULT_HEAVY_WEAPON_DROP_PERCENT, treasure))) {
+            int weapons = BiomeBossesRules.scaleCount(1, treasure);
+            for (int i = 0; i < weapons; i++) {
+                ItemStack gear = new ItemStack(EhmItems.randomWeapon(random));
+                entity.spawnAtLocation(
+                        level,
+                        EnchantmentHelper.enchantItem(random, gear, 20, level.registryAccess(), Optional.empty()));
+            }
+        }
         dropFamilyExtras(level, entity, familyOf(entity), random, treasure);
     }
 

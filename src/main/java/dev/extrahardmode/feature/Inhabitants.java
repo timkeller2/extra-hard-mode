@@ -135,6 +135,12 @@ public final class Inhabitants implements FeatureModule {
         if (!(level instanceof ServerLevel server) || !WorldGate.isModuleActive(server, ID)) {
             return InteractionResult.PASS;
         }
+        if (hand == InteractionHand.MAIN_HAND
+                && player instanceof ServerPlayer serverPlayer
+                && serverPlayer.getMainHandItem().is(Items.CLOCK)) {
+            tradeHomes(serverPlayer, server, villager);
+            return InteractionResult.SUCCESS;
+        }
         InhabitantData.Home home = InhabitantData.of(server).byLiving(villager.getUUID());
         if (home == null || !InhabitantRules.WISE_TEACHER.equals(home.specialty())) {
             return InteractionResult.PASS;
@@ -144,6 +150,109 @@ public final class Inhabitants implements FeatureModule {
         }
         teach(serverPlayer, villager, server, home);
         return InteractionResult.SUCCESS;
+    }
+
+    static void tradeHomes(ServerPlayer player, ServerLevel level, Villager clicked) {
+        InhabitantData data = InhabitantData.of(level);
+        InhabitantData.Home clickedHome = data.byLiving(clicked.getUUID());
+        if (clickedHome == null || clickedHome.living().isEmpty()) {
+            player.setAttached(EhmAttachments.EHM_PENDING_MOVE, "");
+            tell(player, "tougher.message.inhabitant_move_gone", "That resident is no longer there.");
+            return;
+        }
+        String pendingId = player.getAttachedOrElse(EhmAttachments.EHM_PENDING_MOVE, "");
+        if (pendingId == null || pendingId.isEmpty()) {
+            chooseMove(player, clickedHome);
+            return;
+        }
+        if (pendingId.equals(clickedHome.id())) {
+            tell(player, "tougher.message.inhabitant_move_same", "Clock a different resident.");
+            return;
+        }
+        InhabitantData.Home pendingHome = data.get(pendingId);
+        Entity pendingEntity = pendingHome == null || pendingHome.living().isEmpty()
+                ? null
+                : level.getEntityInAnyDimension(pendingHome.living().get());
+        if (!(pendingEntity instanceof Villager pendingVillager)
+                || !pendingVillager.isAlive()
+                || !isInhabitant(pendingVillager)) {
+            tell(player, "tougher.message.inhabitant_move_gone", "That resident is no longer there.");
+            chooseMove(player, clickedHome);
+            return;
+        }
+        boolean refused = false;
+        if (!InhabitantRules.specialtyAllowed(pendingHome.specialty(), clickedHome.score())) {
+            refuseMove(player, pendingHome, clickedHome.score());
+            refused = true;
+        }
+        if (!InhabitantRules.specialtyAllowed(clickedHome.specialty(), pendingHome.score())) {
+            refuseMove(player, clickedHome, pendingHome.score());
+            refused = true;
+        }
+        if (refused) {
+            return;
+        }
+        int fee = InhabitantRules.movingFee(pendingHome.score(), clickedHome.score());
+        if (InventorySearch.count(player, Items.EMERALD) < fee
+                || !InventorySearch.consume(player, Items.EMERALD, fee)) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.inhabitant_move_fee",
+                    "Moving costs %s emeralds.",
+                    Component.literal(Integer.toString(fee))));
+            return;
+        }
+        String pendingPlate = InhabitantRules.nameplate(pendingHome.name(), pendingHome.specialty());
+        String clickedPlate = InhabitantRules.nameplate(clickedHome.name(), clickedHome.specialty());
+        data.put(pendingHome.withResident(
+                clickedHome.specialty(), clickedHome.name(), clickedHome.living(), clickedHome.lastRestockDay()));
+        data.put(clickedHome.withResident(
+                pendingHome.specialty(), pendingHome.name(), pendingHome.living(), pendingHome.lastRestockDay()));
+        pendingVillager.setAttached(EhmAttachments.EHM_INHABITANT_HOME, clickedHome.id());
+        clicked.setAttached(EhmAttachments.EHM_INHABITANT_HOME, pendingHome.id());
+        showNameplate(pendingVillager, pendingHome.name(), pendingHome.specialty());
+        showNameplate(clicked, clickedHome.name(), clickedHome.specialty());
+        moveBody(level, pendingVillager, clickedHome.bed());
+        moveBody(level, clicked, pendingHome.bed());
+        player.setAttached(EhmAttachments.EHM_PENDING_MOVE, "");
+        player.sendSystemMessage(Component.translatableWithFallback(
+                "tougher.chat.inhabitant_swap",
+                "%s and %s have traded homes.",
+                Component.literal(pendingPlate),
+                Component.literal(clickedPlate)));
+        level.playSound(null, clickedHome.bed(), SoundEvents.VILLAGER_YES, SoundSource.NEUTRAL, 1.0F, 1.0F);
+        level.playSound(null, pendingHome.bed(), SoundEvents.VILLAGER_YES, SoundSource.NEUTRAL, 1.0F, 1.0F);
+    }
+
+    static void chooseMove(ServerPlayer player, InhabitantData.Home home) {
+        player.setAttached(EhmAttachments.EHM_PENDING_MOVE, home.id());
+        player.sendSystemMessage(Component.translatableWithFallback(
+                "tougher.message.inhabitant_move_chosen",
+                "%s will trade homes. Clock another resident.",
+                Component.literal(InhabitantRules.nameplate(home.name(), home.specialty()))));
+    }
+
+    static void refuseMove(ServerPlayer player, InhabitantData.Home resident, int destinationScore) {
+        player.sendSystemMessage(Component.translatableWithFallback(
+                "tougher.message.inhabitant_move_score",
+                "%s will not move. That home has %s points, and the job needs %s.",
+                Component.literal(InhabitantRules.nameplate(resident.name(), resident.specialty())),
+                Component.literal(Integer.toString(destinationScore)),
+                Component.literal(Integer.toString(InhabitantRules.minScoreForSpecialty(resident.specialty())))));
+    }
+
+    static void tell(ServerPlayer player, String key, String fallback) {
+        player.sendSystemMessage(Component.translatableWithFallback(key, fallback));
+    }
+
+    static void moveBody(ServerLevel level, Villager villager, BlockPos bed) {
+        BlockPos dest = ResidenceScan.standableNear(level, bed);
+        if (dest == null) {
+            dest = bed.above();
+        }
+        if (villager.getNavigation() != null) {
+            villager.getNavigation().stop();
+        }
+        villager.teleportTo(dest.getX() + 0.5, dest.getY(), dest.getZ() + 0.5);
     }
 
     static void teach(ServerPlayer player, Villager villager, ServerLevel level, InhabitantData.Home home) {

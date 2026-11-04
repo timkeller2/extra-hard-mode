@@ -200,5 +200,10 @@ public final class InhabitantData extends SavedData {
             return new Home(
                     id, bed, score, specialty, name, living, leaveAfterDay, emptyUntilDay, uneasy, lastRestockDay, day);
         }
+
+        /** This house keeps its bed and score. The person, job, and restock clock are replaced. */
+        public Home withResident(String specialty, String name, Optional<UUID> living, long lastRestockDay) {
+            return new Home(id, bed, score, specialty, name, living, -1L, emptyUntilDay, false, lastRestockDay, lastRollDay);
+        }
     }
 }

@@ -386,7 +386,8 @@ public final class EhmHelp {
                         "Weapons: Heavy swords and axes of copper, iron, gold, and diamond use the normal recipe with blocks instead of ingots.",
                         "Weapons: They last three times as long and deal 2 more damage. Repair them with those blocks.",
                         "Weapons: Smith the heavy diamond sword or axe with a netherite upgrade template and a netherite ingot. That ingot repairs it.",
-                        "Weapons: A heavy golden sword casts Smite Evil, the same as a golden sword."));
+                        "Weapons: A heavy golden sword casts Smite Evil, the same as a golden sword.",
+                        "Weapons: A slain biome boss can drop an enchanted heavy sword or axe. The chance starts at 25% and rises as that boss is richer."));
     }
 
     private static Page mana() {
@@ -445,7 +446,7 @@ public final class EhmHelp {
                         "Achievements: Glass, tinted glass, stained glass, and glass panes also award once at 64.",
                         "Achievements: Terracotta, glazed terracotta, concrete, concrete powder, and concrete slabs and stairs also award once at 64.",
                         "Achievements: Other blocks award at 256, then 512, then 1024.",
-                        "Achievements: Each achievement gives 75 experience. Everyone can earn every achievement.",
+                        "Achievements: Each achievement gives 75 experience. A three-tier track pays 1, then 2, then 3 emeralds. A single tier of 64 pays 2. Everyone can earn every achievement.",
                         "Achievements: By default the first player to claim one server-wide gets 25 extra experience.",
                         "Achievements: Set achievements.victory above 0 and the first player to earn that many tiers wins.",
                         "Achievements: Fireworks play, the credits scroll, and everyone keeps playing. The top left shows your achievements over that goal.",

@@ -179,6 +179,11 @@ class EhmHelpTest {
         assertFalse(String.join(" ", lines).contains("how many lapis"));
         assertFalse(String.join(" ", lines).contains("sparkles you blue"));
         assertTrue(String.join(" ", lines).contains("75 experience"));
+        assertTrue(String.join(" ", lines).contains("then 2, then 3 emeralds"));
+        assertTrue(String.join(" ", lines).contains("A single tier of 64 pays 2"));
+        assertTrue(String.join(" ", lines).contains("enchanted heavy sword or axe"));
+        assertTrue(String.join(" ", lines).contains("They trade homes at once"));
+        assertTrue(String.join(" ", lines).contains("half the points of the finer home"));
         assertTrue(String.join(" ", lines).contains("Wise-teacher levels add 2 to that roll"));
         assertTrue(String.join(" ", lines).contains("adds 2 to the achievement die"));
         assertTrue(String.join(" ", lines).contains("visit a biome you gain 50 experience"));
@@ -199,6 +204,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("Glow berries are 3 for 1 emerald"));
         assertTrue(String.join(" ", lines).contains("one of each brewing ingredient"));
         assertTrue(String.join(" ", lines).contains("every 30 Minecraft days"));
+        assertTrue(String.join(" ", lines).contains("keeps them until that wait ends"));
         assertTrue(String.join(" ", lines).contains("near here"));
         assertTrue(String.join(" ", lines).contains("triple experience"));
         assertTrue(String.join(" ", lines).contains("5 times the health"));

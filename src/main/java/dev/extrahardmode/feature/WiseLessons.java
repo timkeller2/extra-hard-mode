@@ -3,21 +3,28 @@ package dev.extrahardmode.feature;
 import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.network.ClientboundWiseLessonPayload;
 import dev.extrahardmode.player.EhmAttachments;
+import dev.extrahardmode.tag.EhmTags;
 import dev.extrahardmode.world.InhabitantData;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.Registry;
 import net.minecraft.core.particles.ColorParticleOption;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -38,6 +45,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
@@ -97,12 +105,14 @@ public final class WiseLessons {
             }
             player.setAttached(EhmAttachments.EHM_WISE_LESSONS, quiet);
             publish(player, quiet);
+            mentionBossBiomes(player, level, teacherId, ended.assignedDay());
             return;
         }
         if (existing != null && !WiseLessonRules.offerDue(existing.assignedDay(), today)) {
             if (existing.active()) {
                 player.sendSystemMessage(Component.literal(lineFor(player, existing)));
             }
+            mentionBossBiomes(player, level, teacherId, existing.assignedDay());
             return;
         }
         String ability = villager.getAttached(EhmAttachments.EHM_WISE_ABILITY);
@@ -611,6 +621,138 @@ public final class WiseLessons {
             return new ArrayList<>();
         }
         return new ArrayList<>(stored);
+    }
+
+    private static void mentionBossBiomes(ServerPlayer player, ServerLevel level, String teacherId, long assignedDay) {
+        List<String> eligible = eligibleBossBiomes(player, level);
+        List<WiseLessonRules.BossHint> stored = hintsOf(player);
+        WiseLessonRules.BossHint prior = findHint(stored, teacherId);
+        int roll = 0;
+        if (WiseLessonRules.choosesBossHint(prior, teacherId, assignedDay, eligible.size())) {
+            roll = level.getRandom().nextInt();
+        }
+        WiseLessonRules.BossHint hint = WiseLessonRules.nextBossHint(prior, teacherId, assignedDay, eligible, roll);
+        if (!hint.equals(prior)) {
+            player.setAttached(EhmAttachments.EHM_WISE_BOSS_HINTS, replaceHint(stored, hint));
+        }
+        if (hint.biomes().isEmpty()) {
+            return;
+        }
+        player.sendSystemMessage(bossBiomeLine(hint.biomes()));
+    }
+
+    /** Visited biomes whose boss family has not appeared yet, in the order they were explored. */
+    private static List<String> eligibleBossBiomes(ServerPlayer player, ServerLevel level) {
+        List<String> visited = player.getAttachedOrElse(EhmAttachments.EHM_VISITED_BIOMES, List.of());
+        if (visited.isEmpty()) {
+            return List.of();
+        }
+        Registry<Biome> registry = level.registryAccess().lookupOrThrow(Registries.BIOME);
+        boolean[] spent = new boolean[BossFamily.values().length];
+        boolean[] known = new boolean[BossFamily.values().length];
+        List<String> eligible = new ArrayList<>();
+        for (String raw : visited) {
+            Identifier id = Identifier.tryParse(raw);
+            if (id == null) {
+                continue;
+            }
+            Optional<Holder.Reference<Biome>> found = registry.get(ResourceKey.create(Registries.BIOME, id));
+            if (found.isEmpty()) {
+                continue;
+            }
+            Holder<Biome> holder = found.get();
+            if (holder.is(EhmTags.NO_BIOME_BOSSES)) {
+                continue;
+            }
+            BossFamily family = null;
+            for (BossFamily candidate : BossFamily.values()) {
+                if (holder.is(candidate.biomes())) {
+                    family = candidate;
+                    break;
+                }
+            }
+            if (family == null) {
+                continue;
+            }
+            int index = family.ordinal();
+            if (!known[index]) {
+                spent[index] = BiomeBosses.familySpent(level, family);
+                known[index] = true;
+            }
+            if (!spent[index]) {
+                eligible.add(raw);
+            }
+        }
+        return eligible;
+    }
+
+    private static Component bossBiomeLine(List<String> biomeIds) {
+        List<Component> names = new ArrayList<>();
+        for (String raw : biomeIds) {
+            Identifier id = Identifier.tryParse(raw);
+            if (id == null) {
+                names.add(Component.literal(ExplorationRules.biomeFallbackName(raw)));
+                continue;
+            }
+            names.add(Exploration.biomeName(ResourceKey.create(Registries.BIOME, id)));
+        }
+        return Component.translatableWithFallback(
+                "tougher.wise.boss_biomes",
+                "A great beast may still wait in %s.",
+                joinBiomeNames(names));
+    }
+
+    /** Same conjunctions as {@link WiseLessonRules#joinNames}. */
+    private static Component joinBiomeNames(List<Component> names) {
+        if (names.size() == 1) {
+            return names.get(0);
+        }
+        MutableComponent line = Component.empty();
+        for (int i = 0; i < names.size(); i++) {
+            if (i > 0) {
+                String separator = names.size() == 2 ? " and " : (i == names.size() - 1 ? ", and " : ", ");
+                line.append(Component.literal(separator));
+            }
+            line.append(names.get(i));
+        }
+        return line;
+    }
+
+    private static List<WiseLessonRules.BossHint> hintsOf(ServerPlayer player) {
+        List<WiseLessonRules.BossHint> stored = player.getAttached(EhmAttachments.EHM_WISE_BOSS_HINTS);
+        if (stored == null || stored.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return new ArrayList<>(stored);
+    }
+
+    private static WiseLessonRules.BossHint findHint(List<WiseLessonRules.BossHint> stored, String teacherId) {
+        for (WiseLessonRules.BossHint hint : stored) {
+            if (teacherId.equals(hint.teacherId())) {
+                return hint;
+            }
+        }
+        return null;
+    }
+
+    private static List<WiseLessonRules.BossHint> replaceHint(
+            List<WiseLessonRules.BossHint> stored, WiseLessonRules.BossHint hint) {
+        List<WiseLessonRules.BossHint> next = new ArrayList<>();
+        boolean replaced = false;
+        for (WiseLessonRules.BossHint prior : stored) {
+            if (hint.teacherId().equals(prior.teacherId())) {
+                if (!replaced) {
+                    next.add(hint);
+                    replaced = true;
+                }
+                continue;
+            }
+            next.add(prior);
+        }
+        if (!replaced) {
+            next.add(hint);
+        }
+        return next;
     }
 
     private static WiseLessonRules.Lesson find(List<WiseLessonRules.Lesson> board, String teacherId) {

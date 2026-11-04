@@ -13,6 +13,8 @@ public final class WiseLessonRules {
     public static final int INTERVAL_DAYS = 30;
     /** An unfinished hunt ends this many Minecraft days after it is given. */
     public static final int MISSION_DAYS = 14;
+    /** Explored biomes named while a teacher waits to offer the next hunt. */
+    public static final int BOSS_HINTS = 3;
     public static final int PERSIST_DAYS = 3;
     public static final int BASE_MIN = 3;
     public static final int BASE_MAX = 8;
@@ -159,6 +161,17 @@ public final class WiseLessonRules {
         }
     }
 
+    /**
+     * Biomes this teacher has named for one cooldown. {@code chosen} stays true after more than
+     * {@link #BOSS_HINTS} were eligible, including when every named biome later becomes ineligible.
+     */
+    public record BossHint(String teacherId, long assignedDay, boolean chosen, List<String> biomes) {
+        public BossHint {
+            teacherId = teacherId == null ? "" : teacherId;
+            biomes = biomes == null || biomes.isEmpty() ? List.of() : List.copyOf(biomes);
+        }
+    }
+
     /** One second of travel. {@code attemptSpawn} is true only when a creature should be placed now. */
     public record Second(Lesson lesson, boolean attemptSpawn) {}
 
@@ -265,6 +278,76 @@ public final class WiseLessonRules {
             return lesson;
         }
         return lesson.withActive(false);
+    }
+
+    /**
+     * True only on the talk that first keeps three biomes for this teacher and assigned day.
+     * A short list, and a choice already made, do not roll again.
+     */
+    public static boolean choosesBossHint(BossHint prior, String teacherId, long assignedDay, int eligibleCount) {
+        if (eligibleCount <= BOSS_HINTS) {
+            return false;
+        }
+        String id = teacherId == null ? "" : teacherId;
+        return prior == null || !prior.chosen() || !id.equals(prior.teacherId()) || prior.assignedDay() != assignedDay;
+    }
+
+    /**
+     * Up to {@link #BOSS_HINTS} eligible biome ids. Three or fewer stay in the given order and are not frozen.
+     * More than that keeps three from {@code roll} until the assigned day changes, and does not refill a gap.
+     */
+    public static BossHint nextBossHint(
+            BossHint prior, String teacherId, long assignedDay, List<String> eligible, int roll) {
+        String id = teacherId == null ? "" : teacherId;
+        List<String> pool = eligible == null ? List.of() : eligible;
+        if (prior != null && prior.chosen() && id.equals(prior.teacherId()) && prior.assignedDay() == assignedDay) {
+            List<String> kept = new ArrayList<>();
+            for (String biome : prior.biomes()) {
+                if (pool.contains(biome)) {
+                    kept.add(biome);
+                }
+            }
+            return new BossHint(id, assignedDay, true, kept);
+        }
+        if (pool.size() <= BOSS_HINTS) {
+            return new BossHint(id, assignedDay, false, pool);
+        }
+        return new BossHint(id, assignedDay, true, pickBossHints(pool, roll));
+    }
+
+    /** One name, "A and B", or "A, B, and C". */
+    public static String joinNames(List<String> names) {
+        if (names == null || names.isEmpty()) {
+            return "";
+        }
+        if (names.size() == 1) {
+            return names.get(0);
+        }
+        if (names.size() == 2) {
+            return names.get(0) + " and " + names.get(1);
+        }
+        StringBuilder text = new StringBuilder();
+        for (int i = 0; i < names.size(); i++) {
+            if (i > 0) {
+                text.append(i == names.size() - 1 ? ", and " : ", ");
+            }
+            text.append(names.get(i));
+        }
+        return text.toString();
+    }
+
+    private static List<String> pickBossHints(List<String> pool, int roll) {
+        List<String> copy = new ArrayList<>(pool);
+        int state = roll;
+        int take = Math.min(BOSS_HINTS, copy.size());
+        for (int i = 0; i < take; i++) {
+            state = state * 31 + 17;
+            int index = i + Math.floorMod(state, copy.size() - i);
+            String chosen = copy.get(index);
+            copy.set(index, copy.get(i));
+            copy.set(i, chosen);
+        }
+        return List.copyOf(copy.subList(0, take));
     }
 
     public static int unlockedTier(int givenCount) {
