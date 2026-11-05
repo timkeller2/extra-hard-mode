@@ -217,7 +217,7 @@ public final class EhmHelp {
         return Page.of(
                 "tougher.help.mining.",
                 List.of(
-                        "Mining: Stone and deepslate need an iron or better pickaxe. Breaking coal or ore softens nearby stone, and that collapse can keep going out to 50 blocks.",
+                        "Mining: Stone and deepslate need an iron or better pickaxe. Breaking coal or ore softens only the blocks around it. That fall can keep going out to 50 blocks.",
                         "Mining: Dirt and cobble fall when nothing is under them, and that collapse stops at 50 blocks too.",
                         "Mining: Wood, stone, and copper tools last one-third as long."));
     }
@@ -304,7 +304,7 @@ public final class EhmHelp {
                 "tougher.help.animals.",
                 List.of(
                         "Animals: Animals wait 6 times as long to breed again. Chickens lay eggs 6 times as slowly.",
-                        "Animals: farming.grassGrowthPercent -1 is 75 minus the current loss, never below 0. 0 never spreads. A positive number is that percent. A fence, gate, door, wall does not stop it.",
+                        "Animals: farming.grassGrowthPercent -1 is 40 minus half the loss, never below 0. 0 never spreads. A positive number is that percent. A fence, gate, door, wall does not stop it.",
                         "Animals: Livestock overgraze by eating grass they can walk to within 6 blocks and turning that block into dirt. Bees do not.",
                         "Animals: About 9 grass blocks keep a cow, pig, sheep, or other large animal fed. About 4 keep a chicken or rabbit fed.",
                         "Animals: Sheep overgraze too, and wait 6 times as long to eat grass and regrow their wool. farming.sheepWoolGrazeMultiplier of 1 is the usual wool wait.",
@@ -374,7 +374,7 @@ public final class EhmHelp {
                         "Combat: Each defeated boss makes the next 30% harder and richer. The third is a world event.",
                         "Combat: The seventh rolls the Minecraft credits, and you can keep playing.",
                         "Combat: Below Y=48, a visited cave may spawn an extra hostile in light 11. Every 20 blocks you are deeper adds 1. Chance falls by 5% times that block's light.",
-                        "Combat: 100 hostile kills by players anywhere in one chunk stop spawns at Y=48 and above. Natural, bounty, and hunt spawns. monsters.chunkClearKills of -1 is off.",
+                        "Combat: 100 hostile kills by players anywhere in one chunk stop hostile spawns at Y=48 and above. Neutral and friendly mobs still spawn. monsters.chunkClearKills of -1 is off.",
                         "Combat: Players in or near it are told this area is being cleared for the alliance, and gain 25 experience and an emerald.",
                         "Combat: Once a Minecraft day, entering each full chunk at Y=48 or above plays a quiet chime.",
                         "Combat: Below Y=0 in the overworld, hostile mobs can spawn in block light of 1 per 15 blocks down. Y=-15 allows 1. Y=-30 allows 2.",

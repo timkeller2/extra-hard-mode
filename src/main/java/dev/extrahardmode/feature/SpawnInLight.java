@@ -151,7 +151,7 @@ public final class SpawnInLight implements FeatureModule {
         if (!Monster.checkAnyLightMonsterSpawnRules(type, level, EntitySpawnReason.NATURAL, pos, random)) {
             return;
         }
-        if (ChunkClear.blocksSpawn(level, pos)) {
+        if (ChunkClear.blocksHostile(level, pos, type)) {
             return;
         }
         Mob spawned = type.spawn(level, pos, EntitySpawnReason.NATURAL);

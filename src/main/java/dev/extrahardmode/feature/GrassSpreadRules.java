@@ -12,11 +12,11 @@ public final class GrassSpreadRules {
     /** Config value that computes the spread from the current crop loss rate. */
     public static final int FOLLOW_LOSS = -1;
     public static final int DEFAULT_PERCENT = FOLLOW_LOSS;
-    /** Spread percent when following loss is {@code LOSS_OFFSET} minus that rate, and never below 0. */
-    public static final int LOSS_OFFSET = 75;
+    /** Spread percent at zero crop loss when the config follows that loss. */
+    public static final int FOLLOW_BASE = 40;
 
     public static final String CONFIG_COMMENT =
-            "Percent of the usual grass spread onto dirt. -1, the default, is 75 minus the current crop loss rate, and never below 0. 0 never spreads. A positive number is that static percent. 100 is the usual rate.";
+            "Percent of the usual grass spread onto dirt. -1, the default, is 40 minus half the current crop loss rate, and never below 0. 0 never spreads. A positive number is that static percent. 100 is the usual rate.";
 
     private GrassSpreadRules() {}
 
@@ -35,15 +35,15 @@ public final class GrassSpreadRules {
     }
 
     /**
-     * Percent passed to {@link #allowSpread}. {@code -1} is {@link #LOSS_OFFSET}
-     * minus {@code currentLossRate}, rounded, and never below 0.
+     * Percent passed to {@link #allowSpread}. {@code -1} is {@link #FOLLOW_BASE}
+     * minus half of {@code currentLossRate}, rounded, and never below 0.
      */
     public static int effectivePercent(int configured, double currentLossRate) {
         int percent = configuredPercent(configured);
         if (percent != FOLLOW_LOSS) {
             return percent;
         }
-        long spread = Math.round(LOSS_OFFSET - Math.max(0.0, currentLossRate));
+        long spread = Math.round(FOLLOW_BASE - 0.5 * Math.max(0.0, currentLossRate));
         if (spread <= 0L) {
             return 0;
         }

@@ -143,7 +143,7 @@ public final class EhmAttachments {
     /** Packed {@link net.minecraft.core.BlockPos} that started this falling chain. Not copied onto players. */
     public static final AttachmentType<Long> EHM_CHAIN_ORIGIN = AttachmentRegistry.create(
             ExtraHardModeMod.id("chain_origin"), builder -> builder.persistent(Codec.LONG));
-    /** This fall came from a cave-in, so unsupported stone around the hole may soften too. */
+    /** This fall came from a cave-in, so loose blocks around the hole may fall too. */
     public static final AttachmentType<Boolean> EHM_CAVE_IN_CHAIN = AttachmentRegistry.create(
             ExtraHardModeMod.id("cave_in_chain"),
             builder -> builder.persistent(Codec.BOOL).initializer(() -> Boolean.FALSE));

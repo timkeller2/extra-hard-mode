@@ -28,18 +28,19 @@ class GrassSpreadRulesTest {
         assertEquals(0, GrassSpreadRules.configuredPercent(-5));
         assertEquals(40, GrassSpreadRules.configuredPercent(40));
         assertEquals(100, GrassSpreadRules.configuredPercent(150));
-        assertEquals(50, GrassSpreadRules.effectivePercent(-1, 25));
-        assertEquals(62, GrassSpreadRules.effectivePercent(-1, 12.6));
-        assertEquals(63, GrassSpreadRules.effectivePercent(-1, 12.5));
-        assertEquals(75, GrassSpreadRules.effectivePercent(-1, 0));
-        assertEquals(0, GrassSpreadRules.effectivePercent(-1, 75));
+        assertEquals(28, GrassSpreadRules.effectivePercent(-1, 25));
+        assertEquals(34, GrassSpreadRules.effectivePercent(-1, 12.6));
+        assertEquals(34, GrassSpreadRules.effectivePercent(-1, 12.5));
+        assertEquals(40, GrassSpreadRules.effectivePercent(-1, 0));
+        assertEquals(3, GrassSpreadRules.effectivePercent(-1, 75));
+        assertEquals(0, GrassSpreadRules.effectivePercent(-1, 80));
         assertEquals(0, GrassSpreadRules.effectivePercent(-1, 90));
         assertEquals(0, GrassSpreadRules.effectivePercent(0, 10));
         assertEquals(40, GrassSpreadRules.effectivePercent(40, 90));
         assertEquals(100, GrassSpreadRules.effectivePercent(150, 0));
         assertFalse(GrassSpreadRules.allowSpread(GrassSpreadRules.effectivePercent(-1, 80), 0));
-        assertTrue(GrassSpreadRules.allowSpread(GrassSpreadRules.effectivePercent(-1, 25), 49));
-        assertFalse(GrassSpreadRules.allowSpread(GrassSpreadRules.effectivePercent(-1, 25), 50));
+        assertTrue(GrassSpreadRules.allowSpread(GrassSpreadRules.effectivePercent(-1, 25), 27));
+        assertFalse(GrassSpreadRules.allowSpread(GrassSpreadRules.effectivePercent(-1, 25), 28));
     }
 
     @Test

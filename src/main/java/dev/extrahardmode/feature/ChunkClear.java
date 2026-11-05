@@ -14,7 +14,9 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Prediction;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.NeutralMob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.item.ItemStack;
@@ -22,8 +24,9 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ChunkPos;
 
 /**
- * Counts hostile kills by players in a chunk. A full chunk refuses spawns at
- * and above Y=48, tells nearby players, and marks that chunk once a day.
+ * Counts hostile kills by players in a chunk. A full chunk refuses hostile
+ * spawns at and above Y=48. Neutral and friendly mobs still spawn. Nearby
+ * players are told, and the chunk is marked once a day.
  */
 public final class ChunkClear {
     private ChunkClear() {}
@@ -57,6 +60,23 @@ public final class ChunkClear {
             return false;
         }
         return ChunkClearRules.full(ChunkClearData.of(level).kills(pos), threshold);
+    }
+
+    /** True when a full chunk should refuse this mob. Neutral and friendly mobs pass. */
+    public static boolean blocksHostile(ServerLevel level, BlockPos pos, EntityType<?> type) {
+        return blocksSpawn(level, pos) && hostile(type);
+    }
+
+    /**
+     * Hostile mobs are the ones peaceful difficulty removes, except neutrals such as
+     * endermen and zombified piglins. Friendly mobs are allowed in peaceful already.
+     */
+    public static boolean hostile(EntityType<?> type) {
+        if (type == null || type.isAllowedInPeaceful()) {
+            return false;
+        }
+        Class<?> base = type.getBaseClass();
+        return base == null || !NeutralMob.class.isAssignableFrom(base);
     }
 
     public static void tickLevel(ServerLevel level) {

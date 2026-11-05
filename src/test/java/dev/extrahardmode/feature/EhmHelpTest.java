@@ -89,7 +89,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("Pumpkins and melons"));
         assertTrue(String.join(" ", lines).contains("drop no seeds"));
         assertTrue(String.join(" ", lines).contains("6 times as long to breed"));
-        assertTrue(String.join(" ", lines).contains("75 minus the current loss"));
+        assertTrue(String.join(" ", lines).contains("40 minus half the loss"));
         assertTrue(String.join(" ", lines).contains("0 never spreads"));
         assertTrue(String.join(" ", lines).contains("fence, gate, door, wall"));
         assertTrue(String.join(" ", lines).contains("Well Fed or ready gold pushes your level past 40"));
@@ -460,6 +460,7 @@ class EhmHelpTest {
         assertTrue(combatText.contains("teleports to the nearest open spot"));
         assertTrue(combatText.contains("phantom that ignores sunlight"));
         assertTrue(combatText.contains("chunkClearKills"));
+        assertTrue(combatText.contains("Neutral and friendly mobs still spawn"));
         assertTrue(combatText.contains("being cleared for the alliance"));
         assertTrue(combatText.contains("25 experience and an emerald"));
         assertTrue(combatText.contains("quiet chime"));
@@ -470,6 +471,7 @@ class EhmHelpTest {
         var mining = EhmHelp.resolve("mining");
         assertFalse(String.join(" ", mining.lines()).contains("overgraze"));
         assertTrue(String.join(" ", mining.lines()).contains("out to 50 blocks"));
+        assertTrue(String.join(" ", mining.lines()).contains("only the blocks around"));
         for (String topic : EhmHelp.topicSuggestions()) {
             var page = EhmHelp.resolve(topic);
             assertTrue(page != null && !page.lines().isEmpty(), topic);

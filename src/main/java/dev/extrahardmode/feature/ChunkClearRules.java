@@ -4,12 +4,12 @@ import java.util.Map;
 
 /**
  * When a chunk has enough player kills of hostile mobs, ground at and above
- * {@link #MIN_Y} stops receiving natural, bounty, and hunt spawns.
+ * {@link #MIN_Y} stops receiving hostile spawns. Neutral and friendly mobs still spawn.
  * Minecraft-free so JUnit can cover the thresholds.
  */
 public final class ChunkClearRules {
     public static final int DEFAULT_KILLS = 100;
-    /** Spawns at this block Y and above are the ones a full chunk refuses. */
+    /** Hostile spawns at this block Y and above are the ones a full chunk refuses. */
     public static final int MIN_Y = 48;
     public static final int REWARD_XP = 25;
     public static final int REWARD_EMERALDS = 1;
@@ -20,7 +20,7 @@ public final class ChunkClearRules {
     public static final String PEACE_MESSAGE = "The alliance holds this ground.";
 
     public static final String CONFIG_COMMENT =
-            "Hostile kills by a player in one chunk. At this many, spawns at Y=48 and above stop: natural spawns, bounties, and wise-teacher hunts. Nearby players gain 25 experience and an emerald. Default 100. -1 turns it off. 0 does too.";
+            "Hostile kills by a player in one chunk. At this many, hostile spawns at Y=48 and above stop. Neutral and friendly mobs still spawn. Nearby players gain 25 experience and an emerald. Default 100. -1 turns it off. 0 does too.";
 
     private ChunkClearRules() {}
 
@@ -40,6 +40,11 @@ public final class ChunkClearRules {
 
     public static boolean blocksSpawn(int y, int kills, int threshold) {
         return y >= MIN_Y && full(kills, threshold);
+    }
+
+    /** A full chunk refuses this spawn only when the mob is hostile. */
+    public static boolean blocksHostileSpawn(int y, int kills, int threshold, boolean hostile) {
+        return hostile && blocksSpawn(y, kills, threshold);
     }
 
     /** Same chunk always counts. Otherwise {@code distanceSquared} is blocks from the kill. */

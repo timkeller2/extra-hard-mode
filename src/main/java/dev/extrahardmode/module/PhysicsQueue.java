@@ -72,7 +72,7 @@ public final class PhysicsQueue {
 
     /**
      * @param chainOrigin block that started this collapse; the chain stops 50 blocks from it
-     * @param caveIn unsupported stone around the hole softens too
+     * @param caveIn loose blocks around this fall keep the chain going
      */
     public void enqueueConvert(
             ServerLevel level,

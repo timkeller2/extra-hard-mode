@@ -10,8 +10,9 @@ package dev.extrahardmode.feature;
  * a large animal at {@link #DEFAULT_LARGE_INTERVAL_TICKS}, and
  * {@link #DEFAULT_SMALL_BLOCKS} blocks keep up with a chicken or rabbit at
  * {@link #DEFAULT_SMALL_INTERVAL_TICKS}. {@link GrassSpreadRules} defaults to
- * a quarter of that spread, so the same pasture shrinks. Raising the block
- * count makes that animal eat sooner, so it needs more grass.
+ * about 28 percent of that spread at a crop loss of 25, so the same pasture
+ * shrinks. Raising the block count makes that animal eat sooner, so it needs
+ * more grass.
  */
 public final class OvergrazingRules {
     public static final int DEFAULT_CHEST_RANGE = 20;

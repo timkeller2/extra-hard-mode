@@ -21,6 +21,10 @@ class ChunkClearRulesTest {
         assertFalse(ChunkClearRules.blocksSpawn(80, 500, 0));
         assertFalse(ChunkClearRules.blocksSpawn(80, 500, -1));
         assertFalse(ChunkClearRules.blocksSpawn(80, 1, -4));
+        assertTrue(ChunkClearRules.blocksHostileSpawn(48, 100, 100, true));
+        assertFalse(ChunkClearRules.blocksHostileSpawn(48, 100, 100, false));
+        assertFalse(ChunkClearRules.blocksHostileSpawn(48, 99, 100, true));
+        assertFalse(ChunkClearRules.blocksHostileSpawn(47, 100, 100, true));
         assertFalse(ChunkClearRules.justFilled(99, -1));
     }
 

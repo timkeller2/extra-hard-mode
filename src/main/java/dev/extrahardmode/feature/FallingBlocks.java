@@ -81,15 +81,12 @@ public final class FallingBlocks implements FeatureModule {
     }
 
     /**
-     * A hole just opened. Adjacent loose blocks, and stone when this fall is a cave-in,
-     * are queued a few ticks later. The walk stops 50 blocks from {@code chainOrigin}.
+     * A hole just opened. Adjacent loose blocks are queued a few ticks later.
+     * The walk stops 50 blocks from {@code chainOrigin}. Stone past the mined block is not softened.
      */
     public static void onBeganFalling(ServerLevel level, BlockPos pos, BlockPos chainOrigin, boolean caveIn) {
         RealisticChopping.dropUnsupportedLogs(level, pos);
         BlockPos origin = chainOrigin == null ? pos : chainOrigin;
-        if (caveIn) {
-            CaveIns.spread(level, pos, origin);
-        }
         if (!ConfigManager.world(level).fallingCascade()) {
             return;
         }

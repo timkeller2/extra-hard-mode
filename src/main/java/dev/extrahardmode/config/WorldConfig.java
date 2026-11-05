@@ -1049,7 +1049,7 @@ public final class WorldConfig {
                 writeDefaultIfMissing(
                         file,
                         "mining.caveIns.enable",
-                        "Mining cave-in ores softens nearby stone. Unsupported stone keeps falling out to 50 blocks.",
+                        "Mining cave-in ores softens the blocks next to the ore. Dirt and cobble keep falling out to 50 blocks.",
                         true);
                 writeDefaultIfMissing(
                         file,

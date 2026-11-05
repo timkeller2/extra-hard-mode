@@ -562,7 +562,7 @@ public final class WiseLessons {
         int x = player.getBlockX() + (int) Math.round(dx);
         int z = player.getBlockZ() + (int) Math.round(dz);
         BlockPos feet = findFeet(level, x, z, player.getBlockY());
-        if (feet == null || ChunkClear.blocksSpawn(level, feet)) {
+        if (feet == null) {
             return null;
         }
         Identifier id = Identifier.tryParse(lesson.mobId());
@@ -570,6 +570,9 @@ public final class WiseLessons {
             return null;
         }
         EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getValue(id);
+        if (ChunkClear.blocksHostile(level, feet, type)) {
+            return null;
+        }
         Entity spawned = type.spawn(level, feet, EntitySpawnReason.COMMAND);
         if (!(spawned instanceof Mob mob)) {
             if (spawned != null) {
