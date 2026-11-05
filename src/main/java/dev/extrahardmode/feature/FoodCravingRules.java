@@ -18,10 +18,10 @@ public final class FoodCravingRules {
     /**
      * What eating {@code foodId} next would mean.
      * Black and brown use the same-food penalty, so Well Fed delays them.
-     * Gold is outside the Well Fed window and outside the last 7 meals. Green is the oldest meal
-     * of a run that is already 7 or longer, and that food appears only once in the Well Fed window.
-     * Full steel blue is a repeat inside that window that grace still allows. The small steel-blue
-     * mark is only novel.
+     * The green up mark is a craving. It maintains or increases the Well Fed run: the food is
+     * outside the Well Fed window and the last 7 meals, or it is the oldest meal of a run of 7 or
+     * more and that food appears only once in the window. A yellow down mark weakens the run.
+     * The full one is a repeat grace still allows. The small one is only novel.
      */
     public static FoodCraving classify(List<String> history, int wellFed, String foodId) {
         if (foodId == null || foodId.isEmpty()) {
@@ -36,13 +36,11 @@ public final class FoodCravingRules {
         if (penalty >= 1) {
             return FoodCraving.SICK;
         }
-        if (outsideLastMealsAndWellFed(recent, foodId, level)) {
-            return FoodCraving.GREAT;
-        }
         int trailing = trailingDifferent(recent);
-        if (isDue(recent, foodId, trailing)
-                && FoodHistory.countInLast(recent, foodId, WellFedRules.holdWindow(level)) <= 1) {
-            return FoodCraving.CRAVING;
+        if (outsideLastMealsAndWellFed(recent, foodId, level)
+                || (isDue(recent, foodId, trailing)
+                        && FoodHistory.countInLast(recent, foodId, WellFedRules.holdWindow(level)) <= 1)) {
+            return FoodCraving.GREAT;
         }
         if (withinGrace(recent, foodId, level)) {
             return FoodCraving.GRACE;
@@ -61,10 +59,9 @@ public final class FoodCravingRules {
         return switch (craving) {
             case VERY_SICK -> 0xF0141414;
             case SICK -> 0xF06B3E22;
-            case SLIGHT -> 0xF07AA0B8;
-            case GRACE -> 0xF0B7D0E0;
-            case CRAVING -> 0xF03E8A48;
-            case GREAT -> 0xF0D4A017;
+            case SLIGHT -> 0xF0C6A81E;
+            case GRACE -> 0xF0FFE566;
+            case GREAT -> 0xF07DCEA0;
             case NORMAL -> 0;
         };
     }

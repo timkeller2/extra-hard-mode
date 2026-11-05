@@ -7,6 +7,5 @@ public enum FoodCraving {
     NORMAL,
     SLIGHT,
     GRACE,
-    CRAVING,
     GREAT
 }

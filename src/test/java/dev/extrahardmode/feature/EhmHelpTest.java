@@ -29,11 +29,12 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("at least 1 hunger"));
         assertTrue(String.join(" ", lines).contains("small mark in the top right"));
         assertTrue(String.join(" ", lines).contains("stack on the cursor"));
-        assertTrue(String.join(" ", lines).contains("small steel-blue up mark is a slight craving"));
-        assertTrue(String.join(" ", lines).contains("grace still allows that Well Fed repeat"));
-        assertTrue(String.join(" ", lines).contains("appears only once in the Well Fed window"));
-        assertTrue(String.join(" ", lines).contains("gold up mark is outside the Well Fed window"));
-        assertTrue(String.join(" ", lines).contains("outside the last 7 meals"));
+        assertTrue(String.join(" ", lines).contains("small yellow down mark is a slight craving"));
+        assertTrue(String.join(" ", lines).contains("yellow down mark is within grace"));
+        assertTrue(String.join(" ", lines).contains("the run weakens"));
+        assertTrue(String.join(" ", lines).contains("green up mark is a craving"));
+        assertTrue(String.join(" ", lines).contains("oldest unduplicated meal"));
+        assertTrue(String.join(" ", lines).contains("outside that window and the last 7"));
         assertTrue(String.join(" ", lines).contains("175, 275, 425, and 600"));
         assertTrue(String.join(" ", lines).contains("pay 1 through 7 emeralds"));
         assertTrue(String.join(" ", lines).contains("inside a bundle"));
