@@ -28,6 +28,14 @@ class HungerRulesTest {
     }
 
     @Test
+    void swimmingDrainsSaturationFasterThanWalking() {
+        assertEquals(1.0F, HungerRules.swimSaturationMultiplier(false, false));
+        assertEquals(2.0F, HungerRules.swimSaturationMultiplier(true, false));
+        assertEquals(4.0F, HungerRules.swimSaturationMultiplier(false, true));
+        assertEquals(4.0F, HungerRules.swimSaturationMultiplier(true, true));
+    }
+
+    @Test
     void lookingAndKeysCountAsActivity() {
         assertFalse(HungerRules.isLooking(0.0F, 0.0F));
         assertTrue(HungerRules.isLooking(1.0F, 0.0F));

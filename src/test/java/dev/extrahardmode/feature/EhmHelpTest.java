@@ -33,14 +33,16 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("yellow down mark is within grace"));
         assertTrue(String.join(" ", lines).contains("the run weakens"));
         assertTrue(String.join(" ", lines).contains("green minus maintains"));
+        assertTrue(String.join(" ", lines).contains("Above the offhand"));
         assertTrue(String.join(" ", lines).contains("appears only once"));
         assertTrue(String.join(" ", lines).contains("green up mark is a craving"));
-        assertTrue(String.join(" ", lines).contains("outside the Well Fed window and the last 7 meals"));
+        assertTrue(String.join(" ", lines).contains("dropped out of the variety run"));
         assertTrue(String.join(" ", lines).contains("175, 275, 425, and 600"));
         assertTrue(String.join(" ", lines).contains("pay 1 through 7 emeralds"));
         assertTrue(String.join(" ", lines).contains("inside a bundle"));
         assertTrue(String.join(" ", lines).contains("or a shop"));
         assertTrue(String.join(" ", lines).contains("saturation does not fall"));
+        assertTrue(String.join(" ", lines).contains("sprint-swimming four times as fast"));
         assertTrue(String.join(" ", lines).contains("Below 18"));
         assertTrue(String.join(" ", lines).contains("does not consume saturation"));
         assertTrue(String.join(" ", lines).contains("casts Battery"));

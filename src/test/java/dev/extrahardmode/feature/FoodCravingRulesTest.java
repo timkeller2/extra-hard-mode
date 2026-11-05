@@ -2,13 +2,29 @@ package dev.extrahardmode.feature;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import dev.extrahardmode.player.FoodHistory;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class FoodCravingRulesTest {
+    @Test
+    void oldestUniqueMealSkipsARepeatedOlderFood() {
+        assertNull(FoodCravingRules.oldestUniqueInRun(List.of("a", "b", "c"), 0));
+        assertNull(FoodCravingRules.oldestUniqueInRun(List.of(), 2));
+        assertNull(FoodCravingRules.oldestUniqueInRun(List.of("a", "a", "a"), 1));
+        List<String> nine = List.of("a", "b", "c", "d", "e", "f", "g", "h", "i");
+        assertEquals("a", FoodCravingRules.oldestUniqueInRun(nine, 1));
+        assertEquals(FoodCraving.MAINTAIN, FoodCravingRules.classify(nine, 1, "a"));
+        List<String> repeatedOldest = List.of(
+                "apple", "bread", "carrot", "potato", "beet", "melon", "cookie", "pumpkin", "apple", "chicken");
+        assertEquals("bread", FoodCravingRules.oldestUniqueInRun(repeatedOldest, 1));
+        assertEquals(FoodCraving.MAINTAIN, FoodCravingRules.classify(repeatedOldest, 1, "bread"));
+    }
+
     @Test
     void aNewDietIsAGreatCravingAndHidesNonFood() {
         assertEquals(FoodCraving.GREAT, FoodCravingRules.classify(List.of(), 0, "minecraft:apple"));
@@ -43,8 +59,9 @@ class FoodCravingRulesTest {
     void wellFedSplitsSlightCravingFromALongerStreak() {
         List<String> ten = List.of("a", "b", "c", "d", "e", "f", "g", "h", "i", "j");
         assertEquals(FoodCraving.GREAT, FoodCravingRules.classify(ten, 1, "k"));
-        assertEquals(FoodCraving.MAINTAIN, FoodCravingRules.classify(ten, 1, "a"));
-        assertEquals(FoodCraving.GRACE, FoodCravingRules.classify(ten, 1, "b"));
+        assertEquals(FoodCraving.GREAT, FoodCravingRules.classify(ten, 1, "a"));
+        assertEquals(FoodCraving.MAINTAIN, FoodCravingRules.classify(ten, 1, "b"));
+        assertEquals(FoodCraving.GRACE, FoodCravingRules.classify(ten, 1, "c"));
         assertEquals(FoodCraving.NORMAL, FoodCravingRules.classify(ten, 1, "j"));
         assertEquals(FoodCraving.GREAT, FoodCravingRules.classify(ten, 0, "a"));
         assertEquals(FoodCraving.GREAT, FoodCravingRules.classify(ten, 0, "b"));
@@ -53,7 +70,7 @@ class FoodCravingRulesTest {
         assertEquals(FoodCraving.GRACE, FoodCravingRules.classify(spared, 1, "c"));
         List<String> tight = List.of("x", "a", "b", "c", "d", "e", "f", "g", "h", "a");
         assertEquals(FoodCraving.MAINTAIN, FoodCravingRules.classify(tight, 1, "b"));
-        assertEquals(FoodCraving.GRACE, FoodCravingRules.classify(tight, 1, "x"));
+        assertEquals(FoodCraving.GREAT, FoodCravingRules.classify(tight, 1, "x"));
         assertEquals(FoodCraving.GREAT, FoodCravingRules.classify(tight, 0, "x"));
         List<String> over = List.of("z", "x", "b", "c", "d", "e", "f", "g", "h", "a", "a");
         assertEquals(FoodCraving.SLIGHT, FoodCravingRules.classify(over, 1, "b"));
@@ -64,6 +81,33 @@ class FoodCravingRulesTest {
         assertEquals(FoodCraving.GRACE, FoodCravingRules.classify(repeatedDue, 1, "b"));
         List<String> pastGrace = List.of("b", "b", "b", "d", "e", "f", "g", "h", "i", "j");
         assertEquals(FoodCraving.SLIGHT, FoodCravingRules.classify(pastGrace, 1, "b"));
+    }
+
+    @Test
+    void graceRepeatsPushTheOldestMealsOutAsCravings() {
+        List<String> meals = new ArrayList<>();
+        for (int i = 0; i < 13; i++) {
+            meals.add(String.valueOf((char) ('a' + i)));
+        }
+        assertEquals(3, WellFedRules.nextLevel(meals, 0));
+        assertEquals(FoodCraving.MAINTAIN, FoodCravingRules.classify(meals, 3, "a"));
+        meals.add("d");
+        assertEquals(FoodCraving.GREAT, FoodCravingRules.classify(meals, 3, "a"));
+        assertEquals(FoodCraving.GRACE, FoodCravingRules.classify(meals, 3, "b"));
+        meals.add("e");
+        assertEquals(FoodCraving.GREAT, FoodCravingRules.classify(meals, 3, "a"));
+        assertEquals(FoodCraving.GREAT, FoodCravingRules.classify(meals, 3, "b"));
+        meals.add("f");
+        assertEquals(3, WellFedRules.nextLevel(meals, 3));
+        assertEquals(FoodCraving.GREAT, FoodCravingRules.classify(meals, 3, "a"));
+        assertEquals(FoodCraving.SLIGHT, FoodCravingRules.classify(meals, 3, "b"));
+        assertEquals(FoodCraving.NORMAL, FoodCravingRules.classify(meals, 3, "d"));
+        for (String meal : List.of("a", "b", "c")) {
+            assertEquals(FoodCraving.GREAT, FoodCravingRules.classify(meals, 3, meal));
+            meals.add(meal);
+            assertEquals(3, WellFedRules.nextLevel(meals, 3));
+        }
+        assertTrue(FoodHistory.lastAreAllDifferent(meals, WellFedRules.gainWindow(3)));
     }
 
     @Test

@@ -34,6 +34,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Input;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodData;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
@@ -171,9 +172,25 @@ public final class Hunger implements FeatureModule {
             return;
         }
         float exhaustion = HungerRules.exhaustionPerTick(ConfigManager.world(level).movingExhaustionPerSecond());
+        exhaustion *= HungerRules.swimSaturationMultiplier(isSwimming(player), isFastSwimming(player));
         if (exhaustion > 0.0F) {
             player.causeFoodExhaustion(exhaustion);
         }
+    }
+
+    /** Off the ground in water. Standing on the bottom stays at the land rate. */
+    static boolean isSwimming(ServerPlayer player) {
+        if (player.isPassenger() || player.onGround()) {
+            return false;
+        }
+        return player.isInWater()
+                || player.isUnderWater()
+                || player.isEyeInFluid(FluidTags.WATER);
+    }
+
+    /** The sprint-swim pose. It still counts while the player brushes the ground. */
+    static boolean isFastSwimming(ServerPlayer player) {
+        return !player.isPassenger() && player.isSwimming();
     }
 
     private static void clear(UUID id) {

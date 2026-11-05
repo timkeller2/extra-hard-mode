@@ -31,6 +31,25 @@ public final class HungerRules {
         return Math.max(0.0F, perSecond) / TICKS_PER_SECOND;
     }
 
+    /** Activity drain while swimming, compared with moving on land. Fast wins. */
+    public static final float SWIM_SATURATION_MULTIPLIER = 2.0F;
+    /** Sprint-swimming. The game's swimming pose. */
+    public static final float FAST_SWIM_SATURATION_MULTIPLIER = 4.0F;
+
+    /**
+     * Scale for the activity exhaustion that empties saturation. {@code fast}
+     * is sprint-swimming. {@code swimming} is any other swim off the ground.
+     */
+    public static float swimSaturationMultiplier(boolean swimming, boolean fast) {
+        if (fast) {
+            return FAST_SWIM_SATURATION_MULTIPLIER;
+        }
+        if (swimming) {
+            return SWIM_SATURATION_MULTIPLIER;
+        }
+        return 1.0F;
+    }
+
     public static boolean isMoving(double dx, double dy, double dz) {
         return dx * dx + dy * dy + dz * dz > STILL_EPSILON_SQR;
     }

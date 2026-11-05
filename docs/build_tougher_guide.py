@@ -152,12 +152,13 @@ def build():
         Paragraph("Hunger", s["h"]),
         Paragraph(
             "Hunger drops while you move or act, not while you stand still. "
+            "Swimming drains saturation twice as fast, and sprint-swimming four times as fast. Hunger follows once saturation is gone. "
             "A food you have not eaten in your last 7 meals gives +1 hunger, or +1 saturation if the bar is already full. "
             "Seven different foods in the last 7 meals gives another +1 hunger, +1 saturation, and 3 experience, "
             "and it can happen again on later meals that keep that streak. "
             "The same food 5 times in the last 7 meals restores less; 7 of the last 7 restores even less. "
             "A meal still gives at least 1 hunger, and saturation does not fall. "
-            "Foods in an inventory or chest, including food inside a bundle or a shop, show a small mark in the top right corner. The hotbar shows that mark, and so does a stack on the cursor. A black X means you would get very sick of it, and a brown down mark means sick of it. Those follow the same-food penalty, so Well Fed delays them. No mark means you ate it in the last 7 meals. A small yellow down mark is a slight craving. Eating it weakens the Well Fed run. A yellow down mark is within grace: the food is outside the last 7 meals, the repeat still fits, and the Well Fed run weakens. A green minus maintains the Well Fed run. It is the oldest meal of that run, and that food appears only once. A green up mark is a craving. That food is outside the Well Fed window and the last 7 meals, so the run grows stronger. "
+            "Foods in an inventory, chest, bundle, shop, hotbar, or on the cursor show a small mark in the top right. A black X means very sick of it, and a brown down mark means sick of it. Those follow the same-food penalty, so Well Fed delays them. No mark means you ate it in the last 7 meals. A small yellow down mark is a slight craving and weakens the run. A yellow down mark is within grace: outside the last 7 meals, the repeat still fits, and the run weakens. A green minus maintains the Well Fed run. It is the oldest meal of that run, that food appears only once, and while Well Fed it is shown above the offhand slot with its mark. A green up mark is a craving. Repeats fill the extra slots, so the oldest meals drop out of the variety run, and eating them builds it back up. "
             "The locator bar is off until you eat a golden carrot. It stays on until your saturation is gone. "
             "Another player sees you only while their own bar is on too.",
             s["body"],
@@ -166,7 +167,7 @@ def build():
         Paragraph(
             "After those seven different meals, every two more different meals raise Well Fed by one. "
             "Nine different meals in a row is Well Fed 1. Thirteen is Well Fed 3. It can go higher. "
-            "At Well Fed 3 the game looks at your last 16 meals and allows 3 repeats before the level drops. "
+            "At Well Fed 3 the last 16 meals allow 3 repeats. Each one pushes the oldest meal out of the 13. "
             "That grace grows with every level. The same-food penalty also waits one extra repeat per level. "
             "Dying clears the meal history, so Well Fed starts over. "
             "Losing a level removes exactly that level's benefits. Health and hunger clamp down. The mana level leaves, but mana you already hold is kept. That is not an extra hit.",

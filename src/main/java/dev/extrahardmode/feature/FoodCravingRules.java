@@ -1,8 +1,10 @@
 package dev.extrahardmode.feature;
 
 import dev.extrahardmode.player.FoodHistory;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -18,9 +20,10 @@ public final class FoodCravingRules {
     /**
      * What eating {@code foodId} next would mean.
      * Black and brown use the same-food penalty, so Well Fed delays them.
-     * A bright-green up mark is a craving: the food is outside the Well Fed window and the last 7
-     * meals, so the run grows. A bright-green minus is the oldest meal of a run of 7 or more when
-     * that food appears only once in the window, so the run holds. A yellow down mark weakens it.
+     * A bright-green up mark is a craving: the food has left the variety run (the meals that
+     * define the level, not the extra repeat slots) and eating it keeps that level, so the run
+     * grows. A bright-green minus is the oldest meal still inside that run when the run is 7 or
+     * more and that food appears only once, so the run holds. A yellow down mark weakens it.
      * The full one is a repeat grace still allows. The small one is only novel.
      */
     public static FoodCraving classify(List<String> history, int wellFed, String foodId) {
@@ -37,10 +40,10 @@ public final class FoodCravingRules {
             return FoodCraving.SICK;
         }
         int trailing = trailingDifferent(recent);
-        if (outsideLastMealsAndWellFed(recent, foodId, level)) {
+        if (outsideVarietyRun(recent, foodId, level)) {
             return FoodCraving.GREAT;
         }
-        if (isDue(recent, foodId, trailing)
+        if (isDue(recent, foodId, trailing, level)
                 && FoodHistory.countInLast(recent, foodId, WellFedRules.holdWindow(level)) <= 1) {
             return FoodCraving.MAINTAIN;
         }
@@ -51,6 +54,36 @@ public final class FoodCravingRules {
             return FoodCraving.SLIGHT;
         }
         return FoodCraving.NORMAL;
+    }
+
+    /**
+     * Oldest meal in the Well Fed window that appears once. Null when Well Fed is off,
+     * or every food in that window is repeated.
+     */
+    public static String oldestUniqueInRun(List<String> history, int wellFed) {
+        if (wellFed <= 0 || history == null || history.isEmpty()) {
+            return null;
+        }
+        int window = Math.min(WellFedRules.holdWindow(wellFed), history.size());
+        if (window <= 0) {
+            return null;
+        }
+        int start = history.size() - window;
+        Map<String, Integer> counts = new HashMap<>();
+        for (int i = start; i < history.size(); i++) {
+            String id = history.get(i);
+            if (id == null || id.isEmpty()) {
+                continue;
+            }
+            counts.merge(id, 1, Integer::sum);
+        }
+        for (int i = start; i < history.size(); i++) {
+            String id = history.get(i);
+            if (id != null && !id.isEmpty() && counts.getOrDefault(id, 0) == 1) {
+                return id;
+            }
+        }
+        return null;
     }
 
     /** Outline color, or 0 when the food should look ordinary. */
@@ -93,25 +126,55 @@ public final class FoodCravingRules {
     }
 
     /**
-     * Absent from the last 7 meals and from the Well Fed window. At level 0 that window is the
-     * same 7 meals.
+     * Absent from the variety run, and eating it keeps the current level. The variety run is the
+     * gain window: 13 meals at Well Fed 3. The longer hold window is that run plus the repeat
+     * slots, so a repeat pushes the oldest meal out of the 13 and this becomes true. At level 0
+     * the run is the last 7 meals.
      */
-    static boolean outsideLastMealsAndWellFed(List<String> recent, String foodId, int level) {
+    static boolean outsideVarietyRun(List<String> recent, String foodId, int level) {
         if (foodId == null || foodId.isEmpty()) {
             return false;
         }
         if (!FoodHistory.isNovelInLast(recent, foodId, VARIETY_WINDOW)) {
             return false;
         }
-        return FoodHistory.isNovelInLast(recent, foodId, WellFedRules.holdWindow(level));
+        if (!FoodHistory.isNovelInLast(recent, foodId, WellFedRules.gainWindow(level))) {
+            return false;
+        }
+        // A food absent from the whole hold window is a new craving, as before.
+        // One that only fell out of the variety run is a craving when eating it keeps the level.
+        if (FoodHistory.isNovelInLast(recent, foodId, WellFedRules.holdWindow(level))) {
+            return true;
+        }
+        return eatingKeepsLevel(recent, foodId, level);
     }
 
-    /** Oldest meal of a run that is already 7 or longer. Eating it keeps that run. */
-    static boolean isDue(List<String> recent, String foodId, int trailing) {
+    /** True when one more meal of {@code foodId} still satisfies {@code level}. */
+    static boolean eatingKeepsLevel(List<String> recent, String foodId, int level) {
+        if (level <= 0) {
+            return true;
+        }
+        List<String> after = FoodHistory.record(recent, foodId, WellFedRules.HISTORY_CAP);
+        return WellFedRules.holds(after, level);
+    }
+
+    /**
+     * Oldest meal of the variety run when that run is already 7 or longer. A tail longer than the
+     * gain window keeps its due meal on the oldest food still inside the window. Level 0 uses the
+     * whole tail, which is the last 7 once a repeat appears.
+     */
+    static boolean isDue(List<String> recent, String foodId, int trailing, int level) {
         if (foodId == null || trailing < VARIETY_WINDOW || recent == null || recent.size() < trailing) {
             return false;
         }
-        return foodId.equals(recent.get(recent.size() - trailing));
+        int span = trailing;
+        if (level > 0) {
+            span = Math.min(trailing, WellFedRules.gainWindow(level));
+        }
+        if (span < VARIETY_WINDOW || recent.size() < span) {
+            return false;
+        }
+        return foodId.equals(recent.get(recent.size() - span));
     }
 
     /**
