@@ -1,5 +1,6 @@
 package dev.extrahardmode.mixin;
 
+import dev.extrahardmode.feature.ChunkClear;
 import dev.extrahardmode.feature.FishStocks;
 import dev.extrahardmode.feature.MoreMonsters;
 import dev.extrahardmode.module.SpawnReplaceService;
@@ -31,6 +32,10 @@ public abstract class NaturalSpawnerMixin {
                                     "Lnet/minecraft/server/level/ServerLevel;addFreshEntityWithPassengers(Lnet/minecraft/world/entity/Entity;)V"),
             require = 0)
     private static void ehm$addFreshOrReplace(ServerLevel level, Entity entity) {
+        if (ChunkClear.blocksSpawn(level, entity.blockPosition())) {
+            entity.discard();
+            return;
+        }
         if (!WorldGate.isActive(level)) {
             SpawnReplaceService.markMixinApplied();
             level.addFreshEntityWithPassengers(entity);
@@ -110,6 +115,25 @@ public abstract class NaturalSpawnerMixin {
     private static void ehm$warnIfAddRedirectMissing(CallbackInfo ci) {
         SpawnReplaceService.warnIfMixinMissing();
         MoreMonsters.warnIfPackMixinMissing();
+    }
+
+    @Inject(
+            method =
+                    "spawnCategoryForPosition(Lnet/minecraft/world/entity/MobCategory;Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/level/chunk/ChunkAccess;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/NaturalSpawner$SpawnPredicate;Lnet/minecraft/world/level/NaturalSpawner$AfterSpawnCallback;)V",
+            at = @At("HEAD"),
+            cancellable = true,
+            require = 0)
+    private static void ehm$skipClearedGround(
+            MobCategory category,
+            ServerLevel level,
+            ChunkAccess chunk,
+            BlockPos pos,
+            NaturalSpawner.SpawnPredicate predicate,
+            NaturalSpawner.AfterSpawnCallback callback,
+            CallbackInfo ci) {
+        if (ChunkClear.blocksSpawn(level, pos)) {
+            ci.cancel();
+        }
     }
 
     @Inject(

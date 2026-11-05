@@ -172,6 +172,8 @@
   "tougher.message.council_mission_complete": "Bounty complete! +%s experience.",
   "tougher.message.council_mission_payout": "%s pays you %s emeralds for the completed bounty.",
   "tougher.message.council_mission_expired": "The bounty on %s has expired.",
+  "tougher.message.chunk_clear": "This area is being cleared for the alliance!",
+  "tougher.message.chunk_peace": "The alliance holds this ground.",
   "tougher.message.explore_biome": "You discovered %s. +%s experience.",
   "tougher.message.explore_biome_first": "You are the first to visit %s! +%s extra experience.",
   "tougher.message.explore_spawn": "You have traveled %s blocks from spawn. +%s experience.",

@@ -294,7 +294,7 @@ public final class EhmHelp {
                         "Crops: Each sapling that would drop has twice the crop loss rate as a percent chance not to. At 50% loss or higher, none drop.",
                         "Crops: Pumpkins and melons fruit at 1/10 vanilla rate. After each fruit the vine may become a weed, starting at 0% and rising 5% per fruit.",
                         "Crops: Broken pumpkin and melon vines drop no seeds. Shearing a full hive gives 1 honeycomb.",
-                        "Crops: A bee that returns with nectar fills a hive or nest at 25% of the usual rate. farming.beeHoneyPercent of 100 is the usual rate. 0 never fills.",
+                        "Crops: A bee fills a hive or nest at farming.beeHoneyPercent, default 20, plus the square root of each flower type within 29 blocks, stored once a day, up to 100. 0 never fills.",
                         "Crops: A ripe cocoa pod drops 1 or 2 beans. One more on a d100 under hoe quality plus the tree: iron 0, diamond 10, gold 20, netherite 30, plus 2 per Efficiency. Other hoes are 0.",
                         "Crops: Each other pod on that tree is -2%. Each jungle log in the tree is +2%, up to +20%."));
     }
@@ -305,7 +305,7 @@ public final class EhmHelp {
                 List.of(
                         "Animals: Animals wait 6 times as long to breed again. Chickens lay eggs 6 times as slowly.",
                         "Animals: farming.grassGrowthPercent -1 is 75 minus the current loss, never below 0. 0 never spreads. A positive number is that percent. A fence, gate, door, wall does not stop it.",
-                        "Animals: Livestock overgraze by eating grass they can walk to within 6 blocks and turning that block into dirt.",
+                        "Animals: Livestock overgraze by eating grass they can walk to within 6 blocks and turning that block into dirt. Bees do not.",
                         "Animals: About 9 grass blocks keep a cow, pig, sheep, or other large animal fed. About 4 keep a chicken or rabbit fed.",
                         "Animals: Sheep overgraze too, and wait 6 times as long to eat grass and regrow their wool. farming.sheepWoolGrazeMultiplier of 1 is the usual wool wait.",
                         "Animals: If no grass block is in reach, they have a 33% chance to eat from a chest or barrel within 20 blocks.",
@@ -374,6 +374,9 @@ public final class EhmHelp {
                         "Combat: Each defeated boss makes the next 30% harder and richer. The third is a world event.",
                         "Combat: The seventh rolls the Minecraft credits, and you can keep playing.",
                         "Combat: Below Y=48, a visited cave may spawn an extra hostile in light 11. Every 20 blocks you are deeper adds 1. Chance falls by 5% times that block's light.",
+                        "Combat: 100 hostile kills by players anywhere in one chunk stop spawns at Y=48 and above. Natural, bounty, and hunt spawns. monsters.chunkClearKills of -1 is off.",
+                        "Combat: Players in or near it are told this area is being cleared for the alliance, and gain 25 experience and an emerald.",
+                        "Combat: Once a Minecraft day, entering each full chunk at Y=48 or above plays a quiet chime.",
                         "Combat: Below Y=0 in the overworld, hostile mobs can spawn in block light of 1 per 15 blocks down. Y=-15 allows 1. Y=-30 allows 2.",
                         "Combat: Within 64 blocks, a biome boss shows a health bar with its name."));
     }

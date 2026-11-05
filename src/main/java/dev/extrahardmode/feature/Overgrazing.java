@@ -32,6 +32,7 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.entity.animal.bee.Bee;
 import net.minecraft.world.entity.animal.chicken.Chicken;
 import net.minecraft.world.entity.animal.equine.AbstractHorse;
 import net.minecraft.world.entity.animal.feline.Cat;
@@ -180,7 +181,11 @@ public final class Overgrazing implements FeatureModule {
                 || Inhabitants.isInhabitant(animal)) {
             return false;
         }
-        if (animal instanceof AbstractHorse || animal instanceof Cat || animal instanceof Wolf || animal instanceof Parrot) {
+        if (animal instanceof AbstractHorse
+                || animal instanceof Bee
+                || animal instanceof Cat
+                || animal instanceof Wolf
+                || animal instanceof Parrot) {
             return false;
         }
         return !(animal instanceof TamableAnimal tamable) || !tamable.isTame();

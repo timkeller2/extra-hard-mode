@@ -3,6 +3,7 @@ package dev.extrahardmode.mixin;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.feature.AntiFarming;
 import dev.extrahardmode.feature.BeeHoneyRules;
+import dev.extrahardmode.world.BeeHoneyData;
 import dev.extrahardmode.world.WorldGate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -32,8 +33,9 @@ public abstract class BeehiveBlockEntityMixin {
         if (vanilla <= 0) {
             return level.setBlockAndUpdate(pos, filled);
         }
-        int scaled = BeeHoneyRules.honeyIncrement(
-                vanilla, ConfigManager.world(server).beeHoneyPercent(), level.getRandom().nextInt(100));
+        int percent = BeeHoneyData.of(server)
+                .rate(server, pos, ConfigManager.world(server).beeHoneyPercent());
+        int scaled = BeeHoneyRules.honeyIncrement(vanilla, percent, level.getRandom().nextInt(100));
         if (scaled <= 0) {
             return false;
         }

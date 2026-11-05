@@ -5,6 +5,7 @@ import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.electronwill.nightconfig.toml.TomlFormat;
 import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.feature.BeeHoneyRules;
+import dev.extrahardmode.feature.ChunkClearRules;
 import dev.extrahardmode.feature.GrassSpreadRules;
 import dev.extrahardmode.feature.HardenedBudget;
 import dev.extrahardmode.feature.HungerRules;
@@ -25,7 +26,7 @@ import net.minecraft.world.level.storage.LevelResource;
 
 /** Per-dimension TOML, stored under the overworld save and keyed by {@code dimension().identifier()}. */
 public final class WorldConfig {
-    public static final int CONFIG_VERSION = 9;
+    public static final int CONFIG_VERSION = 10;
 
     private final Identifier dimensionId;
     private final Map<Identifier, Boolean> modules = new LinkedHashMap<>();
@@ -140,6 +141,7 @@ public final class WorldConfig {
     private int spawnInLightMaxY = 48;
     private int spawnInLightMaxLight = 11;
     private int spawnInLightPercent = 100;
+    private int chunkClearKills = ChunkClearRules.DEFAULT_KILLS;
     private final ExplosionConfig explosions = new ExplosionConfig();
     private final MonsterConfig monsters = new MonsterConfig();
     private boolean blazeNearBedrockEnable = true;
@@ -627,6 +629,10 @@ public final class WorldConfig {
 
     public int spawnInLightPercent() {
         return spawnInLightPercent;
+    }
+
+    public int chunkClearKills() {
+        return chunkClearKills;
     }
 
     public boolean blazeNearBedrockEnable() {
@@ -1184,6 +1190,11 @@ public final class WorldConfig {
                             "Base chance per attempt. Each light level of the chosen block subtracts 5. Default 100.");
                     file.set("monsters.spawnInLight.percent", 100);
                 }
+                writeDefaultIfMissing(
+                        file,
+                        "monsters.chunkClearKills",
+                        ChunkClearRules.CONFIG_COMMENT,
+                        ChunkClearRules.DEFAULT_KILLS);
                 config.explosions.writeDefaults(file);
                 config.monsters.writeDefaults(file);
                 writeDefaultIfMissing(
@@ -1444,6 +1455,8 @@ public final class WorldConfig {
                 file.setComment(
                         "monsters.spawnInLight.percent",
                         "Base chance per attempt. Each light level of the chosen block subtracts 5. Default 100.");
+                file.set("monsters.chunkClearKills", chunkClearKills);
+                file.setComment("monsters.chunkClearKills", ChunkClearRules.CONFIG_COMMENT);
                 file.set("sounds.creeperTntWarning", creeperTntWarning);
                 file.set("villagerNerf.blockDiamondGearTrades", villagerNerfBlockDiamondGear);
                 file.set("villagerNerf.nerfNoviceMending", villagerNerfNoviceMending);
@@ -1641,6 +1654,10 @@ public final class WorldConfig {
         spawnInLightMaxY = getInt(file, "monsters.spawnInLight.maxY", 48);
         spawnInLightMaxLight = getInt(file, "monsters.spawnInLight.maxLight", 11);
         spawnInLightPercent = getInt(file, "monsters.spawnInLight.percent", 100);
+        chunkClearKills = getInt(file, "monsters.chunkClearKills", ChunkClearRules.DEFAULT_KILLS);
+        if (chunkClearKills < -1) {
+            chunkClearKills = -1;
+        }
         creeperTntWarning = file.getOrElse("sounds.creeperTntWarning", true);
         villagerNerfBlockDiamondGear = file.getOrElse("villagerNerf.blockDiamondGearTrades", true);
         villagerNerfNoviceMending = file.getOrElse("villagerNerf.nerfNoviceMending", true);
@@ -1953,6 +1970,8 @@ public final class WorldConfig {
      * Only a stored 300 or 8 is rewritten, so a custom value is kept.
      * Schema 9: grass spread default 25 → -1 (75 minus the current crop loss).
      * Only a stored 25 is rewritten, so a custom value is kept.
+     * Schema 10: bee honey default 25 → 20. Flowers add the square root of each
+     * type within harvest range, counted once a day. Only a stored 25 is rewritten.
      */
     private static void migrate(CommentedFileConfig file) {
         int version = getInt(file, "configVersion", 1);
@@ -1989,6 +2008,14 @@ public final class WorldConfig {
             }
             if (file.contains("farming.grassGrowthPercent")) {
                 file.setComment("farming.grassGrowthPercent", GrassSpreadRules.CONFIG_COMMENT);
+            }
+        }
+        if (version < 10) {
+            if (getInt(file, "farming.beeHoneyPercent", 25) == 25) {
+                file.set("farming.beeHoneyPercent", BeeHoneyRules.DEFAULT_PERCENT);
+            }
+            if (file.contains("farming.beeHoneyPercent")) {
+                file.setComment("farming.beeHoneyPercent", BeeHoneyRules.CONFIG_COMMENT);
             }
         }
         if (version < 7) {

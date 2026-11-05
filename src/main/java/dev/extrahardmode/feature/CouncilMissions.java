@@ -254,7 +254,7 @@ public final class CouncilMissions {
 
     private static boolean accept(
             ServerLevel level, ServerPlayer player, EntityType<?> type, BlockPos feet, RandomSource random) {
-        if (!withinRange(player, feet) || !level.getWorldBorder().isWithinBounds(feet)) {
+        if (ChunkClear.blocksSpawn(level, feet) || !withinRange(player, feet) || !level.getWorldBorder().isWithinBounds(feet)) {
             return false;
         }
         if (flying(type)) {

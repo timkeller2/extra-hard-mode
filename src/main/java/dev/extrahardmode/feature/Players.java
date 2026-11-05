@@ -101,6 +101,8 @@ public final class Players implements FeatureModule {
             PENDING_BED_CLEARS.remove(player.getUUID());
         });
         bus.listen(UseBlockCallback.EVENT, ID, Players::onUseBlock);
+        bus.listen(ServerLivingEntityEvents.AFTER_DEATH, ID, ChunkClear::onDeath);
+        ServerTickEvents.END_LEVEL_TICK.register(ChunkClear::tickLevel);
         bus.listen(PlayerBlockBreakEvents.BEFORE, ID, Players::onBreakBurning);
         ServerTickEvents.END_SERVER_TICK.register(Players::flushRespawns);
         ServerTickEvents.END_LEVEL_TICK.register(level -> {

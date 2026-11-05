@@ -656,6 +656,16 @@ public final class EhmAttachments {
             ExtraHardModeMod.id("wise_lesson_expire"),
             builder -> builder.persistent(Codec.LONG).initializer(() -> Long.MAX_VALUE));
 
+    /**
+     * Full chunks whose peaceful chime this player already heard.
+     * The key is the dimension id, a slash, and the packed chunk. The value is the overworld day.
+     */
+    public static final AttachmentType<Map<String, Long>> EHM_CHUNK_PEACE = AttachmentRegistry.create(
+            ExtraHardModeMod.id("chunk_peace"),
+            builder -> builder.persistent(Codec.unboundedMap(Codec.STRING, Codec.LONG))
+                    .copyOnDeath()
+                    .initializer(HashMap::new));
+
     /** Overworld day a bounty creature appeared. It leaves once that day has passed. -1 is not one. */
     public static final AttachmentType<Long> EHM_BOUNTY_SPAWN_DAY = AttachmentRegistry.create(
             ExtraHardModeMod.id("bounty_spawn_day"),

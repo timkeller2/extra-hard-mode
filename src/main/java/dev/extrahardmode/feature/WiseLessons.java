@@ -562,7 +562,7 @@ public final class WiseLessons {
         int x = player.getBlockX() + (int) Math.round(dx);
         int z = player.getBlockZ() + (int) Math.round(dz);
         BlockPos feet = findFeet(level, x, z, player.getBlockY());
-        if (feet == null) {
+        if (feet == null || ChunkClear.blocksSpawn(level, feet)) {
             return null;
         }
         Identifier id = Identifier.tryParse(lesson.mobId());

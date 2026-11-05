@@ -129,8 +129,12 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("5% times that block's light"));
         assertTrue(String.join(" ", lines).contains("fills a hive or nest"));
         assertTrue(String.join(" ", lines).contains("beeHoneyPercent"));
+        assertTrue(String.join(" ", lines).contains("square root"));
+        assertTrue(String.join(" ", lines).contains("29 blocks"));
+        assertTrue(String.join(" ", lines).contains("stored once a day"));
         assertTrue(String.join(" ", lines).contains("0 never fills"));
         assertTrue(String.join(" ", lines).contains("second segment"));
+        assertTrue(String.join(" ", lines).contains("Bees do not"));
         assertTrue(String.join(" ", lines).contains("8 times as long to restock"));
         assertTrue(String.join(" ", lines).contains("rounded-up eighth"));
         assertTrue(String.join(" ", lines).contains("cannot exceed that librarian's rank"));
@@ -455,6 +459,12 @@ class EhmHelpTest {
         String combatText = String.join(" ", EhmHelp.resolve("combat").lines());
         assertTrue(combatText.contains("teleports to the nearest open spot"));
         assertTrue(combatText.contains("phantom that ignores sunlight"));
+        assertTrue(combatText.contains("chunkClearKills"));
+        assertTrue(combatText.contains("being cleared for the alliance"));
+        assertTrue(combatText.contains("25 experience and an emerald"));
+        assertTrue(combatText.contains("quiet chime"));
+        assertTrue(combatText.contains("each full chunk"));
+        assertTrue(combatText.contains("of -1 is off"));
         assertEquals(null, EhmHelp.resolve("nope"));
         assertEquals(null, EhmHelp.resolve("  "));
         var mining = EhmHelp.resolve("mining");

@@ -198,7 +198,7 @@ def build():
                 "A one-block cane that would grow a second segment may become a weed, using the current crop-loss rate plus the soil under it.",
                 "Pumpkins and melons fruit at one-tenth speed. After each fruit the vine may become a weed, starting at 0% and rising 5% per fruit. Broken vines drop no seeds.",
                 "Shearing a full hive gives 1 honeycomb.",
-                "A bee that returns with nectar fills a hive or nest at 25% of the usual rate. That is farming.beeHoneyPercent. 100 is the usual rate and 0 never fills.",
+                "A bee that returns with nectar fills a hive or nest at farming.beeHoneyPercent, default 20, plus the square root of each flower type within 29 blocks. That rate is stored once a Minecraft day, up to 100. 0 never fills.",
             ],
             s["bullet"],
         ),
@@ -230,7 +230,7 @@ def build():
             [
                 "Animals wait 6 times as long to breed. Chickens lay eggs 6 times as slowly.",
                 "Grass spreads onto dirt from farming.grassGrowthPercent. -1, the default, is 75 minus the current crop loss rate, and never below 0. 0 never spreads. A positive number is that percent of the usual spread, and 100 is the usual rate. A fence, gate, door, wall, or other block that leaves the top of the grass open does not stop that spread.",
-                "Livestock overgraze by eating grass they can walk to within 6 blocks and turning that block into dirt. About 9 grass blocks keep a large animal fed. About 4 keep a chicken or rabbit fed.",
+                "Livestock overgraze by eating grass they can walk to within 6 blocks and turning that block into dirt. Bees do not. About 9 grass blocks keep a large animal fed. About 4 keep a chicken or rabbit fed.",
                 "Sheep overgraze too, and wait 6 times as long to eat grass and regrow their wool. farming.sheepWoolGrazeMultiplier of 1 is the usual wool wait.",
                 "If no grass block is in reach, an animal has a 33% chance to eat from a chest or barrel it can reach within 20 blocks. It eats short grass, the item shears collect, before its breeding food. If neither is left, a second 33% chance starves it and it drops no meat.",
                 "Crowding damages villagers, not livestock. Eight or more in a 3x3x3 take damage. Residents and named villagers are spared. Set farming.overcrowd.villagersOnly false to crowd animals too.",
@@ -246,6 +246,7 @@ def build():
             [
                 "Mobs hit harder. Skeletons ignore arrows. Zombies vary about 20% in speed: faster ones hit softer and look smaller.",
                 "Below Y=48, a cave you have walked may spawn an extra hostile. The light may be 11, and every 20 blocks you are below Y=48 adds 1, so Y=28 allows 12 and Y=8 allows 13. The chance falls by 5% times the light of the chosen block.",
+                "After 100 player kills of hostile mobs anywhere in one chunk, spawns at Y=48 and above stop. Natural spawns, bounties, and wise-teacher hunts stop with them. Players in or near that chunk are told the area is being cleared for the alliance, and gain 25 experience and an emerald. Once each Minecraft day, entering each full chunk plays a quiet chime. monsters.chunkClearKills of -1 turns it off.",
                 "Below Y=0 in the overworld, normal hostile mobs can spawn in block light of 1 for every 15 blocks down. At Y=-15 that is light 1. At Y=-30 that is light 2.",
                 "Skeleton and bogged special shots are 1% per 10 blocks from world spawn, and certain at 1,000 blocks or farther.",
                 "Zombies can rise again. Shields absorb the whole blocked hit and last one-third as long.",
