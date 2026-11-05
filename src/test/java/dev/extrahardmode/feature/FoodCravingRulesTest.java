@@ -21,7 +21,7 @@ class FoodCravingRulesTest {
     void recentFoodIsPlainUnlessItKeepsTheStreakOrSitsOutsideBothWindows() {
         List<String> seven = List.of("a", "b", "c", "d", "e", "f", "g");
         assertEquals(FoodCraving.NORMAL, FoodCravingRules.classify(seven, 0, "d"));
-        assertEquals(FoodCraving.GREAT, FoodCravingRules.classify(seven, 0, "a"));
+        assertEquals(FoodCraving.MAINTAIN, FoodCravingRules.classify(seven, 0, "a"));
         assertEquals(FoodCraving.GREAT, FoodCravingRules.classify(seven, 0, "h"));
         assertEquals(FoodCraving.GREAT, FoodCravingRules.classify(List.of("a", "b", "c"), 0, "d"));
         assertEquals(FoodCraving.GREAT, FoodCravingRules.classify(List.of("a", "b", "c", "d", "e", "f"), 0, "g"));
@@ -43,16 +43,16 @@ class FoodCravingRulesTest {
     void wellFedSplitsSlightCravingFromALongerStreak() {
         List<String> ten = List.of("a", "b", "c", "d", "e", "f", "g", "h", "i", "j");
         assertEquals(FoodCraving.GREAT, FoodCravingRules.classify(ten, 1, "k"));
-        assertEquals(FoodCraving.GREAT, FoodCravingRules.classify(ten, 1, "a"));
+        assertEquals(FoodCraving.MAINTAIN, FoodCravingRules.classify(ten, 1, "a"));
         assertEquals(FoodCraving.GRACE, FoodCravingRules.classify(ten, 1, "b"));
         assertEquals(FoodCraving.NORMAL, FoodCravingRules.classify(ten, 1, "j"));
         assertEquals(FoodCraving.GREAT, FoodCravingRules.classify(ten, 0, "a"));
         assertEquals(FoodCraving.GREAT, FoodCravingRules.classify(ten, 0, "b"));
         List<String> spared = List.of("a", "b", "c", "d", "e", "f", "g", "h", "i", "a");
-        assertEquals(FoodCraving.GREAT, FoodCravingRules.classify(spared, 1, "b"));
+        assertEquals(FoodCraving.MAINTAIN, FoodCravingRules.classify(spared, 1, "b"));
         assertEquals(FoodCraving.GRACE, FoodCravingRules.classify(spared, 1, "c"));
         List<String> tight = List.of("x", "a", "b", "c", "d", "e", "f", "g", "h", "a");
-        assertEquals(FoodCraving.GREAT, FoodCravingRules.classify(tight, 1, "b"));
+        assertEquals(FoodCraving.MAINTAIN, FoodCravingRules.classify(tight, 1, "b"));
         assertEquals(FoodCraving.GRACE, FoodCravingRules.classify(tight, 1, "x"));
         assertEquals(FoodCraving.GREAT, FoodCravingRules.classify(tight, 0, "x"));
         List<String> over = List.of("z", "x", "b", "c", "d", "e", "f", "g", "h", "a", "a");
@@ -96,5 +96,11 @@ class FoodCravingRulesTest {
         assertNotEquals(
                 FoodCravingRules.outlineArgb(FoodCraving.GRACE),
                 FoodCravingRules.outlineArgb(FoodCraving.GREAT));
+        assertEquals(
+                FoodCravingRules.outlineArgb(FoodCraving.MAINTAIN),
+                FoodCravingRules.outlineArgb(FoodCraving.GREAT));
+        assertNotEquals(
+                FoodCravingRules.outlineArgb(FoodCraving.MAINTAIN),
+                FoodCravingRules.outlineArgb(FoodCraving.GRACE));
     }
 }

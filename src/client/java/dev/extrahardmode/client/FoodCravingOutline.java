@@ -50,7 +50,8 @@ public final class FoodCravingOutline {
                 case SICK -> icon(graphics, -MARK, 0, 0xFF3A2418, 0xFFC4956A, ".....", "#...#", ".#.#.", "..#..", ".....");
                 case SLIGHT -> icon(graphics, -MARK, 0, 0xFF2E2808, 0xFFFFE14A, ".....", ".#.#.", "..#..", ".....", ".....");
                 case GRACE -> icon(graphics, -MARK, 0, 0xFF2E2808, 0xFFFFE14A, ".....", "#...#", ".#.#.", "..#..", ".....");
-                case GREAT -> icon(graphics, -MARK, 0, 0xFF102418, 0xFF7DCEA0, "..#..", ".#.#.", "#...#", ".....", ".....");
+                case MAINTAIN -> icon(graphics, -MARK, 0, 0xFF0A280A, 0xFF55FF55, ".....", ".....", "#####", ".....", ".....");
+                case GREAT -> icon(graphics, -MARK, 0, 0xFF0A280A, 0xFF55FF55, "..#..", ".#.#.", "#...#", ".....", ".....");
                 case NORMAL -> {
                     // No mark.
                 }
@@ -127,6 +128,7 @@ public final class FoodCravingOutline {
             case SICK -> "tougher.tooltip.food_sick";
             case SLIGHT -> "tougher.tooltip.food_slight";
             case GRACE -> "tougher.tooltip.food_grace";
+            case MAINTAIN -> "tougher.tooltip.food_maintain";
             case GREAT -> "tougher.tooltip.food_great";
             case NORMAL -> null;
         };
@@ -138,6 +140,7 @@ public final class FoodCravingOutline {
             case SICK -> "Sick of this";
             case SLIGHT -> "Slight craving";
             case GRACE -> "Within grace";
+            case MAINTAIN -> "Maintaining";
             case GREAT -> "Craving";
             case NORMAL -> "";
         };
@@ -150,7 +153,8 @@ public final class FoodCravingOutline {
             case SICK -> 0xC4956A;
             case SLIGHT -> 0xFFE14A;
             case GRACE -> 0xFFE14A;
-            case GREAT -> 0x7DCEA0;
+            case MAINTAIN -> 0x55FF55;
+            case GREAT -> 0x55FF55;
             case NORMAL -> 0xFFFFFF;
         };
     }

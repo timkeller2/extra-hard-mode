@@ -32,9 +32,10 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("small yellow down mark is a slight craving"));
         assertTrue(String.join(" ", lines).contains("yellow down mark is within grace"));
         assertTrue(String.join(" ", lines).contains("the run weakens"));
+        assertTrue(String.join(" ", lines).contains("green minus maintains"));
+        assertTrue(String.join(" ", lines).contains("appears only once"));
         assertTrue(String.join(" ", lines).contains("green up mark is a craving"));
-        assertTrue(String.join(" ", lines).contains("oldest unduplicated meal"));
-        assertTrue(String.join(" ", lines).contains("outside that window and the last 7"));
+        assertTrue(String.join(" ", lines).contains("outside the Well Fed window and the last 7 meals"));
         assertTrue(String.join(" ", lines).contains("175, 275, 425, and 600"));
         assertTrue(String.join(" ", lines).contains("pay 1 through 7 emeralds"));
         assertTrue(String.join(" ", lines).contains("inside a bundle"));

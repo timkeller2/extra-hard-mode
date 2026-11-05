@@ -18,9 +18,9 @@ public final class FoodCravingRules {
     /**
      * What eating {@code foodId} next would mean.
      * Black and brown use the same-food penalty, so Well Fed delays them.
-     * The green up mark is a craving. It maintains or increases the Well Fed run: the food is
-     * outside the Well Fed window and the last 7 meals, or it is the oldest meal of a run of 7 or
-     * more and that food appears only once in the window. A yellow down mark weakens the run.
+     * A bright-green up mark is a craving: the food is outside the Well Fed window and the last 7
+     * meals, so the run grows. A bright-green minus is the oldest meal of a run of 7 or more when
+     * that food appears only once in the window, so the run holds. A yellow down mark weakens it.
      * The full one is a repeat grace still allows. The small one is only novel.
      */
     public static FoodCraving classify(List<String> history, int wellFed, String foodId) {
@@ -37,10 +37,12 @@ public final class FoodCravingRules {
             return FoodCraving.SICK;
         }
         int trailing = trailingDifferent(recent);
-        if (outsideLastMealsAndWellFed(recent, foodId, level)
-                || (isDue(recent, foodId, trailing)
-                        && FoodHistory.countInLast(recent, foodId, WellFedRules.holdWindow(level)) <= 1)) {
+        if (outsideLastMealsAndWellFed(recent, foodId, level)) {
             return FoodCraving.GREAT;
+        }
+        if (isDue(recent, foodId, trailing)
+                && FoodHistory.countInLast(recent, foodId, WellFedRules.holdWindow(level)) <= 1) {
+            return FoodCraving.MAINTAIN;
         }
         if (withinGrace(recent, foodId, level)) {
             return FoodCraving.GRACE;
@@ -61,7 +63,8 @@ public final class FoodCravingRules {
             case SICK -> 0xF06B3E22;
             case SLIGHT -> 0xF0C6A81E;
             case GRACE -> 0xF0FFE566;
-            case GREAT -> 0xF07DCEA0;
+            case MAINTAIN -> 0xF055FF55;
+            case GREAT -> 0xF055FF55;
             case NORMAL -> 0;
         };
     }
