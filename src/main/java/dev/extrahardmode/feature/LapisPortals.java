@@ -6,6 +6,7 @@ import dev.extrahardmode.world.WorldGate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
@@ -138,13 +139,14 @@ public final class LapisPortals implements FeatureModule {
 
     /**
      * A finished booth in a newly loaded chunk is remembered without a door click.
-     * Neighbor chunks are included so a frame that straddles a border is seen once both sides are loaded.
+     * Neighbors are read only when they are already fully loaded. Asking the level to load a
+     * chunk from this callback waits on the chunk that is still being finished, and the server stalls.
      */
     static void onChunkLoad(ServerLevel level, LevelChunk chunk, boolean generated) {
         if (level == null || chunk == null || !WorldGate.isModuleActive(level, ID)) {
             return;
         }
-        rememberChests(level, chunk);
+        rememberChests(level, chunk, null);
         int cx = chunk.getPos().x();
         int cz = chunk.getPos().z();
         for (int dx = -1; dx <= 1; dx++) {
@@ -152,22 +154,61 @@ public final class LapisPortals implements FeatureModule {
                 if (dx == 0 && dz == 0) {
                     continue;
                 }
-                int nx = cx + dx;
-                int nz = cz + dz;
-                if (!level.hasChunk(nx, nz)) {
-                    continue;
+                LevelChunk neighbor = level.getChunkSource().getChunkNow(cx + dx, cz + dz);
+                if (neighbor != null) {
+                    rememberChests(level, neighbor, chunk);
                 }
-                rememberChests(level, level.getChunk(nx, nz));
             }
         }
     }
 
-    private static void rememberChests(ServerLevel level, LevelChunk chunk) {
+    private static void rememberChests(ServerLevel level, LevelChunk chunk, LevelChunk also) {
         for (BlockEntity blockEntity : chunk.getBlockEntities().values()) {
             if (blockEntity instanceof ChestBlockEntity) {
-                scan(level, blockEntity.getBlockPos());
+                scanPresent(level, blockEntity.getBlockPos(), chunk, also);
             }
         }
+    }
+
+    private static void scanPresent(ServerLevel level, BlockPos origin, LevelChunk chunk, LevelChunk also) {
+        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+        for (int dy = -SCAN; dy <= SCAN; dy++) {
+            for (int dx = -SCAN; dx <= SCAN; dx++) {
+                for (int dz = -SCAN; dz <= SCAN; dz++) {
+                    cursor.set(origin.getX() + dx, origin.getY() + dy, origin.getZ() + dz);
+                    rememberPresent(level, cursor, chunk, also);
+                }
+            }
+        }
+    }
+
+    /** Reads blocks already in memory. A missing chunk skips the booth instead of loading it. */
+    private static void rememberPresent(ServerLevel level, BlockPos lower, LevelChunk chunk, LevelChunk also) {
+        Function<BlockPos, BlockState> blocks = pos -> presentState(level, pos, chunk, also);
+        BlockState state = blocks.apply(lower);
+        if (state == null || !(state.getBlock() instanceof DoorBlock) || state.getValue(DoorBlock.HALF) != DoubleBlockHalf.LOWER) {
+            return;
+        }
+        LapisPortalRules.Facing facing = facing(state);
+        if (facing == null || !frameValid(blocks, lower)) {
+            return;
+        }
+        String key = LapisPortalRules.key(new LapisPortalRules.Place(
+                dimension(level), lower.getX(), lower.getY(), lower.getZ(), facing));
+        LapisPortalData.of(level).remember(key);
+    }
+
+    private static BlockState presentState(ServerLevel level, BlockPos pos, LevelChunk chunk, LevelChunk also) {
+        int cx = pos.getX() >> 4;
+        int cz = pos.getZ() >> 4;
+        if (chunk != null && chunk.getPos().x() == cx && chunk.getPos().z() == cz) {
+            return chunk.getBlockState(pos);
+        }
+        if (also != null && also.getPos().x() == cx && also.getPos().z() == cz) {
+            return also.getBlockState(pos);
+        }
+        LevelChunk loaded = level.getChunkSource().getChunkNow(cx, cz);
+        return loaded == null ? null : loaded.getBlockState(pos);
     }
 
     private static void scan(ServerLevel level, BlockPos origin) {
@@ -324,12 +365,16 @@ public final class LapisPortals implements FeatureModule {
     }
 
     private static boolean frameValid(ServerLevel level, BlockPos lower) {
-        BlockState state = level.getBlockState(lower);
-        if (!(state.getBlock() instanceof DoorBlock) || state.getValue(DoorBlock.HALF) != DoubleBlockHalf.LOWER) {
+        return frameValid(level::getBlockState, lower);
+    }
+
+    private static boolean frameValid(Function<BlockPos, BlockState> blocks, BlockPos lower) {
+        BlockState state = blocks.apply(lower);
+        if (state == null || !(state.getBlock() instanceof DoorBlock) || state.getValue(DoorBlock.HALF) != DoubleBlockHalf.LOWER) {
             return false;
         }
-        BlockState upper = level.getBlockState(lower.above());
-        if (upper.getBlock() != state.getBlock() || upper.getValue(DoorBlock.HALF) != DoubleBlockHalf.UPPER) {
+        BlockState upper = blocks.apply(lower.above());
+        if (upper == null || upper.getBlock() != state.getBlock() || upper.getValue(DoorBlock.HALF) != DoubleBlockHalf.UPPER) {
             return false;
         }
         LapisPortalRules.Facing facing = facing(state);
@@ -337,12 +382,17 @@ public final class LapisPortals implements FeatureModule {
             return false;
         }
         for (LapisPortalRules.Offset offset : LapisPortalRules.lapisOffsets(facing)) {
-            if (!level.getBlockState(lower.offset(offset.x(), offset.y(), offset.z())).is(Blocks.LAPIS_BLOCK)) {
+            BlockState lapis = blocks.apply(lower.offset(offset.x(), offset.y(), offset.z()));
+            if (lapis == null || !lapis.is(Blocks.LAPIS_BLOCK)) {
                 return false;
             }
         }
         LapisPortalRules.Offset chest = LapisPortalRules.chestOffset(facing);
-        return level.getBlockState(lower.offset(chest.x(), chest.y(), chest.z())).getBlock() instanceof ChestBlock;
+        if (chest == null) {
+            return false;
+        }
+        BlockState chestState = blocks.apply(lower.offset(chest.x(), chest.y(), chest.z()));
+        return chestState != null && chestState.getBlock() instanceof ChestBlock;
     }
 
     private static Container chest(ServerLevel level, BlockPos lower, LapisPortalRules.Facing facing) {
