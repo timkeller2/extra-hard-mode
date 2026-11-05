@@ -51,6 +51,16 @@ public final class ChunkClear {
         }
     }
 
+    /**
+     * True when this block is in a full chunk at Y=48 or above. The once-a-day chime is separate.
+     */
+    public static boolean peaceful(ServerLevel level, BlockPos pos) {
+        if (level == null || pos == null || pos.getY() < ChunkClearRules.MIN_Y || !WorldGate.isActive(level)) {
+            return false;
+        }
+        return ChunkClearRules.full(ChunkClearData.of(level).kills(pos), ConfigManager.world(level).chunkClearKills());
+    }
+
     public static boolean blocksSpawn(ServerLevel level, BlockPos pos) {
         if (level == null || pos == null || pos.getY() < ChunkClearRules.MIN_Y || !WorldGate.isActive(level)) {
             return false;

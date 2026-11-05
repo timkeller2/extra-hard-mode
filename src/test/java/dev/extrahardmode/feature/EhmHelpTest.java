@@ -251,6 +251,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("largest lapis lazuli stack"));
         assertTrue(String.join(" ", lines).contains("same count connect"));
         assertTrue(String.join(" ", lines).contains("close the open door"));
+        assertTrue(String.join(" ", lines).contains("remembered when the last lapis block"));
         assertTrue(String.join(" ", lines).contains("100 blocks per item"));
         assertTrue(String.join(" ", lines).contains("Two kinds cover 200"));
         assertTrue(String.join(" ", lines).contains("All three cover 300"));
@@ -271,8 +272,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("look smaller"));
         assertTrue(String.join(" ", lines).contains("Shields absorb 100%"));
         assertTrue(String.join(" ", lines).contains("one-third as long"));
-        assertTrue(String.join(" ", lines).contains("appears once"));
-        assertTrue(String.join(" ", lines).contains("does not return"));
+        assertTrue(String.join(" ", lines).contains("500 blocks or more"));
         assertTrue(String.join(" ", lines).contains("80 blocks"));
         assertTrue(String.join(" ", lines).contains("health bar with its name"));
         assertTrue(String.join(" ", lines).contains("brief blind"));
@@ -432,6 +432,8 @@ class EhmHelpTest {
         assertTrue(EhmHelp.resolve("slow").lines().stream().anyMatch(line -> line.startsWith("Slow:")));
         assertTrue(EhmHelp.resolve("sense evil").lines().stream().anyMatch(line -> line.startsWith("Sense Evil:")));
         assertTrue(String.join(" ", EhmHelp.resolve("sense evil").lines()).contains("Hold the click to eat it instead"));
+        assertTrue(String.join(" ", EhmHelp.resolve("sense evil").lines()).contains("biome boss can appear here"));
+        assertTrue(String.join(" ", EhmHelp.resolve("sense evil").lines()).contains("alliance has cleared the area"));
         assertTrue(String.join(" ", EhmHelp.resolve("abilities").lines()).contains("Hold the click to eat it"));
         assertTrue(EhmHelp.resolve("smite evil").lines().stream().anyMatch(line -> line.startsWith("Smite Evil:")));
         assertEquals(null, EhmHelp.resolve("light"));

@@ -259,8 +259,8 @@ def build():
         KeepTogether([
             Paragraph("Biome bosses", s["h"]),
             Paragraph(
-            "A strong boss can appear far from spawn, once for each of 17 biome families. "
-            "That boss does not return in that game, including after it is defeated and including in another biome of the same family. "
+            "A strong boss can appear far from spawn. "
+            "The same family can appear again 500 blocks or more from every earlier spawn of that family. "
             "Bosses do not spawn within 80 blocks of a player or a chest. "
             "Within 64 blocks, a biome boss shows a health bar with its name. "
             "A brood mother keeps chasing when hit, and every few seconds spits for half her bite damage and a brief blindness. "
@@ -273,7 +273,7 @@ def build():
             ),
         ]),
         Paragraph(
-            "A game can hold 17 different biome bosses, one for each family. Several biomes share one boss.",
+            "There are 17 biome bosses, one for each family. Several biomes share one boss.",
             s["body"],
         ),
         bullets(
@@ -373,7 +373,7 @@ def build():
                 "His name, how many are left, and the direction show on your screen. That number falls as you kill them. At that distance the direction becomes near here. Come back closer and the direction returns.",
                 "After 2 minutes out there, on land, at night or below ground, half the pack appears within a few seconds, 20 to 40 blocks away. The rest still arrive one at a time, every 5 to 15 seconds.",
                 "A mark in your line of sight gives off a red mist, so it is not an ordinary creature. A golden carrot mists every mark until you are no longer saturated, and outlines them in white through blocks. Sense Evil does both for 1 minute times its ability level, and that time shows with the other ability durations. Each one has 50% to 100% more health. They give triple experience and double loot, and they always drop both. They vanish after 3 Minecraft days.",
-                "Sense Evil also outlines every hostile mob within 8 blocks times its ability level. Solid blocks do not hide the outline. It lasts 1 minute times that ability level, shown as a spider eye at the bottom left.",
+                "Sense Evil also outlines every hostile mob within 8 blocks times its ability level. Solid blocks do not hide the outline. It lasts 1 minute times that ability level, shown as a spider eye at the bottom left. It says whether a biome boss can appear here. In a full chunk at Y=48 or above, it also says the alliance has cleared the area.",
                 "The first creature of a hunt is slightly larger, has 5 times the health, and resists knockback. It gives 10 times the experience and 3 times the loot, plus one diamond and emeralds equal to 10% to 20% of that health. The last creature has twice that health and hits 50% harder. It drops that same loot without the diamond, with emeralds equal to 10% to 20% of its own health.",
                 "An unfinished hunt ends after 14 Minecraft days. Each wise teacher can give you a different hunt, and each player has his own.",
             ],
@@ -397,7 +397,7 @@ def build():
         Paragraph("Lapis portals", s["h"]),
         bullets(
             [
-                "A door framed in lapis blocks is a portal. Lapis sits under the door, above it, and beside both halves on both sides and on the side the door faces. The chest sits on top of that facing column. The opening, on the other side, stays clear. Wood and iron doors both open.",
+                "A door framed in lapis blocks is a portal. Lapis sits under the door, above it, and beside both halves on both sides and on the side the door faces. The chest sits on top of that facing column. The opening, on the other side, stays clear. Wood and iron doors both open. The booth is remembered when that frame is finished.",
                 "The largest stack of lapis lazuli in the chest is the link. A stack of 3 connects only to another booth whose largest stack is also 3. The lapis is not used up.",
                 "Stand in the doorway and close the open door. The chest pays in redstone dust, nether quartz, or amethyst shards. One kind covers 100 blocks per item, rounded up, and the cost is at least 1. Two kinds cover 200 blocks per item. All three cover 300.",
                 "The kinds already in the chest set that range. Payment alternates across those kinds, largest stack first. When the largest stacks match, nether quartz is first, then redstone dust, then amethyst shards. Each item comes off the largest stack of that kind.",

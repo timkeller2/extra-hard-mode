@@ -367,7 +367,7 @@ public final class EhmHelp {
                         "Combat: Creepers may drop live TNT. TNT sets fire to 20% of the blocks it hits, rounded.",
                         "Combat: explosions.tnt.firePercent changes that share. Set it to 0 to leave TNT blasts unlit.",
                         "Combat: Strong biome bosses can appear far from spawn.",
-                        "Combat: Each biome boss appears once. After it is defeated, it does not return in that game.",
+                        "Combat: The same biome boss family can appear again 500 blocks or more from every earlier spawn of that family.",
                         "Combat: Bosses do not spawn within 80 blocks of a player or a chest.",
                         "Combat: Brood mothers chase when hit. Every few seconds they spit for half damage and a brief blind.",
                         "Combat: A biome boss breaks blocks in its way at iron pickaxe speed when that is how it reaches you.",
@@ -485,7 +485,8 @@ public final class EhmHelp {
                         "Portals: Fuel is redstone dust, nether quartz, and amethyst shards. One kind covers 100 blocks per item, rounded up, and at least 1.",
                         "Portals: Two kinds cover 200 blocks per item. All three cover 300. The kinds in the chest set that range.",
                         "Portals: Payment alternates across those kinds, largest stack first. Ties start with nether quartz, then redstone dust, then amethyst shards.",
-                        "Portals: A count shared by more than two booths does not link."));
+                        "Portals: A count shared by more than two booths does not link.",
+                        "Portals: The booth is remembered when the last lapis block, door, or chest finishes the frame."));
     }
 
     private static Page homes() {

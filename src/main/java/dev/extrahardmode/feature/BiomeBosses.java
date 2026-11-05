@@ -96,8 +96,9 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
- * Rare persistent biome-family bosses. Each family appears once per game.
- * Biome is sampled at the player (caves included); Deep Dark and the End are skipped.
+ * Rare persistent biome-family bosses. The same family can appear again 500 blocks or more
+ * from every earlier spawn of that family in the dimension. Biome is sampled at the player
+ * (caves included); Deep Dark and the End are skipped.
  */
 public final class BiomeBosses implements FeatureModule {
     public static final Identifier ID = ExtraHardModeMod.id("biome_bosses");
@@ -289,14 +290,18 @@ public final class BiomeBosses implements FeatureModule {
             return;
         }
         BiomeBossData data = BiomeBossData.of(level);
+        rememberUntrackedLiving(level, data, family);
         if (data.hasLiving(level, family)) {
             return;
         }
-        if (familySpent(level, family)) {
+        String dimension = level.dimension().identifier().toString();
+        List<BiomeBossesRules.SpawnSite> sites = data.sitesFor(family.id());
+        BlockPos pos = findSpawnPos(level, player, family, sites, dimension);
+        if (pos == null) {
             return;
         }
-        BlockPos pos = findSpawnPos(level, player, family);
-        if (pos == null) {
+        if (!BiomeBossesRules.clearOfFamilySpawns(
+                sites, dimension, pos.getX(), pos.getZ(), BiomeBossesRules.FAMILY_SEPARATION_BLOCKS)) {
             return;
         }
         if (!BiomeBossesRules.spawnRoll(level.getRandom().nextInt(100), config.bossSpawnChancePercent())) {
@@ -313,19 +318,69 @@ public final class BiomeBosses implements FeatureModule {
         double distance = BiomeBossesRules.horizontalDistance(
                 mob.getX() - origin.getX(), mob.getZ() - origin.getZ());
         stampBoss(mob, family, config, distance);
+        BlockPos spawnedAt = mob.blockPosition();
+        data.recordSpawn(family, dimension, spawnedAt.getX(), spawnedAt.getY(), spawnedAt.getZ());
         data.markSpawned(family, mob.getUUID(), now);
-        BiomeBossData.campaign(level).markAppeared(family);
         announce(level, mob, family);
         thunderAll(level.getServer());
     }
 
-    /** True once this family has spawned in any dimension of this game. */
-    static boolean familySpent(ServerLevel level, BossFamily family) {
-        long lastSpawn = 0L;
-        for (ServerLevel world : level.getServer().getAllLevels()) {
-            lastSpawn = Math.max(lastSpawn, BiomeBossData.of(world).state(family).lastSpawnEpochMs());
+    /**
+     * True when a biome boss is allowed to appear at this block. A living boss of the family,
+     * a site closer than 500 blocks, world spawn, or an excluded biome keeps the area closed.
+     * The spawn roll and the 80-block clearance search are attempt mechanics, so they stay out.
+     */
+    public static boolean areaAllowsBoss(ServerLevel level, BlockPos pos) {
+        if (level == null || pos == null || !WorldGate.isModuleActive(level, ID)) {
+            return false;
         }
-        return BiomeBossesRules.familyAlreadyUsed(lastSpawn, BiomeBossData.campaign(level).hasAppeared(family));
+        BlockPos origin = spawnOrigin(level);
+        if (!BiomeBossesRules.farEnough(
+                pos.getX() - origin.getX(),
+                pos.getZ() - origin.getZ(),
+                ConfigManager.world(level).bossMinDistanceFromSpawn())) {
+            return false;
+        }
+        BossFamily family = familyAt(level, pos);
+        if (family == null) {
+            return false;
+        }
+        BiomeBossData data = BiomeBossData.of(level);
+        rememberUntrackedLiving(level, data, family);
+        if (data.hasLiving(level, family)) {
+            return false;
+        }
+        return BiomeBossesRules.clearOfFamilySpawns(
+                data.sitesFor(family.id()),
+                level.dimension().identifier().toString(),
+                pos.getX(),
+                pos.getZ(),
+                BiomeBossesRules.FAMILY_SEPARATION_BLOCKS);
+    }
+
+    /**
+     * A living boss from before spawn sites were stored is recorded once, at the block it
+     * occupies now. Later movement does not add sites.
+     */
+    static void rememberUntrackedLiving(ServerLevel level, BiomeBossData data, BossFamily family) {
+        if (level == null || data == null || family == null || data.hasAnySite(family)) {
+            return;
+        }
+        Optional<UUID> living = data.state(family).living();
+        if (living.isEmpty()) {
+            return;
+        }
+        Entity entity = level.getEntityInAnyDimension(living.get());
+        if (entity == null || !entity.isAlive() || !(entity.level() instanceof ServerLevel world)) {
+            return;
+        }
+        BlockPos pos = entity.blockPosition();
+        String dimension = world.dimension().identifier().toString();
+        BiomeBossData home = BiomeBossData.of(world);
+        home.recordSpawn(family, dimension, pos.getX(), pos.getY(), pos.getZ());
+        if (home != data) {
+            data.recordSpawn(family, dimension, pos.getX(), pos.getY(), pos.getZ());
+        }
     }
 
     static BossFamily familyAt(ServerLevel level, BlockPos pos) {
@@ -349,16 +404,25 @@ public final class BiomeBosses implements FeatureModule {
         return BlockPos.ZERO;
     }
 
-    static BlockPos findSpawnPos(ServerLevel level, ServerPlayer player, BossFamily family) {
+    static BlockPos findSpawnPos(
+            ServerLevel level,
+            ServerPlayer player,
+            BossFamily family,
+            List<BiomeBossesRules.SpawnSite> sites,
+            String dimension) {
         RandomSource random = level.getRandom();
         BlockPos playerPos = player.blockPosition();
         int clearance = BiomeBossesRules.SPAWN_CLEARANCE_BLOCKS;
+        int separation = BiomeBossesRules.FAMILY_SEPARATION_BLOCKS;
         for (int attempt = 0; attempt < SPAWN_TRIES; attempt++) {
             double angle = random.nextDouble() * Math.PI * 2.0;
             int dist = BiomeBossesRules.spawnSearchDistance(
                     random.nextInt(), clearance, BiomeBossesRules.SPAWN_SEARCH_EXTRA);
             int x = playerPos.getX() + (int) Math.round(Math.cos(angle) * dist);
             int z = playerPos.getZ() + (int) Math.round(Math.sin(angle) * dist);
+            if (!BiomeBossesRules.clearOfFamilySpawns(sites, dimension, x, z, separation)) {
+                continue;
+            }
             int y = playerPos.getY() + random.nextInt(17) - 8;
             BlockPos cursor = new BlockPos(x, y, z);
             for (int drop = 0; drop < 24; drop++) {

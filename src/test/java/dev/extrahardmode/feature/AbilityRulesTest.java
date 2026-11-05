@@ -1081,6 +1081,12 @@ class AbilityRulesTest {
                 AbilityRules.senseEvilFoundNearFallback(120));
         assertTrue(AbilityRules.senseEvilNoneFallback().contains("do not sense"));
         assertTrue(AbilityRules.senseEvilNoneFallback().contains("More exploring"));
+        assertEquals(
+                "This area is safe from great evil appearing...", AbilityRules.senseEvilAreaSafeFallback());
+        assertEquals(
+                "This area could have great evil appear...", AbilityRules.senseEvilAreaRiskFallback());
+        assertEquals(
+                "This area has been cleared for the alliance!", AbilityRules.senseEvilClearedFallback());
         double[] xs = {10, 0, 100};
         double[] ys = {0, 0, 0};
         double[] zs = {0, 8, 0};

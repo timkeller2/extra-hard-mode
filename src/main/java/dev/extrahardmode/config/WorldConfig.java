@@ -1875,7 +1875,7 @@ public final class WorldConfig {
         writeDefaultIfMissing(
                 file,
                 "bosses.cooldownHours",
-                "Kept for old configs. A biome boss family appears once per game and does not return after it spawns.",
+                "Kept for old configs. The same family can appear again 500 blocks or more from every earlier spawn of that family.",
                 8);
         writeDefaultIfMissing(
                 file,

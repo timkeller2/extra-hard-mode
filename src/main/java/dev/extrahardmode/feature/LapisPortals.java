@@ -6,6 +6,7 @@ import dev.extrahardmode.world.WorldGate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.core.BlockPos;
@@ -30,6 +31,8 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.ChestBlockEntity;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.phys.BlockHitResult;
@@ -64,6 +67,7 @@ public final class LapisPortals implements FeatureModule {
     public void bootstrap(FeatureBus bus) {
         bus.listen(UseBlockCallback.EVENT, ID, LapisPortals::onUseBlock);
         bus.listen(PlayerBlockBreakEvents.AFTER, ID, LapisPortals::onBreak);
+        ServerChunkEvents.CHUNK_LOAD.register(LapisPortals::onChunkLoad);
     }
 
     static InteractionResult onUseBlock(Player player, Level level, net.minecraft.world.InteractionHand hand, BlockHitResult hit) {
@@ -132,12 +136,51 @@ public final class LapisPortals implements FeatureModule {
         }
     }
 
+    /**
+     * A finished booth in a newly loaded chunk is remembered without a door click.
+     * Neighbor chunks are included so a frame that straddles a border is seen once both sides are loaded.
+     */
+    static void onChunkLoad(ServerLevel level, LevelChunk chunk, boolean generated) {
+        if (level == null || chunk == null || !WorldGate.isModuleActive(level, ID)) {
+            return;
+        }
+        rememberChests(level, chunk);
+        int cx = chunk.getPos().x();
+        int cz = chunk.getPos().z();
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                if (dx == 0 && dz == 0) {
+                    continue;
+                }
+                int nx = cx + dx;
+                int nz = cz + dz;
+                if (!level.hasChunk(nx, nz)) {
+                    continue;
+                }
+                rememberChests(level, level.getChunk(nx, nz));
+            }
+        }
+    }
+
+    private static void rememberChests(ServerLevel level, LevelChunk chunk) {
+        for (BlockEntity blockEntity : chunk.getBlockEntities().values()) {
+            if (blockEntity instanceof ChestBlockEntity) {
+                scan(level, blockEntity.getBlockPos());
+            }
+        }
+    }
+
     private static void scan(ServerLevel level, BlockPos origin) {
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
         for (int dy = -SCAN; dy <= SCAN; dy++) {
             for (int dx = -SCAN; dx <= SCAN; dx++) {
                 for (int dz = -SCAN; dz <= SCAN; dz++) {
-                    cursor.set(origin.getX() + dx, origin.getY() + dy, origin.getZ() + dz);
+                    int x = origin.getX() + dx;
+                    int z = origin.getZ() + dz;
+                    if (!level.hasChunk(x >> 4, z >> 4)) {
+                        continue;
+                    }
+                    cursor.set(x, origin.getY() + dy, z);
                     remember(level, cursor);
                 }
             }
@@ -145,20 +188,38 @@ public final class LapisPortals implements FeatureModule {
     }
 
     private static void remember(ServerLevel level, BlockPos lower) {
+        if (!loaded(level, lower)) {
+            return;
+        }
         BlockState state = level.getBlockState(lower);
         if (!(state.getBlock() instanceof DoorBlock) || state.getValue(DoorBlock.HALF) != DoubleBlockHalf.LOWER) {
             return;
         }
-        if (!frameValid(level, lower)) {
-            return;
-        }
         LapisPortalRules.Facing facing = facing(state);
-        if (facing == null) {
+        if (facing == null || !frameLoaded(level, lower, facing) || !frameValid(level, lower)) {
             return;
         }
         String key = LapisPortalRules.key(new LapisPortalRules.Place(
                 dimension(level), lower.getX(), lower.getY(), lower.getZ(), facing));
         LapisPortalData.of(level).remember(key);
+    }
+
+    /** Every block of the frame is already loaded, so a check does not pull in another chunk. */
+    private static boolean frameLoaded(ServerLevel level, BlockPos lower, LapisPortalRules.Facing facing) {
+        if (!loaded(level, lower) || !loaded(level, lower.above())) {
+            return false;
+        }
+        for (LapisPortalRules.Offset offset : LapisPortalRules.lapisOffsets(facing)) {
+            if (!loaded(level, lower.offset(offset.x(), offset.y(), offset.z()))) {
+                return false;
+            }
+        }
+        LapisPortalRules.Offset chest = LapisPortalRules.chestOffset(facing);
+        return chest != null && loaded(level, lower.offset(chest.x(), chest.y(), chest.z()));
+    }
+
+    private static boolean loaded(ServerLevel level, BlockPos pos) {
+        return level.hasChunk(pos.getX() >> 4, pos.getZ() >> 4);
     }
 
     private static void tryTravel(ServerPlayer player, ServerLevel level, BlockPos lower) {

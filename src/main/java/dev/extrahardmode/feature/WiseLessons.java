@@ -678,15 +678,13 @@ public final class WiseLessons {
         player.sendSystemMessage(bossBiomeLine(hint.biomes()));
     }
 
-    /** Visited biomes whose boss family has not appeared yet, in the order they were explored. */
+    /** Visited biomes that can host a biome boss, in the order they were explored. */
     private static List<String> eligibleBossBiomes(ServerPlayer player, ServerLevel level) {
         List<String> visited = player.getAttachedOrElse(EhmAttachments.EHM_VISITED_BIOMES, List.of());
         if (visited.isEmpty()) {
             return List.of();
         }
         Registry<Biome> registry = level.registryAccess().lookupOrThrow(Registries.BIOME);
-        boolean[] spent = new boolean[BossFamily.values().length];
-        boolean[] known = new boolean[BossFamily.values().length];
         List<String> eligible = new ArrayList<>();
         for (String raw : visited) {
             Identifier id = Identifier.tryParse(raw);
@@ -711,14 +709,7 @@ public final class WiseLessons {
             if (family == null) {
                 continue;
             }
-            int index = family.ordinal();
-            if (!known[index]) {
-                spent[index] = BiomeBosses.familySpent(level, family);
-                known[index] = true;
-            }
-            if (!spent[index]) {
-                eligible.add(raw);
-            }
+            eligible.add(raw);
         }
         return eligible;
     }

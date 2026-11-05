@@ -37,6 +37,11 @@ public final class BiomeBossesRules {
     public static final int CREDITS_DELAY_TICKS = 140;
     /** Euclidean blocks. A boss must spawn strictly farther than this from every player and chest. */
     public static final int SPAWN_CLEARANCE_BLOCKS = 80;
+    /**
+     * Horizontal blocks. The same family can spawn again only when the new site is at least
+     * this far from every earlier spawn of that family in the same dimension.
+     */
+    public static final int FAMILY_SEPARATION_BLOCKS = 500;
     /** Euclidean blocks. A loaded boss shows its named health bar to players this close. */
     public static final double BAR_RANGE_BLOCKS = 64.0;
     /** Added to clearance so block-center vs player feet still clears the radius. */
@@ -190,12 +195,27 @@ public final class BiomeBossesRules {
         return Math.max(0, (int) Math.round(base * Math.max(0.0, multiplier)));
     }
 
+    /** One earlier spawn of a biome-boss family. Distance uses {@code x} and {@code z} only. */
+    public record SpawnSite(String dimension, int x, int y, int z) {}
+
     /**
-     * A family that has spawned in this dimension, or been recorded on the campaign, does not spawn again.
-     * {@code lastSpawnEpochMs <= 0} means this dimension has never spawned it.
+     * True when a spawn at {@code x,z} in {@code dimension} is {@code separation} blocks or more
+     * from every earlier site of that family in the same dimension. Other dimensions are ignored.
      */
-    public static boolean familyAlreadyUsed(long lastSpawnEpochMs, boolean recordedOnCampaign) {
-        return recordedOnCampaign || lastSpawnEpochMs > 0L;
+    public static boolean clearOfFamilySpawns(
+            List<SpawnSite> sites, String dimension, int x, int z, int separation) {
+        if (sites == null || dimension == null || dimension.isEmpty()) {
+            return true;
+        }
+        for (SpawnSite site : sites) {
+            if (site == null || site.dimension() == null || !dimension.equals(site.dimension())) {
+                continue;
+            }
+            if (!farEnough((double) x - site.x(), (double) z - site.z(), separation)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /** True when {@code distanceSquared} is within {@link #BAR_RANGE_BLOCKS}. */

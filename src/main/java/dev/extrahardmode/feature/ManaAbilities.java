@@ -2168,6 +2168,7 @@ public final class ManaAbilities implements FeatureModule {
         sendAbilityDurations(player);
         WiseLessons.refreshMist(player);
         WiseLessons.outlineHostiles(player);
+        tellSenseEvilArea(player);
         if (!BiomeBosses.anySpawned(player.level().getServer())) {
             startHealSparkle(player);
             player.sendSystemMessage(Component.translatableWithFallback(
@@ -2192,6 +2193,24 @@ public final class ManaAbilities implements FeatureModule {
         player.sendSystemMessage(Component.translatableWithFallback(
                 "tougher.message.sense_evil_found", AbilityRules.senseEvilFoundFallback()));
         return true;
+    }
+
+    /** Area verdict first, then the alliance line when this chunk is already full. */
+    static void tellSenseEvilArea(ServerPlayer player) {
+        ServerLevel level = (ServerLevel) player.level();
+        BlockPos pos = player.blockPosition();
+        boolean allows = BiomeBosses.areaAllowsBoss(level, pos);
+        if (allows) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.sense_evil_area_risk", AbilityRules.senseEvilAreaRiskFallback()));
+        } else {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.sense_evil_area_safe", AbilityRules.senseEvilAreaSafeFallback()));
+        }
+        if (ChunkClear.peaceful(level, pos)) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.sense_evil_cleared", AbilityRules.senseEvilClearedFallback()));
+        }
     }
 
     static void lookAt(ServerPlayer player, double x, double y, double z) {

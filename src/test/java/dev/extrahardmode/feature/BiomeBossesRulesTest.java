@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Arrays;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class BiomeBossesRulesTest {
@@ -124,11 +126,26 @@ class BiomeBossesRulesTest {
     }
 
     @Test
-    void familyThatHasSpawnedDoesNotReturn() {
-        assertFalse(BiomeBossesRules.familyAlreadyUsed(0L, false));
-        assertFalse(BiomeBossesRules.familyAlreadyUsed(-1L, false));
-        assertTrue(BiomeBossesRules.familyAlreadyUsed(1L, false));
-        assertTrue(BiomeBossesRules.familyAlreadyUsed(0L, true));
+    void sameFamilyCanSpawnAgainFiveHundredBlocksAway() {
+        assertEquals(500, BiomeBossesRules.FAMILY_SEPARATION_BLOCKS);
+        var here = new BiomeBossesRules.SpawnSite("minecraft:overworld", 0, 64, 0);
+        var far = new BiomeBossesRules.SpawnSite("minecraft:overworld", 1000, 70, 0);
+        var high = new BiomeBossesRules.SpawnSite("minecraft:overworld", 0, 200, 0);
+        List<BiomeBossesRules.SpawnSite> sites = List.of(here);
+        assertTrue(BiomeBossesRules.clearOfFamilySpawns(null, "minecraft:overworld", 0, 0, 500));
+        assertTrue(BiomeBossesRules.clearOfFamilySpawns(List.of(), "minecraft:overworld", 0, 0, 500));
+        assertTrue(BiomeBossesRules.clearOfFamilySpawns(sites, null, 0, 0, 500));
+        assertTrue(BiomeBossesRules.clearOfFamilySpawns(sites, "", 0, 0, 500));
+        assertTrue(BiomeBossesRules.clearOfFamilySpawns(sites, "minecraft:the_nether", 0, 0, 500));
+        assertFalse(BiomeBossesRules.clearOfFamilySpawns(sites, "minecraft:overworld", 499, 0, 500));
+        assertTrue(BiomeBossesRules.clearOfFamilySpawns(sites, "minecraft:overworld", 500, 0, 500));
+        assertTrue(BiomeBossesRules.clearOfFamilySpawns(sites, "minecraft:overworld", 300, 400, 500));
+        assertFalse(BiomeBossesRules.clearOfFamilySpawns(sites, "minecraft:overworld", 299, 400, 500));
+        assertFalse(BiomeBossesRules.clearOfFamilySpawns(List.of(high), "minecraft:overworld", 0, 100, 500));
+        assertFalse(BiomeBossesRules.clearOfFamilySpawns(List.of(here, far), "minecraft:overworld", 100, 0, 500));
+        assertTrue(BiomeBossesRules.clearOfFamilySpawns(List.of(here, far), "minecraft:overworld", 500, 0, 500));
+        assertTrue(BiomeBossesRules.clearOfFamilySpawns(
+                Arrays.asList(here, null), "minecraft:overworld", 500, 0, 500));
     }
 
     @Test
