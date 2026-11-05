@@ -34,25 +34,61 @@ class LapisPortalRulesTest {
     }
 
     @Test
-    void frameLeavesTheFacingSideOpenAndPutsTheChestBehindTheUpperDoor() {
+    void frameEnclosesBothHalvesExceptTheOpeningAndPutsTheChestOnTheFacingColumn() {
         for (Facing facing : Facing.values()) {
             List<Offset> lapis = LapisPortalRules.lapisOffsets(facing);
             assertEquals(8, lapis.size());
             assertEquals(8, new HashSet<>(lapis).size());
             assertTrue(lapis.contains(new Offset(0, -1, 0)));
             assertTrue(lapis.contains(new Offset(0, 2, 0)));
-            assertFalse(lapis.contains(new Offset(facing.x, -1, facing.z)));
-            assertFalse(lapis.contains(new Offset(facing.x, 0, facing.z)));
             assertFalse(lapis.contains(new Offset(0, 0, 0)));
             assertFalse(lapis.contains(new Offset(0, 1, 0)));
+            Facing entrance = facing.opposite();
+            assertFalse(lapis.contains(new Offset(entrance.x, -1, entrance.z)));
+            assertFalse(lapis.contains(new Offset(entrance.x, 0, entrance.z)));
+            assertFalse(lapis.contains(new Offset(entrance.x, 1, entrance.z)));
+            for (Facing dir : Facing.values()) {
+                if (dir == entrance) {
+                    continue;
+                }
+                assertTrue(lapis.contains(new Offset(dir.x, 0, dir.z)));
+                assertTrue(lapis.contains(new Offset(dir.x, 1, dir.z)));
+                assertFalse(lapis.contains(new Offset(dir.x, -1, dir.z)));
+            }
             Offset chest = LapisPortalRules.chestOffset(facing);
-            Facing back = facing.opposite();
-            assertEquals(new Offset(back.x, 1, back.z), chest);
+            assertEquals(new Offset(facing.x, 2, facing.z), chest);
             assertFalse(lapis.contains(chest));
         }
-        assertEquals(new Offset(0, 1, -1), LapisPortalRules.chestOffset(Facing.SOUTH));
         assertNull(LapisPortalRules.chestOffset(null));
         assertTrue(LapisPortalRules.lapisOffsets(null).isEmpty());
+    }
+
+    @Test
+    void witherfenBoothsMatchTheWestAndSouthFrames() {
+        assertEquals(
+                List.of(
+                        new Offset(0, -1, 0),
+                        new Offset(0, 2, 0),
+                        new Offset(0, 0, -1),
+                        new Offset(0, 1, -1),
+                        new Offset(0, 0, 1),
+                        new Offset(0, 1, 1),
+                        new Offset(-1, 0, 0),
+                        new Offset(-1, 1, 0)),
+                LapisPortalRules.lapisOffsets(Facing.WEST));
+        assertEquals(new Offset(-1, 2, 0), LapisPortalRules.chestOffset(Facing.WEST));
+        assertEquals(
+                List.of(
+                        new Offset(0, -1, 0),
+                        new Offset(0, 2, 0),
+                        new Offset(1, 0, 0),
+                        new Offset(1, 1, 0),
+                        new Offset(0, 0, 1),
+                        new Offset(0, 1, 1),
+                        new Offset(-1, 0, 0),
+                        new Offset(-1, 1, 0)),
+                LapisPortalRules.lapisOffsets(Facing.SOUTH));
+        assertEquals(new Offset(0, 2, 1), LapisPortalRules.chestOffset(Facing.SOUTH));
     }
 
     @Test

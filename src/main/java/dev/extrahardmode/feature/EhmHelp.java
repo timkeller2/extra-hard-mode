@@ -479,7 +479,7 @@ public final class EhmHelp {
         return Page.of(
                 "tougher.help.portals.",
                 List.of(
-                        "Portals: Lapis blocks on the floor, above the door, and on the three closed sides at the floor and the door. A chest sits on the back wall.",
+                        "Portals: Lapis under the door, above it, and beside both halves on both sides and the side the door faces. The chest sits on top of that facing column.",
                         "Portals: The largest lapis lazuli stack in the chest picks the link. Two booths with the same count connect.",
                         "Portals: Any door works, including iron. Stand in the doorway and close the open door.",
                         "Portals: Fuel is redstone dust, nether quartz, and amethyst shards. One kind covers 100 blocks per item, rounded up, and at least 1.",

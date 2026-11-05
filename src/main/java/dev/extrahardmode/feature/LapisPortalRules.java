@@ -6,10 +6,11 @@ import java.util.List;
 /**
  * Lapis portal linking and fuel. Minecraft-free so JUnit can cover it.
  *
- * <p>A booth is a door with lapis blocks under it, above it, and on the three
- * sides other than the way the door faces. The chest sits one block behind the
- * top half of the door. The largest lapis lazuli stack is the channel. Fuel is
- * redstone dust, nether quartz, and amethyst shards from that chest.
+ * <p>A booth is a door with lapis under it, above it, and beside both halves
+ * on both sides and on the side the door faces. The opening, opposite that
+ * facing, stays clear. The chest sits on top of the facing lapis column. The
+ * largest lapis lazuli stack is the channel. Fuel is redstone dust, nether
+ * quartz, and amethyst shards from that chest.
  */
 public final class LapisPortalRules {
     public static final String LAPIS_LAZULI = "minecraft:lapis_lazuli";
@@ -264,7 +265,10 @@ public final class LapisPortalRules {
         return found;
     }
 
-    /** Eight lapis offsets. The side the door faces is open. */
+    /**
+     * Eight lapis offsets. Posts stand beside both halves on both sides and on
+     * the side the door faces. The opening, opposite that facing, stays clear.
+     */
     public static List<Offset> lapisOffsets(Facing facing) {
         List<Offset> offsets = new ArrayList<>(8);
         if (facing == null) {
@@ -272,23 +276,23 @@ public final class LapisPortalRules {
         }
         offsets.add(new Offset(0, -1, 0));
         offsets.add(new Offset(0, 2, 0));
+        Facing entrance = facing.opposite();
         for (Facing dir : Facing.values()) {
-            if (dir == facing) {
+            if (dir == entrance) {
                 continue;
             }
-            offsets.add(new Offset(dir.x, -1, dir.z));
             offsets.add(new Offset(dir.x, 0, dir.z));
+            offsets.add(new Offset(dir.x, 1, dir.z));
         }
         return List.copyOf(offsets);
     }
 
-    /** Chest on the back wall, level with the top half of the door. */
+    /** Chest on top of the lapis column on the side the door faces. */
     public static Offset chestOffset(Facing facing) {
         if (facing == null) {
             return null;
         }
-        Facing back = facing.opposite();
-        return new Offset(back.x, 1, back.z);
+        return new Offset(facing.x, 2, facing.z);
     }
 
     public static String key(Place place) {

@@ -247,7 +247,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("achievements.victory above 0"));
         assertTrue(String.join(" ", lines).contains("the credits scroll"));
         assertTrue(String.join(" ", lines).contains("top left shows your achievements"));
-        assertTrue(String.join(" ", lines).contains("chest sits on the back wall"));
+        assertTrue(String.join(" ", lines).contains("chest sits on top of that facing column"));
         assertTrue(String.join(" ", lines).contains("largest lapis lazuli stack"));
         assertTrue(String.join(" ", lines).contains("same count connect"));
         assertTrue(String.join(" ", lines).contains("close the open door"));
