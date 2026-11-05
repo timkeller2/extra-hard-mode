@@ -12,7 +12,10 @@ import dev.extrahardmode.world.WorldGate;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
@@ -57,6 +60,7 @@ import org.joml.Vector3f;
  */
 public final class Overgrazing implements FeatureModule {
     public static final Identifier ID = ExtraHardModeMod.id("overgrazing");
+    private static final Map<Identifier, HerdSchedule> SCHEDULES = new HashMap<>();
 
     @Override
     public Identifier id() {
@@ -64,22 +68,64 @@ public final class Overgrazing implements FeatureModule {
     }
 
     @Override
+    public void onWorldUnload(ServerLevel level) {
+        SCHEDULES.remove(level.dimension().identifier());
+    }
+
+    /**
+     * The entity list is read once a minute. Each animal then runs on its own
+     * tick inside that minute, so a herd does not pathfind on the census tick.
+     */
+    @Override
     public void serverTick(ServerLevel level) {
-        if (level.getGameTime() % OvergrazingRules.TICK_STRIDE != 0L) {
-            return;
-        }
+        Identifier dimension = level.dimension().identifier();
         if (!WorldGate.isModuleActive(level, ID)) {
+            SCHEDULES.remove(dimension);
             return;
         }
         WorldConfig config = ConfigManager.world(level);
         if (!config.overgrazingEnable()) {
+            SCHEDULES.remove(dimension);
             return;
         }
+        long now = level.getGameTime();
+        HerdSchedule schedule = SCHEDULES.computeIfAbsent(dimension, id -> new HerdSchedule());
+        drain(level, schedule, now, config);
+        if (schedule.enrolledAt < 0L || now - schedule.enrolledAt >= OvergrazingRules.CHECK_INTERVAL_TICKS) {
+            enroll(level, schedule, now);
+            drain(level, schedule, now, config);
+        }
+    }
+
+    private static void enroll(ServerLevel level, HerdSchedule schedule, long now) {
+        schedule.enrolledAt = now;
+        schedule.pending.clear();
+        schedule.cursor = 0;
         for (Entity entity : level.getAllEntities()) {
-            if (entity instanceof Animal animal) {
+            if (entity instanceof Animal animal && isLivestock(animal)) {
+                schedule.pending.add(new ScheduledCheck(
+                        OvergrazingRules.nextCheckTick(now, animal.getId()), animal.getUUID()));
+            }
+        }
+        schedule.pending.sort(Comparator.comparingLong(ScheduledCheck::runAt));
+    }
+
+    private static void drain(ServerLevel level, HerdSchedule schedule, long now, WorldConfig config) {
+        while (schedule.cursor < schedule.pending.size()
+                && schedule.pending.get(schedule.cursor).runAt() <= now) {
+            ScheduledCheck check = schedule.pending.get(schedule.cursor++);
+            if (level.getEntity(check.animalId()) instanceof Animal animal) {
                 tickAnimal(level, animal, config);
             }
         }
+    }
+
+    private record ScheduledCheck(long runAt, UUID animalId) {}
+
+    private static final class HerdSchedule {
+        private long enrolledAt = -1L;
+        private final List<ScheduledCheck> pending = new ArrayList<>();
+        private int cursor;
     }
 
     static void tickAnimal(ServerLevel level, Animal animal, WorldConfig config) {

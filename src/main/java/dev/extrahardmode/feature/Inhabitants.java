@@ -90,25 +90,34 @@ public final class Inhabitants implements FeatureModule {
 
     @Override
     public void serverTick(ServerLevel level) {
-        if (level.getGameTime() % 5L == 0L) {
+        long now = level.getGameTime();
+        if (now % 5L == 0L) {
             WiseLessons.mist(level);
         }
-        if (level.getGameTime() % 20L == 0L) {
+        boolean second = now % 20L == 0L;
+        boolean expire = Math.floorMod(now, InhabitantRules.EXPIRE_SCAN_TICKS) == 0L;
+        if (second || expire) {
             long day = AntiFarming.overworldDay(level);
-            WiseLessons.despawnExpired(level, day);
-            CouncilMissions.retireNightSpawns(level, day);
-            for (ServerPlayer player : level.players()) {
-                CouncilMissions.tick(player, day);
-                WiseLessons.tick(player, level, day);
+            if (expire) {
+                WiseLessons.despawnExpired(level, day);
+                CouncilMissions.retireNightSpawns(level, day);
+            }
+            if (second) {
+                for (ServerPlayer player : level.players()) {
+                    CouncilMissions.tick(player, day);
+                    WiseLessons.tick(player, level, day);
+                }
             }
         }
         if (level.dimension() != Level.OVERWORLD) {
             return;
         }
         tickHomes(level);
-        if (level.getGameTime() % 20L == 0L) {
+        if (second) {
             keepNearHome(level);
             discardOrphanResidents(level);
+        }
+        if (Math.floorMod(now, InhabitantRules.VISIT_SCAN_TICKS) == 0L) {
             visitNearbyHomes(level);
         }
     }

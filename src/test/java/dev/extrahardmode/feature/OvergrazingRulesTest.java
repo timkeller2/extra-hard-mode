@@ -72,9 +72,27 @@ class OvergrazingRulesTest {
         assertFalse(OvergrazingRules.staleBite(100L, 0L));
         assertFalse(OvergrazingRules.staleBite(50L, 100L));
         assertFalse(OvergrazingRules.staleBite(100L, 100L));
-        assertFalse(OvergrazingRules.staleBite(119L, 100L));
-        assertTrue(OvergrazingRules.staleBite(120L, 100L));
+        long fresh = 100L + OvergrazingRules.CHECK_INTERVAL_TICKS - 1;
+        assertFalse(OvergrazingRules.staleBite(fresh, 100L));
+        assertTrue(OvergrazingRules.staleBite(100L + OvergrazingRules.CHECK_INTERVAL_TICKS, 100L));
         assertTrue(OvergrazingRules.staleBite(5000L, 100L));
         assertEquals(100, OvergrazingRules.FOOD_FLOAT_TICKS);
+    }
+
+    @Test
+    void eachAnimalIsCheckedOnceAMinuteOnItsOwnTick() {
+        assertEquals(1200, OvergrazingRules.CHECK_INTERVAL_TICKS);
+        assertEquals(0, OvergrazingRules.checkPhase(0));
+        assertEquals(1, OvergrazingRules.checkPhase(1));
+        assertEquals(0, OvergrazingRules.checkPhase(1200));
+        assertEquals(1199, OvergrazingRules.checkPhase(-1));
+        assertEquals(0L, OvergrazingRules.nextCheckTick(0L, 0));
+        assertEquals(1L, OvergrazingRules.nextCheckTick(0L, 1));
+        assertEquals(1199L, OvergrazingRules.nextCheckTick(0L, 1199));
+        assertEquals(500L, OvergrazingRules.nextCheckTick(500L, 500));
+        assertEquals(600L, OvergrazingRules.nextCheckTick(500L, 600));
+        assertEquals(1300L, OvergrazingRules.nextCheckTick(500L, 100));
+        assertEquals(3L, OvergrazingRules.nextCheckTick(0L, 3));
+        assertEquals(4L, OvergrazingRules.nextCheckTick(0L, 4));
     }
 }

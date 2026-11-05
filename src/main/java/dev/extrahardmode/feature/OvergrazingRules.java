@@ -26,7 +26,8 @@ public final class OvergrazingRules {
     public static final int LOOK_CHANCE_PERCENT = 33;
     public static final int STARVE_CHANCE_PERCENT = 33;
     public static final int FOOD_FLOAT_TICKS = 100;
-    public static final int TICK_STRIDE = 20;
+    /** Each loaded animal is checked once a minute, on its own tick. */
+    public static final int CHECK_INTERVAL_TICKS = 1200;
     public static final int MIN_INTERVAL_TICKS = 20;
     public static final int MAX_RANGE = 64;
     public static final int MAX_PATH_CHECKS = 64;
@@ -127,13 +128,31 @@ public final class OvergrazingRules {
     }
 
     /**
-     * A due bite that missed at least one scan. While blocks keep ticking, the
-     * check runs every {@link #TICK_STRIDE} ticks, so a live bite is at most
-     * {@code TICK_STRIDE - 1} ticks late. Anything later was unloaded, or sat
-     * where grass cannot grow, and must not be eaten on the way back in.
+     * Slot in the minute for this animal. Consecutive ids land on consecutive
+     * ticks, so a herd does not pathfind together.
+     */
+    public static int checkPhase(int animalId) {
+        return Math.floorMod(animalId, CHECK_INTERVAL_TICKS);
+    }
+
+    /**
+     * Next tick to check this animal. The current tick is used when it already
+     * falls on the animal's slot.
+     */
+    public static long nextCheckTick(long now, int animalId) {
+        int into = (int) Math.floorMod(now, CHECK_INTERVAL_TICKS);
+        int wait = Math.floorMod(checkPhase(animalId) - into, CHECK_INTERVAL_TICKS);
+        return now + wait;
+    }
+
+    /**
+     * A due bite that missed at least one check. A loaded animal is checked
+     * once a minute, so a live bite is at most {@code CHECK_INTERVAL_TICKS - 1}
+     * ticks late. Anything later was unloaded, or sat where grass cannot grow,
+     * and must not be eaten on the way back in.
      */
     public static boolean staleBite(long now, long scheduled) {
-        return isDue(now, scheduled) && now - scheduled >= TICK_STRIDE;
+        return isDue(now, scheduled) && now - scheduled >= CHECK_INTERVAL_TICKS;
     }
 
     /** True when {@code scheduled} is still inside this animal's bite interval. */

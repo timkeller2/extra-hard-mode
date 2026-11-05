@@ -21,7 +21,6 @@ import net.minecraft.world.phys.AABB;
 
 public final class AnimalCrowdControl implements FeatureModule {
     public static final Identifier ID = ExtraHardModeMod.id("animal_crowd_control");
-    private static final int CHECK_INTERVAL = 200;
 
     @Override
     public Identifier id() {
@@ -44,7 +43,7 @@ public final class AnimalCrowdControl implements FeatureModule {
 
     @Override
     public void serverTick(ServerLevel level) {
-        if (level.getGameTime() % CHECK_INTERVAL != 0) {
+        if (Math.floorMod(level.getGameTime(), AnimalCrowdRules.CHECK_INTERVAL_TICKS) != 0) {
             return;
         }
         if (!WorldGate.isModuleActive(level, ID)) {

@@ -1876,6 +1876,12 @@ public final class InhabitantRules {
     /** One real minute. Each loaded home is rescanned on its own tick inside this window. */
     public static final int HOUSE_SCAN_TICKS = 1200;
 
+    /** Fifteen seconds. Lesson creatures and last night's bounty creatures are removed on this pass. */
+    public static final int EXPIRE_SCAN_TICKS = 300;
+
+    /** Fifteen seconds. Beds near a survival player are considered on this pass. */
+    public static final int VISIT_SCAN_TICKS = 300;
+
     public static boolean houseScanDue(long gameTime, int homeIndex) {
         int phase = Math.max(0, homeIndex);
         return Math.floorMod(gameTime + phase, HOUSE_SCAN_TICKS) == 0;

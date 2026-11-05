@@ -1148,6 +1148,11 @@ class InhabitantRulesTest {
         assertTrue(InhabitantRules.houseScanDue(1199L, 1));
         assertTrue(InhabitantRules.houseScanDue(0L, 1200));
         assertFalse(InhabitantRules.houseScanDue(-1L, 0));
+        assertEquals(300, InhabitantRules.EXPIRE_SCAN_TICKS);
+        assertEquals(300, InhabitantRules.VISIT_SCAN_TICKS);
+        assertEquals(0, Math.floorMod(0L, InhabitantRules.EXPIRE_SCAN_TICKS));
+        assertEquals(0, Math.floorMod(300L, InhabitantRules.VISIT_SCAN_TICKS));
+        assertEquals(15, Math.floorMod(15L, InhabitantRules.VISIT_SCAN_TICKS));
     }
 
     @Test
