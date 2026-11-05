@@ -196,7 +196,8 @@ public final class AbilityReadyRules {
     /**
      * Abilities the player can cast right now at an effective level above {@link #MIN_LEVEL}.
      * The level matches a real cast: skill, the best catalyst they are carrying, the largest nether quartz stack
-     * in the supply list, charcoal in that list for Magic Arrow, a honey bottle for Healing, and Empower's bonus.
+     * in the supply list, charcoal in that list for Magic Arrow, a phantom membrane in that list for Flight,
+     * a honey bottle for Healing, and Empower's bonus.
      * Mana level is not added.
      * Cooldown or missing mana leaves the ability off the list. Healing with honey does not need mana.
      */
@@ -445,6 +446,10 @@ public final class AbilityReadyRules {
         if (AbilityRules.MAGIC_ARROW.equals(ability)
                 && bestCount.getOrDefault(AbilityRules.CHARCOAL_ID, 0) > 0) {
             bonus += AbilityRules.CHARCOAL_ARROW_BONUS;
+        }
+        if (AbilityRules.FLIGHT.equals(ability)
+                && bestCount.getOrDefault(AbilityRules.PHANTOM_MEMBRANE_ID, 0) > 0) {
+            bonus += AbilityRules.FLIGHT_MEMBRANE_BONUS;
         }
         return bonus;
     }

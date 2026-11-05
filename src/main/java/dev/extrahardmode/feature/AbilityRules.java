@@ -76,6 +76,8 @@ public final class AbilityRules {
     public static final int CATALYST_BONUS = 2;
     /** Charcoal in the hotbar or backpack adds this to Magic Arrow and is spent one at a time. */
     public static final int CHARCOAL_ARROW_BONUS = 2;
+    /** Phantom membrane in the hotbar or backpack adds this to Flight and is spent one at a time. */
+    public static final int FLIGHT_MEMBRANE_BONUS = 3;
     /** Unlearned abilities (over the slot cap) subtract this, then floor at {@link #MIN_POWER}. */
     public static final int UNKNOWN_ABILITY_PENALTY = 3;
     public static final double MIN_POWER = 1.0;
@@ -84,6 +86,7 @@ public final class AbilityRules {
     public static final String FEATHER_ID = "minecraft:feather";
     public static final String ARROW_ID = "minecraft:arrow";
     public static final String CHARCOAL_ID = "minecraft:charcoal";
+    public static final String PHANTOM_MEMBRANE_ID = "minecraft:phantom_membrane";
     public static final String COMPASS_ID = "minecraft:compass";
     public static final String STRING_ID = "minecraft:string";
     public static final String WOODEN_HOE_ID = "minecraft:wooden_hoe";
@@ -654,7 +657,8 @@ public final class AbilityRules {
                     "Flight: Speed scales with ability level and reaches 70% of walking speed at 10.",
                     "Flight: One feather is consumed. Two in hand consume both and add +2.",
                     "Flight: If it ends and you still have mana, another mana is spent and it continues, and you gain skill as if you cast it again.",
-                    "Flight: A renew spends a feather only when you are holding one, and that one adds +2.");
+                    "Flight: A renew spends a feather only when you are holding one, and that one adds +2.",
+                    "Flight: A phantom membrane in your hotbar or inventory, not a bundle, adds +3. One is consumed, and each renew consumes another to keep that +3.");
             case GROW -> List.of(
                     "Let it grow: Right-click a plant while holding any hoe to grow it by your ability level in stages.",
                     "Let it grow: Leftover stages go to the nearest plant within 2 blocks. Right-click also still grows random plants around you.",
@@ -1019,7 +1023,7 @@ public final class AbilityRules {
     /**
      * Extra ability level from held supplies: extra catalyst in hand, hoe/pickaxe
      * material, the largest hotbar or backpack nether quartz stack for Detect ore,
-     * and charcoal in that same inventory for Magic Arrow.
+     * charcoal in that same inventory for Magic Arrow, and a phantom membrane there for Flight.
      * {@code quartzStack} is that one stack's count, not a sum and not a bundle.
      */
     public static int supplyBonus(
@@ -1034,12 +1038,26 @@ public final class AbilityRules {
             boolean redstone,
             int quartzStack,
             boolean charcoal) {
+        return supplyBonus(ability, heldItemId, heldCount, redstone, quartzStack, charcoal, false);
+    }
+
+    public static int supplyBonus(
+            String ability,
+            String heldItemId,
+            int heldCount,
+            boolean redstone,
+            int quartzStack,
+            boolean charcoal,
+            boolean membrane) {
         if (ability == null) {
             return 0;
         }
         int bonus = DETECT_ORE.equals(ability) ? detectOreQuartzBonus(quartzStack) : 0;
         if (MAGIC_ARROW.equals(ability)) {
             bonus += charcoalArrowBonus(charcoal);
+        }
+        if (FLIGHT.equals(ability)) {
+            bonus += flightMembraneBonus(membrane);
         }
         if (!ability.equals(abilityForItem(heldItemId))) {
             return bonus;
@@ -1107,6 +1125,11 @@ public final class AbilityRules {
     /** +2 when the hotbar or backpack holds charcoal. Bundles, armor, and the offhand do not count. */
     public static int charcoalArrowBonus(boolean hasCharcoal) {
         return hasCharcoal ? CHARCOAL_ARROW_BONUS : 0;
+    }
+
+    /** +3 when the hotbar or backpack holds a phantom membrane. Bundles, armor, and the offhand do not count. */
+    public static int flightMembraneBonus(boolean hasMembrane) {
+        return hasMembrane ? FLIGHT_MEMBRANE_BONUS : 0;
     }
 
     /** Saved Fire bolt practice becomes Magic Arrow practice. */

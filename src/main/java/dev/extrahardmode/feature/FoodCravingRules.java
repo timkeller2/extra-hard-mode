@@ -18,10 +18,10 @@ public final class FoodCravingRules {
     /**
      * What eating {@code foodId} next would mean.
      * Black and brown use the same-food penalty, so Well Fed delays them.
-     * Gold lengthens a run of 6 or more different meals, and only when that food is outside the
-     * Well Fed window and outside the last 7 meals. Green is a food outside the Well Fed
-     * window, or the oldest meal of a run that is already 7 or longer. Full steel blue is a repeat
-     * inside that window that grace still allows. The small steel-blue mark is only novel.
+     * Gold is outside the Well Fed window and outside the last 7 meals. Green is the oldest meal
+     * of a run that is already 7 or longer, and that food appears only once in the Well Fed window.
+     * Full steel blue is a repeat inside that window that grace still allows. The small steel-blue
+     * mark is only novel.
      */
     public static FoodCraving classify(List<String> history, int wellFed, String foodId) {
         if (foodId == null || foodId.isEmpty()) {
@@ -36,11 +36,12 @@ public final class FoodCravingRules {
         if (penalty >= 1) {
             return FoodCraving.SICK;
         }
-        int trailing = trailingDifferent(recent);
-        if (extendsRewardedStreak(recent, foodId, trailing) && outsideLastMealsAndWellFed(recent, foodId, level)) {
+        if (outsideLastMealsAndWellFed(recent, foodId, level)) {
             return FoodCraving.GREAT;
         }
-        if (isDue(recent, foodId, trailing) || outsideWellFedStreak(recent, foodId, level)) {
+        int trailing = trailingDifferent(recent);
+        if (isDue(recent, foodId, trailing)
+                && FoodHistory.countInLast(recent, foodId, WellFedRules.holdWindow(level)) <= 1) {
             return FoodCraving.CRAVING;
         }
         if (withinGrace(recent, foodId, level)) {
@@ -105,14 +106,6 @@ public final class FoodCravingRules {
         return FoodHistory.isNovelInLast(recent, foodId, WellFedRules.holdWindow(level));
     }
 
-    /** This meal is not in the current run, and the run would then be at least 7. */
-    static boolean extendsRewardedStreak(List<String> recent, String foodId, int trailing) {
-        if (trailing + 1 < VARIETY_WINDOW || inTrailing(recent, foodId, trailing)) {
-            return false;
-        }
-        return true;
-    }
-
     /** Oldest meal of a run that is already 7 or longer. Eating it keeps that run. */
     static boolean isDue(List<String> recent, String foodId, int trailing) {
         if (foodId == null || trailing < VARIETY_WINDOW || recent == null || recent.size() < trailing) {
@@ -137,26 +130,5 @@ public final class FoodCravingRules {
         }
         List<String> after = FoodHistory.record(recent, foodId, WellFedRules.HISTORY_CAP);
         return WellFedRules.holds(after, level);
-    }
-
-    /** Absent from the Well Fed hold window. Level 0 has no window longer than the last 7. */
-    static boolean outsideWellFedStreak(List<String> recent, String foodId, int level) {
-        if (level <= 0 || foodId == null || foodId.isEmpty()) {
-            return false;
-        }
-        return FoodHistory.isNovelInLast(recent, foodId, WellFedRules.holdWindow(level));
-    }
-
-    private static boolean inTrailing(List<String> recent, String foodId, int trailing) {
-        if (recent == null || foodId == null || trailing <= 0) {
-            return false;
-        }
-        int start = Math.max(0, recent.size() - trailing);
-        for (int i = start; i < recent.size(); i++) {
-            if (foodId.equals(recent.get(i))) {
-                return true;
-            }
-        }
-        return false;
     }
 }

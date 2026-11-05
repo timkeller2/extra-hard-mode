@@ -252,6 +252,51 @@ class AbilityReadyRulesTest {
     }
 
     @Test
+    void phantomMembraneAddsThreeToFlight() {
+        Map<String, Integer> uses = Map.of(AbilityRules.FLIGHT, 16);
+        Set<String> learned = Set.of(AbilityRules.FLIGHT);
+        List<AbilityReadyRules.StrongCast> bare = AbilityReadyRules.strongCasts(
+                4,
+                5.0,
+                uses,
+                learned,
+                0,
+                List.of(new AbilityReadyRules.SupplyStack(AbilityRules.FEATHER_ID, 1)),
+                false,
+                0L,
+                Map.of());
+        assertEquals(4.0, bare.get(0).level(), 1e-9);
+
+        List<AbilityReadyRules.StrongCast> fed = AbilityReadyRules.strongCasts(
+                4,
+                5.0,
+                uses,
+                learned,
+                0,
+                List.of(
+                        new AbilityReadyRules.SupplyStack(AbilityRules.FEATHER_ID, 1),
+                        new AbilityReadyRules.SupplyStack(AbilityRules.PHANTOM_MEMBRANE_ID, 4)),
+                false,
+                0L,
+                Map.of());
+        assertEquals(7.0, fed.get(0).level(), 1e-9);
+
+        List<AbilityReadyRules.StrongCast> doubled = AbilityReadyRules.strongCasts(
+                4,
+                5.0,
+                uses,
+                learned,
+                0,
+                List.of(
+                        new AbilityReadyRules.SupplyStack(AbilityRules.FEATHER_ID, 2),
+                        new AbilityReadyRules.SupplyStack(AbilityRules.PHANTOM_MEMBRANE_ID, 1)),
+                false,
+                0L,
+                Map.of());
+        assertEquals(9.0, doubled.get(0).level(), 1e-9);
+    }
+
+    @Test
     void goldBonusShortensCooldownWithoutRaisingOtherAbilityPower() {
         List<AbilityReadyRules.SupplyStack> feather =
                 List.of(new AbilityReadyRules.SupplyStack(AbilityRules.FEATHER_ID, 1));

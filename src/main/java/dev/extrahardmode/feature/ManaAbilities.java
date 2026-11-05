@@ -437,9 +437,14 @@ public final class ManaAbilities implements FeatureModule {
         if (blockedByCooldownOrMana(player, AbilityRules.FLIGHT, "tougher.ability.flight", "Flight")) {
             return true;
         }
-        int bonus = AbilityRules.catalystBonus(player.getMainHandItem().getCount());
+        boolean membrane = InventorySearch.hasOneMain(player, Items.PHANTOM_MEMBRANE);
+        int bonus = AbilityRules.catalystBonus(player.getMainHandItem().getCount())
+                + AbilityRules.flightMembraneBonus(membrane);
         double power = abilityPower(player, AbilityRules.FLIGHT, bonus);
         consumeManaAndHeld(player, Items.FEATHER);
+        if (membrane) {
+            InventorySearch.consumeOneMain(player, Items.PHANTOM_MEMBRANE);
+        }
         recordAbilityUse(player, AbilityRules.FLIGHT);
         startFlight(player, power);
         castEffect(player, SoundEvents.PHANTOM_FLAP, ParticleTypes.CLOUD, ParticleTypes.END_ROD);
@@ -2395,7 +2400,8 @@ public final class ManaAbilities implements FeatureModule {
                 held.getCount(),
                 false,
                 InventorySearch.largestMainStack(player, Items.QUARTZ),
-                InventorySearch.hasOneMain(player, Items.CHARCOAL));
+                InventorySearch.hasOneMain(player, Items.CHARCOAL),
+                InventorySearch.hasOneMain(player, Items.PHANTOM_MEMBRANE));
     }
 
     public static String meLineValue(ServerPlayer player, AbilityRules.AbilitySkill skill) {
@@ -2522,9 +2528,13 @@ public final class ManaAbilities implements FeatureModule {
             return;
         }
         if (Achievements.currentMana(player) >= AbilityRules.MANA_COST) {
-            int bonus = renewCatalystBonus(player, Items.FEATHER);
+            boolean membrane = InventorySearch.hasOneMain(player, Items.PHANTOM_MEMBRANE);
+            int bonus = renewCatalystBonus(player, Items.FEATHER) + AbilityRules.flightMembraneBonus(membrane);
             double power = abilityPower(player, AbilityRules.FLIGHT, bonus);
             consumeRenewCatalyst(player, Items.FEATHER);
+            if (membrane) {
+                InventorySearch.consumeOneMain(player, Items.PHANTOM_MEMBRANE);
+            }
             consumeManaAndHeld(player, null);
             recordAbilityUse(player, AbilityRules.FLIGHT);
             int extra = AbilityRules.flightDurationTicks(power);
@@ -2676,10 +2686,13 @@ public final class ManaAbilities implements FeatureModule {
                 || held.is(Items.QUARTZ_BLOCK)
                 || held.is(Items.LAPIS_LAZULI)
                 || held.is(Items.PAPER)
-                || held.is(Items.FEATHER)
                 || held.is(Items.SPIDER_EYE)
                 || held.is(Items.BOOK)) {
             hoeBonus += AbilityRules.catalystBonus(held.getCount());
+        } else if (held.is(Items.FEATHER)) {
+            hoeBonus += AbilityRules.catalystBonus(held.getCount());
+            hoeBonus += AbilityRules.flightMembraneBonus(
+                    InventorySearch.hasOneMain(player, Items.PHANTOM_MEMBRANE));
         }
         Component abilityName = abilityName(ability);
         if (held.is(ItemTags.HOES)) {
@@ -3102,8 +3115,8 @@ public final class ManaAbilities implements FeatureModule {
     }
 
     /**
-     * Nether quartz and charcoal count only as their own stacks in the hotbar or backpack.
-     * Either one in a bundle, worn as armor, or held in the offhand is left out.
+     * Nether quartz, charcoal, and phantom membranes count only as their own stacks in the hotbar or backpack.
+     * Any of those in a bundle, worn as armor, or held in the offhand is left out.
      * Other supplies still count from the whole inventory, including bundles.
      */
     static void collectSupply(
@@ -3115,7 +3128,9 @@ public final class ManaAbilities implements FeatureModule {
             return;
         }
         String id = heldItemId(stack);
-        boolean mainOnly = AbilityReadyRules.QUARTZ_ID.equals(id) || AbilityRules.CHARCOAL_ID.equals(id);
+        boolean mainOnly = AbilityReadyRules.QUARTZ_ID.equals(id)
+                || AbilityRules.CHARCOAL_ID.equals(id)
+                || AbilityRules.PHANTOM_MEMBRANE_ID.equals(id);
         if (!id.isEmpty()
                 && AbilityReadyRules.countsForAbilitySupply(id, insideBundle)
                 && (!mainOnly || (mainInventory && !insideBundle))) {

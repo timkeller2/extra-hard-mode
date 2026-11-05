@@ -31,8 +31,9 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("stack on the cursor"));
         assertTrue(String.join(" ", lines).contains("small steel-blue up mark is a slight craving"));
         assertTrue(String.join(" ", lines).contains("grace still allows that Well Fed repeat"));
-        assertTrue(String.join(" ", lines).contains("gold up mark lengthens a streak"));
-        assertTrue(String.join(" ", lines).contains("outside the Well Fed streak and the last 7"));
+        assertTrue(String.join(" ", lines).contains("appears only once in the Well Fed window"));
+        assertTrue(String.join(" ", lines).contains("gold up mark is outside the Well Fed window"));
+        assertTrue(String.join(" ", lines).contains("outside the last 7 meals"));
         assertTrue(String.join(" ", lines).contains("175, 275, 425, and 600"));
         assertTrue(String.join(" ", lines).contains("pay 1 through 7 emeralds"));
         assertTrue(String.join(" ", lines).contains("inside a bundle"));
@@ -414,6 +415,9 @@ class EhmHelpTest {
         assertTrue(EhmHelp.resolve("fire bolt").lines().stream().anyMatch(line -> line.contains("arrows burn")));
         assertTrue(EhmHelp.resolve("magic arrow").lines().stream().anyMatch(line -> line.contains("adds +2")));
         assertTrue(EhmHelp.resolve("flight").lines().stream().anyMatch(line -> line.startsWith("Flight:")));
+        assertTrue(String.join(" ", EhmHelp.resolve("flight").lines()).contains("phantom membrane"));
+        assertTrue(String.join(" ", EhmHelp.resolve("flight").lines()).contains("not a bundle"));
+        assertTrue(String.join(" ", EhmHelp.resolve("abilities").lines()).contains("adds +3 to Flight"));
         assertTrue(EhmHelp.resolve("grow").lines().stream().anyMatch(line -> line.contains("Unbreaking can skip that wear")));
         assertTrue(EhmHelp.resolve("power mine").lines().stream().anyMatch(line -> line.startsWith("Power mining:")));
         assertTrue(EhmHelp.resolve("detect ore").lines().stream().anyMatch(line -> line.startsWith("Detect ore:")));
