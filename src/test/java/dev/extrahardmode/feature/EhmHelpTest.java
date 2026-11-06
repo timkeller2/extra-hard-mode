@@ -369,7 +369,12 @@ class EhmHelpTest {
         assertTrue(all.contains("hold 5 at a time"));
         assertTrue(all.contains("unpaid emerald turn-ins"));
         assertTrue(all.contains("20% larger"));
-        assertTrue(all.contains("Every 3 successes"));
+        assertTrue(all.contains("Every 4 successes"));
+        assertTrue(all.contains("Every 4 hunts"));
+        assertTrue(all.contains("more than 20 health"));
+        assertTrue(all.contains("dimension where they live"));
+        assertTrue(all.contains("Guardians are left out"));
+        assertFalse(all.contains("Water mobs are left out"));
         assertTrue(all.contains("with that resident"));
         assertTrue(all.contains("A kill counts for every open bounty"));
         assertTrue(all.contains("within 48 blocks"));

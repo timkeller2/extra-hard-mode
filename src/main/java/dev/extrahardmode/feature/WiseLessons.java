@@ -124,7 +124,8 @@ public final class WiseLessons {
                 player.getAttachedOrElse(EhmAttachments.EHM_WISE_MANA, List.of()), teacherId);
         int given = Math.max(0, player.getAttachedOrElse(EhmAttachments.EHM_WISE_LESSON_COUNT, 0));
         RandomSource random = level.getRandom();
-        WiseLessonRules.Mob mob = WiseLessonRules.pickMob(given, random.nextInt());
+        WiseLessonRules.Mob mob = WiseLessonRules.pickMob(
+                given, random.nextInt(), level.dimension().identifier().toString());
         double stock = Inhabitants.shopScore(villager, home.score());
         int size = WiseLessonRules.packSize(stock, WiseLessonRules.serviceUses(taught, mana));
         WiseLessonRules.Lesson lesson = new WiseLessonRules.Lesson(

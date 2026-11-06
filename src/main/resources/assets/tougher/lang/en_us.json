@@ -184,6 +184,8 @@
   "tougher.message.portal_many": "More than one other portal has a stack of %s lapis lazuli.",
   "tougher.message.portal_cost": "The chest needs %s redstone dust, nether quartz, or amethyst shards.",
   "tougher.message.portal_paid": "The portal takes %s.",
+  "tougher.message.portal_recharge": "This portal is recharging. %s",
+  "tougher.message.portal_recharge_other": "The other portal is recharging. %s",
   "tougher.chat.biome_boss_defeat": "%s has been defeated! Bosses vanquished: %s",
   "tougher.chat.third_boss": "The third boss is vanquished!  Your fame is growing!",
   "tougher.chat.ehm_defeated": "Tougher Defeated!",

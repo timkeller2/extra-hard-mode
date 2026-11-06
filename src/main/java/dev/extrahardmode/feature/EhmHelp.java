@@ -486,7 +486,9 @@ public final class EhmHelp {
                         "Portals: Two kinds cover 200 blocks per item. All three cover 300. The kinds in the chest set that range.",
                         "Portals: Payment alternates across those kinds, largest stack first. Ties start with nether quartz, then redstone dust, then amethyst shards.",
                         "Portals: A count shared by more than two booths does not link.",
-                        "Portals: The booth is remembered when the last lapis block, door, or chest finishes the frame."));
+                        "Portals: The booth is remembered when the last lapis block, door, or chest finishes the frame.",
+                        "Portals: A trip plays thunder for everyone within 200 blocks of either booth. You are dizzy and nauseous for 10 seconds.",
+                        "Portals: Both booths then take 15 seconds to recharge."));
     }
 
     private static Page homes() {

@@ -55,27 +55,34 @@ class WiseLessonRulesTest {
 
     @Test
     void earlyHuntsAreTheEasyCreatures() {
+        assertEquals(4, WiseLessonRules.TIER_EVERY);
         assertEquals(0, WiseLessonRules.unlockedTier(0));
-        assertEquals(0, WiseLessonRules.unlockedTier(2));
-        assertEquals(1, WiseLessonRules.unlockedTier(3));
-        assertEquals(1, WiseLessonRules.unlockedTier(5));
-        assertEquals(2, WiseLessonRules.unlockedTier(6));
-        assertEquals(3, WiseLessonRules.unlockedTier(9));
+        assertEquals(0, WiseLessonRules.unlockedTier(3));
+        assertEquals(1, WiseLessonRules.unlockedTier(4));
+        assertEquals(1, WiseLessonRules.unlockedTier(7));
+        assertEquals(2, WiseLessonRules.unlockedTier(8));
+        assertEquals(2, WiseLessonRules.unlockedTier(11));
+        assertEquals(3, WiseLessonRules.unlockedTier(12));
         assertEquals(3, WiseLessonRules.unlockedTier(40));
         assertEquals("minecraft:zombie", WiseLessonRules.pickMob(0, 0).id());
         assertEquals("zombies", WiseLessonRules.pickMob(0, 0).plural());
-        assertEquals("minecraft:husk", WiseLessonRules.pickMob(3, 0).id());
-        assertEquals("cave spiders", WiseLessonRules.pickMob(3, 2).plural());
-        assertEquals("minecraft:enderman", WiseLessonRules.pickMob(6, 0).id());
-        assertEquals("vindicators", WiseLessonRules.pickMob(6, 3).plural());
-        assertEquals("minecraft:ravager", WiseLessonRules.pickMob(9, 0).id());
-        assertEquals("piglin brutes", WiseLessonRules.pickMob(9, 2).plural());
-        assertEquals(4, WiseLessonRules.mobsAtTier(0).size());
-        assertEquals(6, WiseLessonRules.mobsAtTier(1).size());
-        assertEquals(4, WiseLessonRules.mobsAtTier(2).size());
+        assertEquals("minecraft:drowned", WiseLessonRules.pickMob(0, 4).id());
+        assertEquals("minecraft:husk", WiseLessonRules.pickMob(4, 0).id());
+        assertEquals("cave spiders", WiseLessonRules.pickMob(4, 2).plural());
+        assertEquals("minecraft:enderman", WiseLessonRules.pickMob(8, 0).id());
+        assertEquals("vindicators", WiseLessonRules.pickMob(8, 1).plural());
+        assertEquals("minecraft:ravager", WiseLessonRules.pickMob(12, 0).id());
+        assertEquals("piglin brutes", WiseLessonRules.pickMob(12, 0, WiseLessonRules.NETHER).plural());
+        assertEquals("minecraft:zombified_piglin", WiseLessonRules.pickMob(0, 0, WiseLessonRules.NETHER).id());
+        assertEquals("minecraft:endermite", WiseLessonRules.pickMob(0, 0, WiseLessonRules.END).id());
+        assertEquals("minecraft:endermite", WiseLessonRules.pickMob(4, 0, WiseLessonRules.END).id());
+        assertEquals("minecraft:enderman", WiseLessonRules.pickMob(12, 0, WiseLessonRules.END).id());
+        assertEquals("minecraft:zombie", WiseLessonRules.pickMob(0, 0, "minecraft:nowhere").id());
+        assertEquals(8, WiseLessonRules.mobsAtTier(0).size());
+        assertEquals(9, WiseLessonRules.mobsAtTier(1).size());
+        assertEquals(3, WiseLessonRules.mobsAtTier(2).size());
         assertEquals(3, WiseLessonRules.mobsAtTier(3).size());
         for (WiseLessonRules.Mob mob : WiseLessonRules.MOBS) {
-            assertFalse(mob.id().contains("drowned"));
             assertFalse(mob.id().contains("phantom"));
             assertFalse(mob.id().contains("ghast"));
             assertFalse(mob.id().contains("guardian"));

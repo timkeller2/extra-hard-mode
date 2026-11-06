@@ -537,7 +537,8 @@ public final class CouncilMissions {
                 houseScore,
                 today,
                 level.getRandom().nextInt(),
-                level.getRandom().nextInt());
+                level.getRandom().nextInt(),
+                level.dimension().identifier().toString());
         save(player, CouncilMissionRules.put(board, next));
         player.sendSystemMessage(Component.translatableWithFallback(
                 "tougher.message.council_mission_new",

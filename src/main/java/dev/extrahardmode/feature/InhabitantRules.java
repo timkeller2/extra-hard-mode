@@ -606,7 +606,8 @@ public final class InhabitantRules {
                 "Lessons: Speak to a wise teacher and he tells of a hunt every 30 Minecraft days.",
                 "Lessons: While he waits to give another hunt, he names up to 3 explored biomes that can still spawn a boss. If more than 3 can, he picks 3 and keeps them until that wait ends.",
                 "Lessons: The pack is 3 to 8, from the home and his experience, times 1 plus lessons and mana he has given you.",
-                "Lessons: The first hunts are easier creatures. Later hunts are harder. It lies 200 to 500 blocks north, south, east, or west.",
+                "Lessons: The first hunts are easier creatures. Every 4 hunts, they are harder. It lies 200 to 500 blocks north, south, east, or west.",
+                "Lessons: He only sends creatures from the dimension where he lives.",
                 "Lessons: His name, how many are left, and the direction show on your screen. That number falls as you kill them. At that distance it says near here.",
                 "Lessons: Come back closer than that distance and the direction returns.",
                 "Lessons: After 2 minutes out there, on land, at night or below ground, half appear within a few seconds. The rest spawn every 5 to 15 seconds, 20 to 40 blocks out.",
@@ -658,7 +659,9 @@ public final class InhabitantRules {
     public static List<String> homesBountyLines() {
         return List.of(
                 "Bounties: Council members give each player a personal kill bounty when you check in.",
-                "Bounties: The first hunt from a resident is 6-18 common mobs. Each success with that resident makes the next 20% larger. Every 3 successes, their next hunt is rarer.",
+                "Bounties: The first hunt from a resident is 6-18 common mobs. Each success with that resident makes the next 20% larger. Every 4 successes, their next hunt is rarer.",
+                "Bounties: A mob with more than 20 health is fewer creatures, in proportion to that health.",
+                "Bounties: The resident only sends mobs from the dimension where they live. Guardians are left out.",
                 "Bounties: You have 14 Minecraft days. A bounty that runs out is not replaced in that conversation.",
                 "Bounties: The next bounty from that resident waits 7 Minecraft days after the last one was given, plus 3 per finished bounty with them, and only after you finish the previous one.",
                 "Bounties: Each council member can give you one. You can hold 5 at a time, counting hunts and unpaid emerald turn-ins.",

@@ -36,19 +36,66 @@ class CouncilMissionRulesTest {
         assertEquals(12, CouncilMissionRules.nextCount(10));
         assertEquals(22, CouncilMissionRules.nextCount(18));
         assertEquals(0, CouncilMissionRules.unlockedTier(2));
-        assertEquals(1, CouncilMissionRules.unlockedTier(3));
-        assertEquals(1, CouncilMissionRules.unlockedTier(5));
-        assertEquals(2, CouncilMissionRules.unlockedTier(6));
-        assertEquals(3, CouncilMissionRules.unlockedTier(9));
+        assertEquals(0, CouncilMissionRules.unlockedTier(3));
+        assertEquals(1, CouncilMissionRules.unlockedTier(4));
+        assertEquals(1, CouncilMissionRules.unlockedTier(7));
+        assertEquals(2, CouncilMissionRules.unlockedTier(8));
+        assertEquals(2, CouncilMissionRules.unlockedTier(11));
+        assertEquals(3, CouncilMissionRules.unlockedTier(12));
         assertEquals(3, CouncilMissionRules.unlockedTier(99));
-        assertTrue(CouncilMissionRules.mobsAtTier(1).stream()
+        assertTrue(CouncilMissionRules.mobsAtTier(2).stream()
                 .anyMatch(mob -> "minecraft:witch".equals(mob.id())));
         assertTrue(CouncilMissionRules.mobsAtTier(3).stream()
                 .anyMatch(mob -> "minecraft:ravager".equals(mob.id())));
         CouncilMissionRules.Mob first = CouncilMissionRules.pickMob(0, 0);
         assertEquals(0, first.tier());
-        CouncilMissionRules.Mob rare = CouncilMissionRules.pickMob(9, 0);
+        CouncilMissionRules.Mob rare = CouncilMissionRules.pickMob(12, 0);
         assertEquals(3, rare.tier());
+        assertEquals("minecraft:ravager", rare.id());
+    }
+
+    @Test
+    void harderMobsAreFewerAndEachDimensionKeepsItsOwnLadder() {
+        assertEquals(4, CouncilMissionRules.TIER_EVERY_COMPLETED);
+        assertEquals(20, CouncilMissionRules.REFERENCE_HP);
+        assertEquals(0, CouncilMissionRules.healthScaledCount(0, 100));
+        assertEquals(12, CouncilMissionRules.healthScaledCount(12, 20));
+        assertEquals(12, CouncilMissionRules.healthScaledCount(12, 16));
+        assertEquals(6, CouncilMissionRules.healthScaledCount(12, 40));
+        assertEquals(2, CouncilMissionRules.healthScaledCount(12, 100));
+        assertEquals(1, CouncilMissionRules.healthScaledCount(1, 1000));
+        for (CouncilMissionRules.Mob mob : CouncilMissionRules.mobsAtTier(0)) {
+            assertTrue(mob.hp() <= CouncilMissionRules.REFERENCE_HP, mob.id());
+        }
+        assertTrue(CouncilMissionRules.MOBS.stream().anyMatch(mob -> "minecraft:drowned".equals(mob.id())));
+        assertTrue(CouncilMissionRules.MOBS.stream().anyMatch(mob -> "minecraft:bogged".equals(mob.id())));
+        assertTrue(CouncilMissionRules.MOBS.stream().anyMatch(mob -> "minecraft:breeze".equals(mob.id())));
+        assertTrue(CouncilMissionRules.MOBS.stream().anyMatch(mob -> "minecraft:piglin".equals(mob.id())));
+        assertTrue(CouncilMissionRules.MOBS.stream().anyMatch(mob -> "minecraft:zombified_piglin".equals(mob.id())));
+        assertTrue(CouncilMissionRules.MOBS.stream().anyMatch(mob -> "minecraft:endermite".equals(mob.id())));
+        assertFalse(CouncilMissionRules.MOBS.stream().anyMatch(mob -> mob.id().contains("guardian")));
+        assertEquals("minecraft:drowned", CouncilMissionRules.pickMob(0, 5).id());
+        assertEquals("minecraft:zombified_piglin", CouncilMissionRules.pickMob(0, 0, CouncilMissionRules.NETHER).id());
+        assertEquals("minecraft:magma_cube", CouncilMissionRules.pickMob(0, 1, CouncilMissionRules.NETHER).id());
+        assertEquals("minecraft:endermite", CouncilMissionRules.pickMob(0, 0, CouncilMissionRules.END).id());
+        assertEquals("minecraft:endermite", CouncilMissionRules.pickMob(4, 0, CouncilMissionRules.END).id());
+        assertEquals("minecraft:enderman", CouncilMissionRules.pickMob(8, 0, CouncilMissionRules.END).id());
+        assertEquals("minecraft:shulker", CouncilMissionRules.pickMob(8, 1, CouncilMissionRules.END).id());
+        assertEquals("minecraft:enderman", CouncilMissionRules.pickMob(12, 0, CouncilMissionRules.END).id());
+        assertEquals("minecraft:piglin_brute", CouncilMissionRules.pickMob(12, 0, CouncilMissionRules.NETHER).id());
+        assertEquals("minecraft:zombie", CouncilMissionRules.pickMob(12, 0, "minecraft:nowhere").id());
+
+        CouncilMissionRules.Mission ladder = new CouncilMissionRules.Mission(
+                "", "", 0, 0, 0, -1L, 0, false, 0, 0, 6, 12, "a", "Ada", -1L, 0);
+        CouncilMissionRules.Mission hunt = CouncilMissionRules.assign(
+                ladder, "a", "Ada", 12, 20, 0, 0, CouncilMissionRules.OVERWORLD);
+        assertEquals("minecraft:ravager", hunt.mobId());
+        assertEquals(7, CouncilMissionRules.nextCount(6));
+        assertEquals(1, hunt.target());
+        assertEquals(CouncilMissionRules.healthScaledCount(7, 100), hunt.target());
+        assertEquals(6, hunt.lastCompletedTarget());
+        CouncilMissionRules.Mission done = hunt.withKills(hunt.target()).asCompleted(10, 1);
+        assertEquals(7, done.lastCompletedTarget());
     }
 
     @Test

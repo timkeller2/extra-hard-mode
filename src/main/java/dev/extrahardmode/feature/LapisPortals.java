@@ -4,7 +4,9 @@ import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.world.LapisPortalData;
 import dev.extrahardmode.world.WorldGate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
@@ -22,6 +24,8 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Container;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -58,6 +62,13 @@ public final class LapisPortals implements FeatureModule {
     private static final String COST = "The chest needs %s redstone dust, nether quartz, or amethyst shards.";
     private static final String PAID_KEY = "tougher.message.portal_paid";
     private static final String PAID = "The portal takes %s.";
+    private static final String RECHARGE_KEY = "tougher.message.portal_recharge";
+    private static final String RECHARGE = "This portal is recharging. %s";
+    private static final String RECHARGE_OTHER_KEY = "tougher.message.portal_recharge_other";
+    private static final String RECHARGE_OTHER = "The other portal is recharging. %s";
+
+    /** Game time when each booth may travel again. Keyed without the door facing. */
+    private static final Map<String, Long> READY_AT = new HashMap<>();
 
     @Override
     public Identifier id() {
@@ -323,6 +334,17 @@ public final class LapisPortals implements FeatureModule {
             return;
         }
         Candidate dest = found.get(partner);
+        long now = now(level);
+        int hereLeft = secondsCooling(level, lower, now);
+        if (hereLeft > 0) {
+            tell(player, RECHARGE_KEY, RECHARGE, Component.literal(LapisPortalRules.rechargeWait(hereLeft)));
+            return;
+        }
+        int thereLeft = secondsCooling(dest.level, dest.pos, now);
+        if (thereLeft > 0) {
+            tell(player, RECHARGE_OTHER_KEY, RECHARGE_OTHER, Component.literal(LapisPortalRules.rechargeWait(thereLeft)));
+            return;
+        }
         boolean same = dimension(level).equals(dimension(dest.level));
         double travelled = LapisPortalRules.travelDistance(
                 same, LapisPortalRules.distance(lower.getX(), lower.getY(), lower.getZ(), dest.pos.getX(), dest.pos.getY(), dest.pos.getZ()));
@@ -352,8 +374,13 @@ public final class LapisPortals implements FeatureModule {
             restore(container, original);
             return;
         }
+        arm(level, lower, now);
+        arm(dest.level, dest.pos, now);
+        player.addEffect(new MobEffectInstance(MobEffects.NAUSEA, LapisPortalRules.SICKNESS_TICKS));
         level.playSound(null, lower, SoundEvents.ENDERMAN_TELEPORT, SoundSource.PLAYERS, 0.6F, 1.0F);
         dest.level.playSound(null, dest.pos, SoundEvents.ENDERMAN_TELEPORT, SoundSource.PLAYERS, 0.6F, 1.0F);
+        thunder(level, lower);
+        thunder(dest.level, dest.pos);
         int spentRedstone = LapisPortalRules.total(slots, LapisPortalRules.REDSTONE)
                 - LapisPortalRules.total(paid, LapisPortalRules.REDSTONE);
         int spentQuartz = LapisPortalRules.total(slots, LapisPortalRules.QUARTZ)
@@ -483,6 +510,46 @@ public final class LapisPortals implements FeatureModule {
         int dy = Math.abs(place.y() - pos.getY());
         int dz = Math.abs(place.z() - pos.getZ());
         return Math.max(dx, Math.max(dy, dz));
+    }
+
+    private static long now(ServerLevel level) {
+        return level.getServer().overworld().getGameTime();
+    }
+
+    private static int secondsCooling(ServerLevel level, BlockPos pos, long now) {
+        String key = LapisPortalRules.boothKey(dimension(level), pos.getX(), pos.getY(), pos.getZ());
+        if (key == null) {
+            return 0;
+        }
+        Long ready = READY_AT.get(key);
+        if (ready == null) {
+            return 0;
+        }
+        int left = LapisPortalRules.secondsLeft(ready, now);
+        if (left <= 0) {
+            READY_AT.remove(key);
+        }
+        return left;
+    }
+
+    private static void arm(ServerLevel level, BlockPos pos, long now) {
+        String key = LapisPortalRules.boothKey(dimension(level), pos.getX(), pos.getY(), pos.getZ());
+        if (key != null) {
+            READY_AT.put(key, LapisPortalRules.readyAt(now));
+        }
+    }
+
+    /** Thunder at the booth. Volume reaches {@link LapisPortalRules#THUNDER_BLOCKS} and stays at full loudness. */
+    private static void thunder(ServerLevel level, BlockPos pos) {
+        level.playSound(
+                null,
+                pos.getX() + 0.5,
+                pos.getY(),
+                pos.getZ() + 0.5,
+                SoundEvents.LIGHTNING_BOLT_THUNDER,
+                SoundSource.WEATHER,
+                LapisPortalRules.THUNDER_VOLUME,
+                0.8F);
     }
 
     private static void tell(ServerPlayer player, String key, String fallback, Object... args) {

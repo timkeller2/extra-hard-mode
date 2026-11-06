@@ -31,7 +31,7 @@ public final class WiseLessonRules {
     public static final double LEAD_KNOCKBACK_RESISTANCE = 0.8;
     public static final int SPAWN_RADIUS_MIN = 20;
     public static final int SPAWN_RADIUS_MAX = 40;
-    public static final int TIER_EVERY = 3;
+    public static final int TIER_EVERY = 4;
     public static final int MAX_TIER = 3;
     public static final int XP_FACTOR = 3;
     /** Ordinary marks. 50 is 1.5 times health and 100 is twice, added with ADD_MULTIPLIED_BASE. */
@@ -51,8 +51,23 @@ public final class WiseLessonRules {
     public static final int NIGHT_START = 13000;
     public static final int NIGHT_END = 23000;
     public static final String NEAR = "near here";
+    public static final String OVERWORLD = "minecraft:overworld";
+    public static final String NETHER = "minecraft:the_nether";
+    public static final String END = "minecraft:the_end";
 
-    public record Mob(String id, String plural, int tier) {}
+    public record Mob(String id, String plural, int tier, List<String> dimensions) {
+        public Mob {
+            dimensions = dimensions == null || dimensions.isEmpty() ? List.of(OVERWORLD) : List.copyOf(dimensions);
+        }
+
+        public Mob(String id, String plural, int tier, String... dimensions) {
+            this(id, plural, tier, List.of(dimensions));
+        }
+
+        public boolean livesIn(String dimension) {
+            return dimension != null && dimensions.contains(dimension);
+        }
+    }
 
     /** One hunt from one teacher. {@code mobs} entries are {@code uuid|expireDay}. */
     public record Lesson(
@@ -182,19 +197,25 @@ public final class WiseLessonRules {
             new Mob("minecraft:skeleton", "skeletons", 0),
             new Mob("minecraft:spider", "spiders", 0),
             new Mob("minecraft:creeper", "creepers", 0),
+            new Mob("minecraft:drowned", "drowned", 0),
+            new Mob("minecraft:zombified_piglin", "zombified piglins", 0, NETHER),
+            new Mob("minecraft:piglin", "piglins", 0, NETHER),
+            new Mob("minecraft:endermite", "endermites", 0, END),
             new Mob("minecraft:husk", "husks", 1),
             new Mob("minecraft:stray", "strays", 1),
             new Mob("minecraft:cave_spider", "cave spiders", 1),
             new Mob("minecraft:witch", "witches", 1),
             new Mob("minecraft:pillager", "pillagers", 1),
             new Mob("minecraft:zombie_villager", "zombie villagers", 1),
-            new Mob("minecraft:enderman", "endermen", 2),
-            new Mob("minecraft:blaze", "blazes", 2),
-            new Mob("minecraft:wither_skeleton", "wither skeletons", 2),
+            new Mob("minecraft:bogged", "bogged", 1),
+            new Mob("minecraft:blaze", "blazes", 1, NETHER),
+            new Mob("minecraft:wither_skeleton", "wither skeletons", 1, NETHER),
+            new Mob("minecraft:enderman", "endermen", 2, OVERWORLD, NETHER, END),
             new Mob("minecraft:vindicator", "vindicators", 2),
+            new Mob("minecraft:breeze", "breezes", 2),
             new Mob("minecraft:ravager", "ravagers", 3),
             new Mob("minecraft:evoker", "evokers", 3),
-            new Mob("minecraft:piglin_brute", "piglin brutes", 3));
+            new Mob("minecraft:piglin_brute", "piglin brutes", 3, NETHER));
 
     private static final List<String> DIRECTIONS = List.of("north", "south", "east", "west");
 
@@ -367,9 +388,47 @@ public final class WiseLessonRules {
 
     /** {@code givenCount} is how many hunts this player has already been given, before this one. */
     public static Mob pickMob(int givenCount, int roll) {
-        List<Mob> pool = mobsAtTier(unlockedTier(givenCount));
+        return pickMob(givenCount, roll, OVERWORLD);
+    }
+
+    public static List<Mob> mobsAtTier(int tier, String dimension) {
+        String home = dimension == null || dimension.isEmpty() ? OVERWORLD : dimension;
+        List<Mob> matched = new ArrayList<>();
+        for (Mob mob : mobsAtTier(tier)) {
+            if (mob.livesIn(home)) {
+                matched.add(mob);
+            }
+        }
+        return matched;
+    }
+
+    /**
+     * The unlocked tier, limited to this teacher's dimension. When that tier has none there,
+     * the nearest lower tier in that dimension is used, then a higher one.
+     * A dimension with no listed creatures uses the overworld's common creatures.
+     */
+    public static Mob pickMob(int givenCount, int roll, String dimension) {
+        String home = dimension == null || dimension.isEmpty() ? OVERWORLD : dimension;
+        int unlocked = unlockedTier(givenCount);
+        List<Mob> pool = mobsAtTier(unlocked, home);
         if (pool.isEmpty()) {
-            pool = mobsAtTier(0);
+            for (int tier = unlocked - 1; tier >= 0; tier--) {
+                pool = mobsAtTier(tier, home);
+                if (!pool.isEmpty()) {
+                    break;
+                }
+            }
+        }
+        if (pool.isEmpty()) {
+            for (int tier = unlocked + 1; tier <= MAX_TIER; tier++) {
+                pool = mobsAtTier(tier, home);
+                if (!pool.isEmpty()) {
+                    break;
+                }
+            }
+        }
+        if (pool.isEmpty()) {
+            pool = mobsAtTier(0, OVERWORLD);
         }
         return pool.get(Math.floorMod(roll, pool.size()));
     }

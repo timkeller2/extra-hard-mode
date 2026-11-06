@@ -234,6 +234,36 @@ class LapisPortalRulesTest {
     }
 
     @Test
+    void aTripThundersForTwoHundredBlocksAndRestsBothBooths() {
+        assertEquals(200, LapisPortalRules.THUNDER_BLOCKS);
+        assertEquals(12.5F, LapisPortalRules.THUNDER_VOLUME, 0.0F);
+        assertEquals(10, LapisPortalRules.SICKNESS_SECONDS);
+        assertEquals(200, LapisPortalRules.SICKNESS_TICKS);
+        assertEquals(15, LapisPortalRules.RECHARGE_SECONDS);
+        assertEquals(300, LapisPortalRules.RECHARGE_TICKS);
+        assertTrue(LapisPortalRules.hearsThunder(0));
+        assertTrue(LapisPortalRules.hearsThunder(200));
+        assertFalse(LapisPortalRules.hearsThunder(200.01));
+        assertFalse(LapisPortalRules.hearsThunder(-1));
+        assertEquals(310L, LapisPortalRules.readyAt(10L));
+        assertTrue(LapisPortalRules.recharging(310L, 309L));
+        assertFalse(LapisPortalRules.recharging(310L, 310L));
+        assertEquals(15, LapisPortalRules.secondsLeft(310L, 10L));
+        assertEquals(1, LapisPortalRules.secondsLeft(310L, 309L));
+        assertEquals(1, LapisPortalRules.secondsLeft(310L, 290L));
+        assertEquals(2, LapisPortalRules.secondsLeft(310L, 289L));
+        assertEquals(0, LapisPortalRules.secondsLeft(310L, 310L));
+        assertEquals("1 second remains.", LapisPortalRules.rechargeWait(1));
+        assertEquals("15 seconds remain.", LapisPortalRules.rechargeWait(15));
+        assertEquals("0 seconds remain.", LapisPortalRules.rechargeWait(0));
+        assertEquals(
+                "minecraft:the_nether|4|70|-12",
+                LapisPortalRules.boothKey("minecraft:the_nether", 4, 70, -12));
+        assertNull(LapisPortalRules.boothKey("", 0, 0, 0));
+        assertNull(LapisPortalRules.boothKey(null, 0, 0, 0));
+    }
+
+    @Test
     void placeKeyRoundTrips() {
         Place place = new Place("minecraft:the_nether", 4, 70, -12, Facing.WEST);
         assertEquals(place, LapisPortalRules.parse(LapisPortalRules.key(place)));

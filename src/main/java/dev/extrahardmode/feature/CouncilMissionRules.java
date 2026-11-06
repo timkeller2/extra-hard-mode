@@ -19,9 +19,14 @@ public final class CouncilMissionRules {
     public static final int MAX_OPEN_MISSIONS = 5;
     public static final int XP_FLAT = 25;
     public static final double XP_PER_EXTRA_POINT = 0.10;
-    public static final int TIER_EVERY_COMPLETED = 3;
+    public static final int TIER_EVERY_COMPLETED = 4;
     public static final int MAX_TIER = 3;
     public static final int SPAWN_WEIGHT_FACTOR = 3;
+    /** A common hostile. Bounties for mobs above this health ask for fewer of them. */
+    public static final int REFERENCE_HP = 20;
+    public static final String OVERWORLD = "minecraft:overworld";
+    public static final String NETHER = "minecraft:the_nether";
+    public static final String END = "minecraft:the_end";
     public static final int HUD_GAP = 2;
     /** Overworld night, matching the hostile night window. A full night is 10,000 ticks. */
     public static final int NIGHT_START = 13000;
@@ -38,7 +43,19 @@ public final class CouncilMissionRules {
     public static final int BOUNTY_SPAWN_MIN_BLOCKS = 8;
     public static final int BOUNTY_SPAWN_NEAR_BLOCKS = 48;
 
-    public record Mob(String id, String label, int hp, int tier) {}
+    public record Mob(String id, String label, int hp, int tier, List<String> dimensions) {
+        public Mob {
+            dimensions = dimensions == null || dimensions.isEmpty() ? List.of(OVERWORLD) : List.copyOf(dimensions);
+        }
+
+        public Mob(String id, String label, int hp, int tier, String... dimensions) {
+            this(id, label, hp, tier, List.of(dimensions));
+        }
+
+        public boolean livesIn(String dimension) {
+            return dimension != null && dimensions.contains(dimension);
+        }
+    }
 
     /**
      * {@code lastCompletedTarget} and {@code completedCount} persist between hunts for this giver
@@ -192,34 +209,41 @@ public final class CouncilMissionRules {
     public static final Mission NONE =
             new Mission("", "", 0, 0, 0, -1L, 0, false, 0, 0, 0, 0, "", "", -1L, 0);
 
+    /**
+     * Tier 0 in every dimension stays at {@link #REFERENCE_HP} or below, so the first recorded
+     * hunt count is the unscaled roll. Guardians are omitted. Drowned stay.
+     */
     public static final List<Mob> MOBS = List.of(
             new Mob("minecraft:zombie", "Zombie", 20, 0),
             new Mob("minecraft:skeleton", "Skeleton", 20, 0),
             new Mob("minecraft:spider", "Spider", 16, 0),
             new Mob("minecraft:creeper", "Creeper", 20, 0),
-            new Mob("minecraft:drowned", "Drowned", 20, 0),
             new Mob("minecraft:slime", "Slime", 16, 0),
+            new Mob("minecraft:drowned", "Drowned", 20, 0),
+            new Mob("minecraft:zombified_piglin", "Zombified Piglin", 20, 0, NETHER),
+            new Mob("minecraft:magma_cube", "Magma Cube", 16, 0, NETHER),
+            new Mob("minecraft:endermite", "Endermite", 8, 0, END),
             new Mob("minecraft:husk", "Husk", 20, 1),
             new Mob("minecraft:stray", "Stray", 20, 1),
             new Mob("minecraft:cave_spider", "Cave Spider", 12, 1),
-            new Mob("minecraft:witch", "Witch", 26, 1),
-            new Mob("minecraft:pillager", "Pillager", 24, 1),
+            new Mob("minecraft:zombie_villager", "Zombie Villager", 20, 1),
             new Mob("minecraft:silverfish", "Silverfish", 8, 1),
             new Mob("minecraft:phantom", "Phantom", 20, 1),
-            new Mob("minecraft:zombie_villager", "Zombie Villager", 20, 1),
-            new Mob("minecraft:enderman", "Enderman", 40, 2),
-            new Mob("minecraft:blaze", "Blaze", 20, 2),
-            new Mob("minecraft:guardian", "Guardian", 30, 2),
-            new Mob("minecraft:magma_cube", "Magma Cube", 16, 2),
-            new Mob("minecraft:hoglin", "Hoglin", 40, 2),
-            new Mob("minecraft:wither_skeleton", "Wither Skeleton", 20, 2),
-            new Mob("minecraft:ghast", "Ghast", 10, 2),
+            new Mob("minecraft:bogged", "Bogged", 16, 1),
+            new Mob("minecraft:blaze", "Blaze", 20, 1, NETHER),
+            new Mob("minecraft:piglin", "Piglin", 16, 1, NETHER),
+            new Mob("minecraft:ghast", "Ghast", 10, 1, NETHER),
+            new Mob("minecraft:witch", "Witch", 26, 2),
+            new Mob("minecraft:pillager", "Pillager", 24, 2),
             new Mob("minecraft:vindicator", "Vindicator", 24, 2),
+            new Mob("minecraft:enderman", "Enderman", 40, 2, OVERWORLD, NETHER, END),
+            new Mob("minecraft:breeze", "Breeze", 30, 2),
+            new Mob("minecraft:wither_skeleton", "Wither Skeleton", 20, 2, NETHER),
+            new Mob("minecraft:hoglin", "Hoglin", 40, 2, NETHER),
+            new Mob("minecraft:shulker", "Shulker", 30, 2, END),
             new Mob("minecraft:ravager", "Ravager", 100, 3),
             new Mob("minecraft:evoker", "Evoker", 24, 3),
-            new Mob("minecraft:shulker", "Shulker", 30, 3),
-            new Mob("minecraft:piglin_brute", "Piglin Brute", 50, 3),
-            new Mob("minecraft:elder_guardian", "Elder Guardian", 80, 3));
+            new Mob("minecraft:piglin_brute", "Piglin Brute", 50, 3, NETHER));
 
     private CouncilMissionRules() {}
 
@@ -242,6 +266,21 @@ public final class CouncilMissionRules {
         return nextCount(lastCompletedTarget);
     }
 
+    /**
+     * The rolled count, reduced when this mob has more than {@link #REFERENCE_HP} health.
+     * Twice the health is half as many, rounded, and at least 1. Frailer mobs keep the rolled count.
+     * The growth ladder stays on the unscaled count.
+     */
+    public static int healthScaledCount(int base, int hp) {
+        if (base <= 0) {
+            return 0;
+        }
+        if (hp <= REFERENCE_HP) {
+            return base;
+        }
+        return Math.max(1, (int) Math.round(base * (double) REFERENCE_HP / hp));
+    }
+
     public static int unlockedTier(int completedCount) {
         return Math.min(MAX_TIER, Math.max(0, completedCount) / TIER_EVERY_COMPLETED);
     }
@@ -258,9 +297,48 @@ public final class CouncilMissionRules {
     }
 
     public static Mob pickMob(int completedCount, int roll) {
-        List<Mob> pool = mobsAtTier(unlockedTier(completedCount));
+        return pickMob(completedCount, roll, OVERWORLD);
+    }
+
+    /** Mobs of this tier that live in {@code dimension}. An empty or unknown dimension is the overworld. */
+    public static List<Mob> mobsAtTier(int tier, String dimension) {
+        String home = dimension == null || dimension.isEmpty() ? OVERWORLD : dimension;
+        List<Mob> matched = new ArrayList<>();
+        for (Mob mob : mobsAtTier(tier)) {
+            if (mob.livesIn(home)) {
+                matched.add(mob);
+            }
+        }
+        return matched;
+    }
+
+    /**
+     * The unlocked tier, limited to this resident's dimension. When that tier has none there,
+     * the nearest lower tier in that dimension is used, then a higher one.
+     * A dimension with no listed mobs uses the overworld's common mobs.
+     */
+    public static Mob pickMob(int completedCount, int roll, String dimension) {
+        String home = dimension == null || dimension.isEmpty() ? OVERWORLD : dimension;
+        int unlocked = unlockedTier(completedCount);
+        List<Mob> pool = mobsAtTier(unlocked, home);
         if (pool.isEmpty()) {
-            pool = mobsAtTier(0);
+            for (int tier = unlocked - 1; tier >= 0; tier--) {
+                pool = mobsAtTier(tier, home);
+                if (!pool.isEmpty()) {
+                    break;
+                }
+            }
+        }
+        if (pool.isEmpty()) {
+            for (int tier = unlocked + 1; tier <= MAX_TIER; tier++) {
+                pool = mobsAtTier(tier, home);
+                if (!pool.isEmpty()) {
+                    break;
+                }
+            }
+        }
+        if (pool.isEmpty()) {
+            pool = mobsAtTier(0, OVERWORLD);
         }
         return pool.get(Math.floorMod(roll, pool.size()));
     }
@@ -536,9 +614,22 @@ public final class CouncilMissionRules {
 
     public static Mission assign(
             Mission previous, String giverId, String giverName, int houseScore, long today, int countRoll, int mobRoll) {
+        return assign(previous, giverId, giverName, houseScore, today, countRoll, mobRoll, OVERWORLD);
+    }
+
+    public static Mission assign(
+            Mission previous,
+            String giverId,
+            String giverName,
+            int houseScore,
+            long today,
+            int countRoll,
+            int mobRoll,
+            String dimension) {
         Mission prior = previous == null ? NONE : previous;
-        int target = targetCount(prior.lastCompletedTarget(), countRoll);
-        Mob mob = pickMob(prior.completedCount(), mobRoll);
+        int base = targetCount(prior.lastCompletedTarget(), countRoll);
+        Mob mob = pickMob(prior.completedCount(), mobRoll, dimension);
+        int target = healthScaledCount(base, mob.hp());
         return new Mission(
                 mob.id(),
                 mob.label(),

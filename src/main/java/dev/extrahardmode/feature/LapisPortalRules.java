@@ -26,6 +26,14 @@ public final class LapisPortalRules {
 
     public static final int PARTNER_NONE = -1;
     public static final int PARTNER_AMBIGUOUS = -2;
+    /** Players this close to either booth hear the thunder. */
+    public static final int THUNDER_BLOCKS = 200;
+    /** Volume above 1 extends the thunder without making it louder than 1. 16 × this reaches {@link #THUNDER_BLOCKS}. */
+    public static final float THUNDER_VOLUME = THUNDER_BLOCKS / 16.0F;
+    public static final int SICKNESS_SECONDS = 10;
+    public static final int SICKNESS_TICKS = SICKNESS_SECONDS * 20;
+    public static final int RECHARGE_SECONDS = 15;
+    public static final int RECHARGE_TICKS = RECHARGE_SECONDS * 20;
 
     private LapisPortalRules() {}
 
@@ -146,6 +154,45 @@ public final class LapisPortalRules {
             return 1.0;
         }
         return Math.max(0.0, raw);
+    }
+
+    /** Euclidean distance. Exactly {@link #THUNDER_BLOCKS} still hears it. */
+    public static boolean hearsThunder(double blocks) {
+        return blocks >= 0.0 && blocks <= THUNDER_BLOCKS;
+    }
+
+    /** Game time when this booth may travel again. */
+    public static long readyAt(long now) {
+        return now + RECHARGE_TICKS;
+    }
+
+    public static boolean recharging(long readyAt, long now) {
+        return readyAt > now;
+    }
+
+    /** Whole seconds still to wait, rounded up. Zero when the booth is ready. */
+    public static int secondsLeft(long readyAt, long now) {
+        long ticks = readyAt - now;
+        if (ticks <= 0L) {
+            return 0;
+        }
+        return (int) ((ticks + 19L) / 20L);
+    }
+
+    public static String rechargeWait(int seconds) {
+        int left = Math.max(0, seconds);
+        if (left == 1) {
+            return "1 second remains.";
+        }
+        return left + " seconds remain.";
+    }
+
+    /** Booth identity without the door facing, so a turned door keeps its recharge. */
+    public static String boothKey(String dimension, int x, int y, int z) {
+        if (dimension == null || dimension.isEmpty()) {
+            return null;
+        }
+        return dimension + "|" + x + "|" + y + "|" + z;
     }
 
     /**
