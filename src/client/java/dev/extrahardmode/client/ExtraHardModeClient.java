@@ -23,6 +23,7 @@ import dev.extrahardmode.network.ClientboundCompassSpawnPayload;
 import dev.extrahardmode.network.ClientboundCouncilBountyPayload;
 import dev.extrahardmode.network.ClientboundFlightPayload;
 import dev.extrahardmode.network.ClientboundFoodCravingPayload;
+import dev.extrahardmode.network.ClientboundManaLearningPayload;
 import dev.extrahardmode.network.ClientboundManaPayload;
 import dev.extrahardmode.network.ClientboundPowerMinePayload;
 import dev.extrahardmode.network.ClientboundLightLookPayload;
@@ -63,6 +64,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
 
     private static volatile ClientboundSyncPayload lastSync;
     private static volatile ClientboundManaPayload lastMana;
+    private static volatile double lastManaLearning;
     private static volatile ClientboundFoodCravingPayload lastFoodCraving;
     private static volatile ClientboundFlightPayload lastFlight;
     private static volatile ClientboundPowerMinePayload lastPowerMine;
@@ -80,6 +82,10 @@ public class ExtraHardModeClient implements ClientModInitializer {
 
     public static ClientboundManaPayload lastMana() {
         return lastMana;
+    }
+
+    public static double lastManaLearning() {
+        return lastManaLearning;
     }
 
     public static ClientboundFoodCravingPayload lastFoodCraving() {
@@ -350,6 +356,8 @@ public class ExtraHardModeClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(
                 ClientboundManaPayload.TYPE, (payload, context) -> lastMana = payload);
         ClientPlayNetworking.registerGlobalReceiver(
+                ClientboundManaLearningPayload.TYPE, (payload, context) -> lastManaLearning = payload.capacity());
+        ClientPlayNetworking.registerGlobalReceiver(
                 ClientboundFoodCravingPayload.TYPE, (payload, context) -> lastFoodCraving = payload);
         ClientPlayNetworking.registerGlobalReceiver(
                 ClientboundFlightPayload.TYPE, (payload, context) -> lastFlight = payload);
@@ -385,6 +393,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
             lastSync = null;
             CopperLanterns.setClientActive(false);
             lastMana = null;
+            lastManaLearning = 0.0;
             lastFoodCraving = null;
             FoodCravingClient.disconnected();
             lastFlight = null;

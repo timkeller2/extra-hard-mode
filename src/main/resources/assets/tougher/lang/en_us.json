@@ -321,5 +321,7 @@
   "tougher.tooltip.food_grace": "Within grace, %s",
   "tougher.tooltip.food_maintain": "Maintaining",
   "tougher.tooltip.food_great": "Craving",
-  "tougher.tooltip.food_normal": "Eaten %s"
+  "tougher.tooltip.food_normal": "Eaten %s",
+  "tougher.tooltip.mana_learning": "Mana learning %s",
+  "tougher.tooltip.well_fed_level": "Well Fed %s"
 }

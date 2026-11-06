@@ -25,6 +25,8 @@ public final class EhmNetworking {
         PayloadTypeRegistry.clientboundPlay().register(ClientboundSyncPayload.TYPE, ClientboundSyncPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(ClientboundToastPayload.TYPE, ClientboundToastPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(ClientboundManaPayload.TYPE, ClientboundManaPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay()
+                .register(ClientboundManaLearningPayload.TYPE, ClientboundManaLearningPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(ClientboundFlightPayload.TYPE, ClientboundFlightPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay()
                 .register(ClientboundPowerMinePayload.TYPE, ClientboundPowerMinePayload.STREAM_CODEC);

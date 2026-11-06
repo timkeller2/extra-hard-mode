@@ -225,6 +225,11 @@ class AchievementRulesTest {
         assertEquals(22, AchievementRules.manaDieFaces(20, 2.2));
         assertEquals(2, AchievementRules.manaDieFaces(-3, 2.2));
         assertEquals(0, AchievementRules.manaDieFaces(0, Double.NaN));
+        assertEquals(0.0, AchievementRules.manaLearningTotal(0, 0.0));
+        assertEquals(0.9, AchievementRules.manaLearningTotal(0, 0.9));
+        assertEquals(20.0 + 2.2, AchievementRules.manaLearningTotal(20, 2.2));
+        assertEquals(2.2, AchievementRules.manaLearningTotal(-3, 2.2));
+        assertEquals(0.0, AchievementRules.manaLearningTotal(0, Double.NaN));
         assertTrue(AchievementRules.manaDieBeatsBaseLevel(0, 1));
         assertFalse(AchievementRules.manaDieBeatsBaseLevel(1, 1));
         assertTrue(AchievementRules.manaDieBeatsBaseLevel(1, 2));

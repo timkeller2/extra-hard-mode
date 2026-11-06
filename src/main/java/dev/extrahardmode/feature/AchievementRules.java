@@ -221,13 +221,25 @@ public final class AchievementRules {
     public static final int DEFAULT_MANA_LEARNING_CAPACITY = 0;
 
     /**
-     * Faces on the die rolled after {@link #manaFromExperience} succeeds.
-     * The configured base plus earned capacity, rounded down. {@code 0} cannot succeed.
+     * Mana learning capacity: the configured base plus capacity earned from redstone gifts.
+     * This is the number on the inventory crystal. The die uses {@link #manaDieFaces(int, double)}.
      */
-    public static int manaDieFaces(int configBase, double earned) {
+    public static double manaLearningTotal(int configBase, double earned) {
         double earnedSafe = earned > 0.0 && !Double.isNaN(earned) ? earned : 0.0;
         double total = Math.max(0, configBase) + earnedSafe;
-        if (Double.isNaN(total) || total < 1.0) {
+        if (Double.isNaN(total) || total <= 0.0) {
+            return 0.0;
+        }
+        return total;
+    }
+
+    /**
+     * Faces on the die rolled after {@link #manaFromExperience} succeeds.
+     * {@link #manaLearningTotal} rounded down. {@code 0} cannot succeed.
+     */
+    public static int manaDieFaces(int configBase, double earned) {
+        double total = manaLearningTotal(configBase, earned);
+        if (total < 1.0) {
             return 0;
         }
         return (int) Math.floor(total);

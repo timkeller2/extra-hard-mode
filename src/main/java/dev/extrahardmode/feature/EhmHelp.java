@@ -271,7 +271,7 @@ public final class EhmHelp {
                         "Hunger: A yellow number is how many meals ago you last ate that food.",
                         "Hunger: It is a slight craving when eating it weakens the Well Fed run, and within grace when the repeat still fits.",
                         "Hunger: A green minus maintains the Well Fed run. It is the oldest meal of that run, and that food appears only once.",
-                        "Hunger: Above the offhand, Well Fed shows the oldest food of that run that appears only once, with its mark.",
+                        "Hunger: Above the offhand, a mana crystal shows mana learning when it is above 0, and a chicken above that shows your Well Fed level when it is above 0.",
                         "Hunger: A green up mark is a craving. Those meals have dropped out of the variety run, and eating them builds that run back up.",
                         "Hunger: Black and brown follow that same-food penalty, including the extra repeats Well Fed allows.",
                         "Hunger: After those seven, every 2 more different meals raise Well Fed by one. Nine in a row is Well Fed 1.",

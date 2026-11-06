@@ -455,6 +455,7 @@ public final class Inhabitants implements FeatureModule {
                 Component.literal(taken)));
         level.playSound(
                 null, villager.blockPosition(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.NEUTRAL, 1.0F, 1.0F);
+        Achievements.sendMana(player);
     }
 
     private static void explainLesson(

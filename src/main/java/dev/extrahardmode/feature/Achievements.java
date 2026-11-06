@@ -6,6 +6,7 @@ import dev.extrahardmode.module.TutorialCounts;
 import dev.extrahardmode.network.ClientboundAchievementFloatPayload;
 import dev.extrahardmode.network.ClientboundAchievementScorePayload;
 import dev.extrahardmode.network.ClientboundCreditsPayload;
+import dev.extrahardmode.network.ClientboundManaLearningPayload;
 import dev.extrahardmode.network.ClientboundManaPayload;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.world.AchievementClaimData;
@@ -75,6 +76,7 @@ public final class Achievements implements FeatureModule {
         ServerPlayNetworking.send(
                 player,
                 new ClientboundManaPayload(manaLevel(player), (float) currentMana(player), WellFed.level(player)));
+        ServerPlayNetworking.send(player, new ClientboundManaLearningPayload(manaLearningTotal(player)));
     }
 
     public static void onPlaced(BlockPlaceContext context, Block block) {
@@ -393,17 +395,26 @@ public final class Achievements implements FeatureModule {
         }
     }
 
-    /** Configured base plus redstone gifts, rounded down. Zero faces cannot grant a mana level. */
-    static int manaDieFaces(ServerPlayer player) {
+    /** Configured base plus redstone gifts. The inventory crystal shows this number. */
+    static double manaLearningTotal(ServerPlayer player) {
         if (player == null) {
-            return 0;
+            return 0.0;
         }
         int base = 0;
         if (player.level() instanceof ServerLevel level) {
             base = ConfigManager.world(level).manaLearningCapacity();
         }
         Double earned = player.getAttachedOrElse(EhmAttachments.EHM_MANA_LEARNING, 0.0);
-        return AchievementRules.manaDieFaces(base, earned == null ? 0.0 : earned);
+        return AchievementRules.manaLearningTotal(base, earned == null ? 0.0 : earned);
+    }
+
+    /** Configured base plus redstone gifts, rounded down. Zero faces cannot grant a mana level. */
+    static int manaDieFaces(ServerPlayer player) {
+        double total = manaLearningTotal(player);
+        if (total < 1.0) {
+            return 0;
+        }
+        return (int) Math.floor(total);
     }
 
     public static void grantMana(ServerPlayer player, int levels) {
