@@ -222,6 +222,20 @@ class LapisPortalRulesTest {
     }
 
     @Test
+    void remainPhraseNamesFuelLeftInThePayingChest() {
+        assertEquals("6 redstone dust remain in the chest you left", LapisPortalRules.remainPhrase(6, 0, 0));
+        assertEquals("1 amethyst shard remains in the chest you left", LapisPortalRules.remainPhrase(0, 0, 1));
+        assertEquals("1 nether quartz remains in the chest you left", LapisPortalRules.remainPhrase(0, 1, 0));
+        assertEquals(
+                "2 nether quartz and 3 redstone dust remain in the chest you left",
+                LapisPortalRules.remainPhrase(3, 2, 0));
+        assertEquals(
+                "2 nether quartz, 3 redstone dust, and 4 amethyst shards remain in the chest you left",
+                LapisPortalRules.remainPhrase(3, 2, 4));
+        assertEquals("No fuel remains in the chest you left", LapisPortalRules.remainPhrase(0, 0, 0));
+    }
+
+    @Test
     void partnerRequiresExactlyOneOtherBooth() {
         assertEquals(1, LapisPortalRules.partner(new int[] {3, 3}, 0));
         assertEquals(LapisPortalRules.PARTNER_AMBIGUOUS, LapisPortalRules.partner(new int[] {3, 3, 3}, 0));

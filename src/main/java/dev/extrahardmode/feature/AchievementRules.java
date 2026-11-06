@@ -217,34 +217,29 @@ public final class AchievementRules {
         return roll < chance;
     }
 
-    /** Faces on the die rolled after {@link #manaFromExperience} succeeds. */
-    public static final int MANA_DIE_SIDES = 20;
+    /** Configured base of {@link #manaDieFaces(int, double)} before redstone gifts. */
+    public static final int DEFAULT_MANA_LEARNING_CAPACITY = 0;
 
-    /** Added to that die for each mana level a wise teacher has granted. */
-    public static final int WISE_MANA_DIE_BONUS_PER_LEVEL = 2;
-
-    /** {@code 2 ×} wise-teacher mana levels. A missing or negative count adds nothing. */
-    public static int wiseManaDieBonus(int wiseManaLevels) {
-        if (wiseManaLevels <= 0) {
+    /**
+     * Faces on the die rolled after {@link #manaFromExperience} succeeds.
+     * The configured base plus earned capacity, rounded down. {@code 0} cannot succeed.
+     */
+    public static int manaDieFaces(int configBase, double earned) {
+        double earnedSafe = earned > 0.0 && !Double.isNaN(earned) ? earned : 0.0;
+        double total = Math.max(0, configBase) + earnedSafe;
+        if (Double.isNaN(total) || total < 1.0) {
             return 0;
         }
-        return wiseManaLevels * WISE_MANA_DIE_BONUS_PER_LEVEL;
+        return (int) Math.floor(total);
     }
 
     /**
-     * The experience roll offered a mana level. {@code die} is 1–20 and must be strictly higher
-     * than the stored mana level. Well Fed and ready gold are not part of that level.
+     * The experience roll offered a mana level. {@code die} is 1 through the player's mana learning
+     * capacity and must be strictly higher than the stored mana level. Well Fed and ready gold
+     * are not part of that roll.
      */
     public static boolean manaDieBeatsBaseLevel(int baseManaLevel, int die) {
-        return manaDieBeatsBaseLevel(baseManaLevel, die, 0);
-    }
-
-    /**
-     * Same check, with {@link #wiseManaDieBonus(int)} added to the die. The bonus raises how high
-     * the stored mana level can be and still lose to the roll.
-     */
-    public static boolean manaDieBeatsBaseLevel(int baseManaLevel, int die, int wiseManaLevels) {
-        return die + wiseManaDieBonus(wiseManaLevels) > Math.max(0, baseManaLevel);
+        return die > Math.max(0, baseManaLevel);
     }
 
     /** {@code b:minecraft:oak_planks:0} / {@code s:minecraft:zombie:1}. */

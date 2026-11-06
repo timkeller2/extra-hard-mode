@@ -29,6 +29,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("at least 1 hunger"));
         assertTrue(String.join(" ", lines).contains("small mark in the top right"));
         assertTrue(String.join(" ", lines).contains("stack on the cursor"));
+        assertTrue(String.join(" ", lines).contains("brown number is how many meals ago"));
         assertTrue(String.join(" ", lines).contains("yellow number is how many meals ago"));
         assertTrue(String.join(" ", lines).contains("slight craving when eating it weakens"));
         assertTrue(String.join(" ", lines).contains("within grace when the repeat still fits"));
@@ -50,11 +51,15 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("square root of that level"));
         assertTrue(String.join(" ", lines).contains("stops at your mana level"));
         assertTrue(String.join(" ", lines).contains("spends 1 block, or 2 from a stack"));
-        assertTrue(String.join(" ", lines).contains("casts Lapis Shield"));
+        assertTrue(String.join(" ", lines).contains("casts Amethyst Shield"));
         assertTrue(String.join(" ", lines).contains("1 minute per level"));
         assertTrue(String.join(" ", lines).contains("before armor"));
-        assertTrue(String.join(" ", lines).contains("Every 3 points blocked"));
+        assertTrue(String.join(" ", lines).contains("1 per 3 points blocked"));
+        assertTrue(String.join(" ", lines).contains("1 per 5"));
+        assertTrue(String.join(" ", lines).contains("1 per 7"));
         assertTrue(String.join(" ", lines).contains("rounded up"));
+        assertTrue(String.join(" ", lines).contains("harmful effects"));
+        assertTrue(String.join(" ", lines).contains("adds another +2"));
         assertFalse(String.join(" ", lines).contains("1 quartz per mana"));
         assertTrue(String.join(" ", lines).contains("40 mana"));
         assertTrue(String.join(" ", lines).contains("/tougher ability help"));
@@ -78,16 +83,19 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("casts Empower"));
         assertTrue(String.join(" ", lines).contains("does not renew on its own"));
         assertTrue(String.join(" ", lines).contains("square root of that level"));
-        assertTrue(String.join(" ", lines).contains("half your mana level"));
-        assertTrue(String.join(" ", lines).contains("effective level is at least 1"));
+        assertTrue(String.join(" ", lines).contains("minus 2, and at least 0"));
+        assertTrue(String.join(" ", lines).contains("the cast is practice"));
+        assertTrue(String.join(" ", lines).contains("Read Tome practice keeps the tome"));
+        assertTrue(String.join(" ", lines).contains("half your skill"));
+        assertTrue(String.join(" ", lines).contains("Practice keeps the dust"));
         assertTrue(String.join(" ", lines).contains("wise teacher"));
         assertTrue(String.join(" ", lines).contains("30 emeralds"));
         assertTrue(String.join(" ", lines).contains("down to free"));
-        assertTrue(String.join(" ", lines).contains("does not count toward abilities you learn yourself"));
-        assertTrue(String.join(" ", lines).contains("each house point and each point of his trading experience"));
+        assertTrue(String.join(" ", lines).contains("house points in uses"));
+        assertTrue(String.join(" ", lines).contains("twice the house points"));
         assertTrue(String.join(" ", lines).contains("does not explode"));
-        assertTrue(String.join(" ", lines).contains("lapis lazuli block"));
-        assertTrue(String.join(" ", lines).contains("Redstone dust"));
+        assertTrue(String.join(" ", lines).contains("The first gift takes 1"));
+        assertTrue(String.join(" ", lines).contains("Glowstone dust"));
         assertTrue(String.join(" ", lines).contains("Pumpkins and melons"));
         assertTrue(String.join(" ", lines).contains("drop no seeds"));
         assertTrue(String.join(" ", lines).contains("6 times as long to breed"));
@@ -204,8 +212,8 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("enchanted heavy sword or axe"));
         assertTrue(String.join(" ", lines).contains("They trade homes at once"));
         assertTrue(String.join(" ", lines).contains("half the points of the finer home"));
-        assertTrue(String.join(" ", lines).contains("Wise-teacher levels add 2 to that roll"));
-        assertTrue(String.join(" ", lines).contains("adds 2 to the achievement die"));
+        assertTrue(String.join(" ", lines).contains("Mana learning, rounded down, is the die"));
+        assertTrue(String.join(" ", lines).contains("kill more than half the marks"));
         assertTrue(String.join(" ", lines).contains("visit a biome you gain 50 experience"));
         assertTrue(String.join(" ", lines).contains("first player to visit it"));
         assertTrue(String.join(" ", lines).contains("habitable home in a biome"));
@@ -215,7 +223,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("highest first"));
         assertTrue(String.join(" ", lines).contains("Hold a book"));
         assertTrue(String.join(" ", lines).contains("yellow seconds"));
-        assertTrue(String.join(" ", lines).contains("golden when you have learned"));
+        assertTrue(String.join(" ", lines).contains("The level number is golden"));
         assertTrue(String.join(" ", lines).contains("plantable vegetable"));
         assertTrue(String.join(" ", lines).contains("6 to 16 emeralds"));
         assertTrue(String.join(" ", lines).contains("Pumpkin and melon seeds are 6"));
@@ -413,7 +421,7 @@ class EhmHelpTest {
         assertTrue(index.contains("Paper: Healing"));
         assertTrue(index.contains("Golden sword or heavy golden sword: Smite Evil"));
         assertTrue(index.contains("/tougher ability help <name>"));
-        assertTrue(index.contains("house points plus his trading experience"));
+        assertTrue(index.contains("twice the house points"));
         assertTrue(lines.stream().noneMatch(line -> line.startsWith("Healing:")));
         for (String ability : AbilityRules.ABILITY_IDS) {
             var page = EhmHelp.abilityPage(ability);
@@ -447,11 +455,12 @@ class EhmHelpTest {
         assertTrue(EhmHelp.resolve("diamond skin").lines().stream().anyMatch(line -> line.startsWith("Diamond Skin:")));
         assertTrue(EhmHelp.resolve("empower").lines().stream().anyMatch(line -> line.startsWith("Empower:")));
         assertTrue(EhmHelp.resolve("battery").lines().stream().anyMatch(line -> line.startsWith("Battery:")));
-        assertTrue(EhmHelp.resolve("lapis shield").lines().stream().anyMatch(line -> line.startsWith("Lapis Shield:")));
+        assertTrue(EhmHelp.resolve("amethyst shield").lines().stream().anyMatch(line -> line.startsWith("Amethyst Shield:")));
+        assertTrue(EhmHelp.resolve("lapis shield").lines().stream().anyMatch(line -> line.startsWith("Amethyst Shield:")));
         assertTrue(EhmHelp.resolve("write tome").lines().stream().anyMatch(line -> line.startsWith("Write Tome of the Wise:")));
         assertTrue(EhmHelp.resolve("read tome").lines().stream().anyMatch(line -> line.startsWith("Read Tome of the Wise:")));
         assertTrue(String.join(" ", EhmHelp.resolve("abilities").lines()).contains("Tome of the Wise"));
-        assertTrue(EhmHelp.resolve("lapus").lines().stream().anyMatch(line -> line.startsWith("Lapis Shield:")));
+        assertTrue(EhmHelp.resolve("lapus").lines().stream().anyMatch(line -> line.startsWith("Amethyst Shield:")));
         assertTrue(EhmHelp.resolve("ability fire bolt").lines().stream().anyMatch(line -> line.contains("arrows burn")));
     }
 

@@ -4,6 +4,8 @@ import com.electronwill.nightconfig.core.Config;
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.electronwill.nightconfig.toml.TomlFormat;
 import dev.extrahardmode.ExtraHardModeMod;
+import dev.extrahardmode.feature.AbilityRules;
+import dev.extrahardmode.feature.AchievementRules;
 import dev.extrahardmode.feature.BeeHoneyRules;
 import dev.extrahardmode.feature.ChunkClearRules;
 import dev.extrahardmode.feature.GrassSpreadRules;
@@ -40,6 +42,8 @@ public final class WorldConfig {
     private boolean competitiveAchievements = true;
     /** Achievements that win the game. 0 is off. The overworld file is the one that counts. */
     private int achievementVictory = 0;
+    /** Base faces of the achievement mana die, before redstone blocks given to wise teachers. */
+    private int manaLearningCapacity = AchievementRules.DEFAULT_MANA_LEARNING_CAPACITY;
     private boolean torchSoftDeny = true;
     private int torchNoPlacementUnderY = 0;
     private boolean torchYDeny = true;
@@ -119,6 +123,8 @@ public final class WorldConfig {
     private int sheepWoolGrazeMultiplier = SheepGrazeRules.DEFAULT_MULTIPLIER;
     private int hiveHoneycombCount = 1;
     private int beeHoneyPercent = BeeHoneyRules.DEFAULT_PERCENT;
+    /** Added to every mana ability's skill and item bonuses. The result is never below 0. */
+    private int abilityLevelOffset = AbilityRules.DEFAULT_LEVEL_OFFSET;
     private float movingExhaustionPerSecond = HungerRules.DEFAULT_MOVING_EXHAUSTION_PER_SECOND;
     private int foodHistorySize = 7;
     private int slowRegenTicks = HungerRules.DEFAULT_SLOW_REGEN_TICKS;
@@ -231,6 +237,10 @@ public final class WorldConfig {
 
     public int achievementVictory() {
         return achievementVictory;
+    }
+
+    public int manaLearningCapacity() {
+        return manaLearningCapacity;
     }
 
     public boolean torchSoftDeny() {
@@ -531,6 +541,10 @@ public final class WorldConfig {
 
     public int beeHoneyPercent() {
         return beeHoneyPercent;
+    }
+
+    public int abilityLevelOffset() {
+        return abilityLevelOffset;
     }
 
     public float movingExhaustionPerSecond() {
@@ -1003,6 +1017,11 @@ public final class WorldConfig {
                         0);
                 writeDefaultIfMissing(
                         file,
+                        "achievements.manaLearningCapacity",
+                        "Base mana learning before redstone blocks given to wise teachers. The achievement die has this many faces plus those gifts, rounded down. Default 0, and 0 cannot grant a mana level.",
+                        AchievementRules.DEFAULT_MANA_LEARNING_CAPACITY);
+                writeDefaultIfMissing(
+                        file,
                         "torches.noPlacement.enable",
                         "Deny depth-limited lights and campfires below noPlacementUnderY. Disable with this boolean, not Y=0.",
                         true);
@@ -1300,6 +1319,7 @@ public final class WorldConfig {
                 file.set("client.f3Enabled", f3Enabled);
                 file.set("achievements.competitive", competitiveAchievements);
                 file.set("achievements.victory", achievementVictory);
+                file.set("achievements.manaLearningCapacity", manaLearningCapacity);
                 file.set("torches.noPlacement.enable", torchYDeny);
                 file.set("torches.noPlacementUnderY", torchNoPlacementUnderY);
                 file.set("torches.noPlacementOnSoft", torchSoftDeny);
@@ -1404,6 +1424,10 @@ public final class WorldConfig {
                 file.set("farming.hiveHoneycombCount", hiveHoneycombCount);
                 file.set("farming.beeHoneyPercent", beeHoneyPercent);
                 file.setComment("farming.beeHoneyPercent", BeeHoneyRules.CONFIG_COMMENT);
+                file.set("abilities.levelOffset", abilityLevelOffset);
+                file.setComment(
+                        "abilities.levelOffset",
+                        "Added to every mana ability's skill and item bonuses. Default -2. The result is never below 0.");
                 file.set("hunger.movingExhaustionPerSecond", movingExhaustionPerSecond);
                 file.set("hunger.foodHistorySize", foodHistorySize);
                 file.set("hunger.slowRegenTicks", slowRegenTicks);
@@ -1494,6 +1518,8 @@ public final class WorldConfig {
         f3Enabled = file.getOrElse("client.f3Enabled", false);
         competitiveAchievements = file.getOrElse("achievements.competitive", true);
         achievementVictory = Math.max(0, getInt(file, "achievements.victory", 0));
+        manaLearningCapacity = getInt(
+                file, "achievements.manaLearningCapacity", AchievementRules.DEFAULT_MANA_LEARNING_CAPACITY);
         torchYDeny = file.getOrElse("torches.noPlacement.enable", true);
         torchNoPlacementUnderY = file.getOrElse("torches.noPlacementUnderY", 0);
         torchSoftDeny = file.getOrElse("torches.noPlacementOnSoft", true);
@@ -1608,6 +1634,7 @@ public final class WorldConfig {
         hiveHoneycombCount = Math.clamp(getInt(file, "farming.hiveHoneycombCount", 1), 0, 64);
         beeHoneyPercent = clampPercent(
                 getInt(file, "farming.beeHoneyPercent", BeeHoneyRules.DEFAULT_PERCENT));
+        abilityLevelOffset = getInt(file, "abilities.levelOffset", AbilityRules.DEFAULT_LEVEL_OFFSET);
         movingExhaustionPerSecond = (float) getDouble(
                 file, "hunger.movingExhaustionPerSecond", HungerRules.DEFAULT_MOVING_EXHAUSTION_PER_SECOND);
         foodHistorySize = Math.max(1, getInt(file, "hunger.foodHistorySize", 7));
@@ -1809,6 +1836,11 @@ public final class WorldConfig {
                 1);
         writeDefaultIfMissing(
                 file, "farming.beeHoneyPercent", BeeHoneyRules.CONFIG_COMMENT, BeeHoneyRules.DEFAULT_PERCENT);
+        writeDefaultIfMissing(
+                file,
+                "abilities.levelOffset",
+                "Added to every mana ability's skill and item bonuses. Default -2. The result is never below 0.",
+                AbilityRules.DEFAULT_LEVEL_OFFSET);
         writeDefaultIfMissing(
                 file,
                 "hunger.movingExhaustionPerSecond",

@@ -383,16 +383,27 @@ public final class Achievements implements FeatureModule {
         if (!AchievementRules.manaFromExperience(player.experienceLevel, player.getRandom().nextInt(100))) {
             return;
         }
-        int die = player.getRandom().nextInt(AchievementRules.MANA_DIE_SIDES) + 1;
-        if (AchievementRules.manaDieBeatsBaseLevel(storedManaLevel(player), die, wiseManaLevels(player))) {
+        int faces = manaDieFaces(player);
+        if (faces <= 0) {
+            return;
+        }
+        int die = player.getRandom().nextInt(faces) + 1;
+        if (AchievementRules.manaDieBeatsBaseLevel(storedManaLevel(player), die)) {
             grantMana(player, 1);
         }
     }
 
-    /** Mana levels granted by wise teachers, one per teacher. */
-    static int wiseManaLevels(ServerPlayer player) {
-        List<String> taught = player.getAttachedOrElse(EhmAttachments.EHM_WISE_MANA, List.of());
-        return taught == null ? 0 : taught.size();
+    /** Configured base plus redstone gifts, rounded down. Zero faces cannot grant a mana level. */
+    static int manaDieFaces(ServerPlayer player) {
+        if (player == null) {
+            return 0;
+        }
+        int base = 0;
+        if (player.level() instanceof ServerLevel level) {
+            base = ConfigManager.world(level).manaLearningCapacity();
+        }
+        Double earned = player.getAttachedOrElse(EhmAttachments.EHM_MANA_LEARNING, 0.0);
+        return AchievementRules.manaDieFaces(base, earned == null ? 0.0 : earned);
     }
 
     public static void grantMana(ServerPlayer player, int levels) {

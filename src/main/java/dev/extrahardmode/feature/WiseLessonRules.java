@@ -7,7 +7,8 @@ import java.util.List;
  * Wise-teacher hunts. Minecraft-free so JUnit can cover the math.
  * A pack is offered every 30 Minecraft days. An unfinished hunt ends after 14.
  * Size is a 3–8 base from the home and the resident's trading experience,
- * times 1 plus services already taken.
+ * plus 50% of that base for each hunt finished with him.
+ * Distance is the 200–500 roll plus 33% of that roll for each of those hunts.
  */
 public final class WiseLessonRules {
     public static final int INTERVAL_DAYS = 30;
@@ -87,70 +88,26 @@ public final class WiseLessonRules {
             int spawnWait,
             boolean active,
             List<String> mobs) {
+        public Lesson {
+            mobs = mobs == null || mobs.isEmpty() ? List.of() : List.copyOf(mobs);
+        }
+
         public Lesson withDwell(int dwellTicks, int spawnWait) {
             if (this.dwellTicks == dwellTicks && this.spawnWait == spawnWait) {
                 return this;
             }
-            return new Lesson(
-                    teacherId,
-                    teacherName,
-                    dimension,
-                    originX,
-                    originZ,
-                    mobId,
-                    plural,
-                    size,
-                    distance,
-                    direction,
-                    assignedDay,
-                    spawned,
-                    dwellTicks,
-                    spawnWait,
-                    active,
-                    mobs);
+            return copy(spawned, dwellTicks, spawnWait, active, mobs);
         }
 
         public Lesson withSpawn(int spawned, int spawnWait, List<String> mobs, boolean active) {
-            return new Lesson(
-                    teacherId,
-                    teacherName,
-                    dimension,
-                    originX,
-                    originZ,
-                    mobId,
-                    plural,
-                    size,
-                    distance,
-                    direction,
-                    assignedDay,
-                    spawned,
-                    dwellTicks,
-                    spawnWait,
-                    active,
-                    mobs == null ? List.of() : List.copyOf(mobs));
+            return copy(spawned, this.dwellTicks, spawnWait, active, mobs);
         }
 
         public Lesson withActive(boolean active) {
             if (this.active == active) {
                 return this;
             }
-            return new Lesson(
-                    teacherId,
-                    teacherName,
-                    dimension,
-                    originX,
-                    originZ,
-                    mobId,
-                    plural,
-                    size,
-                    distance,
-                    direction,
-                    assignedDay,
-                    spawned,
-                    dwellTicks,
-                    spawnWait,
-                    active,
-                    mobs);
+            return copy(spawned, dwellTicks, spawnWait, active, mobs);
         }
 
         /** Drop one tracked creature. A delivered pack with none left is finished. */
@@ -174,6 +131,34 @@ public final class WiseLessonRules {
             boolean nextActive = active && !(spawned >= size && kept.isEmpty());
             return withSpawn(spawned, spawnWait, kept, nextActive);
         }
+
+        private Lesson copy(int spawned, int dwellTicks, int spawnWait, boolean active, List<String> mobs) {
+            return new Lesson(
+                    teacherId,
+                    teacherName,
+                    dimension,
+                    originX,
+                    originZ,
+                    mobId,
+                    plural,
+                    size,
+                    distance,
+                    direction,
+                    assignedDay,
+                    spawned,
+                    dwellTicks,
+                    spawnWait,
+                    active,
+                    mobs);
+        }
+    }
+
+    /** Kill progress for the hunt in hand. {@code grantOffer} is true only on the kill that passes half. */
+    public record KillCredit(int killed, boolean grantOffer) {}
+
+    public static KillCredit creditKill(int killed, int size, boolean alreadyGranted) {
+        int next = Math.max(0, killed) + 1;
+        return new KillCredit(next, !alreadyGranted && moreThanHalf(next, size));
     }
 
     /**
@@ -234,18 +219,45 @@ public final class WiseLessonRules {
         return BASE_MIN + (int) Math.round(t * (BASE_MAX - BASE_MIN));
     }
 
-    /** One for the ability and one for the mana raise. The product is not clamped. */
-    public static int serviceUses(boolean taughtAbility, boolean tookMana) {
-        return (taughtAbility ? 1 : 0) + (tookMana ? 1 : 0);
+    /**
+     * Hunts this player has finished with this teacher. Lessons are not part of it.
+     * A hunt is finished when more than half the marks were killed before they vanished.
+     */
+    public static int huntGrowth(int finishedHunts) {
+        return Math.max(0, finishedHunts);
     }
 
-    public static int packSize(double stockScore, int serviceUses) {
-        return baseSize(stockScore) * (1 + Math.max(0, serviceUses));
+    /**
+     * More than half the pack died before the marks vanished.
+     * A pack of 5 needs 3, a pack of 4 needs 3, and a pack of 1 needs 1.
+     */
+    public static boolean moreThanHalf(int killed, int size) {
+        return size > 0 && killed > 0 && killed * 2L > size;
+    }
+
+    /** Base pack plus 50% of that base for each finished hunt. Rounded to the nearest. */
+    public static int packSize(double stockScore, int finishedHunts) {
+        return scaleByPercent(baseSize(stockScore), 50, huntGrowth(finishedHunts));
     }
 
     public static int distance(int roll) {
         int span = MAX_DISTANCE - MIN_DISTANCE + 1;
         return MIN_DISTANCE + Math.floorMod(roll, span);
+    }
+
+    /** Rolled distance plus 33% of it for each finished hunt. Rounded to the nearest. */
+    public static int scaledDistance(int rolled, int finishedHunts) {
+        return scaleByPercent(Math.max(0, rolled), 33, huntGrowth(finishedHunts));
+    }
+
+    /** {@code value} plus {@code percent}% of {@code value}, repeated {@code weight} times, rounded half up. */
+    private static int scaleByPercent(int value, int percent, int weight) {
+        if (value <= 0 || weight <= 0 || percent <= 0) {
+            return Math.max(0, value);
+        }
+        long scaled = (long) value * (100L + (long) percent * weight);
+        long rounded = (scaled + 50L) / 100L;
+        return rounded > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) rounded;
     }
 
     public static String direction(int roll) {

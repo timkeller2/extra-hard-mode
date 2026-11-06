@@ -9,6 +9,9 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffectCategory;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.villager.Villager;
 import org.spongepowered.asm.mixin.Mixin;
@@ -17,6 +20,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.Slice;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(LivingEntity.class)
@@ -41,7 +45,7 @@ public abstract class LivingEntityHurtMixin {
     /**
      * The first store into the damage local after {@code applyItemBlocking} is the hit
      * with the held shield already subtracted, and still before the freeze bonus,
-     * helmet, armor, and health. Lapis Shield reduces that store.
+     * helmet, armor, and health. Amethyst Shield reduces that store.
      */
     @ModifyVariable(
             method = "hurtServer",
@@ -88,5 +92,38 @@ public abstract class LivingEntityHurtMixin {
         }
         LivingEntity entity = (LivingEntity) (Object) this;
         cir.setReturnValue(Players.scaleBlockedDamage(entity, level, blocked));
+    }
+
+    /**
+     * A full Amethyst Shield block skips harmful effects that the attack would add after the hit.
+     * Beneficial effects still land. The ward lasts until this level's tick ends.
+     */
+    @Inject(
+            method = "addEffect(Lnet/minecraft/world/effect/MobEffectInstance;Lnet/minecraft/world/entity/Entity;)Z",
+            at = @At("HEAD"),
+            cancellable = true)
+    private void tougher$blockHarmfulAfterAmethyst(
+            MobEffectInstance effect, Entity source, CallbackInfoReturnable<Boolean> cir) {
+        if (tougher$harmful(effect) && ManaAbilities.amethystWards((LivingEntity) (Object) this)) {
+            cir.setReturnValue(false);
+        }
+    }
+
+    @Inject(
+            method = "forceAddEffect(Lnet/minecraft/world/effect/MobEffectInstance;Lnet/minecraft/world/entity/Entity;)V",
+            at = @At("HEAD"),
+            cancellable = true)
+    private void tougher$blockForcedHarmfulAfterAmethyst(
+            MobEffectInstance effect, Entity source, CallbackInfo ci) {
+        if (tougher$harmful(effect) && ManaAbilities.amethystWards((LivingEntity) (Object) this)) {
+            ci.cancel();
+        }
+    }
+
+    private static boolean tougher$harmful(MobEffectInstance effect) {
+        return effect != null
+                && effect.getEffect() != null
+                && effect.getEffect().value() != null
+                && effect.getEffect().value().getCategory() == MobEffectCategory.HARMFUL;
     }
 }

@@ -78,9 +78,12 @@ public final class AbilityRules {
     public static final int CHARCOAL_ARROW_BONUS = 2;
     /** Phantom membrane in the hotbar or backpack adds this to Flight and is spent one at a time. */
     public static final int FLIGHT_MEMBRANE_BONUS = 3;
-    /** Unlearned abilities (over the slot cap) subtract this, then floor at {@link #MIN_POWER}. */
-    public static final int UNKNOWN_ABILITY_PENALTY = 3;
-    public static final double MIN_POWER = 1.0;
+    /** Added to skill and item bonuses. Worlds override this with {@code abilities.levelOffset}. */
+    public static final int DEFAULT_LEVEL_OFFSET = -2;
+    /** Effective level is never below this. */
+    public static final double MIN_POWER = 0.0;
+    /** A cast below this level practices. Diamond Skin uses {@link #DIAMOND_SKIN_MIN_LEVEL}. */
+    public static final double PRACTICE_LEVEL = 1.0;
     public static final String PAPER_ID = "minecraft:paper";
     public static final String IRON_INGOT_ID = "minecraft:iron_ingot";
     public static final String FEATHER_ID = "minecraft:feather";
@@ -104,7 +107,7 @@ public final class AbilityRules {
     /** Master Builder lasts this many seconds per point of effective ability level. */
     public static final int MASTER_BUILDER_SECONDS_PER_POWER = 30;
     public static final String DIAMOND_ID = "minecraft:diamond";
-    public static final String REDSTONE_ID = "minecraft:redstone";
+    public static final String GLOWSTONE_DUST_ID = "minecraft:glowstone_dust";
     /** Empower lasts this many seconds per point of effective ability level, and at least {@link #EMPOWER_MIN_SECONDS}. */
     public static final int EMPOWER_SECONDS_PER_POWER = 30;
     public static final int EMPOWER_MIN_SECONDS = 30;
@@ -113,12 +116,13 @@ public final class AbilityRules {
     public static final int BATTERY_SECONDS_PER_POWER = 120;
     public static final int BATTERY_MIN_SECONDS = 120;
     public static final String LAPIS_LAZULI_ID = "minecraft:lapis_lazuli";
+    public static final String AMETHYST_SHARD_ID = "minecraft:amethyst_shard";
     public static final String BOOK_ID = "minecraft:book";
-    /** Lapis Shield lasts this many seconds per point of effective ability level. */
+    /** Amethyst Shield lasts this many seconds per point of effective ability level. */
     public static final int LAPIS_SHIELD_SECONDS_PER_POWER = 60;
     /** Diamond Skin lasts this many seconds per point of effective ability level. */
     public static final int DIAMOND_SKIN_SECONDS_PER_POWER = 30;
-    /** A cast with no skill and no item bonus still counts as this level. */
+    /** Diamond Skin practices below this level. The cast is not raised up to it. */
     public static final double DIAMOND_SKIN_MIN_LEVEL = 2.0;
     /** Cyan sparkle when Diamond Skin reduces a hit. 0.25 seconds. */
     public static final int DIAMOND_SKIN_SPARKLE_TICKS = 5;
@@ -207,13 +211,13 @@ public final class AbilityRules {
         if (DIAMOND_ID.equals(itemId)) {
             return DIAMOND_SKIN;
         }
-        if (REDSTONE_ID.equals(itemId)) {
+        if (GLOWSTONE_DUST_ID.equals(itemId)) {
             return EMPOWER;
         }
         if (QUARTZ_BLOCK_ID.equals(itemId)) {
             return BATTERY;
         }
-        if (LAPIS_LAZULI_ID.equals(itemId)) {
+        if (AMETHYST_SHARD_ID.equals(itemId)) {
             return LAPIS_SHIELD;
         }
         if (BOOK_ID.equals(itemId)) {
@@ -487,7 +491,7 @@ public final class AbilityRules {
             case DIAMOND_SKIN -> "Diamond Skin";
             case EMPOWER -> "Empower";
             case BATTERY -> "Battery";
-            case LAPIS_SHIELD -> "Lapis Shield";
+            case LAPIS_SHIELD -> "Amethyst Shield";
             case WRITE_TOME -> "Write Tome of the Wise";
             case READ_TOME -> "Read Tome of the Wise";
             default -> "this ability";
@@ -512,9 +516,9 @@ public final class AbilityRules {
             case SMITE_EVIL -> "A golden sword, heavy or not, is a polite way to end a monster.";
             case MASTER_BUILDER -> "Stone will hold for a while, even where the ground does not agree.";
             case DIAMOND_SKIN -> "A diamond can be asked to stand between you and the blow.";
-            case EMPOWER -> "Redstone will lend its strength to the next working.";
+            case EMPOWER -> "Glowstone will lend its light to the next working.";
             case BATTERY -> "A block of quartz will hold a charge for your mana.";
-            case LAPIS_SHIELD -> "Lapis can stand in the air between a body and the blow.";
+            case LAPIS_SHIELD -> "Amethyst can stand in the air between a body and the blow.";
             case WRITE_TOME -> "Experience can be set down in a book, and carried.";
             case READ_TOME -> "A careful reading gives back only a share of what was written down.";
             default -> "There is a lesson here, if you can pay for it.";
@@ -528,35 +532,35 @@ public final class AbilityRules {
         }
         return switch (ability) {
             case HEAL ->
-                "Hold paper and right-click an injured person, or yourself if you are hurt. It costs 1 mana.";
+                "Hold paper and double-right-click an injured person, or yourself if you are hurt. It costs 1 mana.";
             case IRON_HEART ->
-                "Hold an iron ingot and right-click. Right-click again with an ingot to cancel your own.";
+                "Hold an iron ingot and double-right-click. Double-right-click again with an ingot to cancel your own.";
             case MAGIC_ARROW ->
-                "Hold an arrow and right-click. It seeks a creature along your aim. Charcoal in your inventory adds +2 and makes it burn. It costs 1 mana.";
-            case FLIGHT -> "Hold a feather and right-click. Jump to rise, sneak in the air to descend, and sneak on a block to stop.";
-            case GROW -> "Hold any hoe and right-click a plant. It costs 1 mana and some hoe durability.";
-            case POWER_MINE -> "Hold any pickaxe and right-click. Hardened stone stops eating extra durability for a while.";
+                "Hold an arrow and double-right-click. It seeks a creature along your aim. Charcoal in your inventory adds +2 and makes it burn. It costs 1 mana.";
+            case FLIGHT -> "Hold a feather and double-right-click. Jump to rise, sneak in the air to descend, and sneak on a block to stop.";
+            case GROW -> "Hold any hoe and double-right-click a plant. It costs 1 mana and some hoe durability.";
+            case POWER_MINE -> "Hold any pickaxe and double-right-click. Hardened stone stops eating extra durability for a while.";
             case DETECT_ORE ->
-                "Hold a compass and right-click. You turn toward the best ore you are skilled enough to sense, preferring ore within 2 blocks of your height.";
-            case SLOW -> "Hold string and right-click. A web flies out and bursts on a creature or a solid block.";
+                "Hold a compass and double-right-click. You turn toward the best ore you are skilled enough to sense, preferring ore within 2 blocks of your height.";
+            case SLOW -> "Hold string and double-right-click. A web flies out and bursts on a creature or a solid block.";
             case SENSE_EVIL ->
-                "Right-click a spider eye. Hold the click to eat it instead. You turn toward a living biome boss, if one is out.";
+                "Double-right-click a spider eye. Hold the click to eat it instead. You turn toward a living biome boss, if one is out.";
             case SMITE_EVIL ->
-                "Hold a golden sword or a heavy golden sword and right-click. It strikes along your aim. With at least 1 mana the crosshair turns gold on one in reach. It costs 1/4 mana.";
+                "Hold a golden sword or a heavy golden sword and double-right-click. It strikes along your aim. With at least 1 mana the crosshair turns gold on one in reach. It costs 1/4 mana.";
             case MASTER_BUILDER ->
-                "Hold a clay brick and right-click. Right-click again to cancel. It costs 1 mana.";
+                "Hold a clay brick and double-right-click. Double-right-click again to cancel. It costs 1 mana.";
             case DIAMOND_SKIN ->
-                "Hold diamonds and right-click. Right-click again to cancel. It costs 2 mana.";
+                "Hold diamonds and double-right-click. Double-right-click again to cancel. It costs 2 mana.";
             case EMPOWER ->
-                "Hold redstone dust and right-click in the air. Right-click in the air again to cancel. It costs 1 mana.";
+                "Hold glowstone dust and double-right-click. Double-right-click again to cancel. It costs 1 mana.";
             case BATTERY ->
-                "Hold a quartz block and right-click in the air. Right-click again to cancel. It costs no mana. It renews until mana reaches your level and spends a quartz block.";
+                "Hold a quartz block and double-right-click in the air. Double-right-click again to cancel. It costs no mana. It renews until mana reaches your level and spends a quartz block.";
             case LAPIS_SHIELD ->
-                "Hold lapis lazuli and right-click a creature, or yourself if none is targeted. It costs 1 mana. Right-click again to cancel.";
+                "Hold an amethyst shard and double-right-click a creature, or yourself if none is targeted. It costs 1 mana. Double-right-click again to cancel.";
             case WRITE_TOME ->
-                "Hold a book at experience level 7 or higher and right-click. It costs 1 mana. Two or more books add +2. Three, four, or five books make 2, 3, or 4 tomes and split the experience. More than five still uses five and makes 4.";
+                "Hold a book at experience level 7 or higher and double-right-click. It costs 1 mana. Two or more books add +2. Three, four, or five books make 2, 3, or 4 tomes and split the experience. More than five still uses five and makes 4.";
             case READ_TOME ->
-                "Hold a tome that holds experience and right-click. It costs 1 mana and returns 80% of what was saved, plus 2% per ability level.";
+                "Hold a tome that holds experience and double-right-click. It costs 1 mana and returns 80% of what was saved, plus 2% per ability level.";
             default -> "";
         };
     }
@@ -589,7 +593,7 @@ public final class AbilityRules {
                 "diamond skin",
                 "empower",
                 "battery",
-                "lapis shield",
+                "amethyst shield",
                 "write tome",
                 "read tome");
     }
@@ -615,9 +619,10 @@ public final class AbilityRules {
             case "smite", "smite evil", "smiteevil" -> SMITE_EVIL;
             case "master builder", "masterbuilder" -> MASTER_BUILDER;
             case "diamond skin", "diamondskin" -> DIAMOND_SKIN;
-            case "empower" -> EMPOWER;
+            case "empower", "glowstone", "glowstone dust" -> EMPOWER;
             case "battery" -> BATTERY;
-            case "lapis shield", "lapisshield", "lapus shield", "lapusshield", "lapus" -> LAPIS_SHIELD;
+            case "amethyst shield", "amethystshield", "amethyst", "lapis shield", "lapisshield", "lapus shield",
+                    "lapusshield", "lapus" -> LAPIS_SHIELD;
             case "book", "write tome", "write tome of the wise", "writetome" -> WRITE_TOME;
             case "read tome", "read tome of the wise", "readtome", "tome" -> READ_TOME;
             default -> null;
@@ -634,56 +639,56 @@ public final class AbilityRules {
         }
         return switch (ability) {
             case HEAL -> List.of(
-                    "Healing: Right-click an injured teammate within 2 + ability level blocks while holding paper.",
+                    "Healing: Double-right-click an injured teammate within 2 + ability level blocks while holding paper.",
                     "Healing: If no teammate is targeted and you are injured, you heal yourself instead.",
                     "Healing: Costs 1 mana. A honey bottle in your main inventory (not a bundle) is consumed for +4, bottle included, with or without mana.",
                     "Healing: If you have no mana, a honey bottle still lets you heal, even with no mana levels.",
                     "Healing: The recipient sparkles blue for 6 seconds, and the healing is spread across that sparkle. One paper is consumed. Two in hand consume both and add +2.");
             case IRON_HEART -> List.of(
-                    "Iron Heart: Right-click while holding an iron ingot. Costs 1 mana. Raises maximum health by ability level for ability level minutes.",
+                    "Iron Heart: Double-right-click while holding an iron ingot. Costs 1 mana. Raises maximum health by ability level for ability level minutes.",
                     "Iron Heart: If another player is targeted within 2 + ability level blocks, they receive the buff instead.",
-                    "Iron Heart: Right-click again with an iron ingot to cancel your own; you cannot cancel another player's Iron Heart.",
+                    "Iron Heart: Double-right-click again with an iron ingot to cancel your own; you cannot cancel another player's Iron Heart.",
                     "Iron Heart: The recipient sparkles silver for 3 seconds. One ingot is consumed. Two in hand consume both and add +2.",
                     "Iron Heart: If it ends and you still have mana, another mana is spent and it continues, and you gain skill as if you cast it again.",
                     "Iron Heart: A renew spends an ingot only when you are holding one, and that one adds +2.");
             case MAGIC_ARROW -> List.of(
-                    "Magic arrow: Right-click while holding an arrow. Costs 1 mana. The arrow seeks the nearest creature along your aim.",
+                    "Magic arrow: Double-right-click while holding an arrow. Costs 1 mana. The arrow seeks the nearest creature along your aim.",
                     "Magic arrow: Damage is 3 times your ability level. Range scales with ability level. Cooldown is 10 seconds minus skill.",
                     "Magic arrow: Every 3 ability levels, rounded down, launches another arrow at a different creature. That costs nothing more.",
                     "Magic arrow: Charcoal in your hotbar or inventory, not a bundle, adds +2. One charcoal is consumed, and the arrows burn.",
                     "Magic arrow: One arrow is consumed. Two in hand consume both and add +2.");
             case FLIGHT -> List.of(
-                    "Flight: Right-click while holding a feather. Costs 1 mana. Jump to rise, sneak in the air to descend, and sneak on a block to stop.",
+                    "Flight: Double-right-click while holding a feather. Costs 1 mana. Jump to rise, sneak in the air to descend, and sneak on a block to stop.",
                     "Flight: Speed scales with ability level and reaches 70% of walking speed at 10.",
                     "Flight: One feather is consumed. Two in hand consume both and add +2.",
                     "Flight: If it ends and you still have mana, another mana is spent and it continues, and you gain skill as if you cast it again.",
                     "Flight: A renew spends a feather only when you are holding one, and that one adds +2.",
                     "Flight: A phantom membrane in your hotbar or inventory, not a bundle, adds +3. One is consumed, and each renew consumes another to keep that +3.");
             case GROW -> List.of(
-                    "Let it grow: Right-click a plant while holding any hoe to grow it by your ability level in stages.",
-                    "Let it grow: Leftover stages go to the nearest plant within 2 blocks. Right-click also still grows random plants around you.",
+                    "Let it grow: Double-right-click a plant while holding any hoe to grow it by your ability level in stages.",
+                    "Let it grow: Leftover stages go to the nearest plant within 2 blocks. Double-right-click also still grows random plants around you.",
                     "Let it grow: Costs 1 mana and 3 durability. Unbreaking can skip that wear with the same chance as tilling. Does not replace tilling.",
                     "Let it grow: Each plant grown improves that soil's shown crop-loss modifier by 3.",
                     "Let it grow: Random growth is one plant within 2 blocks by 1 stage, repeated (ability level + hoe bonus) times.",
                     "Let it grow: Hoe bonus: wood/stone 0, copper +1, iron +2, diamond +3, gold +4, netherite +5.");
             case POWER_MINE -> List.of(
-                    "Power mining: Right-click while holding any pickaxe. Costs 1 mana.",
+                    "Power mining: Double-right-click while holding any pickaxe. Costs 1 mana.",
                     "Power mining: For (ability level × 12) seconds, Tougher extra pickaxe wear on hardened stone is suspended. Ends when the timer expires.",
                     "Power mining: Pickaxe bonus: wood/stone 0, copper +1, iron +2, diamond +3, gold +4, netherite +5.");
             case DETECT_ORE -> List.of(
-                    "Detect ore: Right-click while holding a compass. The compass is kept. Costs 1 mana. Nether quartz is not required.",
+                    "Detect ore: Double-right-click while holding a compass. The compass is kept. Costs 1 mana. Nether quartz is not required.",
                     "Detect ore: The largest nether quartz stack in your hotbar or inventory, not a bundle, adds the square root of its count, rounded. That many quartz are consumed from that stack.",
                     "Detect ore: Ores within 2 blocks of your height come first, then farther up or down, out to your rounded ability level minus the ore difficulty, through walls.",
                     "Detect ore: It tells you the ore and approximate distance. You only sense ores at or below your ability level.",
                     "Detect ore: coal 1, quartz 2, copper 3, iron 4, redstone 6, lapis 7, gold 8, emerald 9, diamond 11, ancient debris 13.");
             case SLOW -> List.of(
-                    "Slow: Right-click while holding string. Costs 1 mana. Throws a web up to (ability level × 2 + 4) blocks.",
+                    "Slow: Double-right-click while holding string. Costs 1 mana. Throws a web up to (ability level × 2 + 4) blocks.",
                     "Slow: It bursts on a creature or a solid block and slows creatures within (ability level) blocks of the landing.",
                     "Slow: The slow is 20% + 5% per ability level (max 80%) for (ability level × 6) seconds.",
                     "Slow: Above 100 health, both the slow and the duration are multiplied by 100 divided by that health.",
                     "Slow: It does not affect you, or any player closer to you than the hit. One string is consumed. Two in hand consume both and add +2.");
             case SENSE_EVIL -> List.of(
-                    "Sense Evil: Right-click a spider eye to cast. Hold the click to eat it instead. Costs 1 mana.",
+                    "Sense Evil: Double-right-click a spider eye to cast. Hold the click to eat it instead. Costs 1 mana.",
                     "Sense Evil: If a biome boss is spawned, you turn toward the nearest one and sparkle with a creepy aura for 6 seconds.",
                     "Sense Evil: If it is within 250 × ability level blocks, you also learn the rough distance.",
                     "Sense Evil: If none are spawned, you sparkle as with Healing. One spider eye is consumed. Two in hand consume both and add +2.",
@@ -692,51 +697,53 @@ public final class AbilityRules {
                     "Sense Evil: The outline time shows as a spider eye with your other ability durations.",
                     "Sense Evil: It says whether a biome boss can appear here. In a full chunk at Y=48 or above, it also says the alliance has cleared the area.");
             case SMITE_EVIL -> List.of(
-                    "Smite Evil: Right-click while holding a golden sword or a heavy golden sword. Costs 1/4 mana.",
+                    "Smite Evil: Double-right-click while holding a golden sword or a heavy golden sword. Costs 1/4 mana.",
                     "Smite Evil: Strikes a creature along your aim up to your ability level in blocks with a normal melee attack from that sword.",
                     "Smite Evil: With at least 1 mana, the crosshair turns gold on a creature within that reach.",
                     "Smite Evil: The strike includes enchantments, durability, and attack cooldown. Undead take extra damage equal to your ability level.",
                     "Smite Evil: A small flash of light appears on the creature hit.");
             case MASTER_BUILDER -> List.of(
-                    "Master Builder: Right-click while holding a clay brick. Costs 1 mana. Lasts 30 seconds times your ability level.",
+                    "Master Builder: Double-right-click while holding a clay brick. Costs 1 mana. Lasts 30 seconds times your ability level.",
                     "Master Builder: While it lasts, you can place solid blocks in the air, and block reach increases by your ability level. Torch rules still apply.",
-                    "Master Builder: Right-click again with a clay brick to cancel. If it ends and you still have mana, it spends another and continues.",
+                    "Master Builder: Double-right-click again with a clay brick to cancel. If it ends and you still have mana, it spends another and continues.",
                     "Master Builder: One brick is consumed. Two in hand consume both and add +2. Continuing gains skill as if you cast it again.",
                     "Master Builder: A renew spends a brick only when you are holding one, and that one adds +2.");
             case DIAMOND_SKIN -> List.of(
-                    "Diamond Skin: Right-click while holding diamonds. Costs 2 mana. Effective level is at least 2. Lasts 30 seconds times that level.",
+                    "Diamond Skin: Double-right-click while holding diamonds. Costs 2 mana. Below 2 it is practice and the diamond is kept. Lasts 30 seconds times its level.",
                     "Diamond Skin: Damage that would reach your health is divided by your ability level. Armor still takes the hit first.",
                     "Diamond Skin: Each point of that damage it prevents shortens Diamond Skin by 3 seconds. Poison, drowning, and suffocation are not reduced.",
                     "Diamond Skin: A cyan sparkle shows for a quarter second when a hit is reduced.",
-                    "Diamond Skin: Right-click again with a diamond to cancel. If it ends and you still have 2 mana, it spends that and continues.",
+                    "Diamond Skin: Double-right-click again with a diamond to cancel. If it ends and you still have 2 mana, it spends that and continues.",
                     "Diamond Skin: One diamond is consumed. Two in hand consume both and add +2. Continuing gains skill as if you cast it again.",
                     "Diamond Skin: A renew spends a diamond only when you are holding one, and that one adds +2.");
             case EMPOWER -> List.of(
-                    "Empower: Right-click in the air while holding redstone dust. Costs 1 mana. Lasts 30 seconds per ability level, and at least 30 seconds.",
+                    "Empower: Double-right-click while holding glowstone dust. Costs 1 mana. Lasts 30 seconds per ability level, and at least 30 seconds.",
                     "Empower: While it lasts, each later mana ability cast gains extra level equal to the square root of Empower's level.",
-                    "Empower: Right-click in the air again with redstone dust to cancel.",
+                    "Empower: Double-right-click again with glowstone dust to cancel.",
                     "Empower: One dust is consumed. Two in hand consume both and add +2.");
             case BATTERY -> List.of(
-                    "Battery: Right-click in the air while holding a quartz block. Costs no mana. Lasts 2 minutes per ability level, and at least 2 minutes.",
+                    "Battery: Double-right-click in the air while holding a quartz block. Costs no mana. Lasts 2 minutes per ability level, and at least 2 minutes.",
                     "Battery: While it lasts, mana regeneration is multiplied by 1 plus the square root of your ability level.",
-                    "Battery: Right-click in the air again with a quartz block to cancel. It ends when your mana reaches your mana level.",
+                    "Battery: Double-right-click in the air again with a quartz block to cancel. It ends when your mana reaches your mana level.",
                     "Battery: It continues only while mana is below your level and a quartz block is in hand. One block is consumed. Two in hand consume both and add +2.",
                     "Battery: Continuing gains skill as if you cast it again.");
             case LAPIS_SHIELD -> List.of(
-                    "Lapis Shield: Right-click while holding lapis lazuli. A targeted character gets the shield. Otherwise it shields you. Costs 1 mana.",
-                    "Lapis Shield: It lasts 1 minute times your ability level. A force field stays around that character until it ends.",
-                    "Lapis Shield: Damage up to that level is absorbed before armor or health. Every 3 points blocked costs 1 lapis lazuli, rounded up.",
-                    "Lapis Shield: That lapis comes from your hotbar or inventory, not a bundle, armor, or the offhand. If you cannot pay, the hit lands and the shield ends.",
-                    "Lapis Shield: Right-click again with lapis lazuli to cancel. One is consumed to cast. Two in hand consume both and add +2.");
+                    "Amethyst Shield: Double-right-click while holding an amethyst shard. A targeted character gets the shield. Otherwise it shields you. Costs 1 mana.",
+                    "Amethyst Shield: It lasts 1 minute times your ability level. A force field stays around that character until it ends.",
+                    "Amethyst Shield: Damage up to that level is absorbed before armor or health. A hit within that level also skips harmful effects, such as poison.",
+                    "Amethyst Shield: Amethyst shards, lapis lazuli, and whole mana pay for the block. One kind costs 1 per 3 points, two kinds 1 per 5, and all three 1 per 7, rounded up.",
+                    "Amethyst Shield: The cost alternates those fuels, largest amount first. Items come from your hotbar or inventory, not a bundle, armor, or the offhand.",
+                    "Amethyst Shield: If you cannot pay, the hit lands and the shield ends. Double-right-click again with an amethyst shard to cancel.",
+                    "Amethyst Shield: One shard is consumed to cast. Two in hand consume both and add +2. One lapis lazuli in your hotbar or inventory is also consumed and adds another +2.");
             case WRITE_TOME -> List.of(
-                    "Write Tome of the Wise: Right-click while holding a book at experience level 7 or higher. Costs 1 mana.",
+                    "Write Tome of the Wise: Double-right-click while holding a book at experience level 7 or higher. Costs 1 mana.",
                     "Write Tome of the Wise: Above level 30 and at 30 or below, it saves 80% plus 2% per ability level. Below 10 some is lost, and above 10 some is gained.",
                     "Write Tome of the Wise: Above level 30 only the excess is saved, and you return to exactly level 30. At level 30 or below, all experience is saved and you return to level 0.",
                     "Write Tome of the Wise: The tome names you and the experience it holds. That amount is stored on the book.",
                     "Write Tome of the Wise: One book makes one tome. Two or more add +2. Three, four, or five books make 2, 3, or 4 tomes and split the saved experience.",
                     "Write Tome of the Wise: More than five books still uses five, adds +2, and makes 4 tomes. One of those books is the +2 bonus.");
             case READ_TOME -> List.of(
-                    "Read Tome of the Wise: Right-click a tome that holds experience, at any level. Costs 1 mana and the tome.",
+                    "Read Tome of the Wise: Double-right-click a tome that holds experience, at any level. Costs 1 mana and the tome. Below 1 the tome is kept.",
                     "Read Tome of the Wise: You gain 80% of the saved experience, plus 2% per ability level, above or below level 30. Sneak and right-click to open it instead.");
             default -> null;
         };
@@ -768,12 +775,13 @@ public final class AbilityRules {
 
     public static List<String> powerHelpLines() {
         return List.of(
-                "Base power: skill, the square root of times you have used that ability. Effective level is at least 1.",
+                "Base power: skill, the square root of times you have used that ability, plus item bonuses, minus 2. Effective level is at least 0.",
                 "A cast consumes one catalyst. Two in hand consume both for +2. One consumed catalyst adds nothing. Swords, hoes, and pickaxes are kept.",
                 "A renew spends no catalyst unless you are holding it. Holding it spends one and adds +2.",
                 "Gold armor adds 1 mana level after 90 seconds, then 180, 360, and 720 seconds more. Four pieces put on together reach +4 in 1350 seconds. A piece that comes off loses its bonus.",
                 "A golden item held for 30 seconds, such as a golden hoe, adds 1 more mana level. Gold ingots, nuggets, and blocks do not.",
-                "Using an ability you have not learned still gains skill, at −3 power (floored at 1), until you have a free slot to learn them.");
+                "Below 1 the cast is practice: mana and focus are spent, the cooldown starts, and you gain one use. Diamond Skin practices below 2 and keeps the diamond. Read Tome keeps the tome.",
+                "Redstone dust in the offhand adds half your skill, up to the square root of that stack rounded down. Success consumes that bonus, rounded down. Practice keeps the dust.");
     }
 
     public static List<String> powerHelpKeys() {
@@ -783,7 +791,8 @@ public final class AbilityRules {
                 "tougher.ability.power.help.3",
                 "tougher.ability.power.help.4",
                 "tougher.ability.power.help.5",
-                "tougher.ability.power.help.6");
+                "tougher.ability.power.help.6",
+                "tougher.ability.power.help.7");
     }
 
     public static String powerHelpFallback() {
@@ -816,6 +825,7 @@ public final class AbilityRules {
                 "tougher.ability.index.read_tome",
                 "tougher.ability.index.unlock",
                 "tougher.ability.index.unlock.2",
+                "tougher.ability.index.redstone_offhand",
                 "tougher.ability.index.wise",
                 "tougher.ability.index.wise.cap",
                 "tougher.ability.index.wise.2",
@@ -837,16 +847,17 @@ public final class AbilityRules {
                 "Golden sword or heavy golden sword: Smite Evil",
                 "Clay brick: Master Builder",
                 "Diamond: Diamond Skin",
-                "Redstone dust: Empower",
+                "Glowstone dust: Empower",
                 "Quartz block: Battery",
-                "Lapis lazuli: Lapis Shield",
+                "Amethyst shard: Amethyst Shield",
                 "Book: Write Tome of the Wise",
                 "Tome: Read Tome of the Wise",
-                "You can learn up to half your mana level in abilities, rounded up.",
-                "Unlearned abilities can be used and still gain skill, at −3 power (floored at 1), until you have a free slot to learn them.",
-                "A wise teacher teaches one ability. A 24-point home charges 30 emeralds; each point above that takes 2 off, down to free.",
-                "That lesson does not count toward abilities you learn on your own. Uses equal the house points plus his trading experience. Paying for one you already know frees that slot.",
-                "That teacher will raise your mana once for a diamond block and a lapis lazuli block.",
+                "Every ability's level is its skill plus item bonuses, minus 2, and at least 0.",
+                "Below 1 the cast is practice: mana and focus are spent, the cooldown starts, and you gain one use. Diamond Skin practices below 2 and keeps the diamond. Read Tome keeps the tome.",
+                "Redstone dust in the offhand adds half your skill, up to the square root of that stack rounded down. Success consumes that bonus, rounded down. Practice keeps the dust.",
+                "Hold a focus and he teaches that ability for the house points in uses. A 24-point home charges 30 emeralds from your inventory; each point above takes 2 off, down to free.",
+                "Hold emeralds and he picks an ability at random for twice the house points. You need a mana level. A new hunt, or killing more than half the marks, offers the lesson.",
+                "Hold redstone blocks. The first gift takes 1, then up to 4, 9, and so on. Mana learning grows by the square root of the blocks he takes.",
                 "Type /tougher ability help <name> for one ability.");
     }
 
@@ -982,25 +993,6 @@ public final class AbilityRules {
         return stackCount >= 1 ? CATALYST_BONUS : 0;
     }
 
-    /** Distinct learned mana abilities (slot-cap set, not merely used). */
-    public static int learnedSkillCount(Collection<String> learned) {
-        return learnedSkillCount(learned, Set.of());
-    }
-
-    /** Learned abilities that still use a self-learned slot. Wise-teacher lessons are exempt. */
-    public static int learnedSkillCount(Collection<String> learned, Collection<String> exempt) {
-        if (learned == null || learned.isEmpty()) {
-            return 0;
-        }
-        int count = 0;
-        for (String ability : ABILITY_IDS) {
-            if (learned.contains(ability) && (exempt == null || !exempt.contains(ability))) {
-                count++;
-            }
-        }
-        return count;
-    }
-
     public static boolean isLearned(Collection<String> learned, String ability) {
         return ability != null && learned != null && learned.contains(ability);
     }
@@ -1075,39 +1067,6 @@ public final class AbilityRules {
         return bonus + catalystBonus(heldCount);
     }
 
-    /** How many distinct abilities a player may know: ceil(manaLevel / 2). */
-    public static int abilitySlotCap(int manaLevel) {
-        int level = Math.max(0, manaLevel);
-        return (level + 1) / 2;
-    }
-
-    /**
-     * True when this cast is trained: already learned, or a free slot will learn it
-     * on this use. Unlearned abilities over {@link #abilitySlotCap(int)} can still
-     * be cast and still gain skill, at {@link #untrainedPower(double)}.
-     */
-    public static boolean canLearnAbility(int manaLevel, Collection<String> learned) {
-        return canLearnAbility(manaLevel, learned, Set.of());
-    }
-
-    public static boolean canLearnAbility(int manaLevel, Collection<String> learned, Collection<String> exempt) {
-        return learnedSkillCount(learned, exempt) < abilitySlotCap(manaLevel);
-    }
-
-    public static boolean isTrained(int manaLevel, Collection<String> learned, String ability) {
-        if (ability == null) {
-            return false;
-        }
-        if (isLearned(learned, ability)) {
-            return true;
-        }
-        return canLearnAbility(manaLevel, learned);
-    }
-
-    public static boolean canUseAbility(int manaLevel, Collection<String> learned, String ability) {
-        return isTrained(manaLevel, learned, ability);
-    }
-
     /** Ability level before item bonuses: skill, {@code sqrt(uses)}. */
     public static double basePower(int uses) {
         return skill(uses);
@@ -1131,6 +1090,11 @@ public final class AbilityRules {
     /** +3 when the hotbar or backpack holds a phantom membrane. Bundles, armor, and the offhand do not count. */
     public static int flightMembraneBonus(boolean hasMembrane) {
         return hasMembrane ? FLIGHT_MEMBRANE_BONUS : 0;
+    }
+
+    /** +2 when the hotbar or backpack holds lapis lazuli for an Amethyst Shield cast. One lapis is spent. */
+    public static int lapisCastBonus(boolean hasLapis) {
+        return hasLapis ? CATALYST_BONUS : 0;
     }
 
     /** Saved Fire bolt practice becomes Magic Arrow practice. */
@@ -1222,23 +1186,55 @@ public final class AbilityRules {
     }
 
     /**
-     * Effective ability level from skill and item bonuses, at least {@link #MIN_POWER}.
-     * Mana level is not added. Pass {@code trained} false for an unlearned ability over the slot cap.
+     * Effective level: skill plus item bonuses plus the world offset, floored at {@link #MIN_POWER}.
+     * Mana level is not added. Empower's extra level is applied by the caller after this.
      */
-    public static double power(String ability, int manaLevel, int uses, int itemBonus) {
-        return power(ability, manaLevel, uses, itemBonus, true);
+    public static double power(String ability, int uses, int itemBonus, int levelOffset) {
+        return power(ability, uses, itemBonus, levelOffset, 0);
     }
 
-    public static double power(String ability, int manaLevel, int uses, int itemBonus, boolean trained) {
-        double p = power(manaLevel, uses, itemBonus);
-        if (!trained) {
-            p = untrainedPower(p);
+    /**
+     * Same level, with offhand redstone added to skill before item bonuses and the offset.
+     * {@code offhandRedstone} is that one stack. Zero leaves skill unchanged.
+     */
+    public static double power(String ability, int uses, int itemBonus, int levelOffset, int offhandRedstone) {
+        double base = skill(uses) + redstoneSkillBoost(uses, offhandRedstone);
+        return Math.max(MIN_POWER, base + Math.max(0, itemBonus) + levelOffset);
+    }
+
+    /** Floor of the square root of one offhand redstone stack. Zero when the stack is empty. */
+    public static int redstoneDustCap(int stackCount) {
+        if (stackCount <= 0) {
+            return 0;
         }
-        return Math.max(MIN_POWER, p);
+        return (int) Math.floor(Math.sqrt(stackCount));
     }
 
-    public static double untrainedPower(double power) {
-        return Math.max(MIN_POWER, power - UNKNOWN_ABILITY_PENALTY);
+    /**
+     * Added to skill before item bonuses and the level offset.
+     * Half of skill, and no more than {@link #redstoneDustCap(int)}.
+     */
+    public static double redstoneSkillBoost(int uses, int offhandCount) {
+        int cap = redstoneDustCap(offhandCount);
+        if (cap <= 0) {
+            return 0.0;
+        }
+        return Math.min(skill(uses) * 0.5, cap);
+    }
+
+    /** Dust taken from the offhand when a cast succeeds. The bonus, rounded down. */
+    public static int redstoneDustToConsume(int uses, int offhandCount) {
+        double boost = redstoneSkillBoost(uses, offhandCount);
+        if (!(boost > 0.0) || Double.isNaN(boost)) {
+            return 0;
+        }
+        return (int) Math.floor(boost);
+    }
+
+    /** True when this level spends the cast and gains a use without taking effect. */
+    public static boolean practices(String ability, double level) {
+        double need = DIAMOND_SKIN.equals(ability) ? DIAMOND_SKIN_MIN_LEVEL : PRACTICE_LEVEL;
+        return level < need;
     }
 
     public static String powerLabel(double power) {
@@ -1247,14 +1243,6 @@ public final class AbilityRules {
             return Long.toString(Math.round(value));
         }
         return String.format(java.util.Locale.ROOT, "%.1f", value);
-    }
-
-    public static final String UNLEARNED_MARK = "*";
-
-    /** Clock / {@code /ehm me} name: unlearned abilities get a trailing {@code *}. */
-    public static String abilityListName(String name, boolean learned) {
-        String base = name == null || name.isEmpty() ? "this ability" : name;
-        return learned ? base : base + UNLEARNED_MARK;
     }
 
     public static boolean isMainInventorySlot(int slot) {
@@ -1293,9 +1281,9 @@ public final class AbilityRules {
         return Math.max(0, (int) Math.round(Math.max(0.0, power) * MASTER_BUILDER_SECONDS_PER_POWER * 20.0));
     }
 
-    /** Diamond Skin never casts below {@link #DIAMOND_SKIN_MIN_LEVEL}. */
+    /** Stored Diamond Skin level. A cast below {@link #DIAMOND_SKIN_MIN_LEVEL} practices instead. */
     public static double diamondSkinLevel(double power) {
-        return Math.max(DIAMOND_SKIN_MIN_LEVEL, power);
+        return Math.max(0.0, power);
     }
 
     /** Duration in ticks: 30 seconds per point of effective ability level. */

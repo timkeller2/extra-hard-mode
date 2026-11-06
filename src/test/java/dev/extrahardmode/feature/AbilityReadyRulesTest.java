@@ -58,9 +58,13 @@ class AbilityReadyRulesTest {
                         4, 0.0, Map.of(AbilityRules.HEAL, 16), Set.of(AbilityRules.HEAL), 0, paper, false, 0L, Map.of())
                 .isEmpty());
 
+        assertTrue(AbilityReadyRules.strongCasts(
+                        4, 5.0, Map.of(AbilityRules.HEAL, 16), Set.of(AbilityRules.HEAL), 0, paper, false, 0L, Map.of())
+                .isEmpty());
+
         List<AbilityReadyRules.StrongCast> heal = AbilityReadyRules.strongCasts(
-                4, 5.0, Map.of(AbilityRules.HEAL, 16), Set.of(AbilityRules.HEAL), 0, paper, false, 0L, Map.of());
-        assertEquals(List.of(new AbilityReadyRules.StrongCast(AbilityRules.HEAL, 4.0)), heal);
+                4, 5.0, Map.of(AbilityRules.HEAL, 25), Set.of(AbilityRules.HEAL), 0, paper, false, 0L, Map.of());
+        assertEquals(List.of(new AbilityReadyRules.StrongCast(AbilityRules.HEAL, 3.0)), heal);
 
         List<AbilityReadyRules.StrongCast> exactTwo = AbilityReadyRules.strongCasts(
                 4, 5.0, Map.of(AbilityRules.HEAL, 4), Set.of(AbilityRules.HEAL), 0, paper, false, 0L, Map.of());
@@ -75,7 +79,7 @@ class AbilityReadyRulesTest {
                 new AbilityReadyRules.SupplyStack(AbilityRules.NETHERITE_HOE_ID, 1),
                 new AbilityReadyRules.SupplyStack(AbilityRules.WOODEN_HOE_ID, 1),
                 new AbilityReadyRules.SupplyStack(AbilityRules.CHARCOAL_ID, 1),
-                new AbilityReadyRules.SupplyStack(AbilityReadyRules.REDSTONE_ID, 4),
+                new AbilityReadyRules.SupplyStack(AbilityReadyRules.GLOWSTONE_DUST_ID, 4),
                 new AbilityReadyRules.SupplyStack(AbilityRules.DIAMOND_ID, 1));
         List<AbilityReadyRules.StrongCast> casts = AbilityReadyRules.strongCasts(
                 3,
@@ -98,9 +102,9 @@ class AbilityReadyRulesTest {
                 0L,
                 Map.of());
         assertEquals(AbilityRules.HEAL, casts.get(0).ability());
-        assertEquals(1.0 + 2.0 + 4.0, casts.get(0).level(), 1e-9);
+        assertEquals(5.0, casts.get(0).level(), 1e-9);
         assertEquals(AbilityRules.GROW, casts.get(1).ability());
-        assertEquals(1.0 + 5.0, casts.get(1).level(), 1e-9);
+        assertEquals(4.0, casts.get(1).level(), 1e-9);
         assertEquals(2, casts.size());
         assertTrue(casts.stream().noneMatch(cast -> AbilityRules.FIRE_BOLT.equals(cast.ability())));
         assertTrue(casts.stream().noneMatch(cast -> AbilityRules.FLIGHT.equals(cast.ability())));
@@ -127,16 +131,14 @@ class AbilityReadyRulesTest {
                 0L,
                 Map.of(),
                 2.0);
-        assertEquals(1.0 + 2.0 + 4.0 + 2.0, boosted.get(0).level(), 1e-9);
-        assertEquals(AbilityRules.FLIGHT, boosted.get(1).ability());
-        assertEquals(1.0 + 2.0, boosted.get(1).level(), 1e-9);
-        assertEquals(AbilityRules.GROW, boosted.get(2).ability());
-        assertEquals(1.0 + 5.0 + 2.0, boosted.get(2).level(), 1e-9);
-        assertEquals(AbilityRules.DIAMOND_SKIN, boosted.get(3).ability());
-        assertEquals(3.0, boosted.get(3).level(), 1e-9);
-        assertEquals(AbilityRules.EMPOWER, boosted.get(4).ability());
-        assertEquals(3.0, boosted.get(4).level(), 1e-9);
-        assertEquals(5, boosted.size());
+        assertEquals(AbilityRules.HEAL, boosted.get(0).ability());
+        assertEquals(7.0, boosted.get(0).level(), 1e-9);
+        assertEquals(AbilityRules.GROW, boosted.get(1).ability());
+        assertEquals(6.0, boosted.get(1).level(), 1e-9);
+        assertEquals(2, boosted.size());
+        assertTrue(boosted.stream().noneMatch(cast -> AbilityRules.FLIGHT.equals(cast.ability())));
+        assertTrue(boosted.stream().noneMatch(cast -> AbilityRules.DIAMOND_SKIN.equals(cast.ability())));
+        assertTrue(boosted.stream().noneMatch(cast -> AbilityRules.EMPOWER.equals(cast.ability())));
         assertTrue(boosted.stream().noneMatch(cast -> AbilityRules.FIRE_BOLT.equals(cast.ability())));
     }
 
@@ -147,7 +149,7 @@ class AbilityReadyRulesTest {
         List<AbilityReadyRules.StrongCast> casts = AbilityReadyRules.strongCasts(
                 0,
                 0.0,
-                Map.of(AbilityRules.BATTERY, 9),
+                Map.of(AbilityRules.BATTERY, 25),
                 Set.of(AbilityRules.BATTERY),
                 0,
                 block,
@@ -160,7 +162,7 @@ class AbilityReadyRulesTest {
 
     @Test
     void detectOreCastsWithoutQuartzAndUsesTheLargestStack() {
-        Map<String, Integer> uses = Map.of(AbilityRules.DETECT_ORE, 16);
+        Map<String, Integer> uses = Map.of(AbilityRules.DETECT_ORE, 36);
         Set<String> learned = Set.of(AbilityRules.DETECT_ORE);
         List<AbilityReadyRules.StrongCast> bare = AbilityReadyRules.strongCasts(
                 1,
@@ -207,7 +209,7 @@ class AbilityReadyRulesTest {
 
     @Test
     void magicArrowGainsTwoLevelsFromCharcoalInTheSupplyList() {
-        Map<String, Integer> uses = Map.of(AbilityRules.MAGIC_ARROW, 4);
+        Map<String, Integer> uses = Map.of(AbilityRules.MAGIC_ARROW, 16);
         Set<String> learned = Set.of(AbilityRules.MAGIC_ARROW);
         List<AbilityReadyRules.StrongCast> bare = AbilityReadyRules.strongCasts(
                 4,
@@ -253,7 +255,7 @@ class AbilityReadyRulesTest {
 
     @Test
     void phantomMembraneAddsThreeToFlight() {
-        Map<String, Integer> uses = Map.of(AbilityRules.FLIGHT, 16);
+        Map<String, Integer> uses = Map.of(AbilityRules.FLIGHT, 36);
         Set<String> learned = Set.of(AbilityRules.FLIGHT);
         List<AbilityReadyRules.StrongCast> bare = AbilityReadyRules.strongCasts(
                 4,
@@ -297,13 +299,58 @@ class AbilityReadyRulesTest {
     }
 
     @Test
+    void lapisAddsTwoToAmethystShield() {
+        Map<String, Integer> uses = Map.of(AbilityRules.LAPIS_SHIELD, 25);
+        Set<String> learned = Set.of(AbilityRules.LAPIS_SHIELD);
+        List<AbilityReadyRules.StrongCast> bare = AbilityReadyRules.strongCasts(
+                4,
+                5.0,
+                uses,
+                learned,
+                0,
+                List.of(new AbilityReadyRules.SupplyStack(AbilityRules.AMETHYST_SHARD_ID, 1)),
+                false,
+                0L,
+                Map.of());
+        assertEquals(3.0, bare.get(0).level(), 1e-9);
+
+        List<AbilityReadyRules.StrongCast> fed = AbilityReadyRules.strongCasts(
+                4,
+                5.0,
+                uses,
+                learned,
+                0,
+                List.of(
+                        new AbilityReadyRules.SupplyStack(AbilityRules.AMETHYST_SHARD_ID, 1),
+                        new AbilityReadyRules.SupplyStack(AbilityRules.LAPIS_LAZULI_ID, 1)),
+                false,
+                0L,
+                Map.of());
+        assertEquals(5.0, fed.get(0).level(), 1e-9);
+
+        List<AbilityReadyRules.StrongCast> doubled = AbilityReadyRules.strongCasts(
+                4,
+                5.0,
+                uses,
+                learned,
+                0,
+                List.of(
+                        new AbilityReadyRules.SupplyStack(AbilityRules.AMETHYST_SHARD_ID, 2),
+                        new AbilityReadyRules.SupplyStack(AbilityRules.LAPIS_LAZULI_ID, 4)),
+                false,
+                0L,
+                Map.of());
+        assertEquals(7.0, doubled.get(0).level(), 1e-9);
+    }
+
+    @Test
     void goldBonusShortensCooldownWithoutRaisingOtherAbilityPower() {
         List<AbilityReadyRules.SupplyStack> feather =
                 List.of(new AbilityReadyRules.SupplyStack(AbilityRules.FEATHER_ID, 1));
-        Map<String, Integer> uses = Map.of(AbilityRules.FLIGHT, 16);
+        Map<String, Integer> uses = Map.of(AbilityRules.FLIGHT, 36);
         Map<String, Long> lastUse = Map.of(AbilityRules.FLIGHT, 0L);
-        long withGold = AbilityRules.cooldownTicks(1, 16);
-        assertTrue(withGold < AbilityRules.cooldownTicks(0, 16));
+        long withGold = AbilityRules.cooldownTicks(1, 36);
+        assertTrue(withGold < AbilityRules.cooldownTicks(0, 36));
         assertTrue(AbilityReadyRules.strongCasts(0, 5.0, uses, Set.of(AbilityRules.FLIGHT), 0, feather, false, withGold, lastUse)
                 .isEmpty());
         List<AbilityReadyRules.StrongCast> ready = AbilityReadyRules.strongCasts(
@@ -338,12 +385,12 @@ class AbilityReadyRulesTest {
                 false,
                 0L,
                 Map.of());
-        assertEquals(3.0, untrained.get(0).level(), 1e-9);
+        assertEquals(4.0, untrained.get(0).level(), 1e-9);
 
         assertTrue(AbilityReadyRules.strongCasts(
                         2,
                         5.0,
-                        Map.of(AbilityRules.FLIGHT, 25),
+                        Map.of(AbilityRules.FLIGHT, 16),
                         Set.of(AbilityRules.HEAL),
                         0,
                         feather,
@@ -361,8 +408,8 @@ class AbilityReadyRulesTest {
 
     @Test
     void hudIconsSortByLevelAndFilterUnlessHoldingABook() {
-        assertTrue(AbilityReadyRules.countsForAbilitySupply(AbilityReadyRules.REDSTONE_ID, false));
-        assertTrue(AbilityReadyRules.countsForAbilitySupply(AbilityReadyRules.REDSTONE_ID, true));
+        assertTrue(AbilityReadyRules.countsForAbilitySupply(AbilityReadyRules.GLOWSTONE_DUST_ID, false));
+        assertTrue(AbilityReadyRules.countsForAbilitySupply(AbilityReadyRules.GLOWSTONE_DUST_ID, true));
         assertTrue(AbilityReadyRules.countsForAbilitySupply(AbilityRules.FEATHER_ID, true));
         assertFalse(AbilityReadyRules.countsForAbilitySupply("", true));
         assertTrue(AbilityReadyRules.isBook("minecraft:book"));
@@ -384,7 +431,7 @@ class AbilityReadyRulesTest {
                 new AbilityReadyRules.SupplyStack(AbilityRules.CHARCOAL_ID, 1));
         Map<String, Integer> uses = Map.of(
                 AbilityRules.HEAL, 100,
-                AbilityRules.FLIGHT, 16,
+                AbilityRules.FLIGHT, 25,
                 AbilityRules.FIRE_BOLT, 0);
         List<AbilityReadyRules.HudIcon> withBook = AbilityReadyRules.hudIcons(
                 3,
@@ -400,11 +447,11 @@ class AbilityReadyRulesTest {
                 Set.of());
         assertEquals(2, withBook.size());
         assertEquals(AbilityRules.HEAL, withBook.get(0).ability());
-        assertEquals(10.0, withBook.get(0).level(), 1e-9);
+        assertEquals(8.0, withBook.get(0).level(), 1e-9);
         assertTrue(withBook.get(0).learned());
         assertEquals(AbilityRules.FLIGHT, withBook.get(1).ability());
-        assertEquals(4.0, withBook.get(1).level(), 1e-9);
-        assertFalse(withBook.get(1).learned());
+        assertEquals(3.0, withBook.get(1).level(), 1e-9);
+        assertTrue(withBook.get(1).learned());
         assertTrue(withBook.stream().noneMatch(icon -> AbilityRules.FIRE_BOLT.equals(icon.ability())));
         assertTrue(withBook.stream().noneMatch(icon -> AbilityRules.MAGIC_ARROW.equals(icon.ability())));
 
@@ -452,6 +499,6 @@ class AbilityReadyRulesTest {
         List<AbilityReadyRules.StrongCast> heal = AbilityReadyRules.strongCasts(
                 0, 0.0, Map.of(AbilityRules.HEAL, 9), Set.of(AbilityRules.HEAL), 0, paper, true, 0L, Map.of());
         assertEquals(1, heal.size());
-        assertEquals(3.0 + AbilityRules.HONEY_HEAL_BONUS, heal.get(0).level(), 1e-9);
+        assertEquals(5.0, heal.get(0).level(), 1e-9);
     }
 }

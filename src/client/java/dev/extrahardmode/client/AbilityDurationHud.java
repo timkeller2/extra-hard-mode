@@ -96,13 +96,13 @@ public final class AbilityDurationHud {
             return 0x12343A;
         }
         if (AbilityRules.EMPOWER.equals(ability)) {
-            return 0x2A1214;
+            return 0x2A2210;
         }
         if (AbilityRules.BATTERY.equals(ability)) {
             return 0x24282C;
         }
         if (AbilityRules.LAPIS_SHIELD.equals(ability)) {
-            return 0x10182E;
+            return 0x1A1024;
         }
         if (AbilityRules.SENSE_EVIL.equals(ability)) {
             return 0x241428;
@@ -124,13 +124,13 @@ public final class AbilityDurationHud {
             return 0x5CFFF0;
         }
         if (AbilityRules.EMPOWER.equals(ability)) {
-            return 0xE23B3B;
+            return 0xF0C14A;
         }
         if (AbilityRules.BATTERY.equals(ability)) {
             return 0xF2F0EA;
         }
         if (AbilityRules.LAPIS_SHIELD.equals(ability)) {
-            return 0x3B5BDB;
+            return 0x9B5DE5;
         }
         if (AbilityRules.SENSE_EVIL.equals(ability)) {
             return 0xC45BD0;
@@ -152,13 +152,13 @@ public final class AbilityDurationHud {
             return new ItemStack(Items.DIAMOND);
         }
         if (AbilityRules.EMPOWER.equals(ability)) {
-            return new ItemStack(Items.REDSTONE);
+            return new ItemStack(Items.GLOWSTONE_DUST);
         }
         if (AbilityRules.BATTERY.equals(ability)) {
             return new ItemStack(Items.QUARTZ_BLOCK);
         }
         if (AbilityRules.LAPIS_SHIELD.equals(ability)) {
-            return new ItemStack(Items.LAPIS_LAZULI);
+            return new ItemStack(Items.AMETHYST_SHARD);
         }
         if (AbilityRules.SENSE_EVIL.equals(ability)) {
             return new ItemStack(Items.SPIDER_EYE);

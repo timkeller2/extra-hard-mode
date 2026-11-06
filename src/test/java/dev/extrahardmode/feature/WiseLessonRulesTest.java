@@ -20,17 +20,19 @@ class WiseLessonRulesTest {
         assertEquals(6, WiseLessonRules.baseSize(31));
         assertEquals(8, WiseLessonRules.baseSize(InhabitantRules.stockScore(24, 196)));
         assertEquals(3, WiseLessonRules.baseSize(InhabitantRules.stockScore(24, 0)));
-        assertEquals(0, WiseLessonRules.serviceUses(false, false));
-        assertEquals(1, WiseLessonRules.serviceUses(true, false));
-        assertEquals(1, WiseLessonRules.serviceUses(false, true));
-        assertEquals(2, WiseLessonRules.serviceUses(true, true));
+        assertEquals(0, WiseLessonRules.huntGrowth(0));
+        assertEquals(2, WiseLessonRules.huntGrowth(2));
+        assertEquals(0, WiseLessonRules.huntGrowth(-1));
         assertEquals(3, WiseLessonRules.packSize(24, 0));
-        assertEquals(6, WiseLessonRules.packSize(24, 1));
-        assertEquals(9, WiseLessonRules.packSize(24, 2));
+        assertEquals(5, WiseLessonRules.packSize(24, 1));
+        assertEquals(6, WiseLessonRules.packSize(24, 2));
         assertEquals(8, WiseLessonRules.packSize(38, 0));
-        assertEquals(16, WiseLessonRules.packSize(38, 1));
-        assertEquals(24, WiseLessonRules.packSize(38, 2));
-        assertEquals(12, WiseLessonRules.packSize(31, 1));
+        assertEquals(12, WiseLessonRules.packSize(38, 1));
+        assertEquals(6, WiseLessonRules.packSize(31, 0));
+        assertEquals(200, WiseLessonRules.scaledDistance(200, 0));
+        assertEquals(500, WiseLessonRules.scaledDistance(500, 0));
+        assertEquals(266, WiseLessonRules.scaledDistance(200, 1));
+        assertEquals(332, WiseLessonRules.scaledDistance(200, 2));
     }
 
     @Test
@@ -393,5 +395,25 @@ class WiseLessonRulesTest {
                 -1,
                 true,
                 List.of());
+    }
+
+    @Test
+    void aKillPastHalfCountsAndADespawnDoesNot() {
+        assertFalse(WiseLessonRules.moreThanHalf(2, 5));
+        assertTrue(WiseLessonRules.moreThanHalf(3, 5));
+        assertFalse(WiseLessonRules.moreThanHalf(2, 4));
+        assertTrue(WiseLessonRules.moreThanHalf(3, 4));
+        assertTrue(WiseLessonRules.moreThanHalf(1, 1));
+        assertFalse(WiseLessonRules.moreThanHalf(0, 1));
+        WiseLessonRules.KillCredit first = WiseLessonRules.creditKill(0, 5, false);
+        assertEquals(1, first.killed());
+        assertFalse(first.grantOffer());
+        WiseLessonRules.KillCredit third = WiseLessonRules.creditKill(2, 5, false);
+        assertEquals(3, third.killed());
+        assertTrue(third.grantOffer());
+        assertFalse(WiseLessonRules.creditKill(2, 5, true).grantOffer());
+        assertFalse(WiseLessonRules.creditKill(1, 4, false).grantOffer());
+        assertTrue(WiseLessonRules.creditKill(2, 4, false).grantOffer());
+        assertTrue(WiseLessonRules.creditKill(0, 1, false).grantOffer());
     }
 }

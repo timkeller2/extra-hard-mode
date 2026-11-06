@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -610,8 +611,8 @@ public final class InhabitantRules {
                 "Residents: A home stops listing someone who has died or is no longer around the bed.",
                 "Lessons: Speak to a wise teacher and he tells of a hunt every 30 Minecraft days.",
                 "Lessons: While he waits to give another hunt, he names up to 3 explored biomes that can still spawn a boss. If more than 3 can, he picks 3 and keeps them until that wait ends.",
-                "Lessons: The pack is 3 to 8, from the home and his experience, times 1 plus lessons and mana he has given you.",
-                "Lessons: The first hunts are easier creatures. Every 4 hunts, they are harder. It lies 200 to 500 blocks north, south, east, or west.",
+                "Lessons: The pack is a 3 to 8 base from the home and his experience, plus 50% of that base for each hunt you have finished with him, rounded.",
+                "Lessons: The first hunts are easier. Every 4 hunts, they are harder. It lies 200 to 500 blocks north, south, east, or west, plus 33% of that for each of those hunts, rounded.",
                 "Lessons: He only sends creatures from the dimension where he lives.",
                 "Lessons: His name, how many are left, and the direction show on your screen. That number falls as you kill them. At that distance it says near here.",
                 "Lessons: Come back closer than that distance and the direction returns.",
@@ -1197,9 +1198,15 @@ public final class InhabitantRules {
         return ids.get(Math.floorMod(roll, ids.size()));
     }
 
-    /** Uses granted with the lesson: house points plus this resident's trading experience. */
-    public static int wiseTaughtUses(int houseScore, int residentXp) {
-        return Math.max(0, houseScore) + Math.max(0, residentXp);
+    /** Uses when a focus names the ability. The house points. */
+    public static int wiseFocusUses(int houseScore) {
+        return Math.max(0, houseScore);
+    }
+
+    /** Uses when the player hands over emeralds and the teacher picks the ability. Twice the house points. */
+    public static int wiseEmeraldUses(int houseScore) {
+        long uses = Math.max(0, houseScore) * 2L;
+        return uses > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) uses;
     }
 
     /** Price for this house. {@code 0} means the lesson is free. */
@@ -1213,13 +1220,55 @@ public final class InhabitantRules {
         return !alreadyTaught && emeralds >= Math.max(0, cost);
     }
 
-    /** Sneak-right-click, once per player per teacher. */
-    public static boolean shouldTeachMana(boolean sneaking, boolean hasDiamondBlock, boolean hasLapisBlock, boolean already) {
-        return sneaking && hasDiamondBlock && hasLapisBlock && !already;
+    /** An offered lesson, at least one stored mana level, and enough emeralds. */
+    public static boolean canTeachFocus(int offers, int storedMana, int emeralds, int cost) {
+        return offers > 0 && storedMana >= 1 && emeralds >= Math.max(0, cost);
     }
 
-    public static boolean alreadyTookManaLesson(Collection<String> teacherIds, String teacherId) {
-        return teacherId != null && !teacherId.isEmpty() && teacherIds != null && teacherIds.contains(teacherId);
+    /** An offered lesson and at least one redstone block. Stored mana is not required. */
+    public static boolean canGiveRedstone(int offers, int redstoneBlocks) {
+        return offers > 0 && redstoneBlocks >= 1;
+    }
+
+    /**
+     * Blocks this gift may take. The first gift takes 1, the second up to 4, then 9, 16, and so on.
+     * {@code previousGifts} is how many gifts this teacher has already accepted.
+     */
+    public static int redstoneBlockCap(int previousGifts) {
+        long n = Math.max(0, previousGifts) + 1L;
+        long squared = n * n;
+        if (squared > Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        }
+        return (int) squared;
+    }
+
+    /** Blocks actually taken: the cap, or every block held when that is fewer. None when none are held. */
+    public static int redstoneBlocksTaken(int previousGifts, int held) {
+        if (held <= 0) {
+            return 0;
+        }
+        return Math.min(held, redstoneBlockCap(previousGifts));
+    }
+
+    /** Added to mana learning capacity. The square root of the blocks this gift actually took. */
+    public static double capacityGain(int blocksTaken) {
+        if (blocksTaken <= 0) {
+            return 0.0;
+        }
+        return Math.sqrt(blocksTaken);
+    }
+
+    /** Whole numbers stay whole. Other values show one decimal. */
+    public static String learningLabel(double value) {
+        if (Double.isNaN(value) || value <= 0.0) {
+            return "0";
+        }
+        double tenths = Math.rint(value * 10.0) / 10.0;
+        if (Math.abs(tenths - Math.rint(tenths)) < 1.0e-6) {
+            return Long.toString(Math.round(tenths));
+        }
+        return String.format(Locale.ROOT, "%.1f", tenths);
     }
 
     public static int restockDays(String specialty) {

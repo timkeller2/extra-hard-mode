@@ -26,7 +26,7 @@ public final class AbilityReadyRules {
     public static final int UNLEARNED_LEVEL_COLOR = 0xFFFFFFFF;
     /** Seconds remaining, drawn on the icon. */
     public static final int COOLDOWN_COLOR = 0xFFFFFF00;
-    public static final String REDSTONE_ID = "minecraft:redstone";
+    public static final String GLOWSTONE_DUST_ID = "minecraft:glowstone_dust";
 
     /** A non-empty item id can be brought into hand for a cast. Bundle contents count. */
     public static boolean countsForAbilitySupply(String itemId, boolean insideBundle) {
@@ -197,6 +197,7 @@ public final class AbilityReadyRules {
      * Abilities the player can cast right now at an effective level above {@link #MIN_LEVEL}.
      * The level matches a real cast: skill, the best catalyst they are carrying, the largest nether quartz stack
      * in the supply list, charcoal in that list for Magic Arrow, a phantom membrane in that list for Flight,
+     * lapis lazuli in that list for Amethyst Shield,
      * a honey bottle for Healing, and Empower's bonus.
      * Mana level is not added.
      * Cooldown or missing mana leaves the ability off the list. Healing with honey does not need mana.
@@ -226,6 +227,32 @@ public final class AbilityReadyRules {
             long now,
             Map<String, Long> lastUse,
             double empowerBonus) {
+        return strongCasts(
+                manaLevel,
+                currentMana,
+                uses,
+                learned,
+                goldBonus,
+                stacks,
+                honey,
+                now,
+                lastUse,
+                empowerBonus,
+                AbilityRules.DEFAULT_LEVEL_OFFSET);
+    }
+
+    public static List<StrongCast> strongCasts(
+            int manaLevel,
+            double currentMana,
+            Map<String, Integer> uses,
+            Collection<String> learned,
+            int goldBonus,
+            List<SupplyStack> stacks,
+            boolean honey,
+            long now,
+            Map<String, Long> lastUse,
+            double empowerBonus,
+            int levelOffset) {
         Map<String, Integer> bestCount = new HashMap<>();
         int quartzStack = largestQuartzStack(stacks);
         int bestHoe = -1;
@@ -266,16 +293,8 @@ public final class AbilityReadyRules {
                 continue;
             }
             int itemBonus = itemBonus(ability, bestCount, quartzStack, honey, bestHoe, bestPick);
-            double level = AbilityRules.power(
-                    ability,
-                    mana,
-                    useCount,
-                    itemBonus,
-                    AbilityRules.isTrained(mana, learned, ability));
+            double level = AbilityRules.power(ability, useCount, itemBonus, levelOffset);
             level += Math.max(0.0, empowerBonus);
-            if (AbilityRules.DIAMOND_SKIN.equals(ability)) {
-                level = AbilityRules.diamondSkinLevel(level);
-            }
             if (level > MIN_LEVEL) {
                 ready.add(new StrongCast(ability, level));
             }
@@ -329,6 +348,68 @@ public final class AbilityReadyRules {
             String heldAbility,
             Collection<String> active,
             double empowerBonus) {
+        return hudIcons(
+                manaLevel,
+                uses,
+                learned,
+                goldBonus,
+                stacks,
+                honey,
+                now,
+                lastUse,
+                holdingBook,
+                heldAbility,
+                active,
+                empowerBonus,
+                AbilityRules.DEFAULT_LEVEL_OFFSET);
+    }
+
+    public static List<HudIcon> hudIcons(
+            int manaLevel,
+            Map<String, Integer> uses,
+            Collection<String> learned,
+            int goldBonus,
+            List<SupplyStack> stacks,
+            boolean honey,
+            long now,
+            Map<String, Long> lastUse,
+            boolean holdingBook,
+            String heldAbility,
+            Collection<String> active,
+            double empowerBonus,
+            int levelOffset) {
+        return hudIcons(
+                manaLevel,
+                uses,
+                learned,
+                goldBonus,
+                stacks,
+                honey,
+                now,
+                lastUse,
+                holdingBook,
+                heldAbility,
+                active,
+                empowerBonus,
+                levelOffset,
+                0);
+    }
+
+    public static List<HudIcon> hudIcons(
+            int manaLevel,
+            Map<String, Integer> uses,
+            Collection<String> learned,
+            int goldBonus,
+            List<SupplyStack> stacks,
+            boolean honey,
+            long now,
+            Map<String, Long> lastUse,
+            boolean holdingBook,
+            String heldAbility,
+            Collection<String> active,
+            double empowerBonus,
+            int levelOffset,
+            int offhandRedstone) {
         Map<String, Integer> bestCount = new HashMap<>();
         int quartzStack = largestQuartzStack(stacks);
         int bestHoe = -1;
@@ -360,16 +441,8 @@ public final class AbilityReadyRules {
             boolean running = active != null && active.contains(ability);
             boolean held = ability.equals(heldAbility);
             int itemBonus = itemBonus(ability, bestCount, quartzStack, honey, bestHoe, bestPick);
-            double level = AbilityRules.power(
-                    ability,
-                    mana,
-                    useCount,
-                    itemBonus,
-                    AbilityRules.isTrained(mana, learned, ability));
+            double level = AbilityRules.power(ability, useCount, itemBonus, levelOffset, offhandRedstone);
             level += Math.max(0.0, empowerBonus);
-            if (AbilityRules.DIAMOND_SKIN.equals(ability)) {
-                level = AbilityRules.diamondSkinLevel(level);
-            }
             if (!includeIcon(level, holdingBook, running, seconds > 0, held)) {
                 continue;
             }
@@ -377,7 +450,7 @@ public final class AbilityReadyRules {
             if (hudIconPixels(level, forced) <= 0) {
                 continue;
             }
-            icons.add(new HudIcon(ability, level, AbilityRules.isLearned(learned, ability), seconds));
+            icons.add(new HudIcon(ability, level, true, seconds));
         }
         icons.sort(Comparator.comparingDouble(HudIcon::level)
                 .reversed()
@@ -451,6 +524,10 @@ public final class AbilityReadyRules {
                 && bestCount.getOrDefault(AbilityRules.PHANTOM_MEMBRANE_ID, 0) > 0) {
             bonus += AbilityRules.FLIGHT_MEMBRANE_BONUS;
         }
+        if (AbilityRules.LAPIS_SHIELD.equals(ability)
+                && bestCount.getOrDefault(AbilityRules.LAPIS_LAZULI_ID, 0) > 0) {
+            bonus += AbilityRules.lapisCastBonus(true);
+        }
         return bonus;
     }
 
@@ -486,13 +563,13 @@ public final class AbilityReadyRules {
             return AbilityRules.DIAMOND_ID;
         }
         if (AbilityRules.EMPOWER.equals(ability)) {
-            return AbilityRules.REDSTONE_ID;
+            return AbilityRules.GLOWSTONE_DUST_ID;
         }
         if (AbilityRules.BATTERY.equals(ability)) {
             return AbilityRules.QUARTZ_BLOCK_ID;
         }
         if (AbilityRules.LAPIS_SHIELD.equals(ability)) {
-            return AbilityRules.LAPIS_LAZULI_ID;
+            return AbilityRules.AMETHYST_SHARD_ID;
         }
         if (AbilityRules.WRITE_TOME.equals(ability)) {
             return AbilityRules.BOOK_ID;

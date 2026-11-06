@@ -92,6 +92,123 @@ public final class WiseLessons {
                 && Boolean.TRUE.equals(entity.getAttachedOrElse(EhmAttachments.EHM_WISE_LESSON_FINAL, Boolean.FALSE));
     }
 
+    /** True when this conversation will replace the wait with a new hunt. */
+    public static boolean willStartHunt(ServerPlayer player, Villager villager, ServerLevel level) {
+        if (player == null || villager == null || level == null) {
+            return false;
+        }
+        long today = AntiFarming.overworldDay(level);
+        String teacherId = villager.getStringUUID();
+        WiseLessonRules.Lesson existing = find(boardOf(player), teacherId);
+        WiseLessonRules.Lesson ended = WiseLessonRules.endIfExpired(existing, today);
+        if (ended != existing && !WiseLessonRules.offerDue(ended.assignedDay(), today)) {
+            return false;
+        }
+        return existing == null || WiseLessonRules.offerDue(existing.assignedDay(), today);
+    }
+
+    public static int teachingOffers(ServerPlayer player, String teacherId) {
+        return countOf(player == null ? Map.of() : player.getAttachedOrElse(EhmAttachments.EHM_WISE_OFFERS, Map.of()), teacherId);
+    }
+
+    public static void grantTeachingOffer(ServerPlayer player, String teacherId) {
+        addCount(player, EhmAttachments.EHM_WISE_OFFERS, teacherId, 1);
+    }
+
+    public static void spendTeachingOffer(ServerPlayer player, String teacherId) {
+        addCount(player, EhmAttachments.EHM_WISE_OFFERS, teacherId, -1);
+    }
+
+    public static int redstoneGifts(ServerPlayer player, String teacherId) {
+        return countOf(player == null ? Map.of() : player.getAttachedOrElse(EhmAttachments.EHM_WISE_REDSTONE, Map.of()), teacherId);
+    }
+
+    public static void addRedstoneGift(ServerPlayer player, String teacherId) {
+        addCount(player, EhmAttachments.EHM_WISE_REDSTONE, teacherId, 1);
+    }
+
+    public static boolean hasTaughtAbility(ServerPlayer player, String teacherId) {
+        if (player == null || teacherId == null || teacherId.isEmpty()) {
+            return false;
+        }
+        List<String> taught = player.getAttachedOrElse(EhmAttachments.EHM_WISE_TAUGHT, List.of());
+        return taught != null && taught.contains(teacherId);
+    }
+
+    public static void markTaughtAbility(ServerPlayer player, String teacherId) {
+        if (player == null || teacherId == null || teacherId.isEmpty() || hasTaughtAbility(player, teacherId)) {
+            return;
+        }
+        List<String> next = new ArrayList<>(player.getAttachedOrElse(EhmAttachments.EHM_WISE_TAUGHT, List.of()));
+        next.add(teacherId);
+        player.setAttached(EhmAttachments.EHM_WISE_TAUGHT, next);
+    }
+
+    /** Lessons from this teacher. An older save that only lists him counts as one. */
+    public static int lessonsGiven(ServerPlayer player, String teacherId) {
+        int counted = countOf(
+                player == null ? Map.of() : player.getAttachedOrElse(EhmAttachments.EHM_WISE_LESSON_TIMES, Map.of()),
+                teacherId);
+        if (counted > 0) {
+            return counted;
+        }
+        return hasTaughtAbility(player, teacherId) ? 1 : 0;
+    }
+
+    /** Records one ability lesson and keeps the older taught list in step. */
+    public static void recordLesson(ServerPlayer player, String teacherId) {
+        if (player == null || teacherId == null || teacherId.isEmpty()) {
+            return;
+        }
+        setCount(player, EhmAttachments.EHM_WISE_LESSON_TIMES, teacherId, lessonsGiven(player, teacherId) + 1);
+        markTaughtAbility(player, teacherId);
+    }
+
+    /** Hunts finished with this teacher. A success still marked from before the counter counts as one. */
+    public static int huntsFinished(ServerPlayer player, String teacherId) {
+        int counted = countOf(
+                player == null ? Map.of() : player.getAttachedOrElse(EhmAttachments.EHM_WISE_HUNT_WINS, Map.of()),
+                teacherId);
+        if (player == null || counted > 0) {
+            return counted;
+        }
+        return huntSucceeded(player, teacherId) ? 1 : 0;
+    }
+
+    public static void recordHuntFinished(ServerPlayer player, String teacherId) {
+        addCount(player, EhmAttachments.EHM_WISE_HUNT_WINS, teacherId, 1);
+    }
+
+    /** Keep a success that predates the counter when the next hunt replaces it. */
+    private static void rememberFinishedHunt(ServerPlayer player, String teacherId) {
+        if (countOf(player.getAttachedOrElse(EhmAttachments.EHM_WISE_HUNT_WINS, Map.of()), teacherId) == 0
+                && huntSucceeded(player, teacherId)) {
+            setCount(player, EhmAttachments.EHM_WISE_HUNT_WINS, teacherId, 1);
+        }
+    }
+
+    public static double learningCapacity(ServerPlayer player) {
+        if (player == null) {
+            return 0.0;
+        }
+        Double earned = player.getAttachedOrElse(EhmAttachments.EHM_MANA_LEARNING, 0.0);
+        if (earned == null || earned.isNaN() || earned < 0.0) {
+            return 0.0;
+        }
+        return earned;
+    }
+
+    /** Adds the gain and returns the new earned total, not including the configured base. */
+    public static double addLearningCapacity(ServerPlayer player, double gain) {
+        double earned = learningCapacity(player);
+        if (player == null || !(gain > 0.0) || Double.isNaN(gain)) {
+            return earned;
+        }
+        double next = earned + gain;
+        player.setAttached(EhmAttachments.EHM_MANA_LEARNING, next);
+        return next;
+    }
+
     public static void onTalk(ServerPlayer player, Villager villager, ServerLevel level, InhabitantData.Home home) {
         if (player == null || villager == null || level == null || home == null) {
             return;
@@ -118,16 +235,14 @@ public final class WiseLessons {
             mentionBossBiomes(player, level, teacherId, existing.assignedDay());
             return;
         }
-        String ability = villager.getAttached(EhmAttachments.EHM_WISE_ABILITY);
-        boolean taught = ManaAbilities.taughtByWise(player, ability);
-        boolean mana = InhabitantRules.alreadyTookManaLesson(
-                player.getAttachedOrElse(EhmAttachments.EHM_WISE_MANA, List.of()), teacherId);
+        rememberFinishedHunt(player, teacherId);
+        int finished = huntsFinished(player, teacherId);
         int given = Math.max(0, player.getAttachedOrElse(EhmAttachments.EHM_WISE_LESSON_COUNT, 0));
         RandomSource random = level.getRandom();
         WiseLessonRules.Mob mob = WiseLessonRules.pickMob(
                 given, random.nextInt(), level.dimension().identifier().toString());
         double stock = Inhabitants.shopScore(villager, home.score());
-        int size = WiseLessonRules.packSize(stock, WiseLessonRules.serviceUses(taught, mana));
+        int size = WiseLessonRules.packSize(stock, finished);
         WiseLessonRules.Lesson lesson = new WiseLessonRules.Lesson(
                 teacherId,
                 InhabitantRules.nameplate(home.name(), home.specialty()),
@@ -137,7 +252,7 @@ public final class WiseLessons {
                 mob.id(),
                 mob.plural(),
                 size,
-                WiseLessonRules.distance(random.nextInt()),
+                WiseLessonRules.scaledDistance(WiseLessonRules.distance(random.nextInt()), finished),
                 WiseLessonRules.direction(random.nextInt()),
                 today,
                 0,
@@ -145,6 +260,7 @@ public final class WiseLessons {
                 -1,
                 true,
                 List.of());
+        clearHuntProgress(player, teacherId);
         List<WiseLessonRules.Lesson> next = new ArrayList<>();
         for (WiseLessonRules.Lesson prior : board) {
             if (!teacherId.equals(prior.teacherId())) {
@@ -175,8 +291,8 @@ public final class WiseLessons {
         List<WiseLessonRules.Lesson> next = new ArrayList<>();
         boolean changed = false;
         for (WiseLessonRules.Lesson lesson : board) {
-            WiseLessonRules.Lesson updated = WiseLessonRules.endIfExpired(
-                    refresh(lesson, level.getServer(), today), today);
+            WiseLessonRules.Lesson refreshed = refresh(lesson, level.getServer(), today, player);
+            WiseLessonRules.Lesson updated = WiseLessonRules.endIfExpired(refreshed, today);
             if (updated.active() && present) {
                 boolean inRange = WiseLessonRules.atRange(
                         updated.dimension(),
@@ -297,7 +413,7 @@ public final class WiseLessons {
             }
         }
         for (LivingEntity living : doomed) {
-            forget(living);
+            forget(living, false);
             living.discard();
         }
     }
@@ -306,7 +422,12 @@ public final class WiseLessons {
         if (!isLessonMob(entity)) {
             return;
         }
-        forget(entity);
+        long expire = entity.getAttachedOrElse(EhmAttachments.EHM_WISE_EXPIRE_DAY, Long.MAX_VALUE);
+        long today = Long.MAX_VALUE;
+        if (entity.level() instanceof ServerLevel level) {
+            today = AntiFarming.overworldDay(level);
+        }
+        forget(entity, today < expire);
     }
 
     public static void sendHud(ServerPlayer player) {
@@ -323,7 +444,7 @@ public final class WiseLessons {
         }
     }
 
-    private static void forget(LivingEntity entity) {
+    private static void forget(LivingEntity entity, boolean killed) {
         if (entity == null || !(entity.level() instanceof ServerLevel level)) {
             return;
         }
@@ -335,16 +456,19 @@ public final class WiseLessons {
         if (player == null) {
             return;
         }
-        removeMark(player, entity.getStringUUID());
+        removeMark(player, entity.getStringUUID(), killed);
     }
 
-    private static void removeMark(ServerPlayer player, String uuid) {
+    private static void removeMark(ServerPlayer player, String uuid, boolean killed) {
         List<WiseLessonRules.Lesson> next = new ArrayList<>();
         boolean changed = false;
         for (WiseLessonRules.Lesson lesson : boardOf(player)) {
             WiseLessonRules.Lesson updated = lesson.withoutMob(uuid);
             if (updated != lesson) {
                 changed = true;
+                if (killed) {
+                    creditKill(player, lesson.teacherId(), lesson.size());
+                }
             }
             next.add(updated);
         }
@@ -355,7 +479,53 @@ public final class WiseLessons {
         publish(player, next);
     }
 
-    private static WiseLessonRules.Lesson refresh(WiseLessonRules.Lesson lesson, MinecraftServer server, long today) {
+    /** One teaching offer the first time kills pass half the pack. */
+    private static void creditKill(ServerPlayer player, String teacherId, int size) {
+        if (player == null || teacherId == null || teacherId.isEmpty()) {
+            return;
+        }
+        boolean already = huntSucceeded(player, teacherId);
+        WiseLessonRules.KillCredit credit = WiseLessonRules.creditKill(huntKills(player, teacherId), size, already);
+        setCount(player, EhmAttachments.EHM_WISE_HUNT_KILLS, teacherId, credit.killed());
+        if (!credit.grantOffer()) {
+            return;
+        }
+        List<String> done = new ArrayList<>(player.getAttachedOrElse(EhmAttachments.EHM_WISE_HUNT_SUCCESS, List.of()));
+        if (!done.contains(teacherId)) {
+            done.add(teacherId);
+            player.setAttached(EhmAttachments.EHM_WISE_HUNT_SUCCESS, done);
+        }
+        recordHuntFinished(player, teacherId);
+        grantTeachingOffer(player, teacherId);
+    }
+
+    private static void clearHuntProgress(ServerPlayer player, String teacherId) {
+        if (player == null || teacherId == null || teacherId.isEmpty()) {
+            return;
+        }
+        Map<String, Integer> kills = new HashMap<>(player.getAttachedOrElse(EhmAttachments.EHM_WISE_HUNT_KILLS, Map.of()));
+        if (kills.remove(teacherId) != null) {
+            player.setAttached(EhmAttachments.EHM_WISE_HUNT_KILLS, kills);
+        }
+        List<String> done = player.getAttachedOrElse(EhmAttachments.EHM_WISE_HUNT_SUCCESS, List.of());
+        if (done != null && done.contains(teacherId)) {
+            List<String> next = new ArrayList<>(done);
+            next.remove(teacherId);
+            player.setAttached(EhmAttachments.EHM_WISE_HUNT_SUCCESS, next);
+        }
+    }
+
+    private static int huntKills(ServerPlayer player, String teacherId) {
+        return countOf(player.getAttachedOrElse(EhmAttachments.EHM_WISE_HUNT_KILLS, Map.of()), teacherId);
+    }
+
+    private static boolean huntSucceeded(ServerPlayer player, String teacherId) {
+        List<String> done = player.getAttachedOrElse(EhmAttachments.EHM_WISE_HUNT_SUCCESS, List.of());
+        return teacherId != null && done != null && done.contains(teacherId);
+    }
+
+    private static WiseLessonRules.Lesson refresh(
+            WiseLessonRules.Lesson lesson, MinecraftServer server, long today, ServerPlayer player) {
         if (lesson.mobs() == null || lesson.mobs().isEmpty()) {
             if (lesson.active() && lesson.spawned() >= lesson.size()) {
                 return lesson.withActive(false);
@@ -388,6 +558,9 @@ public final class WiseLessons {
             }
             if (!living.isAlive() || living.isRemoved()) {
                 changed = true;
+                if (today < mark.expireDay()) {
+                    creditKill(player, lesson.teacherId(), lesson.size());
+                }
                 continue;
             }
             long expire = living.getAttachedOrElse(EhmAttachments.EHM_WISE_EXPIRE_DAY, mark.expireDay());
@@ -407,6 +580,49 @@ public final class WiseLessons {
             return lesson;
         }
         return lesson.withSpawn(lesson.spawned(), lesson.spawnWait(), kept, active);
+    }
+
+    private static int countOf(Map<String, Integer> map, String key) {
+        if (map == null || key == null || key.isEmpty()) {
+            return 0;
+        }
+        Integer value = map.get(key);
+        return value == null ? 0 : Math.max(0, value);
+    }
+
+    private static void setCount(
+            ServerPlayer player,
+            net.fabricmc.fabric.api.attachment.v1.AttachmentType<Map<String, Integer>> type,
+            String key,
+            int value) {
+        if (player == null || key == null || key.isEmpty()) {
+            return;
+        }
+        Map<String, Integer> map = new HashMap<>(player.getAttachedOrElse(type, Map.of()));
+        if (value <= 0) {
+            map.remove(key);
+        } else {
+            map.put(key, value);
+        }
+        player.setAttached(type, map);
+    }
+
+    private static void addCount(
+            ServerPlayer player,
+            net.fabricmc.fabric.api.attachment.v1.AttachmentType<Map<String, Integer>> type,
+            String key,
+            int delta) {
+        if (player == null || key == null || key.isEmpty() || delta == 0) {
+            return;
+        }
+        Map<String, Integer> map = new HashMap<>(player.getAttachedOrElse(type, Map.of()));
+        int next = countOf(map, key) + delta;
+        if (next <= 0) {
+            map.remove(key);
+        } else {
+            map.put(key, next);
+        }
+        player.setAttached(type, map);
     }
 
     /**

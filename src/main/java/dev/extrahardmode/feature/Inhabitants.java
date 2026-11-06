@@ -364,6 +364,9 @@ public final class Inhabitants implements FeatureModule {
 
     static void teach(ServerPlayer player, Villager villager, ServerLevel level, InhabitantData.Home home) {
         try {
+            if (WiseLessons.willStartHunt(player, villager, level)) {
+                WiseLessons.grantTeachingOffer(player, villager.getStringUUID());
+            }
             teachServices(player, villager, level, home);
         } finally {
             WiseLessons.onTalk(player, villager, level, home);
@@ -371,82 +374,163 @@ public final class Inhabitants implements FeatureModule {
     }
 
     private static void teachServices(ServerPlayer player, Villager villager, ServerLevel level, InhabitantData.Home home) {
-        String ability = ensureWiseAbility(villager, level);
+        ensureWiseAbility(villager, level);
         String teacherId = villager.getStringUUID();
-        List<String> taughtMana = player.getAttachedOrElse(EhmAttachments.EHM_WISE_MANA, List.of());
-        boolean alreadyMana = InhabitantRules.alreadyTookManaLesson(taughtMana, teacherId);
-        boolean knows = ManaAbilities.knowsAbility(player, ability);
-        boolean taught = ManaAbilities.taughtByWise(player, ability);
-        int emeralds = InventorySearch.count(player, Items.EMERALD);
-        boolean hasDiamond = InventorySearch.count(player, Items.DIAMOND_BLOCK) >= 1;
-        boolean hasLapis = InventorySearch.count(player, Items.LAPIS_BLOCK) >= 1;
+        int offers = WiseLessons.teachingOffers(player, teacherId);
         int price = InhabitantRules.wiseAbilityPrice(home.score());
-        if (InhabitantRules.shouldTeachMana(player.isShiftKeyDown(), hasDiamond, hasLapis, alreadyMana)) {
-            InventorySearch.consume(player, Items.DIAMOND_BLOCK, 1);
-            InventorySearch.consume(player, Items.LAPIS_BLOCK, 1);
-            List<String> next = new ArrayList<>(taughtMana == null ? List.of() : taughtMana);
-            next.add(teacherId);
-            player.setAttached(EhmAttachments.EHM_WISE_MANA, next);
-            Achievements.grantMana(player, 1);
-            player.sendSystemMessage(Component.translatableWithFallback(
-                    "tougher.wise.mana",
-                    "Your mana answers more readily now."));
-            level.playSound(null, villager.blockPosition(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.NEUTRAL, 1.0F, 1.0F);
+        int emeralds = InventorySearch.count(player, Items.EMERALD);
+        int storedMana = Achievements.storedManaLevel(player);
+        if (holdingRedstoneBlock(player)) {
+            int blocks = InventorySearch.count(player, Items.REDSTONE_BLOCK);
+            if (InhabitantRules.canGiveRedstone(offers, blocks)) {
+                giveRedstone(player, villager, level, teacherId, blocks);
+                return;
+            }
+        }
+        String ability = focusAbility(player);
+        if (ability != null && InhabitantRules.canTeachFocus(offers, storedMana, emeralds, price)) {
+            teachFocus(player, villager, level, teacherId, ability, price, InhabitantRules.wiseFocusUses(home.score()));
             return;
         }
-        if (InhabitantRules.shouldTeachAbility(taught, emeralds, price)) {
-            InventorySearch.consume(player, Items.EMERALD, price);
-            ManaAbilities.teachAbility(
-                    player, ability, InhabitantRules.wiseTaughtUses(home.score(), tradeXp(villager)));
+        if (holdingEmeralds(player) && InhabitantRules.canTeachFocus(offers, storedMana, emeralds, price)) {
+            String rolled = InhabitantRules.pickWiseAbility(level.getRandom().nextInt());
+            teachFocus(
+                    player, villager, level, teacherId, rolled, price, InhabitantRules.wiseEmeraldUses(home.score()));
+            return;
+        }
+        explainLesson(player, ability, holdingEmeralds(player), offers, storedMana, price);
+    }
+
+    private static void teachFocus(
+            ServerPlayer player,
+            Villager villager,
+            ServerLevel level,
+            String teacherId,
+            String ability,
+            int price,
+            int uses) {
+        if (price > 0 && !InventorySearch.consume(player, Items.EMERALD, price)) {
+            return;
+        }
+        boolean knows = ManaAbilities.knowsAbility(player, ability);
+        ManaAbilities.grantWiseUses(player, ability, uses);
+        WiseLessons.recordLesson(player, teacherId);
+        WiseLessons.spendTeachingOffer(player, teacherId);
+        Component name = Component.literal(AbilityRules.nameFallback(ability));
+        if (knows) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.wise.freed", "You already knew %s.", name));
+        } else {
             player.sendSystemMessage(Component.translatableWithFallback(
                     "tougher.wise.flavor." + ability, AbilityRules.teacherFlavor(ability)));
-            if (knows) {
-                player.sendSystemMessage(Component.translatableWithFallback(
-                        "tougher.wise.freed",
-                        "You already knew %s. It no longer counts toward the abilities you learn on your own.",
-                        Component.literal(AbilityRules.nameFallback(ability))));
-            } else {
-                String how = AbilityRules.teacherInstruction(ability);
-                if (!how.isEmpty()) {
-                    player.sendSystemMessage(Component.translatableWithFallback(
-                            "tougher.wise.how." + ability, how));
-                }
-                player.sendSystemMessage(Component.translatableWithFallback(
-                        "tougher.wise.learned",
-                        "You have learned %s. It does not count toward the abilities you learn on your own.",
-                        Component.literal(AbilityRules.nameFallback(ability))));
+            String how = AbilityRules.teacherInstruction(ability);
+            if (!how.isEmpty()) {
+                player.sendSystemMessage(Component.translatableWithFallback("tougher.wise.how." + ability, how));
             }
-            level.playSound(null, villager.blockPosition(), SoundEvents.VILLAGER_YES, SoundSource.NEUTRAL, 1.0F, 1.0F);
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.wise.learned", "You have learned %s.", name));
+        }
+        level.playSound(null, villager.blockPosition(), SoundEvents.VILLAGER_YES, SoundSource.NEUTRAL, 1.0F, 1.0F);
+    }
+
+    private static void giveRedstone(
+            ServerPlayer player, Villager villager, ServerLevel level, String teacherId, int blocks) {
+        int gifts = WiseLessons.redstoneGifts(player, teacherId);
+        int take = InhabitantRules.redstoneBlocksTaken(gifts, blocks);
+        if (take <= 0 || !InventorySearch.consume(player, Items.REDSTONE_BLOCK, take)) {
             return;
+        }
+        double gain = InhabitantRules.capacityGain(take);
+        double earned = WiseLessons.addLearningCapacity(player, gain);
+        int base = ConfigManager.world(level).manaLearningCapacity();
+        double effective = Math.max(0, base) + earned;
+        WiseLessons.addRedstoneGift(player, teacherId);
+        WiseLessons.spendTeachingOffer(player, teacherId);
+        String taken = take == 1 ? "1 redstone block" : take + " redstone blocks";
+        player.sendSystemMessage(Component.translatableWithFallback(
+                "tougher.wise.redstone",
+                "Your mana learning rises by %s, to %s. I took %s.",
+                Component.literal(InhabitantRules.learningLabel(gain)),
+                Component.literal(InhabitantRules.learningLabel(effective)),
+                Component.literal(taken)));
+        level.playSound(
+                null, villager.blockPosition(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.NEUTRAL, 1.0F, 1.0F);
+    }
+
+    private static void explainLesson(
+            ServerPlayer player, String ability, boolean emeraldsInHand, int offers, int storedMana, int price) {
+        if (offers <= 0) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.wise.no_offer",
+                    "I can teach when a new hunt is ready for you, or after you kill more than half of a hunt before the marks vanish."));
+        }
+        if ((ability != null || emeraldsInHand) && storedMana < 1) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.wise.need_mana",
+                    "You need a mana level before I will train an ability."));
+        }
+        if (ability != null) {
+            String how = AbilityRules.teacherInstruction(ability);
+            if (!how.isEmpty()) {
+                player.sendSystemMessage(Component.translatableWithFallback("tougher.wise.how." + ability, how));
+            }
+            Component name = Component.literal(AbilityRules.nameFallback(ability));
+            if (price <= 0) {
+                player.sendSystemMessage(Component.translatableWithFallback(
+                        "tougher.wise.price_ability_free",
+                        "I teach %s for free. You gain the house points in uses.",
+                        name));
+            } else {
+                player.sendSystemMessage(Component.translatableWithFallback(
+                        "tougher.wise.price_ability",
+                        "I teach %s for %s emeralds from your pack. You gain the house points in uses.",
+                        name,
+                        Component.literal(Integer.toString(price))));
+            }
+            return;
+        }
+        if (emeraldsInHand) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.wise.emeralds",
+                    "Hand me emeralds and I choose an ability. You gain twice the house points in uses."));
+        } else {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.wise.hold",
+                    "Hold the focus of the ability you want. I take the emeralds from your pack, and you gain the house points in uses. Hold emeralds and I choose an ability for twice the house points. Hold redstone blocks to raise your mana learning."));
         }
         if (price <= 0) {
             player.sendSystemMessage(Component.translatableWithFallback(
-                    "tougher.wise.offer_free",
-                    "I teach %s for free. Speak to me again. Sneak while you carry a diamond block and a lapis lazuli block, and I will raise your mana — once, for you.",
-                    Component.literal(AbilityRules.nameFallback(ability))));
+                    "tougher.wise.price_free", "My price is free."));
         } else {
             player.sendSystemMessage(Component.translatableWithFallback(
-                    "tougher.wise.offer",
-                    "I teach %s, for %s emeralds. Hold them and speak to me again. Sneak while you carry a diamond block and a lapis lazuli block, and I will raise your mana — once, for you.",
-                    Component.literal(AbilityRules.nameFallback(ability)),
+                    "tougher.wise.price",
+                    "My price is %s emeralds.",
                     Component.literal(Integer.toString(price))));
         }
-        if (taught) {
-            player.sendSystemMessage(Component.translatableWithFallback(
-                    "tougher.wise.already",
-                    "I have already taught you %s. It does not count toward what you learn yourself.",
-                    Component.literal(AbilityRules.nameFallback(ability))));
-        } else if (knows) {
-            player.sendSystemMessage(Component.translatableWithFallback(
-                    "tougher.wise.already_known",
-                    "You already know %s. Paying still frees it from the abilities you learn on your own.",
-                    Component.literal(AbilityRules.nameFallback(ability))));
+    }
+
+    private static boolean holdingRedstoneBlock(ServerPlayer player) {
+        return player.getMainHandItem().is(Items.REDSTONE_BLOCK);
+    }
+
+    private static boolean holdingEmeralds(ServerPlayer player) {
+        return player.getMainHandItem().is(Items.EMERALD);
+    }
+
+    /** The ability for the main-hand focus. A tome with experience reads. A redstone block does not. */
+    private static String focusAbility(ServerPlayer player) {
+        ItemStack held = player.getMainHandItem();
+        if (held == null || held.isEmpty() || held.is(Items.REDSTONE_BLOCK)) {
+            return null;
         }
-        if (alreadyMana) {
-            player.sendSystemMessage(Component.translatableWithFallback(
-                    "tougher.wise.mana_done",
-                    "I have already deepened your mana."));
+        String ability = AbilityRules.abilityForItem(ManaAbilities.heldItemId(held));
+        if (ability != null) {
+            return ability;
         }
+        if (ManaAbilities.tomeXp(held) > 0) {
+            return AbilityRules.READ_TOME;
+        }
+        return null;
     }
 
     static String ensureWiseAbility(Villager villager, ServerLevel level) {

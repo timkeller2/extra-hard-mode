@@ -216,23 +216,22 @@ class AchievementRulesTest {
         assertTrue(AchievementRules.manaFromExperience(15, 14));
         assertFalse(AchievementRules.manaFromExperience(15, 15));
         assertTrue(AchievementRules.manaFromExperience(100, 99));
-        assertEquals(20, AchievementRules.MANA_DIE_SIDES);
+        assertEquals(0, AchievementRules.DEFAULT_MANA_LEARNING_CAPACITY);
+        assertEquals(0, AchievementRules.manaDieFaces(0, 0));
+        assertEquals(0, AchievementRules.manaDieFaces(0, 0.9));
+        assertEquals(1, AchievementRules.manaDieFaces(0, 1));
+        assertEquals(1, AchievementRules.manaDieFaces(0, 1.9));
+        assertEquals(20, AchievementRules.manaDieFaces(20, 0));
+        assertEquals(22, AchievementRules.manaDieFaces(20, 2.2));
+        assertEquals(2, AchievementRules.manaDieFaces(-3, 2.2));
+        assertEquals(0, AchievementRules.manaDieFaces(0, Double.NaN));
         assertTrue(AchievementRules.manaDieBeatsBaseLevel(0, 1));
         assertFalse(AchievementRules.manaDieBeatsBaseLevel(1, 1));
         assertTrue(AchievementRules.manaDieBeatsBaseLevel(1, 2));
         assertTrue(AchievementRules.manaDieBeatsBaseLevel(19, 20));
         assertFalse(AchievementRules.manaDieBeatsBaseLevel(20, 20));
-        assertFalse(AchievementRules.manaDieBeatsBaseLevel(21, 20));
-        assertEquals(2, AchievementRules.WISE_MANA_DIE_BONUS_PER_LEVEL);
-        assertEquals(0, AchievementRules.wiseManaDieBonus(0));
-        assertEquals(0, AchievementRules.wiseManaDieBonus(-3));
-        assertEquals(6, AchievementRules.wiseManaDieBonus(3));
-        assertFalse(AchievementRules.manaDieBeatsBaseLevel(20, 18, 1));
-        assertTrue(AchievementRules.manaDieBeatsBaseLevel(20, 19, 1));
-        assertFalse(AchievementRules.manaDieBeatsBaseLevel(22, 20, 1));
-        assertTrue(AchievementRules.manaDieBeatsBaseLevel(23, 20, 2));
-        assertFalse(AchievementRules.manaDieBeatsBaseLevel(24, 20, 2));
-        assertFalse(AchievementRules.manaDieBeatsBaseLevel(20, 20, 0));
+        assertFalse(AchievementRules.manaDieBeatsBaseLevel(5, 5));
+        assertTrue(AchievementRules.manaDieBeatsBaseLevel(5, 6));
     }
 
     @Test

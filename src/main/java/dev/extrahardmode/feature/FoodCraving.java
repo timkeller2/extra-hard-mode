@@ -1,6 +1,6 @@
 package dev.extrahardmode.feature;
 
-/** Desire for one food, from worst to best. Normal draws nothing. */
+/** Desire for one food, from worst to best. Normal is a brown meals-ago number. */
 public enum FoodCraving {
     VERY_SICK,
     SICK,

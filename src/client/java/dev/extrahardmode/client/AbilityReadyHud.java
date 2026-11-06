@@ -151,13 +151,13 @@ public final class AbilityReadyHud {
             return new ItemStack(Items.DIAMOND);
         }
         if (AbilityRules.EMPOWER.equals(ability)) {
-            return new ItemStack(Items.REDSTONE);
+            return new ItemStack(Items.GLOWSTONE_DUST);
         }
         if (AbilityRules.BATTERY.equals(ability)) {
             return new ItemStack(Items.QUARTZ_BLOCK);
         }
         if (AbilityRules.LAPIS_SHIELD.equals(ability)) {
-            return new ItemStack(Items.LAPIS_LAZULI);
+            return new ItemStack(Items.AMETHYST_SHARD);
         }
         if (AbilityRules.WRITE_TOME.equals(ability)) {
             return new ItemStack(Items.BOOK);

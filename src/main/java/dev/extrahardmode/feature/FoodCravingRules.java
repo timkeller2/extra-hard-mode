@@ -24,7 +24,8 @@ public final class FoodCravingRules {
      * define the level, not the extra repeat slots) and eating it keeps that level, so the run
      * grows. A bright-green minus is the oldest meal still inside that run when the run is 7 or
      * more and that food appears only once, so the run holds. A yellow number is how many meals
-     * ago this food was last eaten. Grace still allows one more. Slight means that bite weakens the run.
+     * ago this food was last eaten, once it has left the last 7. A brown number is that same
+     * count for a food still inside the last 7. Grace still allows one more. Slight means that bite weakens the run.
      */
     public static FoodCraving classify(List<String> history, int wellFed, String foodId) {
         if (foodId == null || foodId.isEmpty()) {

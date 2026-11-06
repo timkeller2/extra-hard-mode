@@ -61,7 +61,7 @@ public final class LapisPortals implements FeatureModule {
     private static final String COST_KEY = "tougher.message.portal_cost";
     private static final String COST = "The chest needs %s redstone dust, nether quartz, or amethyst shards.";
     private static final String PAID_KEY = "tougher.message.portal_paid";
-    private static final String PAID = "The portal takes %s.";
+    private static final String PAID = "The portal takes %s. %s.";
     private static final String RECHARGE_KEY = "tougher.message.portal_recharge";
     private static final String RECHARGE = "This portal is recharging. %s";
     private static final String RECHARGE_OTHER_KEY = "tougher.message.portal_recharge_other";
@@ -387,8 +387,12 @@ public final class LapisPortals implements FeatureModule {
                 - LapisPortalRules.total(paid, LapisPortalRules.QUARTZ);
         int spentAmethyst = LapisPortalRules.total(slots, LapisPortalRules.AMETHYST)
                 - LapisPortalRules.total(paid, LapisPortalRules.AMETHYST);
-        tell(player, PAID_KEY, PAID, Component.literal(
-                LapisPortalRules.spentPhrase(spentRedstone, spentQuartz, spentAmethyst)));
+        int leftRedstone = LapisPortalRules.total(paid, LapisPortalRules.REDSTONE);
+        int leftQuartz = LapisPortalRules.total(paid, LapisPortalRules.QUARTZ);
+        int leftAmethyst = LapisPortalRules.total(paid, LapisPortalRules.AMETHYST);
+        tell(player, PAID_KEY, PAID,
+                Component.literal(LapisPortalRules.spentPhrase(spentRedstone, spentQuartz, spentAmethyst)),
+                Component.literal(LapisPortalRules.remainPhrase(leftRedstone, leftQuartz, leftAmethyst)));
     }
 
     private static boolean frameValid(ServerLevel level, BlockPos lower) {

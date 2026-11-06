@@ -23,6 +23,12 @@ public final class FoodCravingOutline {
     private static final float MARK_SCALE = 0.5F;
     private static final int DIGIT_WIDTH = 3;
     private static final int DIGIT_GAP = 1;
+    /** Dark plate and yellow ink for a meal outside the last 7. */
+    private static final int YELLOW_PLATE = 0xFF2E2808;
+    private static final int YELLOW_INK = 0xFFFFE14A;
+    /** Same digits, in brown, for a meal inside the last 7. */
+    private static final int BROWN_PLATE = 0xFF2A160C;
+    private static final int BROWN_INK = 0xFFC68642;
     /** Five rows of three bits. The high bit of each row is the left pixel. */
     private static final int[] DIGIT_BITS = {
         0b111_101_101_101_111,
@@ -52,7 +58,11 @@ public final class FoodCravingOutline {
             return;
         }
         FoodCraving craving = craving(stack);
-        if (craving == null || craving == FoodCraving.NORMAL) {
+        if (craving == null) {
+            return;
+        }
+        int ago = mealsAgo(stack);
+        if (craving == FoodCraving.NORMAL && ago <= 0) {
             return;
         }
         var pose = graphics.pose();
@@ -63,12 +73,10 @@ public final class FoodCravingOutline {
             switch (craving) {
                 case VERY_SICK -> icon(graphics, -MARK, 0, 0xFFE6E6E6, 0xFF141414, "#...#", ".#.#.", "..#..", ".#.#.", "#...#");
                 case SICK -> icon(graphics, -MARK, 0, 0xFF3A2418, 0xFFC4956A, ".....", "#...#", ".#.#.", "..#..", ".....");
-                case SLIGHT, GRACE -> mealsAgoNumber(graphics, mealsAgo(stack));
+                case SLIGHT, GRACE -> mealsAgoNumber(graphics, ago, YELLOW_PLATE, YELLOW_INK);
+                case NORMAL -> mealsAgoNumber(graphics, ago, BROWN_PLATE, BROWN_INK);
                 case MAINTAIN -> icon(graphics, -MARK, 0, 0xFF0A280A, 0xFF55FF55, ".....", ".....", "#####", ".....", ".....");
                 case GREAT -> icon(graphics, -MARK, 0, 0xFF0A280A, 0xFF55FF55, "..#..", ".#.#.", "#...#", ".....", ".....");
-                case NORMAL -> {
-                    // No mark.
-                }
             }
         } finally {
             pose.popMatrix();
@@ -91,11 +99,14 @@ public final class FoodCravingOutline {
 
     public static Component tooltip(ItemStack stack) {
         FoodCraving craving = craving(stack);
+        if (craving == null || (craving == FoodCraving.NORMAL && mealsAgo(stack) <= 0)) {
+            return null;
+        }
         String key = tooltipKey(craving);
         if (key == null) {
             return null;
         }
-        if (craving == FoodCraving.SLIGHT || craving == FoodCraving.GRACE) {
+        if (craving == FoodCraving.SLIGHT || craving == FoodCraving.GRACE || craving == FoodCraving.NORMAL) {
             return Component.translatableWithFallback(
                             key,
                             tooltipFallback(craving),
@@ -108,7 +119,7 @@ public final class FoodCravingOutline {
 
     static FoodCraving craving(ItemStack stack) {
         if (!visible() || stack == null || stack.isEmpty() || stack.get(DataComponents.FOOD) == null) {
-            return FoodCraving.NORMAL;
+            return null;
         }
         ClientboundFoodCravingPayload payload = ExtraHardModeClient.lastFoodCraving();
         return FoodCravingRules.classify(payload.history(), payload.wellFed(), Hunger.itemId(stack));
@@ -130,29 +141,29 @@ public final class FoodCravingOutline {
         return sync == null || !sync.extras().creativeBypasses() || !minecraft.player.isCreative();
     }
 
-    /** Yellow meals-ago count, the same height as the half-size down mark it replaces. */
-    private static void mealsAgoNumber(GuiGraphicsExtractor graphics, int mealsAgo) {
+    /** Meals-ago count at the same half size as the down mark. */
+    private static void mealsAgoNumber(GuiGraphicsExtractor graphics, int mealsAgo, int plate, int ink) {
         if (mealsAgo <= 0) {
             return;
         }
         String digits = Integer.toString(mealsAgo);
         int width = digits.length() * DIGIT_WIDTH + (digits.length() - 1) * DIGIT_GAP;
         int x = -width;
-        graphics.fill(x, 0, x + width, MARK, 0xFF2E2808);
+        graphics.fill(x, 0, x + width, MARK, plate);
         for (int i = 0; i < digits.length(); i++) {
             int value = digits.charAt(i) - '0';
             if (value >= 0 && value < DIGIT_BITS.length) {
-                digit(graphics, x + i * (DIGIT_WIDTH + DIGIT_GAP), DIGIT_BITS[value]);
+                digit(graphics, x + i * (DIGIT_WIDTH + DIGIT_GAP), DIGIT_BITS[value], ink);
             }
         }
     }
 
-    private static void digit(GuiGraphicsExtractor graphics, int x, int bits) {
+    private static void digit(GuiGraphicsExtractor graphics, int x, int bits, int ink) {
         for (int row = 0; row < MARK; row++) {
             int rowBits = (bits >> ((MARK - 1 - row) * DIGIT_WIDTH)) & 0b111;
             for (int col = 0; col < DIGIT_WIDTH; col++) {
                 if (((rowBits >> (DIGIT_WIDTH - 1 - col)) & 1) != 0) {
-                    graphics.fill(x + col, row, x + col + 1, row + 1, 0xFFFFE14A);
+                    graphics.fill(x + col, row, x + col + 1, row + 1, ink);
                 }
             }
         }
@@ -187,7 +198,7 @@ public final class FoodCravingOutline {
             case GRACE -> "tougher.tooltip.food_grace";
             case MAINTAIN -> "tougher.tooltip.food_maintain";
             case GREAT -> "tougher.tooltip.food_great";
-            case NORMAL -> null;
+            case NORMAL -> "tougher.tooltip.food_normal";
         };
     }
 
@@ -199,7 +210,7 @@ public final class FoodCravingOutline {
             case GRACE -> "Within grace, %s";
             case MAINTAIN -> "Maintaining";
             case GREAT -> "Craving";
-            case NORMAL -> "";
+            case NORMAL -> "Eaten %s";
         };
     }
 
@@ -212,7 +223,7 @@ public final class FoodCravingOutline {
             case GRACE -> 0xFFE14A;
             case MAINTAIN -> 0x55FF55;
             case GREAT -> 0x55FF55;
-            case NORMAL -> 0xFFFFFF;
+            case NORMAL -> 0xC68642;
         };
     }
 }

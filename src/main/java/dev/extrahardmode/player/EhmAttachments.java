@@ -95,9 +95,47 @@ public final class EhmAttachments {
     public static final AttachmentType<String> EHM_WISE_ABILITY = AttachmentRegistry.create(
             ExtraHardModeMod.id("wise_ability"),
             builder -> builder.persistent(Codec.STRING).initializer(() -> ""));
-    /** Teacher UUIDs that have already raised this player's mana. Once each. */
-    public static final AttachmentType<List<String>> EHM_WISE_MANA = AttachmentRegistry.create(
-            ExtraHardModeMod.id("wise_mana"),
+    /** Mana learning earned from redstone blocks given to wise teachers. Added to the configured base. */
+    public static final AttachmentType<Double> EHM_MANA_LEARNING = AttachmentRegistry.create(
+            ExtraHardModeMod.id("mana_learning"),
+            builder -> builder.persistent(Codec.DOUBLE).copyOnDeath().initializer(() -> 0.0));
+    /** Unused teaching offers at each wise teacher. Spent on a focus lesson or a redstone-block gift. */
+    public static final AttachmentType<Map<String, Integer>> EHM_WISE_OFFERS = AttachmentRegistry.create(
+            ExtraHardModeMod.id("wise_offers"),
+            builder -> builder.persistent(Codec.unboundedMap(Codec.STRING, Codec.INT))
+                    .copyOnDeath()
+                    .initializer(HashMap::new));
+    /** Completed redstone-block gifts to each wise teacher. The next gift's cap is one more than this, squared. */
+    public static final AttachmentType<Map<String, Integer>> EHM_WISE_REDSTONE = AttachmentRegistry.create(
+            ExtraHardModeMod.id("wise_redstone"),
+            builder -> builder.persistent(Codec.unboundedMap(Codec.STRING, Codec.INT))
+                    .copyOnDeath()
+                    .initializer(HashMap::new));
+    /** Teachers who have taught this player an ability. Older saves record one lesson this way. */
+    public static final AttachmentType<List<String>> EHM_WISE_TAUGHT = AttachmentRegistry.create(
+            ExtraHardModeMod.id("wise_taught"),
+            builder -> builder.persistent(Codec.STRING.listOf()).copyOnDeath().initializer(ArrayList::new));
+    /** Ability lessons given by each wise teacher. A teacher on {@link #EHM_WISE_TAUGHT} counts as one until this grows. */
+    public static final AttachmentType<Map<String, Integer>> EHM_WISE_LESSON_TIMES = AttachmentRegistry.create(
+            ExtraHardModeMod.id("wise_lesson_times"),
+            builder -> builder.persistent(Codec.unboundedMap(Codec.STRING, Codec.INT))
+                    .copyOnDeath()
+                    .initializer(HashMap::new));
+    /** Hunts finished with each wise teacher: more than half the marks killed before they vanished. */
+    public static final AttachmentType<Map<String, Integer>> EHM_WISE_HUNT_WINS = AttachmentRegistry.create(
+            ExtraHardModeMod.id("wise_hunt_wins"),
+            builder -> builder.persistent(Codec.unboundedMap(Codec.STRING, Codec.INT))
+                    .copyOnDeath()
+                    .initializer(HashMap::new));
+    /** Marks killed in the current hunt, per teacher. Reset when that teacher gives a new hunt. */
+    public static final AttachmentType<Map<String, Integer>> EHM_WISE_HUNT_KILLS = AttachmentRegistry.create(
+            ExtraHardModeMod.id("wise_hunt_kills"),
+            builder -> builder.persistent(Codec.unboundedMap(Codec.STRING, Codec.INT))
+                    .copyOnDeath()
+                    .initializer(HashMap::new));
+    /** Teachers whose current hunt has already granted the success lesson. */
+    public static final AttachmentType<List<String>> EHM_WISE_HUNT_SUCCESS = AttachmentRegistry.create(
+            ExtraHardModeMod.id("wise_hunt_success"),
             builder -> builder.persistent(Codec.STRING.listOf()).copyOnDeath().initializer(ArrayList::new));
 
     public static final AttachmentType<UUID> EHM_SILVERFISH_OWNER = AttachmentRegistry.create(
@@ -294,11 +332,12 @@ public final class EhmAttachments {
             builder -> builder.persistent(Codec.unboundedMap(Codec.STRING, Codec.INT))
                     .copyOnDeath()
                     .initializer(HashMap::new));
-    /** Abilities a wise teacher taught. Known, but they do not use a self-learned slot. */
+    /** Older lessons recorded each ability once. New lessons do not read or write this list. */
     public static final AttachmentType<List<String>> EHM_ABILITY_TAUGHT = AttachmentRegistry.create(
             ExtraHardModeMod.id("ability_taught"),
             builder -> builder.persistent(Codec.STRING.listOf()).copyOnDeath().initializer(ArrayList::new));
 
+    /** Earlier saves stored known abilities here. Power no longer reads this list. */
     public static final AttachmentType<List<String>> EHM_ABILITY_LEARNED = AttachmentRegistry.create(
             ExtraHardModeMod.id("ability_learned"),
             builder -> builder.persistent(Codec.STRING.listOf()).copyOnDeath().initializer(ArrayList::new));

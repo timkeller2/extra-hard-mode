@@ -291,6 +291,21 @@ public final class LapisPortalRules {
     }
 
     /**
+     * Fuel still in the paying chest. Names the same items as {@link #spentPhrase} and drops
+     * kinds that are gone. One item uses "remains". More than one item uses "remain".
+     */
+    public static String remainPhrase(int redstone, int quartz, int amethyst) {
+        String named = spentPhrase(redstone, quartz, amethyst);
+        if (named.isEmpty()) {
+            return "No fuel remains in the chest you left";
+        }
+        int kinds = (quartz > 0 ? 1 : 0) + (redstone > 0 ? 1 : 0) + (amethyst > 0 ? 1 : 0);
+        int total = quartz + redstone + amethyst;
+        String verb = kinds == 1 && total == 1 ? " remains" : " remain";
+        return named + verb + " in the chest you left";
+    }
+
+    /**
      * Index of the one other booth with the same positive channel.
      * {@link #PARTNER_NONE} or {@link #PARTNER_AMBIGUOUS} when it does not pair.
      */
