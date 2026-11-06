@@ -241,6 +241,15 @@ class InhabitantRulesTest {
         assertEquals(0, InhabitantRules.movingFee(0, 1));
         assertEquals(1, InhabitantRules.movingFee(-4, 3));
         assertEquals(0, InhabitantRules.movingFee(-8, -2));
+        assertEquals(0, InhabitantRules.residentChunkSpread(0));
+        assertEquals(2, InhabitantRules.residentLoadRadius(0));
+        assertEquals(0, InhabitantRules.residentChunkSpread(-4));
+        assertEquals(1, InhabitantRules.residentChunkSpread(16));
+        assertEquals(3, InhabitantRules.residentLoadRadius(16));
+        assertEquals(2, InhabitantRules.residentChunkSpread(InhabitantRules.SNAP_HOME_RANGE));
+        assertEquals(4, InhabitantRules.residentLoadRadius(InhabitantRules.SNAP_HOME_RANGE));
+        assertEquals(3, InhabitantRules.residentChunkSpread(33));
+        assertEquals(5, InhabitantRules.residentLoadRadius(33));
         assertTrue(InhabitantRules.unseenSpecialties(List.of(), 24).contains(InhabitantRules.JEWELER));
         assertFalse(InhabitantRules.unseenSpecialties(List.of(), 24).contains(InhabitantRules.WEALTHY));
         assertTrue(InhabitantRules.unseenSpecialties(List.of(), 30).contains(InhabitantRules.WEALTHY));

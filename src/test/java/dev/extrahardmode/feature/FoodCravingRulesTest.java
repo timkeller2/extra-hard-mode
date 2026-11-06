@@ -124,6 +124,24 @@ class FoodCravingRulesTest {
     }
 
     @Test
+    void mealsAgoCountsTheLastTimeThatFoodWasEaten() {
+        assertEquals(0, FoodCravingRules.mealsAgo(List.of(), "a"));
+        assertEquals(0, FoodCravingRules.mealsAgo(null, "a"));
+        assertEquals(0, FoodCravingRules.mealsAgo(List.of("a"), ""));
+        assertEquals(0, FoodCravingRules.mealsAgo(List.of("a"), null));
+        assertEquals(0, FoodCravingRules.mealsAgo(List.of("b"), "a"));
+        List<String> meals = List.of("a", "b", "a", "c");
+        assertEquals(2, FoodCravingRules.mealsAgo(meals, "a"));
+        assertEquals(3, FoodCravingRules.mealsAgo(meals, "b"));
+        assertEquals(1, FoodCravingRules.mealsAgo(meals, "c"));
+        assertEquals("", FoodCravingRules.mealsAgoPhrase(0));
+        assertEquals("", FoodCravingRules.mealsAgoPhrase(-1));
+        assertEquals("1 meal ago", FoodCravingRules.mealsAgoPhrase(1));
+        assertEquals("8 meals ago", FoodCravingRules.mealsAgoPhrase(8));
+        assertEquals("64 meals ago", FoodCravingRules.mealsAgoPhrase(64));
+    }
+
+    @Test
     void outlinedCravingsUseDistinctColors() {
         assertEquals(0, FoodCravingRules.outlineArgb(FoodCraving.NORMAL));
         assertEquals(0, FoodCravingRules.outlineArgb(null));

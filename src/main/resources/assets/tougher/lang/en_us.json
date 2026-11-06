@@ -160,6 +160,7 @@
   "tougher.message.inhabitant_move_gone": "That resident is no longer there.",
   "tougher.message.inhabitant_move_score": "%s will not move. That home has %s points, and the job needs %s.",
   "tougher.message.inhabitant_move_fee": "Moving costs %s emeralds.",
+  "tougher.message.inhabitant_move_failed": "That resident could not be moved.",
   "tougher.message.inhabitant_inspect": "%s",
   "tougher.message.inhabitant_lives_here": "%s the %s lives here.",
   "tougher.message.inhabitant_near_villager": "A villager is within 35 blocks, so no resident will appear.",
@@ -314,8 +315,8 @@
   "tougher.message.well_fed_gone": "You are no longer well fed.",
   "tougher.tooltip.food_very_sick": "Very sick of this",
   "tougher.tooltip.food_sick": "Sick of this",
-  "tougher.tooltip.food_slight": "Slight craving",
-  "tougher.tooltip.food_grace": "Within grace",
+  "tougher.tooltip.food_slight": "Slight craving, %s",
+  "tougher.tooltip.food_grace": "Within grace, %s",
   "tougher.tooltip.food_maintain": "Maintaining",
   "tougher.tooltip.food_great": "Craving"
 }

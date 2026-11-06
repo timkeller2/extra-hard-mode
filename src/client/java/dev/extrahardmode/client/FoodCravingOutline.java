@@ -21,6 +21,21 @@ public final class FoodCravingOutline {
     private static final int MARK = 5;
     /** The 5-pixel glyph is drawn at half size so it stays in the corner. */
     private static final float MARK_SCALE = 0.5F;
+    private static final int DIGIT_WIDTH = 3;
+    private static final int DIGIT_GAP = 1;
+    /** Five rows of three bits. The high bit of each row is the left pixel. */
+    private static final int[] DIGIT_BITS = {
+        0b111_101_101_101_111,
+        0b010_110_010_010_111,
+        0b111_001_111_100_111,
+        0b111_001_111_001_111,
+        0b101_101_111_001_001,
+        0b111_100_111_001_111,
+        0b111_100_111_101_111,
+        0b111_001_001_001_001,
+        0b111_101_111_101_111,
+        0b111_101_111_001_111,
+    };
 
     private FoodCravingOutline() {}
 
@@ -48,8 +63,7 @@ public final class FoodCravingOutline {
             switch (craving) {
                 case VERY_SICK -> icon(graphics, -MARK, 0, 0xFFE6E6E6, 0xFF141414, "#...#", ".#.#.", "..#..", ".#.#.", "#...#");
                 case SICK -> icon(graphics, -MARK, 0, 0xFF3A2418, 0xFFC4956A, ".....", "#...#", ".#.#.", "..#..", ".....");
-                case SLIGHT -> icon(graphics, -MARK, 0, 0xFF2E2808, 0xFFFFE14A, ".....", ".#.#.", "..#..", ".....", ".....");
-                case GRACE -> icon(graphics, -MARK, 0, 0xFF2E2808, 0xFFFFE14A, ".....", "#...#", ".#.#.", "..#..", ".....");
+                case SLIGHT, GRACE -> mealsAgoNumber(graphics, mealsAgo(stack));
                 case MAINTAIN -> icon(graphics, -MARK, 0, 0xFF0A280A, 0xFF55FF55, ".....", ".....", "#####", ".....", ".....");
                 case GREAT -> icon(graphics, -MARK, 0, 0xFF0A280A, 0xFF55FF55, "..#..", ".#.#.", "#...#", ".....", ".....");
                 case NORMAL -> {
@@ -81,6 +95,13 @@ public final class FoodCravingOutline {
         if (key == null) {
             return null;
         }
+        if (craving == FoodCraving.SLIGHT || craving == FoodCraving.GRACE) {
+            return Component.translatableWithFallback(
+                            key,
+                            tooltipFallback(craving),
+                            Component.literal(FoodCravingRules.mealsAgoPhrase(mealsAgo(stack))))
+                    .withStyle(style -> style.withColor(tooltipRgb(craving)));
+        }
         return Component.translatableWithFallback(key, tooltipFallback(craving))
                 .withStyle(style -> style.withColor(tooltipRgb(craving)));
     }
@@ -107,6 +128,42 @@ public final class FoodCravingOutline {
             return false;
         }
         return sync == null || !sync.extras().creativeBypasses() || !minecraft.player.isCreative();
+    }
+
+    /** Yellow meals-ago count, the same height as the half-size down mark it replaces. */
+    private static void mealsAgoNumber(GuiGraphicsExtractor graphics, int mealsAgo) {
+        if (mealsAgo <= 0) {
+            return;
+        }
+        String digits = Integer.toString(mealsAgo);
+        int width = digits.length() * DIGIT_WIDTH + (digits.length() - 1) * DIGIT_GAP;
+        int x = -width;
+        graphics.fill(x, 0, x + width, MARK, 0xFF2E2808);
+        for (int i = 0; i < digits.length(); i++) {
+            int value = digits.charAt(i) - '0';
+            if (value >= 0 && value < DIGIT_BITS.length) {
+                digit(graphics, x + i * (DIGIT_WIDTH + DIGIT_GAP), DIGIT_BITS[value]);
+            }
+        }
+    }
+
+    private static void digit(GuiGraphicsExtractor graphics, int x, int bits) {
+        for (int row = 0; row < MARK; row++) {
+            int rowBits = (bits >> ((MARK - 1 - row) * DIGIT_WIDTH)) & 0b111;
+            for (int col = 0; col < DIGIT_WIDTH; col++) {
+                if (((rowBits >> (DIGIT_WIDTH - 1 - col)) & 1) != 0) {
+                    graphics.fill(x + col, row, x + col + 1, row + 1, 0xFFFFE14A);
+                }
+            }
+        }
+    }
+
+    private static int mealsAgo(ItemStack stack) {
+        ClientboundFoodCravingPayload payload = ExtraHardModeClient.lastFoodCraving();
+        if (payload == null || stack == null) {
+            return 0;
+        }
+        return FoodCravingRules.mealsAgo(payload.history(), Hunger.itemId(stack));
     }
 
     private static void icon(
@@ -138,8 +195,8 @@ public final class FoodCravingOutline {
         return switch (craving) {
             case VERY_SICK -> "Very sick of this";
             case SICK -> "Sick of this";
-            case SLIGHT -> "Slight craving";
-            case GRACE -> "Within grace";
+            case SLIGHT -> "Slight craving, %s";
+            case GRACE -> "Within grace, %s";
             case MAINTAIN -> "Maintaining";
             case GREAT -> "Craving";
             case NORMAL -> "";

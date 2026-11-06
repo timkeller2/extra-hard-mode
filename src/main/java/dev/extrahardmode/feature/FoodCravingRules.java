@@ -23,8 +23,8 @@ public final class FoodCravingRules {
      * A bright-green up mark is a craving: the food has left the variety run (the meals that
      * define the level, not the extra repeat slots) and eating it keeps that level, so the run
      * grows. A bright-green minus is the oldest meal still inside that run when the run is 7 or
-     * more and that food appears only once, so the run holds. A yellow down mark weakens it.
-     * The full one is a repeat grace still allows. The small one is only novel.
+     * more and that food appears only once, so the run holds. A yellow number is how many meals
+     * ago this food was last eaten. Grace still allows one more. Slight means that bite weakens the run.
      */
     public static FoodCraving classify(List<String> history, int wellFed, String foodId) {
         if (foodId == null || foodId.isEmpty()) {
@@ -54,6 +54,32 @@ public final class FoodCravingRules {
             return FoodCraving.SLIGHT;
         }
         return FoodCraving.NORMAL;
+    }
+
+    /**
+     * Meals since this food was last eaten, counting that meal as 1. Zero when it is absent.
+     */
+    public static int mealsAgo(List<String> history, String foodId) {
+        if (foodId == null || foodId.isEmpty() || history == null || history.isEmpty()) {
+            return 0;
+        }
+        for (int i = history.size() - 1; i >= 0; i--) {
+            if (foodId.equals(history.get(i))) {
+                return history.size() - i;
+            }
+        }
+        return 0;
+    }
+
+    /** "1 meal ago" or "12 meals ago". Zero is an empty phrase. */
+    public static String mealsAgoPhrase(int mealsAgo) {
+        if (mealsAgo <= 0) {
+            return "";
+        }
+        if (mealsAgo == 1) {
+            return "1 meal ago";
+        }
+        return mealsAgo + " meals ago";
     }
 
     /**

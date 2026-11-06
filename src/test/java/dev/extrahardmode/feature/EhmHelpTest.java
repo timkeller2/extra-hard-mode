@@ -29,9 +29,9 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("at least 1 hunger"));
         assertTrue(String.join(" ", lines).contains("small mark in the top right"));
         assertTrue(String.join(" ", lines).contains("stack on the cursor"));
-        assertTrue(String.join(" ", lines).contains("small yellow down mark is a slight craving"));
-        assertTrue(String.join(" ", lines).contains("yellow down mark is within grace"));
-        assertTrue(String.join(" ", lines).contains("the run weakens"));
+        assertTrue(String.join(" ", lines).contains("yellow number is how many meals ago"));
+        assertTrue(String.join(" ", lines).contains("slight craving when eating it weakens"));
+        assertTrue(String.join(" ", lines).contains("within grace when the repeat still fits"));
         assertTrue(String.join(" ", lines).contains("green minus maintains"));
         assertTrue(String.join(" ", lines).contains("Above the offhand"));
         assertTrue(String.join(" ", lines).contains("appears only once"));

@@ -123,6 +123,11 @@ public final class InhabitantRules {
     private static final List<String> ARMOR_SLOTS = List.of("boots", "helmet", "leggings", "chestplate");
     public static final int WANDER_RANGE = 16;
     public static final int SNAP_HOME_RANGE = 32;
+    /**
+     * Chunk levels at or below this are entity-ticking. A ticket aimed at a full chunk
+     * has to go this many levels lower before the center chunk loads its entities.
+     */
+    public static final int ENTITY_TICKET_EXTRA = 2;
 
     /**
      * The stored resident is gone. A loaded body that is not alive counts immediately.
@@ -580,7 +585,7 @@ public final class InhabitantRules {
     public static List<String> homesResidentLines() {
         return List.of(
                 "Residents: The name over their head is their name and occupation, such as Alden the Jeweler.",
-                "Residents: Clock a resident, then clock another. They trade homes at once. Each refuses a home below their job.",
+                "Residents: Clock a resident, then clock another. They trade homes at once, even far apart. Each refuses a home below their job.",
                 "Residents: A loot collector or council member needs 18. A jeweler, armorsmith, or wise teacher needs 24. A wealthy trader or master armorsmith needs 30. Everyone else needs 12.",
                 "Residents: The trade costs half the points of the finer home, rounded down, in emeralds. Their shop stays until the next restock.",
                 "Residents: Clothes are a villager outfit, so two jewelers may differ. Finer residents wear higher-ranked clothes.",
@@ -685,6 +690,23 @@ public final class InhabitantRules {
         lines.addAll(homesShopLines());
         lines.addAll(homesBountyLines());
         return List.copyOf(lines);
+    }
+
+    /**
+     * Chunks from the bed that can still hold a resident who is at most {@code snapBlocks} away.
+     * A bed on the far edge of its chunk pushes that resident one chunk further.
+     */
+    public static int residentChunkSpread(int snapBlocks) {
+        int blocks = Math.max(0, snapBlocks);
+        return (15 + blocks) / 16;
+    }
+
+    /**
+     * Ticket radius that entity-ticks every chunk {@link #residentChunkSpread(int)} can name.
+     * Vanilla's full-chunk ticket level is two above entity ticking, so the radius adds that.
+     */
+    public static int residentLoadRadius(int snapBlocks) {
+        return residentChunkSpread(snapBlocks) + ENTITY_TICKET_EXTRA;
     }
 
     public static boolean farEnough(int dx, int dz, int spacing) {
