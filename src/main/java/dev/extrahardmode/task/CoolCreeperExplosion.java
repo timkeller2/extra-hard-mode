@@ -3,6 +3,7 @@ package dev.extrahardmode.task;
 import dev.extrahardmode.api.ExplosionType;
 import dev.extrahardmode.config.MonsterConfig;
 import dev.extrahardmode.feature.Explosions;
+import dev.extrahardmode.feature.WiseLessons;
 import dev.extrahardmode.feature.monster.Creepers;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -106,6 +107,9 @@ public final class CoolCreeperExplosion {
             return;
         }
         exploded = true;
+        if (!creeper.isRemoved()) {
+            WiseLessons.onCreeperExploded(creeper);
+        }
         Vec3 pos = creeper.isRemoved() ? lastPos : creeper.position();
         Explosions.createFromModule(level, Creepers.ID, pos, type, creeper);
         if (!creeper.isRemoved()) {

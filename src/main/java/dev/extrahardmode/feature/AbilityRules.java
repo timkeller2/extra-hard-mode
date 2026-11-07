@@ -70,11 +70,16 @@ public final class AbilityRules {
     /** 3 seconds, in ticks, removed per point of mana level plus skill. */
     public static final int COOLDOWN_REDUCE_PER_POINT_TICKS = 60;
     public static final int COOLDOWN_MIN_TICKS = 20;
-    /** Magic arrow cooldown starts at this many seconds, then subtracts skill. */
+    /** Missile Storm cooldown starts at this many seconds, then subtracts skill. */
     public static final int FIRE_BOLT_COOLDOWN_SECONDS = 10;
     /** Extra catalyst in hand when two are consumed. */
     public static final int CATALYST_BONUS = 2;
-    /** Charcoal in the hotbar or backpack adds this to Magic Arrow and is spent one at a time. */
+    /**
+     * More than this many arrows in hand doubles Missile Storm. The levels added are capped at
+     * the square root of that stack, rounded down, and that many arrows are consumed.
+     */
+    public static final int MISSILE_STORM_HAND = 3;
+    /** Charcoal in the hotbar or backpack adds this to Missile Storm and is spent one at a time. */
     public static final int CHARCOAL_ARROW_BONUS = 2;
     /** Phantom membrane in the hotbar or backpack adds this to Flight and is spent one at a time. */
     public static final int FLIGHT_MEMBRANE_BONUS = 3;
@@ -479,7 +484,7 @@ public final class AbilityRules {
         return switch (ability) {
             case HEAL -> "Healing";
             case IRON_HEART -> "Iron Heart";
-            case MAGIC_ARROW -> "Magic arrow";
+            case MAGIC_ARROW -> "Missile Storm";
             case FLIGHT -> "Flight";
             case GROW -> "Let it grow";
             case POWER_MINE -> "Power mining";
@@ -506,7 +511,7 @@ public final class AbilityRules {
         return switch (ability) {
             case HEAL -> "Mercy is a craft. I can put it in your hands.";
             case IRON_HEART -> "There is a second heart, if you ask the iron to remember you.";
-            case MAGIC_ARROW -> "An arrow can be taught to want a target, and charcoal still remembers the fire.";
+            case MAGIC_ARROW -> "A handful of arrows can be taught to hunt together, and charcoal still remembers the fire.";
             case FLIGHT -> "The sky is only heavy if you agree that it is.";
             case GROW -> "Green things listen, if you speak with a hoe.";
             case POWER_MINE -> "Stone yields to a pick that has been properly introduced.";
@@ -536,7 +541,7 @@ public final class AbilityRules {
             case IRON_HEART ->
                 "Hold an iron ingot and double-right-click. Double-right-click again with an ingot to cancel your own.";
             case MAGIC_ARROW ->
-                "Hold an arrow and double-right-click. It seeks a creature along your aim. Charcoal in your inventory adds +2 and makes it burn. It costs 1 mana.";
+                "Hold an arrow and double-right-click. One arrow per level seeks a hostile in range, and each deals that much magic damage. More than 3 arrows doubles the level, up to the square root of the arrows in hand. Charcoal in your inventory adds +2 and makes them burn. It costs 1 mana.";
             case FLIGHT -> "Hold a feather and double-right-click. Jump to rise, sneak in the air to descend, and sneak on a block to stop.";
             case GROW -> "Hold any hoe and double-right-click a plant. It costs 1 mana and some hoe durability.";
             case POWER_MINE -> "Hold any pickaxe and double-right-click. Hardened stone stops eating extra durability for a while.";
@@ -581,7 +586,7 @@ public final class AbilityRules {
         return List.of(
                 "healing",
                 "iron heart",
-                "magic arrow",
+                "missile storm",
                 "flight",
                 "grow",
                 "power mine",
@@ -609,7 +614,7 @@ public final class AbilityRules {
         return switch (key) {
             case "heal", "healing" -> HEAL;
             case "iron heart", "ironheart" -> IRON_HEART;
-            case "fire bolt", "firebolt", "magic arrow", "magicarrow" -> MAGIC_ARROW;
+            case "fire bolt", "firebolt", "magic arrow", "magicarrow", "missile storm", "missilestorm" -> MAGIC_ARROW;
             case "flight" -> FLIGHT;
             case "grow", "let it grow", "letitgrow" -> GROW;
             case "power mine", "power mining", "powermine" -> POWER_MINE;
@@ -652,11 +657,12 @@ public final class AbilityRules {
                     "Iron Heart: If it ends and you still have mana, another mana is spent and it continues, and you gain skill as if you cast it again.",
                     "Iron Heart: A renew spends an ingot only when you are holding one, and that one adds +2.");
             case MAGIC_ARROW -> List.of(
-                    "Magic arrow: Double-right-click while holding an arrow. Costs 1 mana. The arrow seeks the nearest creature along your aim.",
-                    "Magic arrow: Damage is 3 times your ability level. Range scales with ability level. Cooldown is 10 seconds minus skill.",
-                    "Magic arrow: Every 3 ability levels, rounded down, launches another arrow at a different creature. That costs nothing more.",
-                    "Magic arrow: Charcoal in your hotbar or inventory, not a bundle, adds +2. One charcoal is consumed, and the arrows burn.",
-                    "Magic arrow: One arrow is consumed. Two in hand consume both and add +2.");
+                    "Missile Storm: Double-right-click while holding an arrow. Costs 1 mana. It launches one arrow per level, rounded down, and each deals that much magic damage.",
+                    "Missile Storm: Magic damage ignores armor. Skeletons do not deflect it. Witches resist it. Range scales with level. Cooldown is 10 seconds minus skill.",
+                    "Missile Storm: Arrows seek hostiles in range. One hostile can be hit more than once. They spread so a shot does not overkill while another target can take it.",
+                    "Missile Storm: Charcoal in your hotbar or inventory, not a bundle, adds +2. One charcoal is consumed, and the arrows burn.",
+                    "Missile Storm: One arrow is consumed. Two or three consume two and add +2.",
+                    "Missile Storm: More than 3 arrows doubles your level, adding at most the square root of those arrows, rounded down. You consume that many, so 4 arrows still costs 2.");
             case FLIGHT -> List.of(
                     "Flight: Double-right-click while holding a feather. Costs 1 mana. Jump to rise, sneak in the air to descend, and sneak on a block to stop.",
                     "Flight: Speed scales with ability level and reaches 70% of walking speed at 10.",
@@ -838,7 +844,7 @@ public final class AbilityRules {
                 "Paper: Healing",
                 "Iron ingot: Iron Heart",
                 "Feather: Flight",
-                "Arrow: Magic arrow",
+                "Arrow: Missile Storm",
                 "Any hoe: Let it grow",
                 "Any pickaxe: Power mining",
                 "Compass: Detect ore",
@@ -855,8 +861,8 @@ public final class AbilityRules {
                 "Every ability's level is its skill plus item bonuses, minus 2, and at least 0.",
                 "Below 1 the cast is practice: mana and focus are spent, the cooldown starts, and you gain one use. Diamond Skin practices below 2 and keeps the diamond. Read Tome keeps the tome.",
                 "Redstone dust in the offhand adds half your skill, up to the square root of that stack rounded down. Success consumes that bonus, rounded down. Practice keeps the dust.",
-                "Hold a focus and he teaches that ability for the house points in uses. A 24-point home charges 30 emeralds from your inventory; each point above takes 2 off, down to free.",
-                "Hold emeralds and he picks an ability at random for twice the house points. You need a mana level. A new hunt, or killing more than half the marks, offers the lesson.",
+                "Hold a focus and he teaches that ability for half the house points in uses. At 24 points, 30 emeralds from inventory or either hand; each point above takes 2 off, down to free.",
+                "Hold emeralds and he picks an ability at random for the house points. A new hunt, or killing more than half the marks, offers the lesson.",
                 "Hold redstone blocks. The first gift takes 1, then up to 4, 9, and so on. Mana learning grows by the square root of the blocks he takes.",
                 "Type /tougher ability help <name> for one ability.");
     }
@@ -1016,7 +1022,7 @@ public final class AbilityRules {
     /**
      * Extra ability level from held supplies: extra catalyst in hand, hoe/pickaxe
      * material, the largest hotbar or backpack nether quartz stack for Detect ore,
-     * charcoal in that same inventory for Magic Arrow, and a phantom membrane there for Flight.
+     * charcoal in that same inventory for Missile Storm, and a phantom membrane there for Flight.
      * {@code quartzStack} is that one stack's count, not a sum and not a bundle.
      */
     public static int supplyBonus(
@@ -1064,6 +1070,9 @@ public final class AbilityRules {
         if (DETECT_ORE.equals(ability) || SMITE_EVIL.equals(ability)) {
             return bonus;
         }
+        if (MAGIC_ARROW.equals(ability) && heldCount > MISSILE_STORM_HAND) {
+            return bonus;
+        }
         return bonus + catalystBonus(heldCount);
     }
 
@@ -1077,7 +1086,7 @@ public final class AbilityRules {
         return Math.max(0.0, basePower(uses)) + Math.max(0, itemBonus);
     }
 
-    /** Magic arrow uses a 10-second cooldown that shrinks with skill. Mana level does not change it or its power. */
+    /** Missile Storm uses a 10-second cooldown that shrinks with skill. Mana level does not change it or its power. */
     public static boolean usesShortCooldown(String ability) {
         return MAGIC_ARROW.equals(ability);
     }
@@ -1347,22 +1356,112 @@ public final class AbilityRules {
         return FIRE_BASE_RANGE + Math.max(0.0, power) * 2.0;
     }
 
-    /** Hit damage for Magic arrow: ability level times 3, rounded. */
-    public static int projectileDamage(double power) {
-        return (int) Math.round(Math.max(0.0, power) * 3.0);
+    /**
+     * Levels added for a Missile Storm cast when the hand holds more than {@link #MISSILE_STORM_HAND}
+     * arrows. That added amount is the base level, rounded down, and at most the square root of the
+     * stack, rounded down. Two or three arrows keep the ordinary catalyst bonus instead.
+     */
+    public static int missileStormArrowBonus(double baseLevel, int heldArrows) {
+        if (heldArrows <= MISSILE_STORM_HAND || !(baseLevel > 0.0)) {
+            return 0;
+        }
+        int cap = (int) Math.floor(Math.sqrt(heldArrows));
+        int doubling = (int) Math.floor(baseLevel);
+        if (cap <= 0 || doubling <= 0) {
+            return 0;
+        }
+        return Math.min(doubling, cap);
     }
 
-    /** Seconds a charcoal-fed Magic arrow burns its target. This stays the rounded ability level. */
+    /** Arrows spent by one Missile Storm cast. Four arrows still costs 2 when the bonus is 2. */
+    public static int missileStormArrowsToConsume(double baseLevel, int heldArrows) {
+        if (heldArrows <= 0) {
+            return 0;
+        }
+        if (heldArrows <= MISSILE_STORM_HAND) {
+            return catalystConsumeCount(heldArrows);
+        }
+        int bonus = missileStormArrowBonus(baseLevel, heldArrows);
+        return bonus <= 0 ? 1 : Math.min(heldArrows, bonus);
+    }
+
+    /** Effective level after the Missile Storm arrow bonus. Other abilities are unchanged. */
+    public static double missileStormLevel(double baseLevel, int heldArrows) {
+        return baseLevel + missileStormArrowBonus(baseLevel, heldArrows);
+    }
+
+    /** Shots in the volley, and the magic damage of each one: the effective level, rounded down. */
+    public static int projectileDamage(double power) {
+        return Math.max(0, (int) Math.floor(Math.max(0.0, power)));
+    }
+
+    /** Seconds a charcoal-fed Missile Storm arrow burns its target. This stays the rounded ability level. */
     public static int projectileBurnSeconds(double power) {
         return Math.max(0, (int) Math.round(Math.max(0.0, power)));
     }
 
-    /** Extra shots besides the first: one per 3 ability levels, rounded down. */
-    public static int extraProjectileCount(double power) {
-        if (power <= 0.0) {
-            return 0;
+    /**
+     * One target index per shot. A nearer aim score is preferred. A shot goes to a hostile that can
+     * take the whole hit, then to one that is still alive, then stacks on the nearest living hostile.
+     */
+    public static int[] assignMissileShots(int shots, int damage, double[] health, double[] aimScore) {
+        if (shots <= 0 || health == null || health.length == 0) {
+            return new int[0];
         }
-        return (int) Math.floor(power / 3.0);
+        int hit = Math.max(0, damage);
+        double[] left = new double[health.length];
+        for (int i = 0; i < health.length; i++) {
+            left[i] = health[i];
+        }
+        int[] assigned = new int[shots];
+        for (int shot = 0; shot < shots; shot++) {
+            int pick = missileCandidate(health, left, aimScore, hit, true);
+            if (pick < 0) {
+                pick = missileCandidate(health, left, aimScore, hit, false);
+            }
+            if (pick < 0) {
+                pick = missileCandidate(health, null, aimScore, hit, false);
+            }
+            assigned[shot] = pick;
+            if (pick >= 0 && hit > 0) {
+                left[pick] -= hit;
+            }
+        }
+        return assigned;
+    }
+
+    /**
+     * Lowest aim score among living hostiles. {@code requireFull} keeps a target whose remaining
+     * health can absorb {@code hit}. Otherwise any remaining health above 0 qualifies. A null
+     * {@code left} uses the original health, so a later shot may stack after the target is spent.
+     */
+    private static int missileCandidate(
+            double[] health, double[] left, double[] aimScore, int hit, boolean requireFull) {
+        int best = -1;
+        double bestAim = 0.0;
+        for (int i = 0; i < health.length; i++) {
+            if (!(health[i] > 0.0)) {
+                continue;
+            }
+            double pool = left == null ? health[i] : left[i];
+            if (left == null) {
+                if (!(pool > 0.0)) {
+                    continue;
+                }
+            } else if (requireFull) {
+                if (pool < hit) {
+                    continue;
+                }
+            } else if (!(pool > 0.0)) {
+                continue;
+            }
+            double score = aimScore == null || i >= aimScore.length ? 0.0 : aimScore[i];
+            if (best < 0 || score < bestAim) {
+                best = i;
+                bestAim = score;
+            }
+        }
+        return best;
     }
 
     /**
@@ -1902,7 +2001,7 @@ public final class AbilityRules {
 
     /**
      * 2 minutes minus 3 seconds per (mana level + skill), minimum 1 second.
-     * Hits the 1-second floor at combined rating 40. Magic arrow uses
+     * Hits the 1-second floor at combined rating 40. Missile Storm uses
      * {@link #FIRE_BOLT_COOLDOWN_SECONDS} minus skill instead. Mana level does not change that cooldown.
      */
     public static int cooldownTicks(int manaLevel, int uses) {

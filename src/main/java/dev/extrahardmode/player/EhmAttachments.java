@@ -133,6 +133,15 @@ public final class EhmAttachments {
             builder -> builder.persistent(Codec.unboundedMap(Codec.STRING, Codec.INT))
                     .copyOnDeath()
                     .initializer(HashMap::new));
+    /**
+     * Roles waiting to spawn again after a hunt creeper detonates.
+     * The key is the teacher id. The value is comma-separated lead, final, or mark.
+     */
+    public static final AttachmentType<Map<String, String>> EHM_WISE_RESPAWN = AttachmentRegistry.create(
+            ExtraHardModeMod.id("wise_respawn"),
+            builder -> builder.persistent(Codec.unboundedMap(Codec.STRING, Codec.STRING))
+                    .copyOnDeath()
+                    .initializer(HashMap::new));
     /** Teachers whose current hunt has already granted the success lesson. */
     public static final AttachmentType<List<String>> EHM_WISE_HUNT_SUCCESS = AttachmentRegistry.create(
             ExtraHardModeMod.id("wise_hunt_success"),
@@ -351,7 +360,7 @@ public final class EhmAttachments {
                     .initializer(HashMap::new));
     public static final AttachmentType<Integer> EHM_FIREBOLT_POWER = AttachmentRegistry.create(
             ExtraHardModeMod.id("firebolt_power"), builder -> builder.persistent(Codec.INT).initializer(() -> 0));
-    /** Burn time in seconds for a charcoal-fed magic arrow. Separate from the damage stored in {@link #EHM_FIREBOLT_POWER}. */
+    /** Burn time in seconds for a charcoal-fed Missile Storm arrow. Separate from the damage stored in {@link #EHM_FIREBOLT_POWER}. */
     public static final AttachmentType<Integer> EHM_FIREBOLT_BURN = AttachmentRegistry.create(
             ExtraHardModeMod.id("firebolt_burn"), builder -> builder.persistent(Codec.INT).initializer(() -> 0));
     public static final AttachmentType<UUID> EHM_FIREBOLT_TARGET = AttachmentRegistry.create(
@@ -690,6 +699,10 @@ public final class EhmAttachments {
     public static final AttachmentType<Boolean> EHM_WISE_LESSON_FINAL = AttachmentRegistry.create(
             ExtraHardModeMod.id("wise_lesson_final"),
             builder -> builder.persistent(Codec.BOOL).initializer(() -> Boolean.FALSE));
+
+    /** Set when this hunt creeper detonates, so the explosion paths queue one replacement. */
+    public static final AttachmentType<Boolean> EHM_WISE_EXPLODED = AttachmentRegistry.create(
+            ExtraHardModeMod.id("wise_exploded"), builder -> builder.initializer(() -> Boolean.FALSE));
 
     public static final AttachmentType<Long> EHM_WISE_EXPIRE_DAY = AttachmentRegistry.create(
             ExtraHardModeMod.id("wise_lesson_expire"),

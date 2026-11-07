@@ -295,6 +295,7 @@ public final class AbilityReadyRules {
             int itemBonus = itemBonus(ability, bestCount, quartzStack, honey, bestHoe, bestPick);
             double level = AbilityRules.power(ability, useCount, itemBonus, levelOffset);
             level += Math.max(0.0, empowerBonus);
+            level = missileStormLevel(ability, level, bestCount);
             if (level > MIN_LEVEL) {
                 ready.add(new StrongCast(ability, level));
             }
@@ -443,6 +444,7 @@ public final class AbilityReadyRules {
             int itemBonus = itemBonus(ability, bestCount, quartzStack, honey, bestHoe, bestPick);
             double level = AbilityRules.power(ability, useCount, itemBonus, levelOffset, offhandRedstone);
             level += Math.max(0.0, empowerBonus);
+            level = missileStormLevel(ability, level, bestCount);
             if (!includeIcon(level, holdingBook, running, seconds > 0, held)) {
                 continue;
             }
@@ -514,7 +516,10 @@ public final class AbilityReadyRules {
         }
         String catalyst = catalystId(ability);
         if (catalyst != null) {
-            bonus += AbilityRules.catalystBonus(bestCount.getOrDefault(catalyst, 0));
+            int count = bestCount.getOrDefault(catalyst, 0);
+            if (!(AbilityRules.MAGIC_ARROW.equals(ability) && count > AbilityRules.MISSILE_STORM_HAND)) {
+                bonus += AbilityRules.catalystBonus(count);
+            }
         }
         if (AbilityRules.MAGIC_ARROW.equals(ability)
                 && bestCount.getOrDefault(AbilityRules.CHARCOAL_ID, 0) > 0) {
@@ -529,6 +534,15 @@ public final class AbilityReadyRules {
             bonus += AbilityRules.lapisCastBonus(true);
         }
         return bonus;
+    }
+
+    /** Missile Storm's arrow doubling is applied after skill, items, offset, and Empower. */
+    static double missileStormLevel(String ability, double level, Map<String, Integer> bestCount) {
+        if (!AbilityRules.MAGIC_ARROW.equals(ability)) {
+            return level;
+        }
+        int arrows = bestCount == null ? 0 : bestCount.getOrDefault(AbilityRules.ARROW_ID, 0);
+        return AbilityRules.missileStormLevel(level, arrows);
     }
 
     static String catalystId(String ability) {

@@ -85,7 +85,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
 
-/** Mana abilities: heal, iron heart, magic arrow, flight, let it grow, power mining, detect ore, slow, sense evil, smite evil, master builder, diamond skin, empower, battery, amethyst shield, write tome, read tome. */
+/** Mana abilities: heal, iron heart, missile storm, flight, let it grow, power mining, detect ore, slow, sense evil, smite evil, master builder, diamond skin, empower, battery, amethyst shield, write tome, read tome. */
 public final class ManaAbilities implements FeatureModule {
     public static final Identifier ID = ExtraHardModeMod.id("mana_abilities");
     /** Look range for Amethyst Shield when the click itself did not land on a character. */
@@ -1850,24 +1850,32 @@ public final class ManaAbilities implements FeatureModule {
             return true;
         }
         boolean charcoal = InventorySearch.hasOneMain(player, Items.CHARCOAL);
-        int bonus = AbilityRules.catalystBonus(player.getMainHandItem().getCount())
-                + AbilityRules.charcoalArrowBonus(charcoal);
-        double power = abilityPower(player, AbilityRules.MAGIC_ARROW, bonus);
+        int held = player.getMainHandItem().getCount();
+        int bonus = AbilityRules.charcoalArrowBonus(charcoal);
+        if (held <= AbilityRules.MISSILE_STORM_HAND) {
+            bonus += AbilityRules.catalystBonus(held);
+        }
+        double base = abilityPower(player, AbilityRules.MAGIC_ARROW, bonus);
+        double power = AbilityRules.missileStormLevel(base, held);
         double range = AbilityRules.fireRange(power);
-        LivingEntity target = fireTarget(player, clicked, range);
-        if (target == null) {
+        List<LivingEntity> hostiles = missileTargets(player, clicked, range);
+        if (hostiles.isEmpty()) {
             return false;
         }
         if (blockedByCooldownOrMana(
-                player, AbilityRules.MAGIC_ARROW, "tougher.ability.magic_arrow", "Magic arrow")) {
+                player, AbilityRules.MAGIC_ARROW, "tougher.ability.magic_arrow", "Missile Storm")) {
             return true;
         }
-        if (practiceInstead(player, AbilityRules.MAGIC_ARROW, Items.ARROW, power)) {
+        if (AbilityRules.practices(AbilityRules.MAGIC_ARROW, power)) {
+            consumeMissileArrows(player, base);
+            spend(player, null, AbilityRules.MAGIC_ARROW);
+            tellPractice(player, AbilityRules.MAGIC_ARROW);
             return true;
         }
-        hurlArrowVolley(player, power, range, target, charcoal);
+        hurlMissileStorm(player, power, hostiles, charcoal);
         castEffect(player, SoundEvents.ARROW_SHOOT, ParticleTypes.CRIT, ParticleTypes.ENCHANTED_HIT);
-        spend(player, Items.ARROW, AbilityRules.MAGIC_ARROW);
+        consumeMissileArrows(player, base);
+        spend(player, null, AbilityRules.MAGIC_ARROW);
         if (charcoal) {
             InventorySearch.consumeOneMain(player, Items.CHARCOAL);
         }
@@ -2569,6 +2577,9 @@ public final class ManaAbilities implements FeatureModule {
     public static String meLineValue(ServerPlayer player, AbilityRules.AbilitySkill skill) {
         int bonus = supplyBonus(player, skill.id());
         double effective = abilityPower(player, skill.id(), bonus);
+        if (AbilityRules.MAGIC_ARROW.equals(skill.id()) && player.getMainHandItem().is(Items.ARROW)) {
+            effective = AbilityRules.missileStormLevel(effective, player.getMainHandItem().getCount());
+        }
         return AbilityRules.powerLabel(skill.skill()) + " (" + AbilityRules.powerLabel(effective) + ")";
     }
 
@@ -2839,8 +2850,17 @@ public final class ManaAbilities implements FeatureModule {
             hoeBonus += AbilityRules.detectOreQuartzBonus(
                     InventorySearch.largestMainStack(player, Items.QUARTZ));
         } else if (held.is(Items.ARROW)) {
-            hoeBonus += AbilityRules.catalystBonus(held.getCount());
-            hoeBonus += AbilityRules.charcoalArrowBonus(InventorySearch.hasOneMain(player, Items.CHARCOAL));
+            boolean charcoal = InventorySearch.hasOneMain(player, Items.CHARCOAL);
+            int count = held.getCount();
+            if (count > AbilityRules.MISSILE_STORM_HAND) {
+                double base = abilityPower(
+                        player, AbilityRules.MAGIC_ARROW, AbilityRules.charcoalArrowBonus(charcoal));
+                hoeBonus += AbilityRules.missileStormArrowBonus(base, count);
+                hoeBonus += AbilityRules.charcoalArrowBonus(charcoal);
+            } else {
+                hoeBonus += AbilityRules.catalystBonus(count);
+                hoeBonus += AbilityRules.charcoalArrowBonus(charcoal);
+            }
         } else if (held.is(Items.AMETHYST_SHARD)) {
             hoeBonus += AbilityRules.catalystBonus(held.getCount());
             hoeBonus += AbilityRules.lapisCastBonus(InventorySearch.hasOneMain(player, Items.LAPIS_LAZULI));
@@ -3656,13 +3676,64 @@ public final class ManaAbilities implements FeatureModule {
         markHandled(player);
     }
 
-    static void hurlArrowVolley(
-            ServerPlayer player, double power, double range, LivingEntity primary, boolean burn) {
-        int burnSeconds = burn ? AbilityRules.projectileBurnSeconds(power) : 0;
-        hurlMagicArrow(player, power, primary, player.getLookAngle(), burnSeconds);
-        for (LivingEntity extra : extraFireTargets(player, range, primary, AbilityRules.extraProjectileCount(power))) {
-            hurlMagicArrow(player, power, extra, aimAt(player, extra), burnSeconds);
+    static void consumeMissileArrows(ServerPlayer player, double baseLevel) {
+        ItemStack held = player.getMainHandItem();
+        if (!held.is(Items.ARROW)) {
+            return;
         }
+        int take = AbilityRules.missileStormArrowsToConsume(baseLevel, held.getCount());
+        if (take > 0) {
+            held.shrink(Math.min(take, held.getCount()));
+        }
+    }
+
+    static void hurlMissileStorm(ServerPlayer player, double power, List<LivingEntity> hostiles, boolean burn) {
+        int shots = AbilityRules.projectileDamage(power);
+        if (shots <= 0 || hostiles == null || hostiles.isEmpty()) {
+            return;
+        }
+        Vec3 eye = player.getEyePosition();
+        Vec3 look = player.getLookAngle();
+        double[] health = new double[hostiles.size()];
+        double[] aim = new double[hostiles.size()];
+        for (int i = 0; i < hostiles.size(); i++) {
+            LivingEntity living = hostiles.get(i);
+            health[i] = living.getHealth();
+            aim[i] = aimScore(eye, look, living);
+        }
+        int[] plan = AbilityRules.assignMissileShots(shots, shots, health, aim);
+        int burnSeconds = burn ? AbilityRules.projectileBurnSeconds(power) : 0;
+        for (int index : plan) {
+            if (index < 0 || index >= hostiles.size()) {
+                continue;
+            }
+            LivingEntity target = hostiles.get(index);
+            hurlMagicArrow(player, power, target, aimAt(player, target), burnSeconds);
+        }
+    }
+
+    static List<LivingEntity> missileTargets(ServerPlayer caster, LivingEntity clicked, double range) {
+        if (range <= 0.0) {
+            return List.of();
+        }
+        ServerLevel level = (ServerLevel) caster.level();
+        Vec3 eye = caster.getEyePosition();
+        AABB box = caster.getBoundingBox().inflate(range);
+        List<LivingEntity> found = new ArrayList<>(level.getEntitiesOfClass(
+                LivingEntity.class,
+                box,
+                living -> isMissileTarget(caster, living) && eye.distanceTo(living.getEyePosition()) <= range));
+        if (clicked != null
+                && isMissileTarget(caster, clicked)
+                && eye.distanceTo(clicked.getEyePosition()) <= range
+                && !found.contains(clicked)) {
+            found.add(clicked);
+        }
+        return found;
+    }
+
+    static boolean isMissileTarget(ServerPlayer caster, LivingEntity target) {
+        return target != caster && target.isAlive() && target instanceof Enemy && !(target instanceof Player);
     }
 
     static void hurlMagicArrow(
@@ -3681,38 +3752,6 @@ public final class ManaAbilities implements FeatureModule {
     static Vec3 aimAt(ServerPlayer player, LivingEntity target) {
         Vec3 aim = target.getEyePosition().subtract(player.getEyePosition());
         return aim.lengthSqr() < 1.0e-6 ? player.getLookAngle() : aim;
-    }
-
-    /**
-     * Other living creatures within range, nearest the aim first.
-     * Fewer creatures means fewer extra shots. The primary target is skipped.
-     */
-    static List<LivingEntity> extraFireTargets(ServerPlayer caster, double range, LivingEntity primary, int count) {
-        if (count <= 0 || range <= 0.0) {
-            return List.of();
-        }
-        ServerLevel level = (ServerLevel) caster.level();
-        Vec3 eye = caster.getEyePosition();
-        AABB box = caster.getBoundingBox().inflate(range);
-        List<LivingEntity> found = new ArrayList<>(level.getEntitiesOfClass(
-                LivingEntity.class,
-                box,
-                living -> isFireable(caster, living)
-                        && living != primary
-                        && eye.distanceTo(living.getEyePosition()) <= range));
-        if (found.isEmpty()) {
-            return List.of();
-        }
-        Vec3 look = caster.getLookAngle();
-        found.sort((a, b) -> {
-            int aim = Double.compare(aimScore(eye, look, a), aimScore(eye, look, b));
-            if (aim != 0) {
-                return aim;
-            }
-            return Double.compare(eye.distanceTo(a.getEyePosition()), eye.distanceTo(b.getEyePosition()));
-        });
-        int n = Math.min(count, found.size());
-        return new ArrayList<>(found.subList(0, n));
     }
 
     /** Perpendicular distance from the look ray. Creatures behind the caster sort last. */

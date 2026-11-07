@@ -623,6 +623,7 @@ public final class InhabitantRules {
                 "Lessons: The first creature is slightly larger, has 5 times the health, and resists knockback.",
                 "Lessons: It drops 10 times the experience and 3 times the loot, plus one diamond and emeralds from 10% to 20% of that health.",
                 "Lessons: The last creature has twice the first creature's health and hits 50% harder. It drops 3 times the loot, without the diamond, and emeralds from 10% to 20% of its health.",
+                "Lessons: A creeper that explodes goes back on the spawn queue. A first or last creeper returns with that same role.",
                 "Lessons: An unfinished hunt ends after 14 Minecraft days. Each wise teacher can give you a different hunt, and each player has his own.");
     }
 
@@ -1198,15 +1199,14 @@ public final class InhabitantRules {
         return ids.get(Math.floorMod(roll, ids.size()));
     }
 
-    /** Uses when a focus names the ability. The house points. */
+    /** Uses when a focus names the ability. Half the house points, rounded down. */
     public static int wiseFocusUses(int houseScore) {
-        return Math.max(0, houseScore);
+        return Math.max(0, houseScore) / 2;
     }
 
-    /** Uses when the player hands over emeralds and the teacher picks the ability. Twice the house points. */
+    /** Uses when the player hands over emeralds and the teacher picks the ability. The house points. */
     public static int wiseEmeraldUses(int houseScore) {
-        long uses = Math.max(0, houseScore) * 2L;
-        return uses > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) uses;
+        return Math.max(0, houseScore);
     }
 
     /** Price for this house. {@code 0} means the lesson is free. */
@@ -1215,14 +1215,40 @@ public final class InhabitantRules {
         return Math.max(0, WISE_ABILITY_EMERALDS - above * WISE_PRICE_PER_POINT);
     }
 
+    /**
+     * Main-hand choices for this price and the next redstone-block gift.
+     * A free lesson omits the emerald count. One emerald or one block stays singular.
+     */
+    public static String handRequest(int price, int redstoneCap) {
+        int cap = Math.max(1, redstoneCap);
+        String blocks = cap == 1 ? "1 redstone block" : cap + " redstone blocks";
+        if (price <= 0) {
+            return "an ability focus or up to "
+                    + blocks
+                    + " for specific or mana training. Hold emeralds for random training. The lesson is free.";
+        }
+        String emeralds = price == 1 ? "1 emerald" : price + " emeralds";
+        return emeralds + ", an ability focus or up to " + blocks + " for random, specific or mana training.";
+    }
+
+    /** What he says he wants in the main hand when the lesson does not start. */
+    public static String handRequestLine(int price, int redstoneCap) {
+        return "In your hand I am looking for " + handRequest(price, redstoneCap);
+    }
+
+    /** Emeralds for the price may come from the pack, either hand, or both. */
+    public static String emeraldPaymentLine() {
+        return "I take those emeralds from your inventory or either hand. You can use either or both.";
+    }
+
     /** True when this lesson has not already been bought and the player can pay. Already knowing it still qualifies. */
     public static boolean shouldTeachAbility(boolean alreadyTaught, int emeralds, int cost) {
         return !alreadyTaught && emeralds >= Math.max(0, cost);
     }
 
-    /** An offered lesson, at least one stored mana level, and enough emeralds. */
-    public static boolean canTeachFocus(int offers, int storedMana, int emeralds, int cost) {
-        return offers > 0 && storedMana >= 1 && emeralds >= Math.max(0, cost);
+    /** An offered lesson and enough emeralds. Stored mana is not required. */
+    public static boolean canTeachFocus(int offers, int emeralds, int cost) {
+        return offers > 0 && emeralds >= Math.max(0, cost);
     }
 
     /** An offered lesson and at least one redstone block. Stored mana is not required. */

@@ -378,8 +378,8 @@ public final class Inhabitants implements FeatureModule {
         String teacherId = villager.getStringUUID();
         int offers = WiseLessons.teachingOffers(player, teacherId);
         int price = InhabitantRules.wiseAbilityPrice(home.score());
+        // Hotbar, backpack, and offhand, including bundles. The main hand is the selected hotbar slot, so it counts once.
         int emeralds = InventorySearch.count(player, Items.EMERALD);
-        int storedMana = Achievements.storedManaLevel(player);
         if (holdingRedstoneBlock(player)) {
             int blocks = InventorySearch.count(player, Items.REDSTONE_BLOCK);
             if (InhabitantRules.canGiveRedstone(offers, blocks)) {
@@ -388,17 +388,22 @@ public final class Inhabitants implements FeatureModule {
             }
         }
         String ability = focusAbility(player);
-        if (ability != null && InhabitantRules.canTeachFocus(offers, storedMana, emeralds, price)) {
+        if (ability != null && InhabitantRules.canTeachFocus(offers, emeralds, price)) {
             teachFocus(player, villager, level, teacherId, ability, price, InhabitantRules.wiseFocusUses(home.score()));
             return;
         }
-        if (holdingEmeralds(player) && InhabitantRules.canTeachFocus(offers, storedMana, emeralds, price)) {
+        if (holdingEmeralds(player) && InhabitantRules.canTeachFocus(offers, emeralds, price)) {
             String rolled = InhabitantRules.pickWiseAbility(level.getRandom().nextInt());
             teachFocus(
                     player, villager, level, teacherId, rolled, price, InhabitantRules.wiseEmeraldUses(home.score()));
             return;
         }
-        explainLesson(player, ability, holdingEmeralds(player), offers, storedMana, price);
+        explainLesson(
+                player,
+                ability,
+                offers,
+                price,
+                InhabitantRules.redstoneBlockCap(WiseLessons.redstoneGifts(player, teacherId)));
     }
 
     private static void teachFocus(
@@ -458,17 +463,11 @@ public final class Inhabitants implements FeatureModule {
         Achievements.sendMana(player);
     }
 
-    private static void explainLesson(
-            ServerPlayer player, String ability, boolean emeraldsInHand, int offers, int storedMana, int price) {
+    private static void explainLesson(ServerPlayer player, String ability, int offers, int price, int redstoneCap) {
         if (offers <= 0) {
             player.sendSystemMessage(Component.translatableWithFallback(
                     "tougher.wise.no_offer",
                     "I can teach when a new hunt is ready for you, or after you kill more than half of a hunt before the marks vanish."));
-        }
-        if ((ability != null || emeraldsInHand) && storedMana < 1) {
-            player.sendSystemMessage(Component.translatableWithFallback(
-                    "tougher.wise.need_mana",
-                    "You need a mana level before I will train an ability."));
         }
         if (ability != null) {
             String how = AbilityRules.teacherInstruction(ability);
@@ -479,34 +478,23 @@ public final class Inhabitants implements FeatureModule {
             if (price <= 0) {
                 player.sendSystemMessage(Component.translatableWithFallback(
                         "tougher.wise.price_ability_free",
-                        "I teach %s for free. You gain the house points in uses.",
+                        "I teach %s for free. You gain half the house points in uses, rounded down.",
                         name));
             } else {
                 player.sendSystemMessage(Component.translatableWithFallback(
                         "tougher.wise.price_ability",
-                        "I teach %s for %s emeralds from your pack. You gain the house points in uses.",
+                        "I teach %s for %s emeralds from your inventory or either hand. You gain half the house points in uses, rounded down.",
                         name,
                         Component.literal(Integer.toString(price))));
             }
-            return;
         }
-        if (emeraldsInHand) {
+        player.sendSystemMessage(Component.translatableWithFallback(
+                "tougher.wise.hand",
+                "In your hand I am looking for %s",
+                Component.literal(InhabitantRules.handRequest(price, redstoneCap))));
+        if (price > 0) {
             player.sendSystemMessage(Component.translatableWithFallback(
-                    "tougher.wise.emeralds",
-                    "Hand me emeralds and I choose an ability. You gain twice the house points in uses."));
-        } else {
-            player.sendSystemMessage(Component.translatableWithFallback(
-                    "tougher.wise.hold",
-                    "Hold the focus of the ability you want. I take the emeralds from your pack, and you gain the house points in uses. Hold emeralds and I choose an ability for twice the house points. Hold redstone blocks to raise your mana learning."));
-        }
-        if (price <= 0) {
-            player.sendSystemMessage(Component.translatableWithFallback(
-                    "tougher.wise.price_free", "My price is free."));
-        } else {
-            player.sendSystemMessage(Component.translatableWithFallback(
-                    "tougher.wise.price",
-                    "My price is %s emeralds.",
-                    Component.literal(Integer.toString(price))));
+                    "tougher.wise.pay", InhabitantRules.emeraldPaymentLine()));
         }
     }
 

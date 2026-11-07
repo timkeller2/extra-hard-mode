@@ -9,6 +9,7 @@ import dev.extrahardmode.config.MonsterConfig;
 import dev.extrahardmode.feature.Explosions;
 import dev.extrahardmode.feature.FeatureBus;
 import dev.extrahardmode.feature.FeatureModule;
+import dev.extrahardmode.feature.WiseLessons;
 import dev.extrahardmode.module.EntityHelper;
 import dev.extrahardmode.module.SpawnReplaceService;
 import dev.extrahardmode.task.CoolCreeperExplosion;
@@ -145,6 +146,7 @@ public final class Creepers implements FeatureModule {
             return false;
         }
         EntityHelper.markLootless(creeper);
+        WiseLessons.onCreeperExploded(creeper);
         Vec3 origin = creeper.position();
         Explosions.createFromModule(level, ID, origin, ExplosionType.CREEPER_CHARGED, creeper);
         creeper.discard();

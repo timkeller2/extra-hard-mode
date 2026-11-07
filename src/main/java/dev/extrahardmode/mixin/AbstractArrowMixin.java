@@ -35,7 +35,11 @@ public abstract class AbstractArrowMixin {
             Entity owner = self.getOwner();
             if (target instanceof LivingEntity living && target != owner) {
                 if (damage > 0) {
-                    living.hurtServer(level, level.damageSources().arrow(self, owner), damage.floatValue());
+                    var source = owner != null
+                            ? level.damageSources().indirectMagic(owner, owner)
+                            : level.damageSources().magic();
+                    living.setInvulnerableTime(0);
+                    living.hurtServer(level, source, damage.floatValue());
                 }
                 Integer burn = self.getAttached(EhmAttachments.EHM_FIREBOLT_BURN);
                 if (burn != null && burn > 0) {

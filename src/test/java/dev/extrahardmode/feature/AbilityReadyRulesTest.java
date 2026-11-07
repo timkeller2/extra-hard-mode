@@ -251,6 +251,45 @@ class AbilityReadyRulesTest {
                 0L,
                 Map.of());
         assertEquals(6.0, doubled.get(0).level(), 1e-9);
+
+        List<AbilityReadyRules.StrongCast> four = AbilityReadyRules.strongCasts(
+                4,
+                5.0,
+                uses,
+                learned,
+                0,
+                List.of(new AbilityReadyRules.SupplyStack(AbilityRules.ARROW_ID, 4)),
+                false,
+                0L,
+                Map.of());
+        assertEquals(4.0, four.get(0).level(), 1e-9);
+
+        List<AbilityReadyRules.StrongCast> fedFour = AbilityReadyRules.strongCasts(
+                4,
+                5.0,
+                uses,
+                learned,
+                0,
+                List.of(
+                        new AbilityReadyRules.SupplyStack(AbilityRules.ARROW_ID, 4),
+                        new AbilityReadyRules.SupplyStack(AbilityRules.CHARCOAL_ID, 1)),
+                false,
+                0L,
+                Map.of());
+        assertEquals(6.0, fedFour.get(0).level(), 1e-9);
+
+        Map<String, Integer> higher = Map.of(AbilityRules.MAGIC_ARROW, 36);
+        List<AbilityReadyRules.StrongCast> capped = AbilityReadyRules.strongCasts(
+                4,
+                5.0,
+                higher,
+                learned,
+                0,
+                List.of(new AbilityReadyRules.SupplyStack(AbilityRules.ARROW_ID, 9)),
+                false,
+                0L,
+                Map.of());
+        assertEquals(7.0, capped.get(0).level(), 1e-9);
     }
 
     @Test

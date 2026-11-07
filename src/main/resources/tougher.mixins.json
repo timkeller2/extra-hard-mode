@@ -28,6 +28,7 @@
     "ComposterOutputAccess",
     "CompoundContainerAccess",
     "CreeperPoweredMixin",
+    "CreeperExplodeMixin",
     "ChickenMixin",
     "CocoaBlockMixin",
     "CropBlockMixin",

@@ -44,6 +44,7 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.npc.villager.Villager;
@@ -307,9 +308,14 @@ public final class WiseLessons {
                 if (step.attemptSpawn()) {
                     int batch = WiseLessonRules.spawnsThisSecond(updated.spawned(), updated.size());
                     for (int n = 0; n < batch; n++) {
-                        boolean lead = WiseLessonRules.leadSpawn(updated.spawned());
-                        boolean last = WiseLessonRules.finalSpawn(updated.spawned(), updated.size());
+                        String queued = respawnQueue(player, updated.teacherId());
+                        String role = WiseLessonRules.peekRespawn(queued);
+                        boolean lead = WiseLessonRules.leadForSpawn(updated.spawned(), role);
+                        boolean last = WiseLessonRules.finalForSpawn(updated.spawned(), updated.size(), role);
                         String mark = trySpawn(player, level, updated, today, lead, last);
+                        if (mark != null && role != null) {
+                            setRespawnQueue(player, updated.teacherId(), WiseLessonRules.pollRespawn(queued));
+                        }
                         updated = WiseLessonRules.afterAttempt(updated, mark != null, mark, random.nextInt());
                         if (mark == null) {
                             break;
@@ -418,8 +424,59 @@ public final class WiseLessons {
         }
     }
 
+    /**
+     * A hunt creeper that detonates is not a kill. It goes back on the spawn queue, and a first or
+     * last creeper keeps that role. The usual land, night, and distance gate places the replacement.
+     */
+    public static void onCreeperExploded(Creeper creeper) {
+        if (creeper == null || !creeper.isAlive() || creeper.isRemoved() || !isLessonMob(creeper)) {
+            return;
+        }
+        if (Boolean.TRUE.equals(creeper.getAttached(EhmAttachments.EHM_WISE_EXPLODED))) {
+            return;
+        }
+        creeper.setAttached(EhmAttachments.EHM_WISE_EXPLODED, Boolean.TRUE);
+        if (!(creeper.level() instanceof ServerLevel level)) {
+            return;
+        }
+        UUID owner = creeper.getAttached(EhmAttachments.EHM_WISE_LESSON_OWNER);
+        if (owner == null) {
+            return;
+        }
+        ServerPlayer player = level.getServer().getPlayerList().getPlayer(owner);
+        if (player == null) {
+            return;
+        }
+        String role = WiseLessonRules.respawnRole(isLead(creeper), isFinal(creeper));
+        String uuid = creeper.getStringUUID();
+        List<WiseLessonRules.Lesson> next = new ArrayList<>();
+        boolean changed = false;
+        for (WiseLessonRules.Lesson lesson : boardOf(player)) {
+            if (!lesson.active()) {
+                next.add(lesson);
+                continue;
+            }
+            WiseLessonRules.Lesson removed = lesson.withoutMob(uuid);
+            if (removed == lesson) {
+                next.add(lesson);
+                continue;
+            }
+            enqueueRespawn(player, lesson.teacherId(), role);
+            next.add(WiseLessonRules.requeueExploded(removed));
+            changed = true;
+        }
+        if (!changed) {
+            return;
+        }
+        player.setAttached(EhmAttachments.EHM_WISE_LESSONS, next);
+        publish(player, next);
+    }
+
     public static void onMobDeath(LivingEntity entity) {
         if (!isLessonMob(entity)) {
+            return;
+        }
+        if (Boolean.TRUE.equals(entity.getAttached(EhmAttachments.EHM_WISE_EXPLODED))) {
             return;
         }
         long expire = entity.getAttachedOrElse(EhmAttachments.EHM_WISE_EXPIRE_DAY, Long.MAX_VALUE);
@@ -513,6 +570,38 @@ public final class WiseLessons {
             next.remove(teacherId);
             player.setAttached(EhmAttachments.EHM_WISE_HUNT_SUCCESS, next);
         }
+        setRespawnQueue(player, teacherId, "");
+    }
+
+    private static String respawnQueue(ServerPlayer player, String teacherId) {
+        if (player == null || teacherId == null || teacherId.isEmpty()) {
+            return "";
+        }
+        Map<String, String> map = player.getAttachedOrElse(EhmAttachments.EHM_WISE_RESPAWN, Map.of());
+        if (map == null) {
+            return "";
+        }
+        String queued = map.get(teacherId);
+        return queued == null ? "" : queued;
+    }
+
+    private static void setRespawnQueue(ServerPlayer player, String teacherId, String queued) {
+        if (player == null || teacherId == null || teacherId.isEmpty()) {
+            return;
+        }
+        Map<String, String> map = new HashMap<>(player.getAttachedOrElse(EhmAttachments.EHM_WISE_RESPAWN, Map.of()));
+        if (queued == null || queued.isEmpty()) {
+            if (map.remove(teacherId) == null) {
+                return;
+            }
+        } else {
+            map.put(teacherId, queued);
+        }
+        player.setAttached(EhmAttachments.EHM_WISE_RESPAWN, map);
+    }
+
+    private static void enqueueRespawn(ServerPlayer player, String teacherId, String role) {
+        setRespawnQueue(player, teacherId, WiseLessonRules.enqueueRespawn(respawnQueue(player, teacherId), role));
     }
 
     private static int huntKills(ServerPlayer player, String teacherId) {
@@ -557,6 +646,14 @@ public final class WiseLessons {
                 continue;
             }
             if (!living.isAlive() || living.isRemoved()) {
+                if (Boolean.TRUE.equals(living.getAttached(EhmAttachments.EHM_WISE_EXPLODED))) {
+                    if (today >= mark.expireDay()) {
+                        changed = true;
+                        continue;
+                    }
+                    kept.add(raw);
+                    continue;
+                }
                 changed = true;
                 if (today < mark.expireDay()) {
                     creditKill(player, lesson.teacherId(), lesson.size());

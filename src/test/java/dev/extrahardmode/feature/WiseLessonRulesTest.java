@@ -310,6 +310,123 @@ class WiseLessonRulesTest {
     }
 
     @Test
+    void anExplodedCreeperReturnsToTheQueueWithItsRole() {
+        assertEquals("lead", WiseLessonRules.respawnRole(true, false));
+        assertEquals("lead", WiseLessonRules.respawnRole(true, true));
+        assertEquals("final", WiseLessonRules.respawnRole(false, true));
+        assertEquals("mark", WiseLessonRules.respawnRole(false, false));
+        assertEquals("lead", WiseLessonRules.enqueueRespawn(null, "lead"));
+        assertEquals("lead", WiseLessonRules.enqueueRespawn("", "lead"));
+        assertEquals("lead", WiseLessonRules.enqueueRespawn("lead", null));
+        assertEquals("lead", WiseLessonRules.enqueueRespawn("lead", ""));
+        assertEquals("lead,final", WiseLessonRules.enqueueRespawn("lead", "final"));
+        assertEquals("lead,final,mark", WiseLessonRules.enqueueRespawn("lead,final", "mark"));
+        assertEquals("lead", WiseLessonRules.peekRespawn("lead,final"));
+        assertEquals("final", WiseLessonRules.peekRespawn(WiseLessonRules.pollRespawn("lead,final")));
+        assertEquals("", WiseLessonRules.pollRespawn("lead"));
+        assertEquals("", WiseLessonRules.pollRespawn(null));
+        assertNull(WiseLessonRules.peekRespawn(null));
+        assertNull(WiseLessonRules.peekRespawn(""));
+        assertTrue(WiseLessonRules.leadForSpawn(5, "lead"));
+        assertFalse(WiseLessonRules.finalForSpawn(5, 6, "lead"));
+        assertFalse(WiseLessonRules.leadSpawn(5));
+        assertTrue(WiseLessonRules.finalSpawn(5, 6));
+        assertFalse(WiseLessonRules.leadForSpawn(0, "final"));
+        assertTrue(WiseLessonRules.finalForSpawn(0, 6, "final"));
+        assertFalse(WiseLessonRules.leadForSpawn(0, "mark"));
+        assertFalse(WiseLessonRules.finalForSpawn(5, 6, "mark"));
+        assertTrue(WiseLessonRules.leadForSpawn(0, null));
+        assertTrue(WiseLessonRules.leadForSpawn(0, ""));
+        assertFalse(WiseLessonRules.leadForSpawn(3, null));
+        assertTrue(WiseLessonRules.finalForSpawn(5, 6, null));
+        assertTrue(WiseLessonRules.finalForSpawn(5, 6, ""));
+        assertFalse(WiseLessonRules.finalForSpawn(0, 1, null));
+        assertFalse(WiseLessonRules.finalForSpawn(0, 1, "lead"));
+        assertNull(WiseLessonRules.requeueExploded(null));
+
+        List<String> pack = List.of("lead|3", "a|3", "b|3", "c|3", "d|3", "final|3");
+        WiseLessonRules.Lesson full = creeperHunt(6, 6, 2400, 40, pack);
+        assertEquals(6, WiseLessonRules.marksLeft(full));
+        WiseLessonRules.Lesson leadBack = WiseLessonRules.requeueExploded(full.withoutMob("lead"));
+        assertEquals(5, leadBack.spawned());
+        assertEquals(2400, leadBack.dwellTicks());
+        assertEquals(40, leadBack.spawnWait());
+        assertTrue(leadBack.active());
+        assertEquals(List.of("a|3", "b|3", "c|3", "d|3", "final|3"), leadBack.mobs());
+        assertEquals(6, WiseLessonRules.marksLeft(leadBack));
+        assertTrue(WiseLessonRules.leadForSpawn(leadBack.spawned(), "lead"));
+        assertFalse(WiseLessonRules.finalForSpawn(leadBack.spawned(), leadBack.size(), "lead"));
+
+        String queue = WiseLessonRules.enqueueRespawn(null, WiseLessonRules.respawnRole(true, false));
+        WiseLessonRules.Lesson both = WiseLessonRules.requeueExploded(leadBack.withoutMob("final"));
+        queue = WiseLessonRules.enqueueRespawn(queue, WiseLessonRules.respawnRole(false, true));
+        assertEquals(4, both.spawned());
+        assertTrue(both.active());
+        assertEquals(40, both.spawnWait());
+        assertEquals(6, WiseLessonRules.marksLeft(both));
+        assertEquals("lead", WiseLessonRules.peekRespawn(queue));
+        assertTrue(WiseLessonRules.leadForSpawn(both.spawned(), WiseLessonRules.peekRespawn(queue)));
+        queue = WiseLessonRules.pollRespawn(queue);
+        assertEquals("final", WiseLessonRules.peekRespawn(queue));
+        assertFalse(WiseLessonRules.leadForSpawn(4, WiseLessonRules.peekRespawn(queue)));
+        assertTrue(WiseLessonRules.finalForSpawn(4, both.size(), WiseLessonRules.peekRespawn(queue)));
+
+        WiseLessonRules.Lesson bursting = creeperHunt(6, 3, 2400, 20, List.of("a|3", "b|3", "c|3"));
+        WiseLessonRules.Lesson ordinary = WiseLessonRules.requeueExploded(bursting.withoutMob("b"));
+        assertEquals(2, ordinary.spawned());
+        assertEquals(6, WiseLessonRules.marksLeft(ordinary));
+        assertEquals(6, WiseLessonRules.marksLeft(bursting));
+        assertFalse(WiseLessonRules.leadForSpawn(ordinary.spawned(), "mark"));
+        assertFalse(WiseLessonRules.finalForSpawn(ordinary.spawned(), ordinary.size(), "mark"));
+
+        WiseLessonRules.Lesson lastStanding = creeperHunt(6, 6, 100, 80, List.of("only|3"));
+        WiseLessonRules.Lesson cleared = lastStanding.withoutMob("only");
+        assertFalse(cleared.active());
+        WiseLessonRules.Lesson revived = WiseLessonRules.requeueExploded(cleared);
+        assertTrue(revived.active());
+        assertEquals(5, revived.spawned());
+        assertEquals(80, revived.spawnWait());
+        assertEquals(100, revived.dwellTicks());
+        assertEquals(1, WiseLessonRules.marksLeft(lastStanding));
+        assertEquals(1, WiseLessonRules.marksLeft(revived));
+
+        WiseLessonRules.Lesson solo = creeperHunt(1, 1, 50, 15, List.of("c|3"));
+        WiseLessonRules.Lesson soloGone = solo.withoutMob("c");
+        assertFalse(soloGone.active());
+        WiseLessonRules.Lesson soloBack = WiseLessonRules.requeueExploded(soloGone);
+        assertTrue(soloBack.active());
+        assertEquals(0, soloBack.spawned());
+        assertEquals(15, soloBack.spawnWait());
+        assertEquals(50, soloBack.dwellTicks());
+        assertEquals(1, WiseLessonRules.marksLeft(soloBack));
+        assertEquals(1, WiseLessonRules.marksLeft(solo));
+        assertTrue(WiseLessonRules.leadForSpawn(soloBack.spawned(), "lead"));
+        assertFalse(WiseLessonRules.finalForSpawn(soloBack.spawned(), soloBack.size(), "lead"));
+        assertFalse(WiseLessonRules.finalSpawn(0, 1));
+    }
+
+    private static WiseLessonRules.Lesson creeperHunt(
+            int size, int spawned, int dwell, int wait, List<String> mobs) {
+        return new WiseLessonRules.Lesson(
+                "teacher",
+                "Alden the Wise Teacher",
+                "minecraft:overworld",
+                0,
+                0,
+                "minecraft:creeper",
+                "creepers",
+                size,
+                200,
+                "east",
+                10,
+                spawned,
+                dwell,
+                wait,
+                true,
+                mobs);
+    }
+
+    @Test
     void bossHintsStayWithTheTeacherUntilTheNextHunt() {
         assertEquals("", WiseLessonRules.joinNames(null));
         assertEquals("", WiseLessonRules.joinNames(List.of()));

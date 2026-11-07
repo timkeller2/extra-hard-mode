@@ -75,7 +75,7 @@ class EhmHelpTest {
         assertFalse(String.join(" ", lines).contains("tuff"));
         assertTrue(String.join(" ", lines).contains("Let it grow"));
         assertFalse(String.join(" ", lines).contains("Let there be light"));
-        assertTrue(String.join(" ", lines).contains("An arrow casts Magic arrow"));
+        assertTrue(String.join(" ", lines).contains("An arrow casts Missile Storm"));
         assertTrue(String.join(" ", lines).contains("adds +2 and the burn"));
         assertFalse(String.join(" ", lines).contains("Fire bolt"));
         assertTrue(String.join(" ", lines).contains("Iron ingot: Iron Heart"));
@@ -93,8 +93,12 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("wise teacher"));
         assertTrue(String.join(" ", lines).contains("30 emeralds"));
         assertTrue(String.join(" ", lines).contains("down to free"));
-        assertTrue(String.join(" ", lines).contains("house points in uses"));
-        assertTrue(String.join(" ", lines).contains("twice the house points"));
+        assertTrue(String.join(" ", lines).contains("inventory or either hand"));
+        assertTrue(String.join(" ", lines).contains("He names that count"));
+        assertFalse(String.join(" ", lines).contains("You need one mana level"));
+        assertTrue(String.join(" ", lines).contains("half the house points in uses"));
+        assertTrue(String.join(" ", lines).contains("rounded down"));
+        assertFalse(String.join(" ", lines).contains("twice the house points"));
         assertTrue(String.join(" ", lines).contains("does not explode"));
         assertTrue(String.join(" ", lines).contains("The first gift takes 1"));
         assertTrue(String.join(" ", lines).contains("Glowstone dust"));
@@ -241,6 +245,8 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("white outline through blocks"));
         assertTrue(String.join(" ", lines).contains("outlined through solid blocks"));
         assertTrue(String.join(" ", lines).contains("twice the first creature's health"));
+        assertTrue(String.join(" ", lines).contains("goes back on the spawn queue"));
+        assertTrue(String.join(" ", lines).contains("returns with that same role"));
         assertTrue(String.join(" ", lines).contains("emeralds from 10% to 20% of its health"));
         assertTrue(String.join(" ", lines).contains("10 times the experience"));
         assertTrue(String.join(" ", lines).contains("An unfinished hunt ends after 14 Minecraft days"));
@@ -423,7 +429,11 @@ class EhmHelpTest {
         assertTrue(index.contains("Paper: Healing"));
         assertTrue(index.contains("Golden sword or heavy golden sword: Smite Evil"));
         assertTrue(index.contains("/tougher ability help <name>"));
-        assertTrue(index.contains("twice the house points"));
+        assertTrue(index.contains("half the house points in uses"));
+        assertTrue(index.contains("at random for the house points"));
+        assertFalse(index.contains("twice the house points"));
+        assertTrue(index.contains("inventory or either hand"));
+        assertFalse(index.contains("You need a mana level"));
         assertTrue(lines.stream().noneMatch(line -> line.startsWith("Healing:")));
         for (String ability : AbilityRules.ABILITY_IDS) {
             var page = EhmHelp.abilityPage(ability);
@@ -437,6 +447,8 @@ class EhmHelpTest {
         assertTrue(EhmHelp.resolve("iron heart").lines().stream().anyMatch(line -> line.startsWith("Iron Heart:")));
         assertTrue(EhmHelp.resolve("fire bolt").lines().stream().anyMatch(line -> line.contains("arrows burn")));
         assertTrue(EhmHelp.resolve("magic arrow").lines().stream().anyMatch(line -> line.contains("adds +2")));
+        assertTrue(EhmHelp.resolve("missile storm").lines().stream().anyMatch(line -> line.contains("4 arrows still costs 2")));
+        assertTrue(EhmHelp.resolve("missilestorm").lines().stream().anyMatch(line -> line.contains("magic damage")));
         assertTrue(EhmHelp.resolve("flight").lines().stream().anyMatch(line -> line.startsWith("Flight:")));
         assertTrue(String.join(" ", EhmHelp.resolve("flight").lines()).contains("phantom membrane"));
         assertTrue(String.join(" ", EhmHelp.resolve("flight").lines()).contains("not a bundle"));

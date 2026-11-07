@@ -52,6 +52,10 @@ public final class WiseLessonRules {
     public static final int NIGHT_START = 13000;
     public static final int NIGHT_END = 23000;
     public static final String NEAR = "near here";
+    /** A detonated hunt creeper waiting to be placed again. */
+    public static final String RESPAWN_LEAD = "lead";
+    public static final String RESPAWN_FINAL = "final";
+    public static final String RESPAWN_MARK = "mark";
     public static final String OVERWORLD = "minecraft:overworld";
     public static final String NETHER = "minecraft:the_nether";
     public static final String END = "minecraft:the_end";
@@ -550,6 +554,84 @@ public final class WiseLessonRules {
      */
     public static boolean finalSpawn(int alreadySpawned, int size) {
         return size > 1 && alreadySpawned == size - 1;
+    }
+
+    /** The first creature wins when both flags are set. Anything else is an ordinary mark. */
+    public static String respawnRole(boolean lead, boolean finale) {
+        if (lead) {
+            return RESPAWN_LEAD;
+        }
+        if (finale) {
+            return RESPAWN_FINAL;
+        }
+        return RESPAWN_MARK;
+    }
+
+    /** Append one role. A blank role leaves the queue unchanged. */
+    public static String enqueueRespawn(String queued, String role) {
+        if (role == null || role.isEmpty()) {
+            return queued == null ? "" : queued;
+        }
+        if (queued == null || queued.isEmpty()) {
+            return role;
+        }
+        return queued + "," + role;
+    }
+
+    /** The next role, or null when nothing is waiting. */
+    public static String peekRespawn(String queued) {
+        if (queued == null || queued.isEmpty()) {
+            return null;
+        }
+        int comma = queued.indexOf(',');
+        String token = comma < 0 ? queued : queued.substring(0, comma);
+        return token.isEmpty() ? null : token;
+    }
+
+    /** The queue after its first role is taken. Empty when that was the last one. */
+    public static String pollRespawn(String queued) {
+        if (queued == null || queued.isEmpty()) {
+            return "";
+        }
+        int comma = queued.indexOf(',');
+        if (comma < 0 || comma >= queued.length() - 1) {
+            return "";
+        }
+        return queued.substring(comma + 1);
+    }
+
+    /**
+     * A queued role replaces the spawn index. An empty queue uses {@link #leadSpawn}.
+     */
+    public static boolean leadForSpawn(int alreadySpawned, String queuedRole) {
+        if (queuedRole != null && !queuedRole.isEmpty()) {
+            return RESPAWN_LEAD.equals(queuedRole);
+        }
+        return leadSpawn(alreadySpawned);
+    }
+
+    /**
+     * A queued role replaces the spawn index. An empty queue uses {@link #finalSpawn}.
+     * A hunt of one stays the first creature only.
+     */
+    public static boolean finalForSpawn(int alreadySpawned, int size, String queuedRole) {
+        if (queuedRole != null && !queuedRole.isEmpty()) {
+            return RESPAWN_FINAL.equals(queuedRole);
+        }
+        return finalSpawn(alreadySpawned, size);
+    }
+
+    /**
+     * One exploded mark returns a spawn slot and the hunt stays active.
+     * Dwell and the current spawn wait are left as they are.
+     * Call this only for a hunt that was still active.
+     */
+    public static Lesson requeueExploded(Lesson lesson) {
+        if (lesson == null) {
+            return null;
+        }
+        int spawned = Math.max(0, lesson.spawned() - 1);
+        return lesson.withSpawn(spawned, lesson.spawnWait(), lesson.mobs(), true);
     }
 
     public static int xpFactor(boolean lead) {

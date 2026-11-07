@@ -302,11 +302,15 @@ class InhabitantRulesTest {
         assertEquals(councilOutfit, InhabitantRules.parseOutfit(InhabitantRules.outfitKey(councilOutfit)));
         assertNull(InhabitantRules.parseOutfit("bad"));
         assertEquals(30, InhabitantRules.WISE_ABILITY_EMERALDS);
-        assertEquals(24, InhabitantRules.wiseFocusUses(24));
+        assertEquals(12, InhabitantRules.wiseFocusUses(24));
+        assertEquals(12, InhabitantRules.wiseFocusUses(25));
+        assertEquals(0, InhabitantRules.wiseFocusUses(1));
         assertEquals(0, InhabitantRules.wiseFocusUses(0));
         assertEquals(0, InhabitantRules.wiseFocusUses(-3));
-        assertEquals(48, InhabitantRules.wiseEmeraldUses(24));
-        assertEquals(76, InhabitantRules.wiseEmeraldUses(38));
+        assertEquals(24, InhabitantRules.wiseEmeraldUses(24));
+        assertEquals(25, InhabitantRules.wiseEmeraldUses(25));
+        assertEquals(38, InhabitantRules.wiseEmeraldUses(38));
+        assertEquals(1, InhabitantRules.wiseEmeraldUses(1));
         assertEquals(0, InhabitantRules.wiseEmeraldUses(0));
         assertEquals(0, InhabitantRules.wiseEmeraldUses(-4));
         assertEquals(30, InhabitantRules.wiseAbilityPrice(24));
@@ -320,11 +324,25 @@ class InhabitantRulesTest {
         assertFalse(InhabitantRules.shouldTeachAbility(true, 30, 30));
         assertFalse(InhabitantRules.shouldTeachAbility(false, 29, 30));
         assertTrue(InhabitantRules.shouldTeachAbility(false, 0, 0));
-        assertTrue(InhabitantRules.canTeachFocus(1, 1, 30, 30));
-        assertFalse(InhabitantRules.canTeachFocus(0, 1, 30, 30));
-        assertFalse(InhabitantRules.canTeachFocus(1, 0, 30, 30));
-        assertFalse(InhabitantRules.canTeachFocus(1, 1, 29, 30));
-        assertTrue(InhabitantRules.canTeachFocus(1, 1, 0, 0));
+        assertTrue(InhabitantRules.canTeachFocus(1, 30, 30));
+        assertFalse(InhabitantRules.canTeachFocus(0, 30, 30));
+        assertFalse(InhabitantRules.canTeachFocus(1, 29, 30));
+        assertTrue(InhabitantRules.canTeachFocus(1, 0, 0));
+        assertEquals(
+                "8 emeralds, an ability focus or up to 9 redstone blocks for random, specific or mana training.",
+                InhabitantRules.handRequest(InhabitantRules.wiseAbilityPrice(35), InhabitantRules.redstoneBlockCap(2)));
+        assertEquals(
+                "1 emerald, an ability focus or up to 1 redstone block for random, specific or mana training.",
+                InhabitantRules.handRequest(1, 1));
+        assertEquals(
+                "an ability focus or up to 1 redstone block for specific or mana training. Hold emeralds for random training. The lesson is free.",
+                InhabitantRules.handRequest(InhabitantRules.wiseAbilityPrice(39), InhabitantRules.redstoneBlockCap(-4)));
+        assertEquals(
+                "In your hand I am looking for 8 emeralds, an ability focus or up to 9 redstone blocks for random, specific or mana training.",
+                InhabitantRules.handRequestLine(8, 9));
+        assertEquals(
+                "I take those emeralds from your inventory or either hand. You can use either or both.",
+                InhabitantRules.emeraldPaymentLine());
         assertTrue(InhabitantRules.canGiveRedstone(1, 1));
         assertFalse(InhabitantRules.canGiveRedstone(0, 4));
         assertFalse(InhabitantRules.canGiveRedstone(1, 0));

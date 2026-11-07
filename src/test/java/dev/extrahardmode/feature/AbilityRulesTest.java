@@ -1,5 +1,6 @@
 package dev.extrahardmode.feature;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -154,11 +155,21 @@ class AbilityRulesTest {
         assertTrue(magicHelp.contains("adds +2"));
         assertTrue(magicHelp.contains("arrows burn"));
         assertTrue(magicHelp.contains("10 seconds"));
-        assertTrue(magicHelp.contains("3 times"));
+        assertTrue(magicHelp.contains("one arrow per level"));
+        assertTrue(magicHelp.contains("magic damage"));
+        assertTrue(magicHelp.contains("ignores armor"));
+        assertTrue(magicHelp.contains("do not deflect"));
+        assertTrue(magicHelp.contains("Witches resist"));
+        assertTrue(magicHelp.contains("hostiles"));
+        assertTrue(magicHelp.contains("more than once"));
+        assertTrue(magicHelp.contains("overkill"));
+        assertTrue(magicHelp.contains("More than 3"));
+        assertTrue(magicHelp.contains("square root"));
+        assertTrue(magicHelp.contains("4 arrows still costs 2"));
+        assertTrue(magicHelp.contains("Two or three"));
         assertTrue(magicHelp.contains("minus skill"));
-        assertTrue(magicHelp.contains("another arrow"));
-        assertTrue(magicHelp.contains("Every 3 ability levels"));
-        assertTrue(magicHelp.contains("seeks the nearest"));
+        assertFalse(magicHelp.contains("3 times"));
+        assertFalse(magicHelp.contains("Every 3 ability levels"));
         assertFalse(magicHelp.contains("mana level"));
         assertFalse(magicHelp.contains("Fire bolt"));
         String flightHelp = AbilityRules.helpFallback(AbilityRules.FLIGHT);
@@ -251,7 +262,7 @@ class AbilityRulesTest {
         assertTrue(powerHelp.contains("Below 1 the cast is practice"));
         assertFalse(AbilityRules.indexHelpFallback().contains("Charcoal: Fire bolt"));
         assertFalse(AbilityRules.indexHelpFallback().contains("Fire bolt"));
-        assertTrue(AbilityRules.indexHelpFallback().contains("Arrow: Magic arrow"));
+        assertTrue(AbilityRules.indexHelpFallback().contains("Arrow: Missile Storm"));
         assertTrue(AbilityRules.indexHelpFallback().contains("Iron ingot: Iron Heart"));
         assertTrue(AbilityRules.indexHelpFallback().contains("Glowstone dust"));
         assertEquals(null, AbilityRules.helpFallback(null));
@@ -341,7 +352,7 @@ class AbilityRulesTest {
         assertEquals("Healing", AbilityRules.nameFallback(AbilityRules.HEAL));
         assertEquals("Iron Heart", AbilityRules.nameFallback(AbilityRules.IRON_HEART));
         assertEquals("this ability", AbilityRules.nameFallback(AbilityRules.FIRE_BOLT));
-        assertEquals("Magic arrow", AbilityRules.nameFallback(AbilityRules.MAGIC_ARROW));
+        assertEquals("Missile Storm", AbilityRules.nameFallback(AbilityRules.MAGIC_ARROW));
         assertEquals("Flight", AbilityRules.nameFallback(AbilityRules.FLIGHT));
         assertEquals("Let it grow", AbilityRules.nameFallback(AbilityRules.GROW));
         assertEquals("Power mining", AbilityRules.nameFallback(AbilityRules.POWER_MINE));
@@ -468,6 +479,9 @@ class AbilityRulesTest {
         assertEquals(0, AbilityRules.supplyBonus(AbilityRules.SMITE_EVIL, "tougher:heavy_golden_sword", 1, false, 0));
         assertEquals(0, AbilityRules.supplyBonus(AbilityRules.SMITE_EVIL, "minecraft:golden_sword", 1, true, 0));
         assertEquals(2, AbilityRules.supplyBonus(AbilityRules.MAGIC_ARROW, "minecraft:arrow", 2, false, 0));
+        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.MAGIC_ARROW, "minecraft:arrow", 3, false, 0));
+        assertEquals(0, AbilityRules.supplyBonus(AbilityRules.MAGIC_ARROW, "minecraft:arrow", 4, false, 0, false));
+        assertEquals(2, AbilityRules.supplyBonus(AbilityRules.MAGIC_ARROW, "minecraft:arrow", 4, false, 0, true));
         assertEquals(2, AbilityRules.supplyBonus(AbilityRules.MASTER_BUILDER, "minecraft:brick", 2, false, 0));
         assertEquals(0, AbilityRules.supplyBonus(AbilityRules.MASTER_BUILDER, "minecraft:brick", 1, false, 0));
         assertEquals(2, AbilityRules.supplyBonus(AbilityRules.MASTER_BUILDER, "minecraft:brick", 3, true, 0));
@@ -796,24 +810,52 @@ class AbilityRulesTest {
         assertEquals(160, AbilityRules.cooldownTicks(AbilityRules.MAGIC_ARROW, 1, 4));
         assertEquals(0, AbilityRules.projectileDamage(0));
         assertEquals(0, AbilityRules.projectileDamage(-2));
-        assertEquals(3, AbilityRules.projectileDamage(1));
-        assertEquals(6, AbilityRules.projectileDamage(2));
-        assertEquals(8, AbilityRules.projectileDamage(2.5));
-        assertEquals(15, AbilityRules.projectileDamage(5));
+        assertEquals(1, AbilityRules.projectileDamage(1));
+        assertEquals(2, AbilityRules.projectileDamage(2));
+        assertEquals(2, AbilityRules.projectileDamage(2.5));
+        assertEquals(5, AbilityRules.projectileDamage(5));
         assertEquals(0, AbilityRules.projectileBurnSeconds(0));
         assertEquals(1, AbilityRules.projectileBurnSeconds(0.6));
         assertEquals(2, AbilityRules.projectileBurnSeconds(1.6));
         assertEquals(3, AbilityRules.projectileBurnSeconds(2.5));
-        assertEquals(0, AbilityRules.extraProjectileCount(0));
-        assertEquals(0, AbilityRules.extraProjectileCount(1.9));
-        assertEquals(0, AbilityRules.extraProjectileCount(2));
-        assertEquals(0, AbilityRules.extraProjectileCount(2.9));
-        assertEquals(1, AbilityRules.extraProjectileCount(3));
-        assertEquals(1, AbilityRules.extraProjectileCount(3.9));
-        assertEquals(1, AbilityRules.extraProjectileCount(5.9));
-        assertEquals(2, AbilityRules.extraProjectileCount(6));
-        assertEquals(2, AbilityRules.extraProjectileCount(8.2));
-        assertEquals(3, AbilityRules.extraProjectileCount(9));
+    }
+
+    @Test
+    void missileStormBonusMatchesTheArrowsConsumed() {
+        assertEquals(2, AbilityRules.missileStormArrowBonus(5, 4));
+        assertEquals(0, AbilityRules.missileStormArrowBonus(5, 3));
+        assertEquals(3, AbilityRules.missileStormArrowBonus(5, 9));
+        assertEquals(2, AbilityRules.missileStormArrowBonus(2, 16));
+        assertEquals(4, AbilityRules.missileStormArrowBonus(10, 16));
+        assertEquals(1, AbilityRules.missileStormArrowBonus(1, 100));
+        assertEquals(0, AbilityRules.missileStormArrowBonus(0, 16));
+        assertEquals(0, AbilityRules.missileStormArrowBonus(0.9, 16));
+        assertEquals(2, AbilityRules.missileStormArrowsToConsume(5, 4));
+        assertEquals(1, AbilityRules.missileStormArrowsToConsume(5, 1));
+        assertEquals(2, AbilityRules.missileStormArrowsToConsume(5, 2));
+        assertEquals(2, AbilityRules.missileStormArrowsToConsume(5, 3));
+        assertEquals(1, AbilityRules.missileStormArrowsToConsume(1, 4));
+        assertEquals(3, AbilityRules.missileStormArrowsToConsume(10, 9));
+        assertEquals(1, AbilityRules.missileStormArrowsToConsume(0, 4));
+        assertEquals(8.0, AbilityRules.missileStormLevel(5, 9), 1e-9);
+        assertEquals(5.0, AbilityRules.missileStormLevel(5, 3), 1e-9);
+    }
+
+    @Test
+    void missileStormSpreadsShotsBeforeItOverkills() {
+        assertArrayEquals(new int[] {0, 0, 0, 0}, AbilityRules.assignMissileShots(4, 6, new double[] {20}, new double[] {0}));
+        assertArrayEquals(
+                new int[] {1, 0},
+                AbilityRules.assignMissileShots(2, 6, new double[] {10, 10}, new double[] {1, 0}));
+        assertArrayEquals(
+                new int[] {1, 0, 1, 0},
+                AbilityRules.assignMissileShots(4, 6, new double[] {10, 10}, new double[] {1, 0}));
+        assertArrayEquals(
+                new int[] {1, 2, 0},
+                AbilityRules.assignMissileShots(3, 6, new double[] {7, 7, 7}, new double[] {2, 0, 1}));
+        assertArrayEquals(new int[] {0, 0}, AbilityRules.assignMissileShots(2, 6, new double[] {5}, new double[] {0}));
+        assertEquals(0, AbilityRules.assignMissileShots(0, 6, new double[] {20}, new double[] {0}).length);
+        assertEquals(0, AbilityRules.assignMissileShots(2, 6, new double[0], new double[0]).length);
     }
 
     @Test
