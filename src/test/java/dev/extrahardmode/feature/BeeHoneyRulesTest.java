@@ -53,6 +53,16 @@ class BeeHoneyRulesTest {
     }
 
     @Test
+    void reportedPercentUsesTheStoredDayThenTheFlowers() {
+        assertEquals(0, BeeHoneyRules.reportedPercent(0, true, 40, new int[] {16}));
+        assertEquals(100, BeeHoneyRules.reportedPercent(100, false, 0, new int[] {1}));
+        assertEquals(36, BeeHoneyRules.reportedPercent(20, true, 36, new int[] {1}));
+        assertEquals(100, BeeHoneyRules.reportedPercent(20, true, 140, new int[] {1}));
+        assertEquals(24, BeeHoneyRules.reportedPercent(20, false, 36, new int[] {16}));
+        assertEquals(20, BeeHoneyRules.reportedPercent(20, true, 0, new int[0]));
+    }
+
+    @Test
     void tallFlowersCountOnce() {
         assertTrue(BeeHoneyRules.countsHalf(false, false, false));
         assertTrue(BeeHoneyRules.countsHalf(false, false, true));

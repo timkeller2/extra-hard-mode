@@ -90,6 +90,25 @@ public final class BeeHoneyData extends SavedData {
         return percent;
     }
 
+    /**
+     * Fill percent a clock shows for this hive. A rate already stored today is reused.
+     * Otherwise the flowers are counted and nothing is stored.
+     */
+    public int reportedRate(ServerLevel level, BlockPos pos, int basePercent) {
+        if (basePercent <= 0 || basePercent >= 100) {
+            return BeeHoneyRules.reportedPercent(basePercent, false, 0, null);
+        }
+        long day = CropGrowthRules.dayIndex(level.getOverworldClockTime());
+        long packed = pos.asLong();
+        if (days.get(packed) == day) {
+            int stored = percents.get(packed);
+            if (stored > 0) {
+                return BeeHoneyRules.reportedPercent(basePercent, true, stored, null);
+            }
+        }
+        return BeeHoneyRules.reportedPercent(basePercent, false, 0, flowerCounts(level, pos));
+    }
+
     private void remember(long packed, long day, int percent) {
         days.put(packed, day);
         percents.put(packed, Math.min(100, Math.max(1, percent)));

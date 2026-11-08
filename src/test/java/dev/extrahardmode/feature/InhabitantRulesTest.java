@@ -598,7 +598,8 @@ class InhabitantRulesTest {
         assertEquals(8, wealthy.get("minecraft:glass").count());
         assertEquals(6, wealthy.get("minecraft:leather").count());
         assertEquals(8, wealthy.get("minecraft:string").count());
-        assertEquals(4, wealthy.get("minecraft:nether_wart").count());
+        assertEquals(1, wealthy.get("minecraft:nether_wart").count());
+        assertEquals(1, wealthy.get("minecraft:nether_wart").emeralds());
         assertEquals(4, wealthy.get("minecraft:amethyst_shard").count());
         assertEquals(8, wealthy.get("minecraft:coal").count());
         assertEquals(4, wealthy.get("minecraft:lantern").count());
@@ -883,7 +884,7 @@ class InhabitantRulesTest {
             }
             int expectedCount = switch (listing.itemId()) {
                 case "minecraft:pumpkin_seeds", "minecraft:melon_seeds" -> 6;
-                case "minecraft:nether_wart" -> 4;
+                case "minecraft:nether_wart" -> 2;
                 default -> 1;
             };
             assertEquals(expectedCount, listing.count(), listing.itemId());
@@ -914,6 +915,7 @@ class InhabitantRulesTest {
         for (InhabitantRules.TradeListing listing : InhabitantRules.FARM_PLANT_SELLS) {
             prices.put(listing.itemId(), listing.emeralds());
         }
+        assertEquals(6, prices.get("minecraft:nether_wart").intValue());
         Set<String> seen = new HashSet<>();
         boolean sawPlantOnSmallFarm = false;
         for (int seed = 0; seed < 200; seed++) {

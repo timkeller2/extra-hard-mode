@@ -6,6 +6,7 @@ import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.config.WorldConfig;
 import dev.extrahardmode.network.EhmNetworking;
 import dev.extrahardmode.player.EhmAttachments;
+import dev.extrahardmode.world.BeeHoneyData;
 import dev.extrahardmode.world.EhmTags;
 import dev.extrahardmode.world.FarmlandData;
 import dev.extrahardmode.world.StemFruitData;
@@ -120,7 +121,12 @@ public final class AntiFarming implements FeatureModule {
             return InteractionResult.PASS;
         }
         if (player instanceof ServerPlayer serverPlayer) {
+            Long tick = serverPlayer.getAttachedOrElse(EhmAttachments.EHM_ABILITY_HANDLED_TICK, -1L);
+            boolean already = tick != null && tick == server.getGameTime();
             tryTellSeason(serverPlayer, server, hand);
+            if (!already) {
+                tryTellHive(serverPlayer, server, hand, hit.getBlockPos());
+            }
             if (EhmApi.playerBypasses(serverPlayer)) {
                 return InteractionResult.PASS;
             }
@@ -172,6 +178,22 @@ public final class AntiFarming implements FeatureModule {
                     "Bees are staying in their hives."));
         }
         return true;
+    }
+
+    /** Main-hand clock on a hive or nest states that block's honey production. */
+    static void tryTellHive(ServerPlayer player, ServerLevel level, InteractionHand hand, BlockPos pos) {
+        if (hand != InteractionHand.MAIN_HAND || !player.getMainHandItem().is(Items.CLOCK)) {
+            return;
+        }
+        if (!(level.getBlockState(pos).getBlock() instanceof BeehiveBlock)) {
+            return;
+        }
+        int percent = BeeHoneyData.of(level)
+                .reportedRate(level, pos, ConfigManager.world(level).beeHoneyPercent());
+        player.sendSystemMessage(Component.translatableWithFallback(
+                "tougher.message.hive_honey",
+                "This hive's honey production is %s%%.",
+                Component.literal(Integer.toString(percent))));
     }
 
     public static long overworldDay(ServerLevel level) {

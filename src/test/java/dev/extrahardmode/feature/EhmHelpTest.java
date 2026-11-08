@@ -149,6 +149,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("29 blocks"));
         assertTrue(String.join(" ", lines).contains("stored once a day"));
         assertTrue(String.join(" ", lines).contains("0 never fills"));
+        assertTrue(String.join(" ", lines).contains("that hive's honey production"));
         assertTrue(String.join(" ", lines).contains("second segment"));
         assertTrue(String.join(" ", lines).contains("Bees do not"));
         assertTrue(String.join(" ", lines).contains("8 times as long to restock"));
@@ -233,7 +234,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("plantable vegetable"));
         assertTrue(String.join(" ", lines).contains("6 to 16 emeralds"));
         assertTrue(String.join(" ", lines).contains("Pumpkin and melon seeds are 6"));
-        assertTrue(String.join(" ", lines).contains("nether wart is 4"));
+        assertTrue(String.join(" ", lines).contains("nether wart is 2 for 6"));
         assertTrue(String.join(" ", lines).contains("down to 16"));
         assertTrue(String.join(" ", lines).contains("Glow berries are 3 for 1 emerald"));
         assertTrue(String.join(" ", lines).contains("one of each brewing ingredient"));

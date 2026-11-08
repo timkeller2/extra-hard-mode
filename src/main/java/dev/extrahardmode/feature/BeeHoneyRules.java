@@ -68,6 +68,24 @@ public final class BeeHoneyRules {
     }
 
     /**
+     * The percent a clock reports for one hive. A base of 0 is 0, and 100 or more is 100.
+     * A rate already stored for this Minecraft day is that hive's production. Otherwise the
+     * flowers are counted now and the day is left unstored.
+     */
+    public static int reportedPercent(int basePercent, boolean storedToday, int storedPercent, int[] counts) {
+        if (basePercent <= 0) {
+            return 0;
+        }
+        if (basePercent >= 100) {
+            return 100;
+        }
+        if (storedToday && storedPercent > 0) {
+            return Math.min(100, storedPercent);
+        }
+        return fillPercent(basePercent, counts);
+    }
+
+    /**
      * Honey levels to add for this delivery. {@code vanillaIncrement} is the usual
      * gain. {@code roll} is 0–99 from {@code nextInt(100)}.
      */

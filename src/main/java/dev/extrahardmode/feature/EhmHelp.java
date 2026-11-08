@@ -296,7 +296,7 @@ public final class EhmHelp {
                         "Crops: Trees take 10 times as long to grow. Leaves drop half as many saplings.",
                         "Crops: Each sapling that would drop has twice the crop loss rate as a percent chance not to. At 50% loss or higher, none drop.",
                         "Crops: Pumpkins and melons fruit at 1/10 vanilla rate. After each fruit the vine may become a weed, starting at 0% and rising 5% per fruit.",
-                        "Crops: Broken pumpkin and melon vines drop no seeds. Shearing a full hive gives 1 honeycomb.",
+                        "Crops: Broken pumpkin and melon vines drop no seeds. Shearing a full hive gives 1 honeycomb. Right-click a hive or nest with a clock to see that hive's honey production.",
                         "Crops: A bee fills a hive or nest at farming.beeHoneyPercent, default 20, plus the square root of each flower type within 29 blocks, stored once a day, up to 100. 0 never fills.",
                         "Crops: A ripe cocoa pod drops 1 or 2 beans. One more on a d100 under hoe quality plus the tree: iron 0, diamond 10, gold 20, netherite 30, plus 2 per Efficiency. Other hoes are 0.",
                         "Crops: Each other pod on that tree is -2%. Each jungle log in the tree is +2%, up to +20%."));

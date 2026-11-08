@@ -281,7 +281,7 @@ public final class InhabitantRules {
             new WealthyListing("minecraft:gunpowder", 4, 2),
             new WealthyListing("minecraft:blaze_rod", 1, 3),
             new WealthyListing("minecraft:ghast_tear", 1, 8),
-            new WealthyListing("minecraft:nether_wart", 4, 1),
+            new WealthyListing("minecraft:nether_wart", 1, 1),
             new WealthyListing("minecraft:amethyst_shard", 4, 1),
             new WealthyListing("minecraft:coal", 8, 1),
             new WealthyListing("minecraft:lantern", 4, 1),
@@ -289,7 +289,7 @@ public final class InhabitantRules {
 
     /**
      * Seeds and plantable vegetables a farm neighbor may sell. Most are one item.
-     * Pumpkin seeds and melon seeds are 6, and nether wart is 4. Glow berries are
+     * Pumpkin seeds and melon seeds are 6, and nether wart is 2 for 6 emeralds. Glow berries are
      * 3 for 1 emerald. The other emerald costs are hefty next to a stack of cobble.
      */
     public static final List<TradeListing> FARM_PLANT_SELLS = List.of(
@@ -303,7 +303,7 @@ public final class InhabitantRules {
             sellOf("minecraft:glow_berries", 3, 1, FARM_PLANT_USES),
             sellOf("minecraft:pumpkin_seeds", 6, 12, FARM_PLANT_USES),
             sellOf("minecraft:melon_seeds", 6, 12, FARM_PLANT_USES),
-            sellOf("minecraft:nether_wart", 4, 12, FARM_PLANT_USES),
+            sellOf("minecraft:nether_wart", 2, 6, FARM_PLANT_USES),
             sellOf("minecraft:torchflower_seeds", 1, FARM_PLANT_MAX_EMERALDS, FARM_PLANT_USES),
             sellOf("minecraft:pitcher_pod", 1, FARM_PLANT_MAX_EMERALDS, FARM_PLANT_USES));
 
@@ -638,7 +638,7 @@ public final class InhabitantRules {
                 "Shops: Each stock change rolls item amounts once from -25% to +25%, then adds 0 to 25 for house points and trading experience.",
                 "Shops: That total adds items when you buy and subtracts the items required when you sell to the resident. Emerald prices stay the same.",
                 "Shops: A hauler pays 1 emerald for 32 of a block. Each chest, barrel, or shulker box takes 2 off that stack, down to 16.",
-                "Shops: A farm neighbor may sell one seed or plantable vegetable for 6 to 16 emeralds. Pumpkin and melon seeds are 6, and nether wart is 4. Glow berries are 3 for 1 emerald.",
+                "Shops: A farm neighbor may sell one seed or plantable vegetable for 6 to 16 emeralds. Pumpkin and melon seeds are 6, and nether wart is 2 for 6. Glow berries are 3 for 1 emerald.",
                 "Shops: A trader also buys each thing he sells. The buy stack is 2 larger and pays the same number of emeralds.",
                 "Shops: Those buys start with no uses. Buying from him adds 1 use to each of them. Selling him anything spends 1 use on each of them.",
                 "Shops: A trader or a wealthy trader also offers other players' chests. A sign on the chest that says SELL or BUY is what he reads.",
