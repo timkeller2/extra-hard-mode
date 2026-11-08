@@ -19,15 +19,16 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Enderman;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Endermen teleport the player onto them when the player cheeses a 2-high roof
- * or otherwise blocks LoS in a close fight.
+ * In a close fight, an enderman teleports the player to itself when it cannot
+ * path to them, or when they are standing in a space only 2 blocks tall.
  */
 public final class Endermen implements FeatureModule {
     public static final Identifier ID = ExtraHardModeMod.id("endermen");
-    public static final int RANGE_BLOCKS = 8;
+    public static final int RANGE_BLOCKS = 5;
     public static final int COOLDOWN_TICKS = 60;
     public static final int MIN_DEST_Y = 3;
     public static final int MAX_HEIGHT_DIFF = 10;
@@ -57,12 +58,15 @@ public final class Endermen implements FeatureModule {
         if (enderman.distanceToSqr(player) > RANGE_BLOCKS * RANGE_BLOCKS) {
             return;
         }
-        if (!isCheese(level, enderman, player)) {
-            return;
-        }
         long now = level.getGameTime();
         long last = player.getAttachedOrElse(EhmAttachments.EHM_ENDERMAN_TP_TICK, 0L);
         if (onCooldown(now, last)) {
+            return;
+        }
+        boolean low = isTwoBlocksTall(level, player.blockPosition());
+        boolean pull = pullsPlayer(!low && !canReachPlayer(enderman, player), low);
+        player.setAttached(EhmAttachments.EHM_ENDERMAN_TP_TICK, now);
+        if (!pull) {
             return;
         }
         BlockPos landing = findLanding(level, enderman, player);
@@ -87,7 +91,6 @@ public final class Endermen implements FeatureModule {
                 1.0F);
         player.teleportTo(level, to.x, to.y, to.z, Set.of(), player.getYRot(), player.getXRot(), true);
         player.resetFallDistance();
-        player.setAttached(EhmAttachments.EHM_ENDERMAN_TP_TICK, now);
         level.playSound(
                 enderman, to.x, to.y, to.z, SoundEvents.ENDERMAN_TELEPORT, SoundSource.HOSTILE, 1.0F, 1.0F);
     }
@@ -96,16 +99,28 @@ public final class Endermen implements FeatureModule {
         return now - last < COOLDOWN_TICKS;
     }
 
-    static boolean isTwoHighRoof(boolean losBlocked, boolean above1Blocks, boolean above2Blocks) {
-        return losBlocked || above1Blocks || above2Blocks;
+    /** A blocked path or a ceiling too low for an enderman to fight in. */
+    static boolean pullsPlayer(boolean cannotPath, boolean twoBlocksTall) {
+        return cannotPath || twoBlocksTall;
     }
 
-    static boolean isCheese(ServerLevel level, Enderman enderman, ServerPlayer player) {
-        BlockPos feet = player.blockPosition();
-        return isTwoHighRoof(
-                !enderman.hasLineOfSight(player),
-                blocksPath(level, feet.above(1)),
-                blocksPath(level, feet.above(2)));
+    /**
+     * The column at the player's feet is only 2 blocks tall, or tighter.
+     * {@code headBlocked} is the block they stand in at head height. {@code ceilingBlocked} is the
+     * block above that, which is the ceiling of a 2-block-tall space.
+     */
+    static boolean isTwoBlocksTall(boolean headBlocked, boolean ceilingBlocked) {
+        return headBlocked || ceilingBlocked;
+    }
+
+    static boolean isTwoBlocksTall(ServerLevel level, BlockPos feet) {
+        return isTwoBlocksTall(blocksPath(level, feet.above(1)), blocksPath(level, feet.above(2)));
+    }
+
+    /** True when the enderman's own pathfinder can stand on the player's block. */
+    private static boolean canReachPlayer(Enderman enderman, ServerPlayer player) {
+        Path path = enderman.getNavigation().createPath(player, 0);
+        return path != null && path.canReach();
     }
 
     static BlockPos findLanding(ServerLevel level, Enderman enderman, ServerPlayer player) {

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class CouncilMissionRulesTest {
@@ -168,8 +169,14 @@ class CouncilMissionRulesTest {
         CouncilMissionRules.Mission unpaid = active.withKills(6).asCompleted(85, 8);
         assertTrue(unpaid.awaitingTurnIn());
         assertFalse(CouncilMissionRules.canTakeNext(unpaid, 30));
-        assertEquals("Zombie Bounty 3/12", CouncilMissionRules.hudLabel("Zombie", 3, 12));
-        assertEquals("Zombie Bounty 0/6", CouncilMissionRules.hudLabel(active));
+        assertEquals("Ada: 9 Zombies", CouncilMissionRules.hudLabel("Ada", "Zombie", 9));
+        assertEquals("Ada: 1 Zombie", CouncilMissionRules.hudLabel("Ada", "Zombie", 1));
+        assertEquals("Ada: 2 Endermen", CouncilMissionRules.hudLabel("Ada", "Enderman", 2));
+        assertEquals("Ada: 2 Witches", CouncilMissionRules.hudLabel("Ada", "Witch", 2));
+        assertEquals("Ada: 2 Cave Spiders", CouncilMissionRules.hudLabel("Ada", "Cave Spider", 2));
+        assertEquals("Ada: 0 Silverfish", CouncilMissionRules.hudLabel("Ada", "Silverfish", 0));
+        assertEquals("Ada: 2 Drowned", CouncilMissionRules.hudLabel("Ada", "Drowned", 2));
+        assertEquals("Ada: 6 Zombies", CouncilMissionRules.hudLabel(active));
         CouncilMissionRules.Mission grown =
                 CouncilMissionRules.assign(active.asCompleted(85, 8), "home-a", "Ada", 12, 20, 0, 0);
         assertEquals(7, grown.target());
@@ -335,10 +342,59 @@ class CouncilMissionRulesTest {
         assertEquals("Ada", CouncilMissionRules.findGiver(legacy, "a").giverName());
         assertNull(CouncilMissionRules.findGiver(legacy, ""));
         List<String> lines = CouncilMissionRules.hudLines(List.of(first, second));
-        assertEquals(List.of("Ada: Zombie Bounty 0/6", "Bea: Zombie Bounty 0/6"), lines);
-        assertEquals(List.of("Zombie Bounty 0/6"), CouncilMissionRules.hudLines(List.of(first)));
+        assertEquals(List.of("Ada: 6 Zombies", "Bea: 6 Zombies"), lines);
+        assertEquals(List.of("Ada: 6 Zombies"), CouncilMissionRules.hudLines(List.of(first)));
         assertFalse(CouncilMissionRules.worthMigrating(CouncilMissionRules.NONE));
         assertTrue(CouncilMissionRules.worthMigrating(first));
         assertTrue(CouncilMissionRules.worthMigrating(first.clearHunt()));
+    }
+
+    @Test
+    void aHomeSwapKeepsFinishedHuntsWithThatCouncilMember() {
+        assertTrue(CouncilMissionRules.homeKey("111"));
+        assertTrue(CouncilMissionRules.homeKey("-5"));
+        assertFalse(CouncilMissionRules.homeKey("uuid-ada"));
+        CouncilMissionRules.Mission ladder =
+                CouncilMissionRules.assign(CouncilMissionRules.NONE, "111", "Ada", 12, 0, 0, 0);
+        for (int i = 0; i < 4; i++) {
+            ladder = ladder.withKills(ladder.target()).asCompleted(1, 1);
+            if (i < 3) {
+                ladder = CouncilMissionRules.assign(ladder.clearHunt(), "111", "Ada", 12, 10 + i, 0, 0);
+            }
+        }
+        assertEquals(4, ladder.completedCount());
+        CouncilMissionRules.Mission leftBehind = ladder.clearHunt();
+        CouncilMissionRules.Mission easy =
+                CouncilMissionRules.assign(CouncilMissionRules.NONE, "222", "Ada", 30, 20, 0, 0);
+        Map<String, String> afterSwap = Map.of("111", "Bram", "222", "Ada");
+        List<CouncilMissionRules.Mission> bound = CouncilMissionRules.adoptResident(
+                List.of(leftBehind, easy), "uuid-ada", "222", "Ada", afterSwap);
+        CouncilMissionRules.Mission ada = CouncilMissionRules.findGiver(bound, "uuid-ada");
+        assertEquals(4, ada.completedCount());
+        assertEquals(1, CouncilMissionRules.unlockedTier(ada.completedCount()));
+        assertTrue(ada.active());
+        assertEquals(easy.mobId(), ada.mobId());
+        assertEquals(1, bound.size());
+
+        List<CouncilMissionRules.Mission> bram = CouncilMissionRules.adoptResident(
+                List.of(leftBehind), "uuid-bram", "111", "Bram", afterSwap);
+        assertNull(CouncilMissionRules.findGiver(bram, "uuid-bram"));
+        assertEquals(4, CouncilMissionRules.findGiver(bram, "111").completedCount());
+
+        CouncilMissionRules.Mission stayed = CouncilMissionRules.adoptResident(
+                        List.of(leftBehind), "uuid-ada", "111", "Ada", Map.of("111", "Ada"))
+                .get(0);
+        assertEquals("uuid-ada", stayed.giverId());
+        assertEquals(4, stayed.completedCount());
+
+        CouncilMissionRules.Mission neighbor =
+                CouncilMissionRules.assign(CouncilMissionRules.NONE, "333", "Ada", 12, 0, 0, 0)
+                        .withKills(6)
+                        .asCompleted(1, 1)
+                        .clearHunt();
+        List<CouncilMissionRules.Mission> separate = CouncilMissionRules.adoptResident(
+                List.of(leftBehind, neighbor), "uuid-other", "333", "Ada", Map.of("111", "Ada", "333", "Ada"));
+        assertEquals(1, CouncilMissionRules.findGiver(separate, "uuid-other").completedCount());
+        assertEquals(4, CouncilMissionRules.findGiver(separate, "111").completedCount());
     }
 }

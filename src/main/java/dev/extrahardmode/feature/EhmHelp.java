@@ -366,6 +366,7 @@ public final class EhmHelp {
                         "Combat: Zombies vary ±20% in speed (faster hit softer and look smaller, slower hit harder and look larger).",
                         "Combat: Zombies can rise again. Shields absorb 100% of a blocked hit and last one-third as long.",
                         "Combat: Creepers may drop live TNT. TNT sets fire to 20% of the blocks it hits, rounded.",
+                        "Combat: Within 5 blocks, an enderman teleports you to it every 3 seconds when it cannot path to you or you are in a space only 2 blocks tall.",
                         "Combat: explosions.tnt.firePercent changes that share. Set it to 0 to leave TNT blasts unlit.",
                         "Combat: Strong biome bosses can appear far from spawn.",
                         "Combat: The same biome boss family can appear again 500 blocks or more from every earlier spawn of that family.",

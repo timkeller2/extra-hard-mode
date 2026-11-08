@@ -589,6 +589,7 @@ public final class InhabitantRules {
                 "Residents: Clock a resident, then clock another. They trade homes at once, even far apart. Each refuses a home below their job.",
                 "Residents: A loot collector or council member needs 18. A jeweler, armorsmith, or wise teacher needs 24. A wealthy trader or master armorsmith needs 30. Everyone else needs 12.",
                 "Residents: The trade costs half the points of the finer home, rounded down, in emeralds. Their shop stays until the next restock.",
+                "Residents: A council member keeps the hunts already finished with you when they trade homes.",
                 "Residents: Clothes are a villager outfit, so two jewelers may differ. Finer residents wear higher-ranked clothes.",
                 "Residents: A resident will not appear within 35 blocks of a villager. Other residents do not count.",
                 "Residents: Eligible loaded homes are checked at dawn. An empty eligible home is timestamped the day it becomes inhabitable.",
@@ -679,7 +680,7 @@ public final class InhabitantRules {
                 "Bounties: Finishing grants XP equal to one quarter of the slain mobs' health plus 25, with 10% more per extra house point.",
                 "Bounties: You also get a congratulations message and a sound. Return to that resident for emeralds equal to one tenth of that XP.",
                 "Bounties: Collecting plays a sound. When that wait is over, that resident offers a new bounty.",
-                "Bounties: One bounty reads Zombie Bounty 3/12 above the ability icons. Two or more name the resident and stack upward.",
+                "Bounties: A bounty reads Ada: 9 Zombies above the ability icons. The line is the council member, how many are left, and the mob. Lines stack upward.",
                 "Bounties: A loot collector warns you when a biome boss is out, and names the compass direction from that resident. East is the rising sun.");
     }
 
@@ -1216,24 +1217,24 @@ public final class InhabitantRules {
     }
 
     /**
-     * Main-hand choices for this price and the next redstone-block gift.
-     * A free lesson omits the emerald count. One emerald or one block stays singular.
+     * What he asks the player to hold. One emerald or one redstone block stays singular.
+     * A free lesson says 0 emeralds.
      */
     public static String handRequest(int price, int redstoneCap) {
+        int emeralds = Math.max(0, price);
         int cap = Math.max(1, redstoneCap);
-        String blocks = cap == 1 ? "1 redstone block" : cap + " redstone blocks";
-        if (price <= 0) {
-            return "an ability focus or up to "
-                    + blocks
-                    + " for specific or mana training. Hold emeralds for random training. The lesson is free.";
-        }
-        String emeralds = price == 1 ? "1 emerald" : price + " emeralds";
-        return emeralds + ", an ability focus or up to " + blocks + " for random, specific or mana training.";
+        String emeraldWords = emeralds == 1 ? "1 emerald" : emeralds + " emeralds";
+        String blockWords = cap == 1 ? "1 redstone block" : cap + " redstone blocks";
+        return "Hold "
+                + emeraldWords
+                + ", for me to teach you a random ability; an ability focus for that ability (1/2 as effective); or "
+                + blockWords
+                + " for me to deepen your mana learning capacity.";
     }
 
     /** What he says he wants in the main hand when the lesson does not start. */
     public static String handRequestLine(int price, int redstoneCap) {
-        return "In your hand I am looking for " + handRequest(price, redstoneCap);
+        return handRequest(price, redstoneCap);
     }
 
     /** Emeralds for the price may come from the pack, either hand, or both. */

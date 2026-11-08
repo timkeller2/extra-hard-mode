@@ -1,5 +1,6 @@
 package dev.extrahardmode.feature.monster;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -15,10 +16,13 @@ class EndermenTest {
     }
 
     @Test
-    void cheeseIsLosOrTwoHighRoof() {
-        assertTrue(Endermen.isTwoHighRoof(true, false, false));
-        assertTrue(Endermen.isTwoHighRoof(false, true, false));
-        assertTrue(Endermen.isTwoHighRoof(false, false, true));
-        assertFalse(Endermen.isTwoHighRoof(false, false, false));
+    void pullsWhenThePathIsBlockedOrTheSpaceIsTwoBlocksTall() {
+        assertTrue(Endermen.pullsPlayer(true, false));
+        assertTrue(Endermen.pullsPlayer(false, true));
+        assertFalse(Endermen.pullsPlayer(false, false));
+        assertTrue(Endermen.isTwoBlocksTall(true, false));
+        assertTrue(Endermen.isTwoBlocksTall(false, true));
+        assertFalse(Endermen.isTwoBlocksTall(false, false));
+        assertEquals(5, Endermen.RANGE_BLOCKS);
     }
 }

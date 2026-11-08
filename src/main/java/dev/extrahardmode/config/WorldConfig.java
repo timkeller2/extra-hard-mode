@@ -1130,7 +1130,7 @@ public final class WorldConfig {
                 writeDefaultIfMissing(
                         file,
                         "endermen.teleportPlayers",
-                        "In a fight, an enderman may teleport the player onto it (2-high roof cheese).",
+                        "In a fight, within 5 blocks, an enderman teleports the player to it every 3 seconds when it cannot path there or the player is in a 2-block-tall space.",
                         true);
                 writeDefaultIfMissing(
                         file,

@@ -248,6 +248,10 @@ public final class Inhabitants implements FeatureModule {
             }
             String pendingPlate = InhabitantRules.nameplate(pendingHome.name(), pendingHome.specialty());
             String clickedPlate = InhabitantRules.nameplate(clickedHome.name(), clickedHome.specialty());
+            CouncilMissions.keepLadder(
+                    level, data, pendingHome.living().get().toString(), pendingHome.id(), pendingHome.name());
+            CouncilMissions.keepLadder(
+                    level, data, clickedHome.living().get().toString(), clickedHome.id(), clickedHome.name());
             data.put(pendingHome.withResident(
                     clickedHome.specialty(), clickedHome.name(), clickedHome.living(), clickedHome.lastRestockDay()));
             data.put(clickedHome.withResident(
@@ -433,7 +437,7 @@ public final class Inhabitants implements FeatureModule {
                 player.sendSystemMessage(Component.translatableWithFallback("tougher.wise.how." + ability, how));
             }
             player.sendSystemMessage(Component.translatableWithFallback(
-                    "tougher.wise.learned", "You have learned %s.", name));
+                    "tougher.wise.learned", "You have learned more about %s.", name));
         }
         level.playSound(null, villager.blockPosition(), SoundEvents.VILLAGER_YES, SoundSource.NEUTRAL, 1.0F, 1.0F);
     }
@@ -478,20 +482,23 @@ public final class Inhabitants implements FeatureModule {
             if (price <= 0) {
                 player.sendSystemMessage(Component.translatableWithFallback(
                         "tougher.wise.price_ability_free",
-                        "I teach %s for free. You gain half the house points in uses, rounded down.",
+                        "I teach more about %s for free!",
                         name));
             } else {
                 player.sendSystemMessage(Component.translatableWithFallback(
                         "tougher.wise.price_ability",
-                        "I teach %s for %s emeralds from your inventory or either hand. You gain half the house points in uses, rounded down.",
+                        "I teach more about %s for %s emeralds from your inventory.",
                         name,
                         Component.literal(Integer.toString(price))));
             }
         }
+        int emeralds = Math.max(0, price);
+        int blocks = Math.max(1, redstoneCap);
         player.sendSystemMessage(Component.translatableWithFallback(
                 "tougher.wise.hand",
-                "In your hand I am looking for %s",
-                Component.literal(InhabitantRules.handRequest(price, redstoneCap))));
+                "Hold %s, for me to teach you a random ability; an ability focus for that ability (1/2 as effective); or %s for me to deepen your mana learning capacity.",
+                Component.literal(emeralds == 1 ? "1 emerald" : emeralds + " emeralds"),
+                Component.literal(blocks == 1 ? "1 redstone block" : blocks + " redstone blocks")));
         if (price > 0) {
             player.sendSystemMessage(Component.translatableWithFallback(
                     "tougher.wise.pay", InhabitantRules.emeraldPaymentLine()));

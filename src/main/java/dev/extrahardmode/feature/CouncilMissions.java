@@ -8,7 +8,9 @@ import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.world.InhabitantData;
 import dev.extrahardmode.world.WorldGate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -445,15 +447,54 @@ public final class CouncilMissions {
         }
     }
 
+    /**
+     * A clock swap moves the person onto another bed. Finished hunts stay with that person, including
+     * for players who are online while the homes trade.
+     */
+    public static void keepLadder(
+            ServerLevel level, InhabitantData data, String residentId, String homeId, String name) {
+        if (level == null || data == null || residentId == null || residentId.isEmpty()) {
+            return;
+        }
+        Map<String, String> occupants = occupantNames(data);
+        for (ServerPlayer online : level.getServer().getPlayerList().getPlayers()) {
+            List<CouncilMissionRules.Mission> board = boardOf(online);
+            List<CouncilMissionRules.Mission> next = CouncilMissionRules.adoptResident(
+                    board, residentId, homeId, name == null ? "" : name, occupants);
+            if (!next.equals(board)) {
+                save(online, next);
+            }
+        }
+    }
+
+    static Map<String, String> occupantNames(InhabitantData data) {
+        Map<String, String> names = new HashMap<>();
+        if (data == null) {
+            return names;
+        }
+        for (InhabitantData.Home home : data.homes()) {
+            if (home.living().isEmpty() || home.name() == null || home.name().isEmpty() || home.id() == null) {
+                continue;
+            }
+            names.put(home.id(), home.name());
+        }
+        return names;
+    }
+
     public static void onTalk(ServerPlayer player, ServerLevel level, InhabitantData.Home home) {
         if (Achievements.skipPlayer(player)) {
             return;
         }
         long today = AntiFarming.overworldDay(level);
-        String giverId = home == null || home.id() == null ? "" : home.id();
+        String homeId = home == null || home.id() == null ? "" : home.id();
+        String residentId = home == null || home.living().isEmpty() ? "" : home.living().get().toString();
+        String giverId = residentId.isEmpty() ? homeId : residentId;
         String giverName = home == null || home.name() == null || home.name().isEmpty() ? "The council" : home.name();
+        InhabitantData data = InhabitantData.of(level);
         List<CouncilMissionRules.Mission> board =
                 new ArrayList<>(CouncilMissionRules.claimLegacy(boardOf(player), giverId, giverName));
+        board = new ArrayList<>(CouncilMissionRules.adoptResident(
+                board, giverId, homeId, giverName, occupantNames(data)));
         boolean changed = !board.equals(boardOf(player));
         boolean thisOneExpired = false;
         List<CouncilMissionRules.Mission> kept = new ArrayList<>();
@@ -478,12 +519,7 @@ public final class CouncilMissions {
             slot = CouncilMissionRules.findGiver(board, giverId);
         }
         if (slot != null && slot.active()) {
-            player.sendSystemMessage(Component.translatableWithFallback(
-                    "tougher.message.council_mission_progress",
-                    "Your bounty: %s / %s %s.",
-                    Component.literal(Integer.toString(slot.kills())),
-                    Component.literal(Integer.toString(slot.target())),
-                    Component.literal(slot.label())));
+            tellBounty(player, "tougher.message.council_mission_progress", slot);
             if (changed) {
                 save(player, board);
             }
@@ -540,12 +576,18 @@ public final class CouncilMissions {
                 level.getRandom().nextInt(),
                 level.dimension().identifier().toString());
         save(player, CouncilMissionRules.put(board, next));
+        tellBounty(player, "tougher.message.council_mission_new", next);
+    }
+
+    static void tellBounty(ServerPlayer player, String key, CouncilMissionRules.Mission mission) {
+        int left = mission.remaining();
+        String who = mission.giverName() == null || mission.giverName().isEmpty() ? "Council" : mission.giverName();
         player.sendSystemMessage(Component.translatableWithFallback(
-                "tougher.message.council_mission_new",
-                "%s wants you to slay %s %s. You have 14 Minecraft days.",
-                Component.literal(giverName),
-                Component.literal(Integer.toString(next.target())),
-                Component.literal(next.label())));
+                key,
+                "%s: %s %s",
+                Component.literal(who),
+                Component.literal(Integer.toString(left)),
+                Component.literal(CouncilMissionRules.mobName(mission.label(), left))));
     }
 
     static CouncilMissionRules.Mission finish(

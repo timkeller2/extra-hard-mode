@@ -2,6 +2,7 @@ package dev.extrahardmode.feature;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Council-member kill bounties. Minecraft-free so JUnit can cover the math.
@@ -60,7 +61,7 @@ public final class CouncilMissionRules {
     /**
      * {@code lastCompletedTarget} and {@code completedCount} persist between hunts for this giver
      * only. Empty {@code mobId} means no active or turn-in bounty.
-     * {@code giverId} is the home id of the council member who gave it.
+     * {@code giverId} is the resident's id. Older saves used the home id, which stays with the bed.
      */
     public record Mission(
             String mobId,
@@ -132,6 +133,27 @@ public final class CouncilMissionRules {
                     completedCount,
                     id == null ? "" : id,
                     name == null ? "" : name,
+                    spawnCountDay,
+                    spawnReplacements);
+        }
+
+        /** Keep this hunt and move the ladder that survives a home swap. */
+        public Mission withProgress(int nextLastCompletedTarget, int nextCompletedCount) {
+            return new Mission(
+                    mobId,
+                    label,
+                    hp,
+                    target,
+                    kills,
+                    assignedDay,
+                    houseScore,
+                    completed,
+                    awardedXp,
+                    pendingEmeralds,
+                    Math.max(0, nextLastCompletedTarget),
+                    Math.max(0, nextCompletedCount),
+                    giverId,
+                    giverName,
                     spawnCountDay,
                     spawnReplacements);
         }
@@ -504,42 +526,191 @@ public final class CouncilMissionRules {
         return List.copyOf(next);
     }
 
-    public static List<String> hudLines(List<Mission> missions) {
-        List<Mission> active = new ArrayList<>();
-        if (missions != null) {
-            for (Mission mission : missions) {
-                if (mission.active()) {
-                    active.add(mission);
-                }
+    /** A home id is the bed position as a decimal long. A resident id is a UUID. */
+    public static boolean homeKey(String giverId) {
+        if (giverId == null || giverId.isEmpty()) {
+            return false;
+        }
+        int start = giverId.charAt(0) == '-' ? 1 : 0;
+        if (start >= giverId.length()) {
+            return false;
+        }
+        for (int i = start; i < giverId.length(); i++) {
+            if (!Character.isDigit(giverId.charAt(i))) {
+                return false;
             }
         }
+        return true;
+    }
+
+    /**
+     * Move this resident's ladder onto their id. The home id still belongs to them while they live
+     * there. After a swap, a home id left behind is theirs when the mission carries their name and
+     * the person now in that home does not. The kept slot is the one with the most finished hunts.
+     */
+    public static List<Mission> adoptResident(
+            List<Mission> missions,
+            String residentId,
+            String homeId,
+            String name,
+            Map<String, String> occupantNames) {
+        if (missions == null || missions.isEmpty() || residentId == null || residentId.isEmpty()) {
+            return missions == null ? List.of() : List.copyOf(missions);
+        }
+        List<Mission> owned = new ArrayList<>();
+        for (Mission mission : missions) {
+            if (belongsToResident(mission, residentId, homeId, name, occupantNames)) {
+                owned.add(mission);
+            }
+        }
+        if (owned.isEmpty()) {
+            return List.copyOf(missions);
+        }
+        String keptName = name == null ? "" : name;
+        if (owned.size() == 1) {
+            Mission only = owned.get(0);
+            String onlyName = only.giverName() == null ? "" : only.giverName();
+            if (residentId.equals(only.giverId()) && (keptName.isEmpty() || keptName.equals(onlyName))) {
+                return List.copyOf(missions);
+            }
+        }
+        Mission kept = mergeResident(owned, residentId, keptName);
+        List<Mission> next = new ArrayList<>();
+        boolean placed = false;
+        for (Mission mission : missions) {
+            if (!belongsToResident(mission, residentId, homeId, name, occupantNames)) {
+                next.add(mission);
+                continue;
+            }
+            if (!placed) {
+                next.add(kept);
+                placed = true;
+            }
+        }
+        return List.copyOf(next);
+    }
+
+    static boolean belongsToResident(
+            Mission mission,
+            String residentId,
+            String homeId,
+            String name,
+            Map<String, String> occupantNames) {
+        if (mission == null || residentId == null || residentId.isEmpty()) {
+            return false;
+        }
+        String id = mission.giverId() == null ? "" : mission.giverId();
+        if (id.equals(residentId)) {
+            return true;
+        }
+        if (!homeKey(id)) {
+            return false;
+        }
+        String missionName = mission.giverName() == null ? "" : mission.giverName();
+        String residentName = name == null ? "" : name;
+        if (id.equals(homeId == null ? "" : homeId)) {
+            return missionName.isEmpty() || residentName.isEmpty() || missionName.equals(residentName);
+        }
+        if (residentName.isEmpty() || !missionName.equals(residentName)) {
+            return false;
+        }
+        Map<String, String> occupants = occupantNames == null ? Map.of() : occupantNames;
+        String occupant = occupants.get(id);
+        return occupant == null || !occupant.equals(missionName);
+    }
+
+    static Mission mergeResident(List<Mission> owned, String residentId, String name) {
+        Mission best = owned.get(0);
+        for (int i = 1; i < owned.size(); i++) {
+            Mission mission = owned.get(i);
+            if (mission.completedCount() > best.completedCount()
+                    || (mission.completedCount() == best.completedCount() && mission.hasMob() && !best.hasMob())) {
+                best = mission;
+            }
+        }
+        String keptName = name == null || name.isEmpty() ? (best.giverName() == null ? "" : best.giverName()) : name;
+        if (!best.hasMob()) {
+            Mission live = null;
+            for (Mission mission : owned) {
+                if (!mission.hasMob()) {
+                    continue;
+                }
+                if (live == null || mission.kills() > live.kills()) {
+                    live = mission;
+                }
+            }
+            if (live != null) {
+                return live.withProgress(
+                                Math.max(best.lastCompletedTarget(), live.lastCompletedTarget()),
+                                Math.max(best.completedCount(), live.completedCount()))
+                        .withGiver(residentId, keptName);
+            }
+        }
+        return best.withGiver(residentId, keptName);
+    }
+
+    public static List<String> hudLines(List<Mission> missions) {
         List<String> lines = new ArrayList<>();
-        boolean named = active.size() > 1;
-        for (Mission mission : active) {
-            String base = hudLabel(mission);
-            if (named && mission.giverName() != null && !mission.giverName().isEmpty()) {
-                lines.add(mission.giverName() + ": " + base);
-            } else {
-                lines.add(base);
+        if (missions == null) {
+            return lines;
+        }
+        for (Mission mission : missions) {
+            if (mission.active()) {
+                lines.add(hudLabel(mission));
             }
         }
         return lines;
+    }
+
+    /** Singular at 1 remaining. Every other count uses the plural. */
+    public static String mobName(String label, int count) {
+        String name = label == null || label.isEmpty() ? "Mob" : label;
+        if (count == 1) {
+            return name;
+        }
+        return plural(name);
+    }
+
+    private static String plural(String name) {
+        if (name.equals("Enderman")) {
+            return "Endermen";
+        }
+        if (name.equals("Silverfish") || name.equals("Drowned") || name.equals("Bogged")) {
+            return name;
+        }
+        int space = name.lastIndexOf(' ');
+        if (space >= 0) {
+            return name.substring(0, space + 1) + plural(name.substring(space + 1));
+        }
+        if (name.endsWith("s")
+                || name.endsWith("x")
+                || name.endsWith("z")
+                || name.endsWith("ch")
+                || name.endsWith("sh")) {
+            return name + "es";
+        }
+        int length = name.length();
+        if (length >= 2 && name.endsWith("y") && "aeiou".indexOf(Character.toLowerCase(name.charAt(length - 2))) < 0) {
+            return name.substring(0, length - 1) + "ies";
+        }
+        return name + "s";
     }
 
     public static boolean expired(Mission mission, long today) {
         return mission != null && mission.active() && expired(mission.assignedDay(), today);
     }
 
-    public static String hudLabel(String mobLabel, int kills, int target) {
-        String name = mobLabel == null || mobLabel.isEmpty() ? "Mob" : mobLabel;
-        return name + " Bounty " + Math.max(0, kills) + "/" + Math.max(0, target);
+    public static String hudLabel(String giverName, String mobLabel, int remaining) {
+        int left = Math.max(0, remaining);
+        String who = giverName == null || giverName.isEmpty() ? "Council" : giverName;
+        return who + ": " + left + " " + mobName(mobLabel, left);
     }
 
     public static String hudLabel(Mission mission) {
         if (mission == null || !mission.active()) {
             return "";
         }
-        return hudLabel(mission.label(), mission.kills(), mission.target());
+        return hudLabel(mission.giverName(), mission.label(), mission.remaining());
     }
 
     /** {@code dayTime} is an overworld clock. Night is {@code [13000, 23000)}. */

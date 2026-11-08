@@ -379,7 +379,7 @@ class EhmHelpTest {
         assertTrue(all.contains("subtracts the items required"));
         assertTrue(all.contains("council member"));
         assertTrue(all.contains("three times as likely"));
-        assertTrue(all.contains("Zombie Bounty 3/12"));
+        assertTrue(all.contains("Ada: 9 Zombies"));
         assertTrue(all.contains("14 Minecraft days"));
         assertTrue(all.contains("7 Minecraft days after the last one was given"));
         assertTrue(all.contains("hold 5 at a time"));
@@ -405,7 +405,8 @@ class EhmHelpTest {
         assertTrue(all.contains("from 1/6 of those still to kill"));
         assertTrue(all.contains("through 1/3"));
         assertTrue(all.contains("not replaced in that conversation"));
-        assertTrue(all.contains("name the resident"));
+        assertTrue(all.contains("how many are left"));
+        assertTrue(all.contains("keeps the hunts already finished"));
         assertTrue(all.contains("Emerald prices stay the same"));
         assertTrue(all.contains("only after you finish the previous one"));
         assertTrue(all.contains("compass direction"));

@@ -329,16 +329,16 @@ class InhabitantRulesTest {
         assertFalse(InhabitantRules.canTeachFocus(1, 29, 30));
         assertTrue(InhabitantRules.canTeachFocus(1, 0, 0));
         assertEquals(
-                "8 emeralds, an ability focus or up to 9 redstone blocks for random, specific or mana training.",
+                "Hold 8 emeralds, for me to teach you a random ability; an ability focus for that ability (1/2 as effective); or 9 redstone blocks for me to deepen your mana learning capacity.",
                 InhabitantRules.handRequest(InhabitantRules.wiseAbilityPrice(35), InhabitantRules.redstoneBlockCap(2)));
         assertEquals(
-                "1 emerald, an ability focus or up to 1 redstone block for random, specific or mana training.",
+                "Hold 1 emerald, for me to teach you a random ability; an ability focus for that ability (1/2 as effective); or 1 redstone block for me to deepen your mana learning capacity.",
                 InhabitantRules.handRequest(1, 1));
         assertEquals(
-                "an ability focus or up to 1 redstone block for specific or mana training. Hold emeralds for random training. The lesson is free.",
+                "Hold 0 emeralds, for me to teach you a random ability; an ability focus for that ability (1/2 as effective); or 1 redstone block for me to deepen your mana learning capacity.",
                 InhabitantRules.handRequest(InhabitantRules.wiseAbilityPrice(39), InhabitantRules.redstoneBlockCap(-4)));
         assertEquals(
-                "In your hand I am looking for 8 emeralds, an ability focus or up to 9 redstone blocks for random, specific or mana training.",
+                "Hold 8 emeralds, for me to teach you a random ability; an ability focus for that ability (1/2 as effective); or 9 redstone blocks for me to deepen your mana learning capacity.",
                 InhabitantRules.handRequestLine(8, 9));
         assertEquals(
                 "I take those emeralds from your inventory or either hand. You can use either or both.",
