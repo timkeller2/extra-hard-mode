@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.feature.CouncilMissionRules;
+import dev.extrahardmode.feature.InhabitantRules;
 import dev.extrahardmode.feature.OldMinerRules;
 import dev.extrahardmode.feature.WiseLessonRules;
 import it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet;
@@ -282,8 +283,8 @@ public final class EhmAttachments {
     public static final AttachmentType<Boolean> EHM_BOSS_MINE_GOAL =
             AttachmentRegistry.create(ExtraHardModeMod.id("boss_mine_goal"));
     /**
-     * Persistent. A mob with this set does not burn in sunlight. The biome-boss finale phantom uses it
-     * so daylight does not end the fight.
+     * Persistent. A mob with this set does not burn in sunlight. The biome-boss finale phantom uses it,
+     * and so do wise-teacher hunt zombies, skeletons, and phantoms.
      */
     public static final AttachmentType<Boolean> EHM_NO_SUN_BURN = AttachmentRegistry.create(
             ExtraHardModeMod.id("no_sun_burn"),
@@ -647,6 +648,26 @@ public final class EhmAttachments {
                                     .optionalFieldOf("next_day", -1L)
                                     .forGetter(OldMinerRules.Lead::nextDay))
                     .apply(instance, OldMinerRules.Lead::new));
+
+    public static final Codec<InhabitantRules.HouseHint> HOUSE_HINT_CODEC = RecordCodecBuilder.create(
+            instance -> instance.group(
+                            Codec.STRING
+                                    .optionalFieldOf("bed", "")
+                                    .forGetter(InhabitantRules.HouseHint::bed),
+                            Codec.STRING
+                                    .optionalFieldOf("improvement", "")
+                                    .forGetter(InhabitantRules.HouseHint::improvement),
+                            Codec.LONG
+                                    .optionalFieldOf("until", 0L)
+                                    .forGetter(InhabitantRules.HouseHint::until))
+                    .apply(instance, InhabitantRules.HouseHint::new));
+
+    /** One clock suggestion per bed, kept for the player who asked. */
+    public static final AttachmentType<List<InhabitantRules.HouseHint>> EHM_HOUSE_HINTS = AttachmentRegistry.create(
+            ExtraHardModeMod.id("house_hints"),
+            builder -> builder.persistent(HOUSE_HINT_CODEC.listOf())
+                    .copyOnDeath()
+                    .initializer(ArrayList::new));
 
     /** One ore lead per old miner. Several miners can lead the same player, and one miner can lead several players. */
     public static final AttachmentType<List<OldMinerRules.Lead>> EHM_OLD_MINER_LEADS = AttachmentRegistry.create(

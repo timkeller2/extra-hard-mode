@@ -334,7 +334,7 @@ public final class WiseLessons {
         publish(player, next);
     }
 
-    /** Red mist for every player in this level who can currently see his marks. */
+    /** Red mist for marks the hunter can reveal. Every player near the mark can see it. */
     public static void mist(ServerLevel level) {
         if (level == null) {
             return;
@@ -413,6 +413,7 @@ public final class WiseLessons {
             if (!(entity instanceof LivingEntity living) || !isLessonMob(living)) {
                 continue;
             }
+            shieldDaylight(living);
             long expire = living.getAttachedOrElse(EhmAttachments.EHM_WISE_EXPIRE_DAY, Long.MAX_VALUE);
             if (today >= expire) {
                 doomed.add(living);
@@ -770,13 +771,14 @@ public final class WiseLessons {
     }
 
     /**
-     * Red mist on and around a hunt creature. Only the owner's line of sight shows it, unless a golden
-     * carrot is still keeping them saturated or Sense Evil is revealing marks.
+     * Red mist on and around a hunt creature. The owner's line of sight shows it, unless a golden
+     * carrot is still keeping them saturated or Sense Evil is revealing marks. Other players see it too.
      */
     private static void showMist(LivingEntity living) {
         if (living == null || !isLessonMob(living)) {
             return;
         }
+        shieldDaylight(living);
         if (!(living.level() instanceof ServerLevel level) || level.getServer() == null) {
             clearOutline(living);
             return;
@@ -795,7 +797,7 @@ public final class WiseLessons {
         boolean sense = WiseLessonRules.senseOutlineActive(until, level.getServer().overworld().getGameTime());
         boolean sight = owner.hasLineOfSight(living);
         if (WiseLessonRules.showMist(sight, carrot, sense)) {
-            spawnMist(level, owner, living);
+            spawnMist(level, living);
         }
         if (WiseLessonRules.showOutline(carrot, sense)) {
             living.addEffect(new MobEffectInstance(MobEffects.GLOWING, OUTLINE_TICKS, 0, false, false));
@@ -811,23 +813,22 @@ public final class WiseLessons {
         }
     }
 
-    /** Dust on the body, a wider darker cloud, and drifting red spores. Sent only to the owner. */
-    private static void spawnMist(ServerLevel level, ServerPlayer owner, LivingEntity living) {
+    /** Dust on the body, a wider darker cloud, and drifting red spores. Every player in range sees it. */
+    private static void spawnMist(ServerLevel level, LivingEntity living) {
         double x = living.getX();
         double y = living.getY() + living.getBbHeight() * 0.55;
         double z = living.getZ();
         double body = Math.max(0.3, living.getBbWidth() * 0.45);
         double around = Math.max(0.55, living.getBbWidth() * 0.85);
         double lift = Math.max(0.4, living.getBbHeight() * 0.5);
-        puff(level, owner, MARK_MIST, x, y, z, 8, body, lift * 0.7, 0.004);
-        puff(level, owner, MARK_HAZE, x, y, z, 10, around, lift, 0.008);
-        puff(level, owner, ParticleTypes.CRIMSON_SPORE, x, y, z, 5, around * 0.8, lift * 0.6, 0.01);
-        puff(level, owner, MARK_VEIL, x, y, z, 3, body * 0.8, lift * 0.5, 0.0);
+        puff(level, MARK_MIST, x, y, z, 8, body, lift * 0.7, 0.004);
+        puff(level, MARK_HAZE, x, y, z, 10, around, lift, 0.008);
+        puff(level, ParticleTypes.CRIMSON_SPORE, x, y, z, 5, around * 0.8, lift * 0.6, 0.01);
+        puff(level, MARK_VEIL, x, y, z, 3, body * 0.8, lift * 0.5, 0.0);
     }
 
     private static void puff(
             ServerLevel level,
-            ServerPlayer owner,
             ParticleOptions particle,
             double x,
             double y,
@@ -836,7 +837,23 @@ public final class WiseLessons {
             double spreadX,
             double spreadY,
             double speed) {
-        level.sendParticles(owner, particle, true, false, x, y, z, count, spreadX, spreadY, spreadX, speed);
+        for (ServerPlayer viewer : level.players()) {
+            level.sendParticles(viewer, particle, true, false, x, y, z, count, spreadX, spreadY, spreadX, speed);
+        }
+    }
+
+    /** Zombies, skeletons, phantoms, and the hunt kinds of those families do not burn in sunlight. */
+    private static void shieldDaylight(LivingEntity living) {
+        if (!(living instanceof Mob mob)) {
+            return;
+        }
+        if (Boolean.TRUE.equals(mob.getAttached(EhmAttachments.EHM_NO_SUN_BURN))) {
+            return;
+        }
+        Identifier id = BuiltInRegistries.ENTITY_TYPE.getKey(mob.getType());
+        if (id != null && WiseLessonRules.ignoresDaylight(id.toString())) {
+            mob.setAttached(EhmAttachments.EHM_NO_SUN_BURN, Boolean.TRUE);
+        }
     }
 
     private static void addBonus(AttributeInstance attribute, Identifier id, double amount) {
@@ -896,6 +913,7 @@ public final class WiseLessons {
         mob.setAttached(EhmAttachments.EHM_UNNATURAL_SPAWN, Boolean.FALSE);
         mob.setAttached(EhmAttachments.EHM_WISE_LESSON_MOB, Boolean.TRUE);
         mob.setAttached(EhmAttachments.EHM_WISE_LESSON_OWNER, player.getUUID());
+        shieldDaylight(mob);
         if (lead) {
             promoteLead(mob);
         } else if (last) {

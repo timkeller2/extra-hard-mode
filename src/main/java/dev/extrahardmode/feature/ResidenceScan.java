@@ -26,7 +26,8 @@ public final class ResidenceScan {
             boolean lit,
             boolean roofed,
             InhabitantRules.AmenityCounts amenities,
-            InhabitantRules.GateResult gates) {}
+            InhabitantRules.GateResult gates,
+            int rooms) {}
 
     private ResidenceScan() {}
 
@@ -48,7 +49,8 @@ public final class ResidenceScan {
         int isolation = InhabitantRules.isolationPoints(nearestOccupiedSquared(anchor, occupiedBeds));
         InhabitantRules.GateResult gates = InhabitantRules.gates(
                 enclosed, volume, hasBed, doorOutside, lit, roofed, far, amenities, house.rooms(), isolation);
-        return new Result(anchor, volume, enclosed, hasBed, doorOutside, lit, roofed, amenities, gates);
+        return new Result(
+                anchor, volume, enclosed, hasBed, doorOutside, lit, roofed, amenities, gates, house.rooms());
     }
 
     static boolean fill(ServerLevel level, BlockPos bed, LongOpenHashSet interior) {

@@ -277,6 +277,16 @@ class WiseLessonRulesTest {
         assertEquals(100, WiseLessonRules.retryWait(2, 5, 0));
         assertEquals(100, WiseLessonRules.retryWait(0, 5, 0));
         assertEquals(0.8, WiseLessonRules.leadKnockbackResistance());
+        assertTrue(WiseLessonRules.ignoresDaylight("minecraft:zombie"));
+        assertTrue(WiseLessonRules.ignoresDaylight("minecraft:skeleton"));
+        assertTrue(WiseLessonRules.ignoresDaylight("minecraft:phantom"));
+        assertTrue(WiseLessonRules.ignoresDaylight("minecraft:drowned"));
+        assertTrue(WiseLessonRules.ignoresDaylight("minecraft:stray"));
+        assertTrue(WiseLessonRules.ignoresDaylight("minecraft:bogged"));
+        assertTrue(WiseLessonRules.ignoresDaylight("minecraft:zombie_villager"));
+        assertFalse(WiseLessonRules.ignoresDaylight("minecraft:creeper"));
+        assertFalse(WiseLessonRules.ignoresDaylight("minecraft:spider"));
+        assertFalse(WiseLessonRules.ignoresDaylight(null));
         assertTrue(WiseLessonRules.showMist(true, false, false));
         assertFalse(WiseLessonRules.showMist(false, false, false));
         assertTrue(WiseLessonRules.showMist(false, true, false));

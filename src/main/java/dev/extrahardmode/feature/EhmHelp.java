@@ -391,7 +391,10 @@ public final class EhmHelp {
                 List.of(
                         "Armor: Heavy copper, iron, diamond, and netherite armor add extra hearts (5 / 10 / 20 / 30 for a full set).",
                         "Armor: Those pieces last twice as long as the matching vanilla pieces.",
-                        "Armor: Healing and food regen fill every heart, not just the first ten."));
+                        "Armor: Healing and food regen fill every heart, not just the first ten.",
+                        "Armor: Unarmored, leather, and chainmail move 10% faster than usual. A full set of copper, iron, or gold slows that pace by 10%. Diamond and netherite slow it by 5%.",
+                        "Armor: Heavy armor slows 5% more than its material for a full set. Each worn piece applies one quarter of that amount.",
+                        "Armor: Keys: player.armor.copperIronGoldSlowdownPercent, diamondSlowdownPercent, leatherChainmailSlowdownPercent, heavyExtraSlowdownPercent."));
     }
 
     private static Page weapons() {
@@ -448,7 +451,7 @@ public final class EhmHelp {
                         "Abilities: Read Tome practice keeps the tome.",
                         "Abilities: Redstone dust in the offhand adds half your skill, up to the square root of that stack rounded down. Success consumes that bonus, rounded down. Practice keeps the dust.",
                         "Abilities: Hold a focus and a wise teacher teaches that ability for 30 emeralds from your inventory or either hand.",
-                        "Abilities: Each house point above 24 lowers that price by 2 emeralds, down to free. He names that count, a focus, or the next redstone gift.",
+                        "Abilities: Each house point above 24 lowers that price by 2 emeralds, down to free. He names that count, a focus, or the next redstone gift when a lesson is offered.",
                         "Abilities: A focus gives half the house points in uses, rounded down. Hold emeralds and he picks an ability for the house points.",
                         "Abilities: He offers a lesson when a new hunt begins, and again when you kill more than half the marks before they vanish.",
                         "Abilities: Hold redstone blocks instead. The first gift takes 1, then up to 4, 9, and so on. Mana learning grows by the square root of the blocks he takes.",

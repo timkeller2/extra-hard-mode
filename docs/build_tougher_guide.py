@@ -307,7 +307,16 @@ def build():
         Paragraph(
             "A full set of heavy copper, iron, diamond, or netherite armor adds 5, 10, 20, or 30 hearts. "
             "Those pieces last twice as long as the matching vanilla pieces. "
-            "Healing and food regen fill every heart, not only the first ten.",
+            "Healing and food regen fill every heart, not only the first ten. "
+            "Unarmored, leather, and chainmail move 10% faster than usual. "
+            "A full set of copper, iron, or gold armor slows that pace by 10%. "
+            "A full set of diamond or netherite armor slows it by 5%. "
+            "Heavy armor slows 5% more than its material for a full set, so heavy iron slows by 15% "
+            "and heavy diamond or netherite slows by 10%. "
+            "Each worn piece applies one quarter of its full-set amount. "
+            "The config keys are player.armor.copperIronGoldSlowdownPercent, "
+            "player.armor.diamondSlowdownPercent, player.armor.leatherChainmailSlowdownPercent, "
+            "and player.armor.heavyExtraSlowdownPercent.",
             s["body"],
         ),
         Paragraph("Weapons", s["h"]),
@@ -366,14 +375,15 @@ def build():
                 "Below 1 a cast is practice: mana and focus are spent, the cooldown starts, and you gain one use. Diamond Skin practices below 2 and keeps the diamond. Read Tome keeps the tome.",
                 "Redstone dust in the offhand adds half your skill, up to the square root of that stack rounded down. Success consumes that bonus, rounded down. Practice keeps the dust.",
                 "Bottom-right icons list abilities above level 2, highest first. Each icon is 5% of normal size times that level, and that level sits on its right at the same scale. Hold a book to see all of them. Otherwise only an active ability, one on cooldown, or the ability for the item in your hand is shown. Cooldown seconds are yellow on the icon. The level number is golden.",
-                "Hold a focus and he teaches that ability for half the house points in uses, rounded down. Hold emeralds and he picks an ability for the house points. A 24-point home charges 30 emeralds from your inventory or either hand, minus 2 per point above 24, down to free. He asks you to hold that many emeralds for a random ability, a focus for that ability at half the uses, or that many redstone blocks to deepen mana learning. A new hunt, or killing more than half the marks, offers the lesson.",
+                "Hold a focus and he teaches that ability for half the house points in uses, rounded down. Hold emeralds and he picks an ability for the house points. A 24-point home charges 30 emeralds from your inventory or either hand, minus 2 per point above 24, down to free. When a lesson is offered, he asks you to hold that many emeralds for a random ability, a focus for that ability at half the uses, or that many redstone blocks to deepen mana learning. A new hunt, or killing more than half the marks, offers the lesson.",
                 "Hold redstone blocks instead. The first gift takes 1, then up to 4, 9, and 16. Fewer still count. Mana learning rises by the square root of the blocks he takes.",
                 "He offers a hunt every 30 Minecraft days. The pack is 3 to 8 from the home and his experience, plus 50% of that for each hunt you have finished with him. Creatures come from his own dimension.",
                 "While he waits to give another hunt, he names up to 3 explored biomes that can still spawn a boss. If more than 3 can, he picks 3 and keeps them until that wait ends.",
                 "The first hunts are easier creatures. Every 4 hunts, they are harder. The hunt lies 200 to 500 blocks north, south, east, or west, plus 33% of that for each hunt you have finished with him.",
                 "His name, how many are left, and the direction show on your screen. That number falls as you kill them. At that distance the direction becomes near here. Come back closer and the direction returns.",
                 "After 2 minutes out there, on land, at night or below ground, half the pack appears within a few seconds, 20 to 40 blocks away. The rest still arrive one at a time, every 5 to 15 seconds.",
-                "A mark in your line of sight gives off a red mist, so it is not an ordinary creature. A golden carrot mists every mark until you are no longer saturated, and outlines them in white through blocks. Sense Evil does both for 1 minute times its ability level, and that time shows with the other ability durations. Each one has 50% to 100% more health. They give triple experience and double loot, and they always drop both. They vanish after 3 Minecraft days.",
+                "A mark in your line of sight gives off a red mist that other players can see, so it is not an ordinary creature. A golden carrot mists every mark until you are no longer saturated, and outlines them in white through blocks. Sense Evil does both for 1 minute times its ability level, and that time shows with the other ability durations. Each one has 50% to 100% more health. They give triple experience and double loot, and they always drop both. They vanish after 3 Minecraft days.",
+                "Zombies, skeletons, drowned, strays, bogged, zombie villagers, and phantoms on a hunt do not burn in sunlight.",
                 "Sense Evil also outlines every hostile mob within 8 blocks times its ability level. Solid blocks do not hide the outline. It lasts 1 minute times that ability level, shown as a spider eye at the bottom left. It says whether a biome boss can appear here. In a full chunk at Y=48 or above, it also says the alliance has cleared the area.",
                 "The first creature of a hunt is slightly larger, has 5 times the health, and resists knockback. It gives 10 times the experience and 3 times the loot, plus emeralds equal to 5% to 10% of that health. The last creature has twice that health and hits 50% harder. It drops 3 times the loot, with emeralds equal to 5% to 10% of its own health.",
                 "A creeper that explodes goes back on the spawn queue. A first or last creeper returns with that same role.",
@@ -423,6 +433,7 @@ def build():
         ),
         bullets(
             [
+                "The clock also names one improvement that would still raise the score. It keeps that suggestion for 3 minutes. When that improvement no longer adds points, the next look names another one.",
                 "A resident will not appear within 35 blocks of a villager. Other residents do not count.",
                 "The name over a resident is their name and occupation, such as Alden the Jeweler. Each name is used once before any name is used again.",
                 "An old miner, such as Jack the Old Miner, can live in a 12-point home. Speak to him for a lead. He does not keep a shop. Every 7 Minecraft days he names the largest vein of one ore in his chunk and the eight chunks around it, and he adds more of that ore beside the vein. He names only ores found in that ground.",

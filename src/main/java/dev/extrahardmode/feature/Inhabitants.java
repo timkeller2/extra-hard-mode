@@ -508,16 +508,18 @@ public final class Inhabitants implements FeatureModule {
                         Component.literal(Integer.toString(price))));
             }
         }
-        int emeralds = Math.max(0, price);
-        int blocks = Math.max(1, redstoneCap);
-        player.sendSystemMessage(Component.translatableWithFallback(
-                "tougher.wise.hand",
-                "Hold %s, for me to teach you a random ability; an ability focus for that ability (1/2 as effective); or %s for me to deepen your mana learning capacity.",
-                Component.literal(emeralds == 1 ? "1 emerald" : emeralds + " emeralds"),
-                Component.literal(blocks == 1 ? "1 redstone block" : blocks + " redstone blocks")));
-        if (price > 0) {
+        if (offers > 0) {
+            int emeralds = Math.max(0, price);
+            int blocks = Math.max(1, redstoneCap);
             player.sendSystemMessage(Component.translatableWithFallback(
-                    "tougher.wise.pay", InhabitantRules.emeraldPaymentLine()));
+                    "tougher.wise.hand",
+                    "Hold %s, for me to teach you a random ability; an ability focus for that ability (1/2 as effective); or %s for me to deepen your mana learning capacity.",
+                    Component.literal(emeralds == 1 ? "1 emerald" : emeralds + " emeralds"),
+                    Component.literal(blocks == 1 ? "1 redstone block" : blocks + " redstone blocks")));
+            if (price > 0) {
+                player.sendSystemMessage(Component.translatableWithFallback(
+                        "tougher.wise.pay", InhabitantRules.emeraldPaymentLine()));
+            }
         }
     }
 
@@ -589,6 +591,11 @@ public final class Inhabitants implements FeatureModule {
         }
         player.sendSystemMessage(Component.translatableWithFallback(
                 "tougher.message.inhabitant_inspect", "%s", Component.literal(report)));
+        String suggestion = houseSuggestion(player, level, result);
+        if (!suggestion.isEmpty()) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.house_suggestion", "Suggestion: %s", Component.literal(suggestion)));
+        }
         InhabitantData.Home home = data.get(ResidenceScan.homeId(result.bed()));
         if (home != null && home.living().isPresent()) {
             home = ensureMaleName(data, home);
@@ -605,6 +612,30 @@ public final class Inhabitants implements FeatureModule {
                     "tougher.message.inhabitant_near_villager",
                     "A villager is within 35 blocks, so no resident will appear."));
         }
+    }
+
+    /** One remaining point gain for this bed. Kept for 3 minutes, or replaced as soon as it no longer adds points. */
+    private static String houseSuggestion(ServerPlayer player, ServerLevel level, ResidenceScan.Result result) {
+        List<String> open = InhabitantRules.openImprovements(
+                result.amenities(), result.volume(), result.rooms(), result.gates().isolation());
+        long now = System.currentTimeMillis();
+        String bedKey = InhabitantRules.houseHintBed(
+                level.dimension().identifier().toString(),
+                result.bed().getX(),
+                result.bed().getY(),
+                result.bed().getZ());
+        List<InhabitantRules.HouseHint> stored = player.getAttachedOrElse(EhmAttachments.EHM_HOUSE_HINTS, List.of());
+        InhabitantRules.HouseHint prior = InhabitantRules.hintFor(stored, bedKey);
+        String remembered = prior == null ? "" : prior.improvement();
+        long until = prior == null ? 0L : prior.until();
+        String chosen = InhabitantRules.chooseImprovement(open, remembered, now, until, level.getRandom().nextInt());
+        if (!InhabitantRules.keepImprovement(open, remembered, now, until)) {
+            List<InhabitantRules.HouseHint> next = InhabitantRules.rememberHint(stored, bedKey, chosen, now);
+            if (stored == null || !next.equals(stored)) {
+                player.setAttached(EhmAttachments.EHM_HOUSE_HINTS, next);
+            }
+        }
+        return InhabitantRules.improvementText(chosen);
     }
 
     static void tickHomes(ServerLevel level) {

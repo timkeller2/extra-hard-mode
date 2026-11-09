@@ -1254,4 +1254,114 @@ class InhabitantRulesTest {
         assertEquals(1, last[1]);
         assertEquals(0, last[2]);
     }
+
+    @Test
+    void clockSuggestsOneRemainingPointGain() {
+        assertEquals(180_000L, InhabitantRules.HOUSE_HINT_MILLIS);
+        InhabitantRules.AmenityCounts empty =
+                new InhabitantRules.AmenityCounts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, false);
+        assertEquals(
+                List.of(
+                        InhabitantRules.HINT_WINDOWS,
+                        InhabitantRules.HINT_ART,
+                        InhabitantRules.HINT_CARPETS,
+                        InhabitantRules.HINT_SEATING,
+                        InhabitantRules.HINT_STORAGE,
+                        InhabitantRules.HINT_WORKSTATIONS,
+                        InhabitantRules.HINT_LIGHTS,
+                        InhabitantRules.HINT_PLANTS,
+                        InhabitantRules.HINT_BOOKS,
+                        InhabitantRules.HINT_BED,
+                        InhabitantRules.HINT_KITCHEN_WATER,
+                        InhabitantRules.HINT_VOLUME,
+                        InhabitantRules.HINT_ROOMS,
+                        InhabitantRules.HINT_ISOLATION_NEAR),
+                InhabitantRules.openImprovements(empty, 0, 0, 0));
+        for (String improvement : InhabitantRules.openImprovements(empty, 0, 0, 0)) {
+            String text = InhabitantRules.improvementText(improvement);
+            assertFalse(text.isEmpty(), improvement);
+            assertTrue(text.endsWith("."), improvement);
+        }
+        assertEquals("", InhabitantRules.improvementText("roof"));
+        assertEquals("", InhabitantRules.improvementText(null));
+
+        InhabitantRules.AmenityCounts maxed =
+                new InhabitantRules.AmenityCounts(3, 6, 12, 2, 2, 2, 2, 2, 2, 1, true, true);
+        assertTrue(InhabitantRules.openImprovements(maxed, 240, 3, 2).isEmpty());
+        assertTrue(InhabitantRules.openImprovements(maxed, 400, 8, 2).isEmpty());
+        assertEquals("", InhabitantRules.chooseImprovement(List.of(), InhabitantRules.HINT_ART, 0L, 1L, 0));
+
+        assertFalse(InhabitantRules.openImprovements(empty, 239, 2, 0).contains(InhabitantRules.HINT_ISOLATION_FAR));
+        assertTrue(InhabitantRules.openImprovements(empty, 239, 2, 0).contains(InhabitantRules.HINT_VOLUME));
+        assertTrue(InhabitantRules.openImprovements(empty, 239, 2, 0).contains(InhabitantRules.HINT_ROOMS));
+        assertFalse(InhabitantRules.openImprovements(empty, 240, 3, 0).contains(InhabitantRules.HINT_VOLUME));
+        assertFalse(InhabitantRules.openImprovements(empty, 240, 3, 0).contains(InhabitantRules.HINT_ROOMS));
+        assertTrue(InhabitantRules.openImprovements(empty, 240, 3, 1).contains(InhabitantRules.HINT_ISOLATION_FAR));
+        assertFalse(InhabitantRules.openImprovements(empty, 240, 3, 1).contains(InhabitantRules.HINT_ISOLATION_NEAR));
+        assertFalse(InhabitantRules.openImprovements(empty, 240, 3, 2).contains(InhabitantRules.HINT_ISOLATION_FAR));
+
+        InhabitantRules.AmenityCounts windows =
+                new InhabitantRules.AmenityCounts(2, 6, 12, 2, 2, 2, 2, 2, 2, 1, true, true);
+        assertTrue(InhabitantRules.openImprovements(windows, 240, 3, 2).contains(InhabitantRules.HINT_WINDOWS));
+        InhabitantRules.AmenityCounts windowCap =
+                new InhabitantRules.AmenityCounts(3, 6, 12, 2, 2, 2, 2, 2, 2, 1, true, true);
+        assertFalse(InhabitantRules.openImprovements(windowCap, 240, 3, 2).contains(InhabitantRules.HINT_WINDOWS));
+        InhabitantRules.AmenityCounts rugs =
+                new InhabitantRules.AmenityCounts(3, 6, 11, 2, 2, 2, 2, 2, 2, 1, true, true);
+        assertTrue(InhabitantRules.openImprovements(rugs, 240, 3, 2).contains(InhabitantRules.HINT_CARPETS));
+        InhabitantRules.AmenityCounts rugCap =
+                new InhabitantRules.AmenityCounts(3, 6, 12, 2, 2, 2, 2, 2, 2, 1, true, true);
+        assertFalse(InhabitantRules.openImprovements(rugCap, 240, 3, 2).contains(InhabitantRules.HINT_CARPETS));
+        InhabitantRules.AmenityCounts heat =
+                new InhabitantRules.AmenityCounts(3, 6, 12, 2, 2, 2, 2, 2, 2, 1, false, true);
+        List<String> heatOpen = InhabitantRules.openImprovements(heat, 240, 3, 2);
+        assertTrue(heatOpen.contains(InhabitantRules.HINT_KITCHEN_HEAT));
+        assertFalse(heatOpen.contains(InhabitantRules.HINT_KITCHEN_WATER));
+        InhabitantRules.AmenityCounts water =
+                new InhabitantRules.AmenityCounts(3, 6, 12, 2, 2, 2, 2, 2, 2, 1, false, false);
+        List<String> waterOpen = InhabitantRules.openImprovements(water, 240, 3, 2);
+        assertTrue(waterOpen.contains(InhabitantRules.HINT_KITCHEN_WATER));
+        assertFalse(waterOpen.contains(InhabitantRules.HINT_KITCHEN_HEAT));
+
+        List<String> open = List.of(InhabitantRules.HINT_ART, InhabitantRules.HINT_BOOKS, InhabitantRules.HINT_BED);
+        long now = 10_000L;
+        long until = now + InhabitantRules.HOUSE_HINT_MILLIS;
+        assertEquals(
+                InhabitantRules.HINT_BOOKS,
+                InhabitantRules.chooseImprovement(open, InhabitantRules.HINT_BOOKS, now, until, 0));
+        assertTrue(InhabitantRules.keepImprovement(open, InhabitantRules.HINT_BOOKS, until - 1, until));
+        assertFalse(InhabitantRules.keepImprovement(open, InhabitantRules.HINT_BOOKS, until, until));
+        assertEquals(
+                InhabitantRules.HINT_ART,
+                InhabitantRules.chooseImprovement(open, InhabitantRules.HINT_BOOKS, until, until, 0));
+        List<String> afterBooks = List.of(InhabitantRules.HINT_ART, InhabitantRules.HINT_BED);
+        assertEquals(
+                InhabitantRules.HINT_BED,
+                InhabitantRules.chooseImprovement(afterBooks, InhabitantRules.HINT_BOOKS, now, until, 1));
+        assertEquals(InhabitantRules.HINT_BED, InhabitantRules.chooseImprovement(open, "", now, until, -1));
+
+        String bed = InhabitantRules.houseHintBed("minecraft:overworld", 4, 64, -2);
+        assertEquals("minecraft:overworld 4 64 -2", bed);
+        List<InhabitantRules.HouseHint> saved =
+                InhabitantRules.rememberHint(List.of(), bed, InhabitantRules.HINT_CARPETS, now);
+        assertEquals(1, saved.size());
+        assertEquals(until, saved.getFirst().until());
+        String other = InhabitantRules.houseHintBed("minecraft:overworld", 80, 64, -2);
+        List<InhabitantRules.HouseHint> both = InhabitantRules.rememberHint(
+                saved, other, InhabitantRules.HINT_ART, now + 1_000L);
+        assertEquals(InhabitantRules.HINT_CARPETS, InhabitantRules.hintFor(both, bed).improvement());
+        assertEquals(until, InhabitantRules.hintFor(both, bed).until());
+        List<InhabitantRules.HouseHint> replaced =
+                InhabitantRules.rememberHint(both, bed, InhabitantRules.HINT_WINDOWS, now + 1_000L);
+        assertEquals(InhabitantRules.HINT_WINDOWS, InhabitantRules.hintFor(replaced, bed).improvement());
+        assertEquals(now + 1_000L + InhabitantRules.HOUSE_HINT_MILLIS, InhabitantRules.hintFor(replaced, bed).until());
+        assertEquals(InhabitantRules.HINT_ART, InhabitantRules.hintFor(replaced, other).improvement());
+        List<InhabitantRules.HouseHint> cleared = InhabitantRules.rememberHint(replaced, bed, "", now + 1_000L);
+        assertNull(InhabitantRules.hintFor(cleared, bed));
+        assertEquals(InhabitantRules.HINT_ART, InhabitantRules.hintFor(cleared, other).improvement());
+        List<InhabitantRules.HouseHint> pruned =
+                InhabitantRules.rememberHint(cleared, bed, InhabitantRules.HINT_BED, until + 5_000L);
+        assertNull(InhabitantRules.hintFor(pruned, other));
+        assertEquals(InhabitantRules.HINT_BED, InhabitantRules.hintFor(pruned, bed).improvement());
+    }
 }

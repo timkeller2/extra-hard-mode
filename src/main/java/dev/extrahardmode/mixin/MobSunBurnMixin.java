@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/** A marked mob, such as the biome-boss finale phantom, does not burn in sunlight. */
+/** A marked mob does not burn in sunlight. Biome-boss phantoms and wise-teacher hunt marks use this. */
 @Mixin(Mob.class)
 public abstract class MobSunBurnMixin {
     @Inject(method = "isSunBurnTick", at = @At("HEAD"), cancellable = true)

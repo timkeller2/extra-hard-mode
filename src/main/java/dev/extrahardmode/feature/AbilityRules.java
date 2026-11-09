@@ -862,7 +862,7 @@ public final class AbilityRules {
                 "Below 1 the cast is practice: mana and focus are spent, the cooldown starts, and you gain one use. Diamond Skin practices below 2 and keeps the diamond. Read Tome keeps the tome.",
                 "Redstone dust in the offhand adds half your skill, up to the square root of that stack rounded down. Success consumes that bonus, rounded down. Practice keeps the dust.",
                 "Hold a focus and he teaches that ability for half the house points in uses. At 24 points, 30 emeralds from inventory or either hand; each point above takes 2 off, down to free.",
-                "Hold emeralds and he picks an ability at random for the house points. A new hunt, or killing more than half the marks, offers the lesson.",
+                "Hold emeralds and he picks an ability at random for the house points. A new hunt, or killing more than half the marks, offers the lesson. He names what to hold only then.",
                 "Hold redstone blocks. The first gift takes 1, then up to 4, 9, and so on. Mana learning grows by the square root of the blocks he takes.",
                 "Type /tougher ability help <name> for one ability.");
     }

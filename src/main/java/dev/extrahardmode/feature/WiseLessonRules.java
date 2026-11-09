@@ -669,10 +669,32 @@ public final class WiseLessonRules {
 
     /**
      * A mark gives off red mist when its owner can see it, still has saturation from a golden carrot,
-     * or Sense Evil is revealing marks.
+     * or Sense Evil is revealing marks. Nearby players see that same mist.
      */
     public static boolean showMist(boolean lineOfSight, boolean goldenCarrotArmed, boolean senseEvilActive) {
         return lineOfSight || goldenCarrotArmed || senseEvilActive;
+    }
+
+    /**
+     * Hunt marks of these kinds do not burn in sunlight. The list is the burning zombie and skeleton
+     * families used on hunts, plus phantoms.
+     */
+    public static boolean ignoresDaylight(String mobId) {
+        if (mobId == null || mobId.isEmpty()) {
+            return false;
+        }
+        return switch (mobId) {
+            case "minecraft:zombie",
+                    "minecraft:zombie_villager",
+                    "minecraft:husk",
+                    "minecraft:drowned",
+                    "minecraft:skeleton",
+                    "minecraft:stray",
+                    "minecraft:bogged",
+                    "minecraft:wither_skeleton",
+                    "minecraft:phantom" -> true;
+            default -> false;
+        };
     }
 
     /** True while the Sense Evil mist window has not reached {@code now}. */

@@ -4,19 +4,28 @@ import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.api.EhmApi;
 import dev.extrahardmode.config.PlayerSettings;
 import dev.extrahardmode.config.WorldConfig;
+import dev.extrahardmode.feature.ArmorSpeedRules;
+import java.util.ArrayList;
+import java.util.List;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.item.ItemStack;
 
 /**
- * Identifier-keyed movement-speed modifier. Vanilla walk-speed 0.2 maps to attribute 0.1;
- * unarmored buffs to 0.22 walk-speed. Full diamond (20 armor) applies
- * {@code fullDiamondSlowdownPercent} from that base (default 0).
+ * Identifier-keyed movement-speed modifier. Unarmored walk speed is {@code baseSpeed}
+ * (default 0.22, 10% faster than vanilla). Worn armor slows that pace by material.
  */
 public final class ArmorWeightTask {
     public static final AttributeModifier.Operation OPERATION = AttributeModifier.Operation.ADD_MULTIPLIED_BASE;
+    private static final EquipmentSlot[] ARMOR_SLOTS = {
+        EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET
+    };
 
     private ArmorWeightTask() {}
 
@@ -36,12 +45,29 @@ public final class ArmorWeightTask {
             speed.removeModifier(ExtraHardModeMod.ARMOR_SLOWDOWN);
             return;
         }
-        double armor = player.getAttributeValue(Attributes.ARMOR);
-        double fraction = Math.min(1.0, armor / 20.0);
-        // walkSpeed 0.22/0.2 = 1.1x vanilla attribute; then interpolate the configured slowdown.
-        double amount = (settings.baseSpeed() / 0.2) * (1.0 - fraction * (settings.fullDiamondSlowdownPercent() / 100.0))
-                - 1.0;
+        double slow = ArmorSpeedRules.slowPercent(
+                wornArmorIds(player),
+                settings.copperIronGoldSlowdownPercent(),
+                settings.diamondSlowdownPercent(),
+                settings.leatherChainmailSlowdownPercent(),
+                settings.heavyExtraSlowdownPercent());
+        double amount = ArmorSpeedRules.modifierAmount(settings.baseSpeed(), slow);
         speed.addOrUpdateTransientModifier(new AttributeModifier(ExtraHardModeMod.ARMOR_SLOWDOWN, amount, OPERATION));
+    }
+
+    private static List<String> wornArmorIds(ServerPlayer player) {
+        List<String> ids = new ArrayList<>(ARMOR_SLOTS.length);
+        for (EquipmentSlot slot : ARMOR_SLOTS) {
+            ItemStack stack = player.getItemBySlot(slot);
+            if (stack.isEmpty()) {
+                continue;
+            }
+            Identifier id = BuiltInRegistries.ITEM.getKey(stack.getItem());
+            if (id != null) {
+                ids.add(id.toString());
+            }
+        }
+        return ids;
     }
 
     public static void clear(ServerPlayer player) {

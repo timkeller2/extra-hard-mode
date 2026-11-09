@@ -1,6 +1,7 @@
 package dev.extrahardmode.config;
 
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
+import dev.extrahardmode.feature.ArmorSpeedRules;
 import dev.extrahardmode.feature.ShieldRules;
 
 /** Per-dimension player death / environment / weight / armor settings. RootNode defaults. */
@@ -47,6 +48,10 @@ public final class PlayerSettings {
 
     private boolean armorEnable = true;
     private double baseSpeed = 0.22;
+    private int copperIronGoldSlowdownPercent = ArmorSpeedRules.DEFAULT_COPPER_IRON_GOLD_PERCENT;
+    private int diamondSlowdownPercent = ArmorSpeedRules.DEFAULT_DIAMOND_PERCENT;
+    private int leatherChainmailSlowdownPercent = ArmorSpeedRules.DEFAULT_LEATHER_CHAINMAIL_PERCENT;
+    private int heavyExtraSlowdownPercent = ArmorSpeedRules.DEFAULT_HEAVY_EXTRA_PERCENT;
     private int fullDiamondSlowdownPercent = 0;
     private int shieldAbsorbPercent = ShieldRules.DEFAULT_ABSORB_PERCENT;
     private int shieldDurabilityMultiplier = ShieldRules.DEFAULT_DURABILITY_MULTIPLIER;
@@ -187,6 +192,23 @@ public final class PlayerSettings {
         return baseSpeed;
     }
 
+    public int copperIronGoldSlowdownPercent() {
+        return copperIronGoldSlowdownPercent;
+    }
+
+    public int diamondSlowdownPercent() {
+        return diamondSlowdownPercent;
+    }
+
+    public int leatherChainmailSlowdownPercent() {
+        return leatherChainmailSlowdownPercent;
+    }
+
+    public int heavyExtraSlowdownPercent() {
+        return heavyExtraSlowdownPercent;
+    }
+
+    /** Kept so an older world file still stores the value. The material percents are what apply. */
     public int fullDiamondSlowdownPercent() {
         return fullDiamondSlowdownPercent;
     }
@@ -251,16 +273,40 @@ public final class PlayerSettings {
         setIfMissing(file, "player.weight.drownRate", 35);
         setIfMissing(file, "player.weight.overencumbranceAdds", 2);
 
-        comment(
-                file,
+        file.setComment(
                 "player.armor.enable",
-                "Identifier-keyed movement-speed modifier. Unarmored buff to 0.22 walk-speed.");
+                "Movement speed. Unarmored walk speed is baseSpeed (default 0.22, 10% faster than vanilla 0.2). Worn armor slows that pace by material.");
         setIfMissing(file, "player.armor.enable", true);
         setIfMissing(file, "player.armor.baseSpeed", 0.22);
         comment(
                 file,
+                "player.armor.copperIronGoldSlowdownPercent",
+                "Percent a full set of copper, iron, or gold armor slows the unarmored pace. Each worn piece applies one quarter. Default 10.");
+        setIfMissing(
+                file,
+                "player.armor.copperIronGoldSlowdownPercent",
+                ArmorSpeedRules.DEFAULT_COPPER_IRON_GOLD_PERCENT);
+        comment(
+                file,
+                "player.armor.diamondSlowdownPercent",
+                "Percent a full set of diamond or netherite armor slows the unarmored pace. Each worn piece applies one quarter. Default 5.");
+        setIfMissing(file, "player.armor.diamondSlowdownPercent", ArmorSpeedRules.DEFAULT_DIAMOND_PERCENT);
+        comment(
+                file,
+                "player.armor.leatherChainmailSlowdownPercent",
+                "Percent a full set of leather or chainmail slows the unarmored pace. Default 0, so those sets keep the unarmored speed.");
+        setIfMissing(
+                file,
+                "player.armor.leatherChainmailSlowdownPercent",
+                ArmorSpeedRules.DEFAULT_LEATHER_CHAINMAIL_PERCENT);
+        comment(
+                file,
+                "player.armor.heavyExtraSlowdownPercent",
+                "Extra percentage points a full set of heavy armor adds on top of its material. Each heavy piece adds one quarter of this. Default 5.");
+        setIfMissing(file, "player.armor.heavyExtraSlowdownPercent", ArmorSpeedRules.DEFAULT_HEAVY_EXTRA_PERCENT);
+        file.setComment(
                 "player.armor.fullDiamondSlowdownPercent",
-                "Movement penalty at 20 armor (full diamond), interpolated by armor points. Default 0 (off). Raise this if a host wants armor to slow players.");
+                "Unused. The material percents set the slowdown. This value stays so an older file still stores it.");
         setIfMissing(file, "player.armor.fullDiamondSlowdownPercent", 0);
         comment(
                 file,
@@ -315,6 +361,14 @@ public final class PlayerSettings {
 
         armorEnable = file.getOrElse("player.armor.enable", true);
         baseSpeed = number(file, "player.armor.baseSpeed", 0.22);
+        copperIronGoldSlowdownPercent = file.getOrElse(
+                "player.armor.copperIronGoldSlowdownPercent", ArmorSpeedRules.DEFAULT_COPPER_IRON_GOLD_PERCENT);
+        diamondSlowdownPercent =
+                file.getOrElse("player.armor.diamondSlowdownPercent", ArmorSpeedRules.DEFAULT_DIAMOND_PERCENT);
+        leatherChainmailSlowdownPercent = file.getOrElse(
+                "player.armor.leatherChainmailSlowdownPercent", ArmorSpeedRules.DEFAULT_LEATHER_CHAINMAIL_PERCENT);
+        heavyExtraSlowdownPercent = file.getOrElse(
+                "player.armor.heavyExtraSlowdownPercent", ArmorSpeedRules.DEFAULT_HEAVY_EXTRA_PERCENT);
         fullDiamondSlowdownPercent = file.getOrElse("player.armor.fullDiamondSlowdownPercent", 0);
         shieldAbsorbPercent = ShieldRules.clampAbsorbPercent(
                 file.getOrElse("player.shield.absorbPercent", ShieldRules.DEFAULT_ABSORB_PERCENT));
@@ -361,6 +415,10 @@ public final class PlayerSettings {
 
         file.set("player.armor.enable", armorEnable);
         file.set("player.armor.baseSpeed", baseSpeed);
+        file.set("player.armor.copperIronGoldSlowdownPercent", copperIronGoldSlowdownPercent);
+        file.set("player.armor.diamondSlowdownPercent", diamondSlowdownPercent);
+        file.set("player.armor.leatherChainmailSlowdownPercent", leatherChainmailSlowdownPercent);
+        file.set("player.armor.heavyExtraSlowdownPercent", heavyExtraSlowdownPercent);
         file.set("player.armor.fullDiamondSlowdownPercent", fullDiamondSlowdownPercent);
         file.set("player.shield.absorbPercent", shieldAbsorbPercent);
         file.set("player.shield.durabilityMultiplier", shieldDurabilityMultiplier);

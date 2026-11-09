@@ -95,6 +95,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("down to free"));
         assertTrue(String.join(" ", lines).contains("inventory or either hand"));
         assertTrue(String.join(" ", lines).contains("He names that count"));
+        assertTrue(String.join(" ", lines).contains("when a lesson is offered"));
         assertFalse(String.join(" ", lines).contains("You need one mana level"));
         assertTrue(String.join(" ", lines).contains("half the house points in uses"));
         assertTrue(String.join(" ", lines).contains("rounded down"));
@@ -370,6 +371,8 @@ class EhmHelpTest {
         assertTrue(all.contains("near here"));
         assertTrue(all.contains("triple experience"));
         assertTrue(all.contains("line of sight"));
+        assertTrue(all.contains("other players can see it"));
+        assertTrue(all.contains("do not burn in sunlight"));
         assertTrue(all.contains("1 minute times its level"));
         assertTrue(all.contains("5 times the health"));
         assertTrue(all.contains("10 times the experience"));
@@ -425,6 +428,8 @@ class EhmHelpTest {
         assertTrue(all.contains("Windows"));
         assertTrue(all.contains("Kitchen"));
         assertTrue(all.contains("clock"));
+        assertTrue(all.contains("3 minutes"));
+        assertTrue(all.contains("no longer adds points"));
     }
 
     @Test
@@ -440,6 +445,7 @@ class EhmHelpTest {
         assertTrue(index.contains("/tougher ability help <name>"));
         assertTrue(index.contains("half the house points in uses"));
         assertTrue(index.contains("at random for the house points"));
+        assertTrue(index.contains("He names what to hold only then"));
         assertFalse(index.contains("twice the house points"));
         assertTrue(index.contains("inventory or either hand"));
         assertFalse(index.contains("You need a mana level"));
@@ -507,6 +513,14 @@ class EhmHelpTest {
         assertTrue(combatText.contains("quiet chime"));
         assertTrue(combatText.contains("each full chunk"));
         assertTrue(combatText.contains("of -1 is off"));
+        String armorText = String.join(" ", EhmHelp.resolve("armor").lines());
+        assertTrue(armorText.contains("move 10% faster than usual"));
+        assertTrue(armorText.contains("slows that pace by 10%"));
+        assertTrue(armorText.contains("netherite slow it by 5%"));
+        assertTrue(armorText.contains("5% more than its material"));
+        assertTrue(armorText.contains("one quarter"));
+        assertTrue(armorText.contains("copperIronGoldSlowdownPercent"));
+        assertTrue(armorText.contains("heavyExtraSlowdownPercent"));
         assertEquals(null, EhmHelp.resolve("nope"));
         assertEquals(null, EhmHelp.resolve("  "));
         var mining = EhmHelp.resolve("mining");

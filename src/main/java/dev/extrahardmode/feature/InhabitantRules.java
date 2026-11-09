@@ -33,6 +33,24 @@ public final class InhabitantRules {
     public static final int ISOLATION_NEAR_BLOCKS = 50;
     /** More than this distance gives 2 points instead of 1. */
     public static final int ISOLATION_FAR_BLOCKS = 100;
+    /** How long one clock suggestion stays on a bed, in real milliseconds. */
+    public static final long HOUSE_HINT_MILLIS = 3L * 60L * 1000L;
+    public static final String HINT_WINDOWS = "windows";
+    public static final String HINT_ART = "art";
+    public static final String HINT_CARPETS = "carpets";
+    public static final String HINT_SEATING = "seating";
+    public static final String HINT_STORAGE = "storage";
+    public static final String HINT_WORKSTATIONS = "workstations";
+    public static final String HINT_LIGHTS = "lights";
+    public static final String HINT_PLANTS = "plants";
+    public static final String HINT_BOOKS = "books";
+    public static final String HINT_BED = "bed";
+    public static final String HINT_KITCHEN_HEAT = "kitchen_heat";
+    public static final String HINT_KITCHEN_WATER = "kitchen_water";
+    public static final String HINT_VOLUME = "volume";
+    public static final String HINT_ROOMS = "rooms";
+    public static final String HINT_ISOLATION_NEAR = "isolation_near";
+    public static final String HINT_ISOLATION_FAR = "isolation_far";
     /** A new resident will not appear when a villager is closer than this, in blocks. */
     public static final int VILLAGER_CLEARANCE = 35;
     public static final int BASE_CHANCE_PERCENT = 8;
@@ -396,6 +414,9 @@ public final class InhabitantRules {
         }
     }
 
+    /** One sticky clock suggestion for one bed. {@code until} is epoch milliseconds. */
+    public record HouseHint(String bed, String improvement, long until) {}
+
     private InhabitantRules() {}
 
     public static boolean volumeOk(int volume) {
@@ -572,9 +593,156 @@ public final class InhabitantRules {
         return head + " Missing: " + String.join(", ", result.missing()) + ".";
     }
 
+    /**
+     * Point gains still available. A category at its cap is left out, and so is anything
+     * that does not raise the score, such as a roof or a brighter floor.
+     */
+    public static List<String> openImprovements(AmenityCounts counts, int volume, int rooms, int isolation) {
+        if (counts == null) {
+            counts = new AmenityCounts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, false);
+        }
+        List<String> open = new ArrayList<>();
+        if (counts.windows() < 3) {
+            open.add(HINT_WINDOWS);
+        }
+        if (counts.art() < ART_SCORE_CAP) {
+            open.add(HINT_ART);
+        }
+        if (counts.carpets() < 12) {
+            open.add(HINT_CARPETS);
+        }
+        if (counts.seating() < 2) {
+            open.add(HINT_SEATING);
+        }
+        if (counts.storage() < 2) {
+            open.add(HINT_STORAGE);
+        }
+        if (counts.workstations() < 2) {
+            open.add(HINT_WORKSTATIONS);
+        }
+        if (counts.extraLights() < 2) {
+            open.add(HINT_LIGHTS);
+        }
+        if (counts.plants() < 2) {
+            open.add(HINT_PLANTS);
+        }
+        if (counts.books() < 2) {
+            open.add(HINT_BOOKS);
+        }
+        if (counts.extraBeds() <= 0) {
+            open.add(HINT_BED);
+        }
+        if (!counts.kitchen()) {
+            open.add(counts.cauldron() ? HINT_KITCHEN_HEAT : HINT_KITCHEN_WATER);
+        }
+        if (volumePoints(volume) < VOLUME_POINT_CAP) {
+            open.add(HINT_VOLUME);
+        }
+        if (roomPoints(rooms) < ROOM_POINT_CAP) {
+            open.add(HINT_ROOMS);
+        }
+        int distance = Math.max(0, Math.min(2, isolation));
+        if (distance < 1) {
+            open.add(HINT_ISOLATION_NEAR);
+        } else if (distance < 2) {
+            open.add(HINT_ISOLATION_FAR);
+        }
+        return List.copyOf(open);
+    }
+
+    /** True while the saved suggestion still raises points and its 3 minutes have not passed. */
+    public static boolean keepImprovement(List<String> open, String remembered, long now, long until) {
+        return open != null
+                && remembered != null
+                && !remembered.isEmpty()
+                && now < until
+                && open.contains(remembered);
+    }
+
+    /**
+     * The saved suggestion while it still applies and {@code now} is before {@code until}.
+     * Otherwise one of {@code open}, chosen by {@code roll}. An empty list returns "".
+     */
+    public static String chooseImprovement(List<String> open, String remembered, long now, long until, int roll) {
+        if (open == null || open.isEmpty()) {
+            return "";
+        }
+        if (keepImprovement(open, remembered, now, until)) {
+            return remembered;
+        }
+        return open.get(Math.floorMod(roll, open.size()));
+    }
+
+    public static String houseHintBed(String dimension, int x, int y, int z) {
+        String dim = dimension == null ? "" : dimension;
+        return dim + " " + x + " " + y + " " + z;
+    }
+
+    public static HouseHint hintFor(List<HouseHint> hints, String bed) {
+        if (hints == null || bed == null || bed.isEmpty()) {
+            return null;
+        }
+        for (HouseHint hint : hints) {
+            if (hint != null && bed.equals(hint.bed())) {
+                return hint;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Stores {@code improvement} on {@code bed} until 3 minutes after {@code now}.
+     * An empty improvement clears that bed. Other beds stay until their own time ends.
+     */
+    public static List<HouseHint> rememberHint(List<HouseHint> current, String bed, String improvement, long now) {
+        List<HouseHint> next = new ArrayList<>();
+        if (current != null) {
+            for (HouseHint hint : current) {
+                if (hint == null || hint.bed() == null || hint.bed().isEmpty()) {
+                    continue;
+                }
+                if (hint.bed().equals(bed) || hint.until() <= now) {
+                    continue;
+                }
+                next.add(hint);
+            }
+        }
+        if (bed != null && !bed.isEmpty() && improvement != null && !improvement.isEmpty()) {
+            next.add(new HouseHint(bed, improvement, now + HOUSE_HINT_MILLIS));
+        }
+        return List.copyOf(next);
+    }
+
+    /** What the clock suggests. Unknown ids return "". */
+    public static String improvementText(String improvement) {
+        if (improvement == null) {
+            return "";
+        }
+        return switch (improvement) {
+            case HINT_WINDOWS -> "Add a window of glass or panes that looks out of the room.";
+            case HINT_ART -> "Add a painting or a filled item frame.";
+            case HINT_CARPETS -> "Add wool carpets. Every 4 carpets adds 1 point, up to 12 carpets.";
+            case HINT_SEATING -> "Add a seat made from stairs or a slab.";
+            case HINT_STORAGE -> "Add a chest, barrel, or shulker box.";
+            case HINT_WORKSTATIONS -> "Add a crafting table, furnace, smoker, anvil, or similar workstation.";
+            case HINT_LIGHTS -> "Add a torch, lantern, glowstone, or campfire.";
+            case HINT_PLANTS -> "Add a flower pot, flower, or sapling.";
+            case HINT_BOOKS -> "Add a bookshelf or a lectern.";
+            case HINT_BED -> "Add a second bed.";
+            case HINT_KITCHEN_HEAT -> "Add a furnace, smoker, or campfire beside the cauldron.";
+            case HINT_KITCHEN_WATER -> "Add a cauldron beside a furnace, smoker, or campfire.";
+            case HINT_VOLUME -> "Enlarge the interior. Every 48 air blocks adds 1 point, up to 5.";
+            case HINT_ROOMS -> "Add another enclosed room joined by a door, trapdoor, or fence gate.";
+            case HINT_ISOLATION_NEAR -> "Place this home more than 50 blocks from the nearest other occupied home.";
+            case HINT_ISOLATION_FAR -> "Place this home more than 100 blocks from the nearest other occupied home.";
+            default -> "";
+        };
+    }
+
     public static List<String> homesIntroLines() {
         return List.of(
                 "Homes: Right-click a bed with a clock to score the room. Type /tougher help homes anytime for this list.",
+                "Homes: The clock names one improvement that would still raise the score. It stays for 3 minutes, or changes at once when that improvement no longer adds points.",
                 "Homes: An enclosed, well-lit room with a bed, a door, and furnishings may attract one traveler. They dislike crowding.",
                 "Homes: Subjects: rooms, furnishings, residents, shops, bounties. Each is also /tougher help <subject>.",
                 "Homes: Residents may buy spare blocks, trade food, post bounties, keep a shop, teach a mana ability, or sell armor.",
@@ -646,8 +814,10 @@ public final class InhabitantRules {
                 "Lessons: Come back closer than that distance and the direction returns.",
                 "Lessons: After 2 minutes out there, on land, at night or below ground, half appear within a few seconds. The rest spawn every 5 to 15 seconds, 20 to 40 blocks out.",
                 "Lessons: Each mark has 50% to 100% more health. They give triple experience and double loot, and they always drop both. They vanish after 3 Minecraft days.",
-                "Lessons: A mark in your line of sight gives off a red mist. A golden carrot mists every mark until you are not saturated. Sense Evil does that for 1 minute times its level.",
+                "Lessons: A mark in your line of sight gives off a red mist, and other players can see it.",
+                "Lessons: A golden carrot mists every mark until you are not saturated. Sense Evil does that for 1 minute times its level.",
                 "Lessons: A golden carrot or Sense Evil also shows a white outline through blocks.",
+                "Lessons: Zombies, skeletons, drowned, strays, bogged, zombie villagers, and phantoms on a hunt do not burn in sunlight.",
                 "Lessons: The first creature is slightly larger, has 5 times the health, and resists knockback.",
                 "Lessons: It drops 10 times the experience and 3 times the loot, plus emeralds from 5% to 10% of that health.",
                 "Lessons: The last creature has twice the first creature's health and hits 50% harder. It drops 3 times the loot and emeralds from 5% to 10% of its health.",
@@ -1325,7 +1495,7 @@ public final class InhabitantRules {
                 + " for me to deepen your mana learning capacity.";
     }
 
-    /** What he says he wants in the main hand when the lesson does not start. */
+    /** What he says to hold when a lesson is offered and does not start. */
     public static String handRequestLine(int price, int redstoneCap) {
         return handRequest(price, redstoneCap);
     }
