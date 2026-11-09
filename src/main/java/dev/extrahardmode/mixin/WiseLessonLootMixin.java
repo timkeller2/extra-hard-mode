@@ -18,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
  * Lesson creatures drop twice and grant triple experience, including kills with no player blow.
- * The first creature drops three times, grants ten times the experience, and adds a diamond and emeralds.
+ * The first creature drops three times, grants ten times the experience, and adds emeralds.
  * The last creature drops three times and adds emeralds from the same share of its own health.
  * The guard is set before the inner calls so those rolls are not multiplied again.
  */

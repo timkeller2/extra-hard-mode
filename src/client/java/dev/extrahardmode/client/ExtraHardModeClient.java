@@ -21,6 +21,7 @@ import dev.extrahardmode.network.ClientboundCreditsPayload;
 import dev.extrahardmode.network.ClientboundAbilityReadyPayload;
 import dev.extrahardmode.network.ClientboundCompassSpawnPayload;
 import dev.extrahardmode.network.ClientboundCouncilBountyPayload;
+import dev.extrahardmode.network.ClientboundMinerLeadPayload;
 import dev.extrahardmode.network.ClientboundFlightPayload;
 import dev.extrahardmode.network.ClientboundFoodCravingPayload;
 import dev.extrahardmode.network.ClientboundManaLearningPayload;
@@ -73,6 +74,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
     private static volatile ClientboundSoilLookPayload lastSoilLook;
     private static volatile ClientboundLightLookPayload lastLightLook;
     private static volatile ClientboundCouncilBountyPayload lastCouncilBounty;
+    private static volatile ClientboundMinerLeadPayload lastMinerLead;
     private static volatile ClientboundWiseLessonPayload lastWiseLesson;
     private static volatile GlobalPos compassSpawn;
 
@@ -132,6 +134,10 @@ public class ExtraHardModeClient implements ClientModInitializer {
 
     public static ClientboundCouncilBountyPayload lastCouncilBounty() {
         return lastCouncilBounty;
+    }
+
+    public static ClientboundMinerLeadPayload lastMinerLead() {
+        return lastMinerLead;
     }
 
     public static ClientboundWiseLessonPayload lastWiseLesson() {
@@ -374,6 +380,8 @@ public class ExtraHardModeClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(
                 ClientboundCouncilBountyPayload.TYPE, (payload, context) -> lastCouncilBounty = payload);
         ClientPlayNetworking.registerGlobalReceiver(
+                ClientboundMinerLeadPayload.TYPE, (payload, context) -> lastMinerLead = payload);
+        ClientPlayNetworking.registerGlobalReceiver(
                 ClientboundWiseLessonPayload.TYPE, (payload, context) -> lastWiseLesson = payload);
         ClientPlayNetworking.registerGlobalReceiver(
                 ClientboundCompassSpawnPayload.TYPE,
@@ -403,6 +411,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
             lastSoilLook = null;
             lastLightLook = null;
             lastCouncilBounty = null;
+            lastMinerLead = null;
             lastWiseLesson = null;
             compassSpawn = null;
             AchievementFloater.clear();
@@ -414,6 +423,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
         AbilityReadyHud.register();
         CouncilBountyHud.register();
         WiseLessonHud.register();
+        MinerLeadHud.register();
         SoilLookHud.register();
         LightLookHud.register();
         AbilityHelp.register();

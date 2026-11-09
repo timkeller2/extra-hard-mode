@@ -375,7 +375,7 @@ def build():
                 "After 2 minutes out there, on land, at night or below ground, half the pack appears within a few seconds, 20 to 40 blocks away. The rest still arrive one at a time, every 5 to 15 seconds.",
                 "A mark in your line of sight gives off a red mist, so it is not an ordinary creature. A golden carrot mists every mark until you are no longer saturated, and outlines them in white through blocks. Sense Evil does both for 1 minute times its ability level, and that time shows with the other ability durations. Each one has 50% to 100% more health. They give triple experience and double loot, and they always drop both. They vanish after 3 Minecraft days.",
                 "Sense Evil also outlines every hostile mob within 8 blocks times its ability level. Solid blocks do not hide the outline. It lasts 1 minute times that ability level, shown as a spider eye at the bottom left. It says whether a biome boss can appear here. In a full chunk at Y=48 or above, it also says the alliance has cleared the area.",
-                "The first creature of a hunt is slightly larger, has 5 times the health, and resists knockback. It gives 10 times the experience and 3 times the loot, plus one diamond and emeralds equal to 10% to 20% of that health. The last creature has twice that health and hits 50% harder. It drops that same loot without the diamond, with emeralds equal to 10% to 20% of its own health.",
+                "The first creature of a hunt is slightly larger, has 5 times the health, and resists knockback. It gives 10 times the experience and 3 times the loot, plus emeralds equal to 5% to 10% of that health. The last creature has twice that health and hits 50% harder. It drops 3 times the loot, with emeralds equal to 5% to 10% of its own health.",
                 "A creeper that explodes goes back on the spawn queue. A first or last creeper returns with that same role.",
                 "An unfinished hunt ends after 14 Minecraft days. Each wise teacher can give you a different hunt, and each player has his own.",
             ],
@@ -415,7 +415,7 @@ def build():
             "Furnishings come from size, extra rooms, windows, art, rugs, seating, storage, workstations, lights, plants, books, a second bed, and a kitchen. "
             "Empty eligible homes are checked at dawn. Chance starts at 8% at 12 points and rises with the score. It is halved in blight. "
             "Chests bias a hauler, a kitchen biases a cook, and plants or workstations bias a farmer. "
-            "A cauldron favors a brewer, who can come to a 12-point home. "
+            "A cauldron favors a brewer, who can come to a 12-point home. An old miner can come to a 12-point home. "
             "18 points can bring a loot collector or a council member. 24 can bring a jeweler, an armorsmith, or a wise teacher. 30 can bring a wealthy trader or a master armorsmith. "
             "A job with more than twice as many residents as the smallest job that home can host is skipped. Wise teachers and council members are skipped only past three times that number. "
             "Council members are especially likely. New residents prefer a specialty that has not appeared yet.",
@@ -424,12 +424,16 @@ def build():
         bullets(
             [
                 "A resident will not appear within 35 blocks of a villager. Other residents do not count.",
-                "The name over a resident is their name and occupation, such as Alden the Jeweler.",
+                "The name over a resident is their name and occupation, such as Alden the Jeweler. Each name is used once before any name is used again.",
+                "An old miner, such as Jack the Old Miner, can live in a 12-point home. Speak to him for a lead. He does not keep a shop. Every 7 Minecraft days he names the largest vein of one ore in his chunk and the eight chunks around it, and he adds more of that ore beside the vein. He names only ores found in that ground.",
+                "The list is the easiest of those ores he has not finished with you. Its length is the home's points plus the leads you have finished with him, divided by 5, rounded up. Finishing an easier ore lets the next harder ore there join the list. He does not repeat an ore until every ore there has been named. A lead you never finish can be named again.",
+                "The line reads Jack: Iron East. The direction is North, South, East, West, Up, or Down, whichever is farthest, and it changes as you move. Within 3 blocks the lead is finished. It expires after 7 Minecraft days. Each player has a separate lead, and one miner can lead several players at once.",
                 "Clock a resident, then clock another. They trade homes at once, even far apart. Each refuses a home below their job. A loot collector or council member needs 18. A jeweler, armorsmith, or wise teacher needs 24. A wealthy trader or master armorsmith needs 30. Everyone else needs 12. The trade costs half the points of the finer home, rounded down, in emeralds. Their shop stays until the next restock. A council member keeps the hunts already finished with you.",
                 "Clothes are a villager outfit, so two of one occupation may look different. A jeweler, wealthy trader, or loot collector wears a finer coat. An armorsmith or wise teacher ranks higher, and a master armorsmith or council member wears the highest rank.",
                 "Most residents restock every 14 Minecraft days. Armorsmiths restock every 30. Look at one who is waiting to see the time left, in days and hours.",
                 "Shop size follows house points. The top of the roll is 50% at 14 points and 175% at 38. Higher scores stay there. The bottom is half of that. Prices do not inflate. A hauler pays 1 emerald for 32 of a block. Each chest, barrel, or shulker box takes 2 off that stack, down to 16.",
-                "A farm neighbor may sell one seed or plantable vegetable for 6 to 16 emeralds. Pumpkin and melon seeds are 6, and nether wart is 2 for 6 emeralds. Glow berries are 3 for 1 emerald.",
+                "A farm neighbor sells 8 wheat for 1 emerald. Seeds, carrots, berries, pods, and sugar cane are 3 for 1 emerald. A smaller home may also sell a sapling for 2 emeralds, 4 bone meal for 1 emerald, 1 pumpkin for 1, 1 melon for 1, or 12 beetroot for 1.",
+                "Potatoes, pumpkin seeds, melon seeds, cocoa beans, and nether wart need a larger home. Each is 1 for 1 emerald.",
                 "A trader also buys each thing he sells. The buy stack is 2 larger and pays the same number of emeralds. Those buys start with no uses. Buying from him adds 1 use to each of them. Selling him anything spends 1 use on each of them.",
                 "A trader or a wealthy trader offers other players' chests after his own trades. Put a sign on a chest, including a trapped chest, whose first matching line is SELL or BUY. A double chest is one shop. Barrels, ender chests, and shulker boxes are not.",
                 "The sign can be on the side of the chest, standing on top of it, or hanging under it. Blank lines are skipped. The player who finishes the sign owns the shop, and a new sign on that chest replaces the old one. Your own chest is not offered to you. The chest can be anywhere, including another dimension, and it does not have to stay loaded.",

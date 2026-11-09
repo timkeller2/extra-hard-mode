@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -197,14 +198,30 @@ class InhabitantRulesTest {
         assertEquals(16, InhabitantRules.farmWheatBuy(false));
         assertEquals(8, InhabitantRules.farmWheatBuy(true));
         assertEquals("Alden", InhabitantRules.pickName(0));
-        assertEquals(64, InhabitantRules.nameCount());
+        assertEquals(128, InhabitantRules.nameCount());
         assertEquals("Tobias", InhabitantRules.pickName(63));
-        assertEquals(InhabitantRules.pickName(0), InhabitantRules.pickName(64));
+        assertEquals("Albert", InhabitantRules.pickName(64));
+        assertEquals("Luther", InhabitantRules.pickName(127));
+        assertEquals(InhabitantRules.pickName(0), InhabitantRules.pickName(128));
         Set<String> residentNames = new HashSet<>();
-        for (int roll = 0; roll < 128; roll++) {
+        for (int roll = 0; roll < 256; roll++) {
             residentNames.add(InhabitantRules.pickName(roll));
         }
-        assertEquals(64, residentNames.size());
+        assertEquals(128, residentNames.size());
+        assertEquals("Bram", InhabitantRules.pickFreshName(List.of("Alden"), 0));
+        List<String> almost = new ArrayList<>();
+        for (int i = 0; i < InhabitantRules.nameCount() - 1; i++) {
+            almost.add(InhabitantRules.pickName(i));
+        }
+        assertEquals(InhabitantRules.pickName(127), InhabitantRules.pickFreshName(almost, 0));
+        assertEquals(InhabitantRules.pickName(127), InhabitantRules.pickFreshName(almost, 9));
+        List<String> all = new ArrayList<>(almost);
+        all.add(InhabitantRules.pickName(127));
+        assertTrue(InhabitantRules.namesExhausted(all));
+        assertFalse(InhabitantRules.namesExhausted(almost));
+        assertEquals(InhabitantRules.pickName(3), InhabitantRules.pickFreshName(all, 3));
+        assertEquals(List.of("Alden", "Bram"), InhabitantRules.namesInUse(List.of("Alden"), List.of("Bram", "Mira")));
+        assertEquals(List.of("Alden", "Cedric"), InhabitantRules.nextNameCycle(List.of("Alden", "Mira"), "Cedric"));
         assertTrue(InhabitantRules.listedName("Alden"));
         assertFalse(InhabitantRules.listedName("Mira"));
         assertFalse(InhabitantRules.listedName("Alder"));
@@ -214,10 +231,10 @@ class InhabitantRulesTest {
         assertEquals(InhabitantRules.pickName(0), InhabitantRules.nameForHome(null));
         assertTrue(InhabitantRules.listedName(InhabitantRules.nameForHome("bed-1")));
         assertEquals(
-                List.of("hauler", "cook", "farm", "trader", "brewer"),
+                List.of("hauler", "cook", "farm", "trader", "brewer", "old_miner"),
                 InhabitantRules.unseenSpecialties(List.of(), 12));
         assertEquals(
-                List.of("hauler", "cook", "farm", "bounty", "trader", "council", "brewer"),
+                List.of("hauler", "cook", "farm", "bounty", "trader", "council", "brewer", "old_miner"),
                 InhabitantRules.unseenSpecialties(List.of(), 18));
         assertTrue(InhabitantRules.unseenSpecialties(List.of(), 24).contains(InhabitantRules.ARMORSMITH));
         assertTrue(InhabitantRules.unseenSpecialties(List.of(), 24).contains(InhabitantRules.WISE_TEACHER));
@@ -271,7 +288,13 @@ class InhabitantRulesTest {
         assertEquals("wise teacher", InhabitantRules.specialtyFallback(InhabitantRules.WISE_TEACHER));
         assertEquals("jeweler", InhabitantRules.specialtyFallback(InhabitantRules.JEWELER));
         assertEquals("brewer", InhabitantRules.specialtyFallback(InhabitantRules.BREWER));
+        assertEquals("old miner", InhabitantRules.specialtyFallback(InhabitantRules.OLD_MINER));
+        assertEquals("Jack the Old Miner", InhabitantRules.nameplate("Jack", InhabitantRules.OLD_MINER));
         assertEquals("Lumen the Brewer", InhabitantRules.nameplate("Lumen", InhabitantRules.BREWER));
+        assertFalse(InhabitantRules.specialtyAllowed(InhabitantRules.OLD_MINER, 11));
+        assertTrue(InhabitantRules.specialtyAllowed(InhabitantRules.OLD_MINER, 12));
+        assertTrue(InhabitantRules.defaultListings(InhabitantRules.OLD_MINER, 0, false).isEmpty());
+        assertTrue(InhabitantRules.extraListings(InhabitantRules.OLD_MINER, 0, false).isEmpty());
         assertFalse(InhabitantRules.specialtyAllowed(InhabitantRules.BREWER, 11));
         assertTrue(InhabitantRules.specialtyAllowed(InhabitantRules.BREWER, 12));
         InhabitantRules.Outfit brewerOutfit = InhabitantRules.pickOutfit(InhabitantRules.BREWER, 0, 0, 0);
@@ -365,6 +388,8 @@ class InhabitantRulesTest {
         assertEquals("0", InhabitantRules.learningLabel(0.0));
         assertTrue(InhabitantRules.scaledListings(InhabitantRules.WISE_TEACHER, 30, 0, false, new java.util.Random(1))
                 .isEmpty());
+        assertTrue(InhabitantRules.scaledListings(InhabitantRules.OLD_MINER, 30, 4, false, new java.util.Random(1))
+                .isEmpty());
         for (String ability : AbilityRules.ABILITY_IDS) {
             assertFalse(AbilityRules.teacherFlavor(ability).isEmpty());
             assertFalse(AbilityRules.teacherInstruction(ability).isEmpty());
@@ -405,7 +430,7 @@ class InhabitantRulesTest {
                 council++;
             }
         }
-        assertTrue(council >= 50);
+        assertTrue(council >= 42);
         boolean emptyBrewer = false;
         for (int roll = 0; roll < 80; roll++) {
             if (InhabitantRules.BREWER.equals(
@@ -431,7 +456,8 @@ class InhabitantRulesTest {
                 InhabitantRules.COOK, 1,
                 InhabitantRules.FARM, 1,
                 InhabitantRules.TRADER, 5,
-                InhabitantRules.BREWER, 1);
+                InhabitantRules.BREWER, 1,
+                InhabitantRules.OLD_MINER, 1);
         assertEquals(1, InhabitantRules.lowestPossibleMembers(12, crowdedTrader));
         assertEquals(
                 5,
@@ -443,11 +469,12 @@ class InhabitantRulesTest {
                                 InhabitantRules.FARM, 5,
                                 InhabitantRules.TRADER, 5,
                                 InhabitantRules.BREWER, 5,
+                                InhabitantRules.OLD_MINER, 5,
                                 InhabitantRules.MASTER_ARMORSMITH, 0)));
         InhabitantRules.AmenityCounts empty =
                 new InhabitantRules.AmenityCounts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, false);
         assertEquals(
-                InhabitantRules.HAULER,
+                InhabitantRules.OLD_MINER,
                 InhabitantRules.pickSpecialty(empty, 12, 0, InhabitantRules.SPECIALTIES, crowdedTrader));
         for (int roll = 0; roll < 20; roll++) {
             assertNotEquals(
@@ -465,6 +492,7 @@ class InhabitantRulesTest {
         assertTrue(InhabitantRules.specialtyBag(empty, 24).contains(InhabitantRules.JEWELER));
         assertFalse(InhabitantRules.specialtyBag(empty, 24).contains(InhabitantRules.WEALTHY));
         assertTrue(InhabitantRules.specialtyBag(empty, 30).contains(InhabitantRules.WEALTHY));
+        assertTrue(InhabitantRules.specialtyBag(empty, 12).contains(InhabitantRules.OLD_MINER));
     }
 
     @Test
@@ -868,91 +896,100 @@ class InhabitantRulesTest {
     }
 
     @Test
-    void farmNeighborMaySellSeedsAndVegetables() {
+    void farmNeighborSellsFromALowerListAndALargerHomeList() {
         assertEquals(3, InhabitantRules.defaultTradeTypeCount(InhabitantRules.FARM));
-        assertTrue(InhabitantRules.FARM_PLANT_SELLS.size() >= 8);
-        int cheapest = Integer.MAX_VALUE;
-        int dearest = 0;
-        Set<String> ids = new HashSet<>();
-        for (InhabitantRules.TradeListing listing : InhabitantRules.FARM_PLANT_SELLS) {
+        Map<String, InhabitantRules.TradeListing> lower = new HashMap<>();
+        for (InhabitantRules.TradeListing listing : InhabitantRules.FARM_LOWER_SELLS) {
             assertFalse(listing.buy());
-            assertTrue(ids.add(listing.itemId()));
-            if ("minecraft:glow_berries".equals(listing.itemId())) {
-                assertEquals(3, listing.count());
-                assertEquals(1, listing.emeralds());
-                continue;
+            assertEquals(null, lower.put(listing.itemId(), listing));
+        }
+        Map<String, InhabitantRules.TradeListing> higher = new HashMap<>();
+        for (InhabitantRules.TradeListing listing : InhabitantRules.FARM_HIGHER_SELLS) {
+            assertFalse(listing.buy());
+            assertEquals(null, higher.put(listing.itemId(), listing));
+            assertFalse(lower.containsKey(listing.itemId()));
+        }
+        assertFarmSell(lower, "minecraft:wheat_seeds", 3, 1);
+        assertFarmSell(lower, "minecraft:beetroot_seeds", 3, 1);
+        assertFarmSell(lower, "minecraft:carrot", 3, 1);
+        assertFarmSell(lower, "minecraft:sweet_berries", 3, 1);
+        assertFarmSell(lower, "minecraft:glow_berries", 3, 1);
+        assertFarmSell(lower, "minecraft:sugar_cane", 3, 1);
+        assertFarmSell(lower, "minecraft:torchflower_seeds", 3, 1);
+        assertFarmSell(lower, "minecraft:pitcher_pod", 3, 1);
+        assertFarmSell(lower, "minecraft:oak_sapling", 1, 2);
+        assertFarmSell(lower, "minecraft:birch_sapling", 1, 2);
+        assertFarmSell(lower, "minecraft:spruce_sapling", 1, 2);
+        assertFarmSell(lower, "minecraft:bone_meal", 4, 1);
+        assertFarmSell(lower, "minecraft:pumpkin", 1, 1);
+        assertFarmSell(lower, "minecraft:melon", 1, 1);
+        assertFarmSell(lower, "minecraft:beetroot", 12, 1);
+        assertFarmSell(higher, "minecraft:cocoa_beans", 1, 1);
+        assertFarmSell(higher, "minecraft:pumpkin_seeds", 1, 1);
+        assertFarmSell(higher, "minecraft:melon_seeds", 1, 1);
+        assertFarmSell(higher, "minecraft:potato", 1, 1);
+        assertFarmSell(higher, "minecraft:nether_wart", 1, 1);
+        InhabitantRules.TradeListing wheat = InhabitantRules.farmUsualListings().getFirst();
+        assertEquals("minecraft:wheat", wheat.itemId());
+        assertFalse(wheat.buy());
+        assertEquals(8, wheat.count());
+        assertEquals(1, wheat.emeralds());
+        boolean sawBeetBuy = false;
+        for (InhabitantRules.TradeListing listing : InhabitantRules.farmExtraListings(false)) {
+            if ("minecraft:beetroot".equals(listing.itemId()) && listing.buy()) {
+                assertEquals(16, listing.count());
+                sawBeetBuy = true;
             }
-            int expectedCount = switch (listing.itemId()) {
-                case "minecraft:pumpkin_seeds", "minecraft:melon_seeds" -> 6;
-                case "minecraft:nether_wart" -> 2;
-                default -> 1;
-            };
-            assertEquals(expectedCount, listing.count(), listing.itemId());
-            assertTrue(listing.emeralds() >= InhabitantRules.FARM_PLANT_MIN_EMERALDS);
-            assertTrue(listing.emeralds() <= InhabitantRules.FARM_PLANT_MAX_EMERALDS);
-            cheapest = Math.min(cheapest, listing.emeralds());
-            dearest = Math.max(dearest, listing.emeralds());
+            if (higher.containsKey(listing.itemId())) {
+                assertEquals(higher.get(listing.itemId()).emeralds(), listing.emeralds());
+            }
         }
-        assertEquals(InhabitantRules.FARM_PLANT_MIN_EMERALDS, cheapest);
-        assertEquals(InhabitantRules.FARM_PLANT_MAX_EMERALDS, dearest);
-        for (String id : List.of(
-                "minecraft:wheat_seeds",
-                "minecraft:beetroot_seeds",
-                "minecraft:pumpkin_seeds",
-                "minecraft:melon_seeds",
-                "minecraft:torchflower_seeds",
-                "minecraft:pitcher_pod",
-                "minecraft:carrot",
-                "minecraft:potato",
-                "minecraft:nether_wart",
-                "minecraft:cocoa_beans",
-                "minecraft:sweet_berries",
-                "minecraft:glow_berries",
-                "minecraft:sugar_cane")) {
-            assertTrue(ids.contains(id), id);
-        }
-        Map<String, Integer> prices = new HashMap<>();
-        for (InhabitantRules.TradeListing listing : InhabitantRules.FARM_PLANT_SELLS) {
-            prices.put(listing.itemId(), listing.emeralds());
-        }
-        assertEquals(6, prices.get("minecraft:nether_wart").intValue());
-        Set<String> seen = new HashSet<>();
-        boolean sawPlantOnSmallFarm = false;
-        for (int seed = 0; seed < 200; seed++) {
+        assertTrue(sawBeetBuy);
+        assertEquals(8, InhabitantRules.farmSideListings(true).getFirst().count());
+        Set<String> seenLower = new HashSet<>();
+        for (int seed = 0; seed < 400; seed++) {
             List<InhabitantRules.TradeListing> offers =
                     InhabitantRules.scaledListings(InhabitantRules.FARM, 12, 0, false, new Random(seed));
             assertFalse(offers.isEmpty());
             assertTrue(offers.size() <= 2);
-            Set<String> offerIds = new HashSet<>();
             for (InhabitantRules.TradeListing listing : offers) {
-                assertTrue(offerIds.add(listing.itemId()));
-                if (prices.containsKey(listing.itemId())) {
+                assertFalse(higher.containsKey(listing.itemId()), listing.itemId());
+                if ("minecraft:wheat".equals(listing.itemId())) {
                     assertFalse(listing.buy());
-                    assertEquals(prices.get(listing.itemId()).intValue(), listing.emeralds());
-                    seen.add(listing.itemId());
-                    sawPlantOnSmallFarm = true;
+                    assertEquals(1, listing.emeralds());
+                }
+                InhabitantRules.TradeListing priced = lower.get(listing.itemId());
+                if (priced != null) {
+                    assertFalse(listing.buy());
+                    assertEquals(priced.emeralds(), listing.emeralds());
+                    seenLower.add(listing.itemId());
                 }
             }
         }
-        assertTrue(sawPlantOnSmallFarm);
-        assertEquals(ids, seen);
-        boolean sawThirdPlant = false;
-        for (int seed = 0; seed < 80; seed++) {
+        assertEquals(lower.keySet(), seenLower);
+        boolean sawHigher = false;
+        for (int seed = 0; seed < 200; seed++) {
             List<InhabitantRules.TradeListing> rich =
                     InhabitantRules.scaledListings(InhabitantRules.FARM, 38, 0, false, new Random(seed));
             assertTrue(rich.size() >= 3);
-            int plants = 0;
             for (InhabitantRules.TradeListing listing : rich) {
-                if (prices.containsKey(listing.itemId())) {
-                    plants++;
-                    assertEquals(prices.get(listing.itemId()).intValue(), listing.emeralds());
+                InhabitantRules.TradeListing priced = higher.get(listing.itemId());
+                if (priced != null) {
+                    assertFalse(listing.buy());
+                    assertEquals(priced.emeralds(), listing.emeralds());
+                    sawHigher = true;
                 }
             }
-            if (plants >= 3) {
-                sawThirdPlant = true;
-            }
         }
-        assertTrue(sawThirdPlant);
+        assertTrue(sawHigher);
+    }
+
+    private static void assertFarmSell(
+            Map<String, InhabitantRules.TradeListing> listings, String itemId, int count, int emeralds) {
+        InhabitantRules.TradeListing listing = listings.get(itemId);
+        assertTrue(listing != null, itemId);
+        assertEquals(count, listing.count(), itemId);
+        assertEquals(emeralds, listing.emeralds(), itemId);
     }
 
     @Test

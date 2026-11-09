@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.feature.CouncilMissionRules;
+import dev.extrahardmode.feature.OldMinerRules;
 import dev.extrahardmode.feature.WiseLessonRules;
 import it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
@@ -615,6 +616,45 @@ public final class EhmAttachments {
                             .copyOnDeath()
                             .initializer(ArrayList::new));
 
+    public static final Codec<OldMinerRules.Lead> OLD_MINER_LEAD_CODEC = RecordCodecBuilder.create(
+            instance -> instance.group(
+                            Codec.STRING
+                                    .optionalFieldOf("miner_id", "")
+                                    .forGetter(OldMinerRules.Lead::minerId),
+                            Codec.STRING
+                                    .optionalFieldOf("miner_name", "")
+                                    .forGetter(OldMinerRules.Lead::minerName),
+                            Codec.INT
+                                    .optionalFieldOf("successes", 0)
+                                    .forGetter(OldMinerRules.Lead::successes),
+                            Codec.STRING
+                                    .optionalFieldOf("finished", "")
+                                    .forGetter(OldMinerRules.Lead::finished),
+                            Codec.STRING.optionalFieldOf("ore", "").forGetter(OldMinerRules.Lead::ore),
+                            Codec.INT.optionalFieldOf("x", 0).forGetter(OldMinerRules.Lead::x),
+                            Codec.INT.optionalFieldOf("y", 0).forGetter(OldMinerRules.Lead::y),
+                            Codec.INT.optionalFieldOf("z", 0).forGetter(OldMinerRules.Lead::z),
+                            Codec.STRING
+                                    .optionalFieldOf("dimension", "")
+                                    .forGetter(OldMinerRules.Lead::dimension),
+                            Codec.LONG
+                                    .optionalFieldOf("given_day", -1L)
+                                    .forGetter(OldMinerRules.Lead::givenDay),
+                            Codec.LONG
+                                    .optionalFieldOf("expire_day", -1L)
+                                    .forGetter(OldMinerRules.Lead::expireDay),
+                            Codec.LONG
+                                    .optionalFieldOf("next_day", -1L)
+                                    .forGetter(OldMinerRules.Lead::nextDay))
+                    .apply(instance, OldMinerRules.Lead::new));
+
+    /** One ore lead per old miner. Several miners can lead the same player, and one miner can lead several players. */
+    public static final AttachmentType<List<OldMinerRules.Lead>> EHM_OLD_MINER_LEADS = AttachmentRegistry.create(
+            ExtraHardModeMod.id("old_miner_leads"),
+            builder -> builder.persistent(OLD_MINER_LEAD_CODEC.listOf())
+                    .copyOnDeath()
+                    .initializer(ArrayList::new));
+
     public static final Codec<WiseLessonRules.Lesson> WISE_LESSON_CODEC = RecordCodecBuilder.create(
             instance -> instance.group(
                             Codec.STRING
@@ -695,7 +735,7 @@ public final class EhmAttachments {
             ExtraHardModeMod.id("wise_lesson_lead"),
             builder -> builder.persistent(Codec.BOOL).initializer(() -> Boolean.FALSE));
 
-    /** The last creature of that hunt: twice the first creature's health, 50% more damage, and its loot without the diamond. */
+    /** The last creature of that hunt: twice the first creature's health and 50% more damage. */
     public static final AttachmentType<Boolean> EHM_WISE_LESSON_FINAL = AttachmentRegistry.create(
             ExtraHardModeMod.id("wise_lesson_final"),
             builder -> builder.persistent(Codec.BOOL).initializer(() -> Boolean.FALSE));

@@ -113,6 +113,12 @@ public final class Inhabitants implements FeatureModule {
                 }
             }
         }
+        if (now % 10L == 0L) {
+            long minerDay = AntiFarming.overworldDay(level);
+            for (ServerPlayer player : level.players()) {
+                OldMiners.tick(player, level, minerDay);
+            }
+        }
         if (level.dimension() != Level.OVERWORLD) {
             return;
         }
@@ -155,14 +161,24 @@ public final class Inhabitants implements FeatureModule {
             return InteractionResult.SUCCESS;
         }
         InhabitantData.Home home = InhabitantData.of(server).byLiving(villager.getUUID());
-        if (home == null || !InhabitantRules.WISE_TEACHER.equals(home.specialty())) {
+        if (home == null) {
             return InteractionResult.PASS;
         }
-        if (hand != InteractionHand.MAIN_HAND || !(player instanceof ServerPlayer serverPlayer)) {
+        if (InhabitantRules.WISE_TEACHER.equals(home.specialty())) {
+            if (hand != InteractionHand.MAIN_HAND || !(player instanceof ServerPlayer serverPlayer)) {
+                return InteractionResult.SUCCESS;
+            }
+            teach(serverPlayer, villager, server, home);
             return InteractionResult.SUCCESS;
         }
-        teach(serverPlayer, villager, server, home);
-        return InteractionResult.SUCCESS;
+        if (InhabitantRules.OLD_MINER.equals(home.specialty())) {
+            if (hand != InteractionHand.MAIN_HAND || !(player instanceof ServerPlayer serverPlayer)) {
+                return InteractionResult.SUCCESS;
+            }
+            OldMiners.onTalk(serverPlayer, server, home, villager.getUUID());
+            return InteractionResult.SUCCESS;
+        }
+        return InteractionResult.PASS;
     }
 
     static void tradeHomes(ServerPlayer player, ServerLevel level, Villager clicked) {
@@ -813,7 +829,7 @@ public final class Inhabitants implements FeatureModule {
                 random.nextInt(),
                 data.spawnedSpecialties(),
                 data.livingCounts());
-        String name = InhabitantRules.pickName(random.nextInt());
+        String name = takeResidentName(data, random.nextInt());
         stamp(villager, ResidenceScan.homeId(result.bed()), specialty, name, random);
         if (InhabitantRules.WISE_TEACHER.equals(specialty)) {
             villager.setAttached(
@@ -1112,9 +1128,38 @@ public final class Inhabitants implements FeatureModule {
         if (home == null || InhabitantRules.listedName(home.name())) {
             return home;
         }
-        InhabitantData.Home named = home.withName(InhabitantRules.nameForHome(home.id()));
+        int roll = home.id() == null ? 0 : home.id().hashCode();
+        InhabitantData.Home named = home.withName(takeResidentName(data, roll));
         data.put(named);
         return named;
+    }
+
+    /**
+     * Next male name that has not been used yet. Names still saved on homes count as used.
+     * When every name has been used, the roll may repeat one and a new cycle starts.
+     */
+    static String takeResidentName(InhabitantData data, int roll) {
+        List<String> homeNames = new ArrayList<>();
+        List<String> livingNames = new ArrayList<>();
+        for (InhabitantData.Home home : data.homes()) {
+            if (home.name() != null && !home.name().isEmpty()) {
+                homeNames.add(home.name());
+            }
+            if (home.living().isPresent() && home.name() != null && !home.name().isEmpty()) {
+                livingNames.add(home.name());
+            }
+        }
+        List<String> blocked = InhabitantRules.namesInUse(data.usedNames(), homeNames);
+        String name = InhabitantRules.pickFreshName(blocked, roll);
+        if (InhabitantRules.namesExhausted(blocked)) {
+            data.setUsedNames(InhabitantRules.nextNameCycle(livingNames, name));
+        } else {
+            for (String homeName : homeNames) {
+                data.rememberUsedName(homeName);
+            }
+            data.rememberUsedName(name);
+        }
+        return name;
     }
 
     /** Drop a home's resident record when that villager is dead or no longer loaded near the bed. */

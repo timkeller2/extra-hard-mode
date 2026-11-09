@@ -723,8 +723,7 @@ public final class WiseLessons {
     }
 
     /**
-     * The first creature drops one diamond. The first and the last drop emeralds from 10% through
-     * 20% of that creature's own health.
+     * The first and the last drop emeralds from 5% through 10% of that creature's own health.
      */
     public static void dropBonusTreasure(LivingEntity mob, ServerLevel level) {
         if (mob == null || level == null) {
@@ -732,9 +731,6 @@ public final class WiseLessons {
         }
         boolean lead = isLead(mob);
         boolean finale = isFinal(mob);
-        if (WiseLessonRules.dropsDiamond(lead)) {
-            mob.spawnAtLocation(level, new ItemStack(Items.DIAMOND));
-        }
         if (!WiseLessonRules.dropsEmeralds(lead, finale)) {
             return;
         }

@@ -41,14 +41,14 @@ public final class WiseLessonRules {
     /** The first creature of a hunt. Creatures between the first and the last keep the ordinary factors. */
     public static final double LEAD_SCALE = 1.25;
     public static final int LEAD_HEALTH_FACTOR = 5;
-    /** The last creature has twice the first creature's health, hits 50% harder, and shares its loot without the diamond. */
+    /** The last creature has twice the first creature's health and hits 50% harder. */
     public static final int FINAL_HEALTH_FACTOR = LEAD_HEALTH_FACTOR * 2;
     public static final double FINAL_DAMAGE_BONUS = 0.5;
     public static final int LEAD_XP_FACTOR = 10;
     public static final int LOOT_ROLLS = 2;
     public static final int LEAD_LOOT_ROLLS = 3;
-    public static final int LEAD_EMERALD_MIN_PERCENT = 10;
-    public static final int LEAD_EMERALD_MAX_PERCENT = 20;
+    public static final int LEAD_EMERALD_MIN_PERCENT = 5;
+    public static final int LEAD_EMERALD_MAX_PERCENT = 10;
     public static final int NIGHT_START = 13000;
     public static final int NIGHT_END = 23000;
     public static final String NEAR = "near here";
@@ -647,11 +647,6 @@ public final class WiseLessonRules {
         return lead || finale ? LEAD_LOOT_ROLLS : LOOT_ROLLS;
     }
 
-    /** Only the first creature drops a diamond. */
-    public static boolean dropsDiamond(boolean lead) {
-        return lead;
-    }
-
     /** The first and the last drop emeralds. The ones between do not. */
     public static boolean dropsEmeralds(boolean lead, boolean finale) {
         return lead || finale;
@@ -738,7 +733,7 @@ public final class WiseLessonRules {
     }
 
     /**
-     * Emeralds for the first or last creature: a whole number from 10% through 20% of that creature's
+     * Emeralds for the first or last creature: a whole number from 5% through 10% of that creature's
      * own health, inclusive. {@code roll} may be any int.
      */
     public static int leadEmeralds(int finalHealth, int roll) {

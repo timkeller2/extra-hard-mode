@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -78,12 +79,11 @@ public final class InhabitantRules {
     /** Furnishings 30 + volume 5 + rooms 3. */
     public static final int MAX_HOUSE_SCORE = 38;
     public static final int MAX_TRADE_TYPES = 24;
-    /** Usual farm shop sells this many plant listings, drawn from {@link #FARM_PLANT_SELLS}. */
+    /** Usual farm shop sells this many listings, drawn from {@link #FARM_LOWER_SELLS}. */
     public static final int FARM_USUAL_SELLS = 2;
     public static final int FARM_PLANT_USES = DEFAULT_TRADE_USES;
-    /** One seed or plantable vegetable. The pool uses both ends. */
-    public static final int FARM_PLANT_MIN_EMERALDS = 6;
-    public static final int FARM_PLANT_MAX_EMERALDS = 16;
+    /** Wheat a farm neighbor sells for one emerald. */
+    public static final int FARM_WHEAT_COUNT = 8;
     public static final int MASTER_ARMOR_PRICE_FACTOR = 4;
     public static final int IRON_BOOTS_EMERALDS = 12;
     public static final int IRON_HELMET_EMERALDS = 15;
@@ -169,6 +169,7 @@ public final class InhabitantRules {
     public static final String WISE_TEACHER = "wise_teacher";
     public static final String JEWELER = "jeweler";
     public static final String COUNCIL = "council";
+    public static final String OLD_MINER = "old_miner";
     /** Emeralds a wise teacher charges in a 24-point home. Each point above that takes {@link #WISE_PRICE_PER_POINT} off, down to free. */
     public static final int WISE_ABILITY_EMERALDS = 30;
     public static final int WISE_PRICE_PER_POINT = 2;
@@ -185,7 +186,8 @@ public final class InhabitantRules {
             WISE_TEACHER,
             JEWELER,
             COUNCIL,
-            BREWER);
+            BREWER,
+            OLD_MINER);
 
     public record WealthyListing(String itemId, int count, int emeralds) {}
 
@@ -288,24 +290,33 @@ public final class InhabitantRules {
             new WealthyListing("minecraft:phantom_membrane", 2, 4));
 
     /**
-     * Seeds and plantable vegetables a farm neighbor may sell. Most are one item.
-     * Pumpkin seeds and melon seeds are 6, and nether wart is 2 for 6 emeralds. Glow berries are
-     * 3 for 1 emerald. The other emerald costs are hefty next to a stack of cobble.
+     * Crops a smaller farm can sell, besides wheat. The usual shop draws {@link #FARM_USUAL_SELLS} of these.
+     * Seeds, carrots, berries, pods, and sugar cane are 3 for 1 emerald. A sapling is 1 for 2.
      */
-    public static final List<TradeListing> FARM_PLANT_SELLS = List.of(
-            sellOf("minecraft:wheat_seeds", 1, 6, FARM_PLANT_USES),
-            sellOf("minecraft:beetroot_seeds", 1, 6, FARM_PLANT_USES),
-            sellOf("minecraft:carrot", 1, 8, FARM_PLANT_USES),
-            sellOf("minecraft:potato", 1, 8, FARM_PLANT_USES),
-            sellOf("minecraft:sweet_berries", 1, 8, FARM_PLANT_USES),
-            sellOf("minecraft:sugar_cane", 1, 8, FARM_PLANT_USES),
-            sellOf("minecraft:cocoa_beans", 1, 8, FARM_PLANT_USES),
+    public static final List<TradeListing> FARM_LOWER_SELLS = List.of(
+            sellOf("minecraft:wheat_seeds", 3, 1, FARM_PLANT_USES),
+            sellOf("minecraft:beetroot_seeds", 3, 1, FARM_PLANT_USES),
+            sellOf("minecraft:carrot", 3, 1, FARM_PLANT_USES),
+            sellOf("minecraft:sweet_berries", 3, 1, FARM_PLANT_USES),
             sellOf("minecraft:glow_berries", 3, 1, FARM_PLANT_USES),
-            sellOf("minecraft:pumpkin_seeds", 6, 12, FARM_PLANT_USES),
-            sellOf("minecraft:melon_seeds", 6, 12, FARM_PLANT_USES),
-            sellOf("minecraft:nether_wart", 2, 6, FARM_PLANT_USES),
-            sellOf("minecraft:torchflower_seeds", 1, FARM_PLANT_MAX_EMERALDS, FARM_PLANT_USES),
-            sellOf("minecraft:pitcher_pod", 1, FARM_PLANT_MAX_EMERALDS, FARM_PLANT_USES));
+            sellOf("minecraft:sugar_cane", 3, 1, FARM_PLANT_USES),
+            sellOf("minecraft:torchflower_seeds", 3, 1, FARM_PLANT_USES),
+            sellOf("minecraft:pitcher_pod", 3, 1, FARM_PLANT_USES),
+            sellOf("minecraft:oak_sapling", 1, 2, FARM_PLANT_USES),
+            sellOf("minecraft:birch_sapling", 1, 2, FARM_PLANT_USES),
+            sellOf("minecraft:spruce_sapling", 1, 2, FARM_PLANT_USES),
+            sellOf("minecraft:bone_meal", 4, 1, FARM_PLANT_USES),
+            sellOf("minecraft:pumpkin", 1, 1, FARM_PLANT_USES),
+            sellOf("minecraft:melon", 1, 1, FARM_PLANT_USES),
+            sellOf("minecraft:beetroot", 12, 1, FARM_PLANT_USES));
+
+    /** Sales that wait for a larger home. Each is one item for one emerald. */
+    public static final List<TradeListing> FARM_HIGHER_SELLS = List.of(
+            sellOf("minecraft:cocoa_beans", 1, 1, FARM_PLANT_USES),
+            sellOf("minecraft:pumpkin_seeds", 1, 1, FARM_PLANT_USES),
+            sellOf("minecraft:melon_seeds", 1, 1, FARM_PLANT_USES),
+            sellOf("minecraft:potato", 1, 1, FARM_PLANT_USES),
+            sellOf("minecraft:nether_wart", 1, 1, FARM_PLANT_USES));
 
     /** Goods a jeweler keeps in the usual shop. Larger houses draw the rest from {@link #JEWELER_EXTRA_SELLS}. */
     public static final List<TradeListing> JEWELER_USUAL_SELLS = List.of(
@@ -336,7 +347,15 @@ public final class InhabitantRules {
         "Kenneth", "Lawrence", "Martin", "Nicholas", "Oliver", "Patrick", "Quentin", "Robert", "Simon", "Theodore",
         "Victor", "Walter", "Xavier", "Yusuf", "Zachary", "Adrian", "Blake", "Conrad", "Dominic", "Ernest",
         "Frederick", "Grant", "Hugh", "Ian", "Jasper", "Keith", "Lewis", "Miles", "Nathan", "Owen",
-        "Paul", "Reid", "Seth", "Tobias"
+        "Paul", "Reid", "Seth", "Tobias",
+        "Albert", "Alfred", "Ambrose", "Amos", "Andrew", "Angus", "Archibald", "Arnold",
+        "Bartholomew", "Basil", "Benedict", "Bernard", "Bertram", "Boris", "Brendan", "Bruce",
+        "Carl", "Cecil", "Charles", "Chester", "Clarence", "Clark", "Clifford", "Clyde",
+        "Dennis", "Desmond", "Douglas", "Duncan", "Dwight", "Earl", "Edgar", "Edwin",
+        "Elias", "Elliot", "Elmer", "Emmett", "Eric", "Eugene", "Everett", "Ezra",
+        "Floyd", "Francis", "Frank", "Fred", "Gilbert", "Gordon", "Graham", "Gregory",
+        "Harvey", "Hector", "Herbert", "Howard", "Hugo", "Irving", "Jack", "Jacob",
+        "Julian", "Julius", "Leo", "Lionel", "Lloyd", "Louis", "Lucas", "Luther"
     };
 
     public record AmenityCounts(
@@ -585,7 +604,7 @@ public final class InhabitantRules {
 
     public static List<String> homesResidentLines() {
         return List.of(
-                "Residents: The name over their head is their name and occupation, such as Alden the Jeweler.",
+                "Residents: The name over their head is their name and occupation, such as Alden the Jeweler. Each name is used once before any name is used again.",
                 "Residents: Clock a resident, then clock another. They trade homes at once, even far apart. Each refuses a home below their job.",
                 "Residents: A loot collector or council member needs 18. A jeweler, armorsmith, or wise teacher needs 24. A wealthy trader or master armorsmith needs 30. Everyone else needs 12.",
                 "Residents: The trade costs half the points of the finer home, rounded down, in emeralds. Their shop stays until the next restock.",
@@ -597,6 +616,14 @@ public final class InhabitantRules {
                 "Residents: Houses in unloaded chunks can still fill. Chance starts at 8% at 12 points and rises with extra points (halved in blight).",
                 "Residents: Chests bias a hauler, a kitchen biases a cook, and plants or workstations bias a farm neighbor.",
                 "Residents: A cauldron favors a brewer, and a brewer can come to a 12-point home.",
+                "Residents: An old miner can come to a 12-point home.",
+                "Ore leads: Speak to an old miner for a lead. He does not keep a shop. Every 7 Minecraft days he names the largest vein in his chunk and the eight around it.",
+                "Ore leads: He adds more of that ore beside the vein. He names only ores found in his chunk and the eight around it.",
+                "Ore leads: The list is the easiest of those ores he has not finished. Its length is the home's points plus finished leads with him, divided by 5, rounded up.",
+                "Ore leads: Finishing an easier ore lets the next harder ore there join the list. He will not repeat an ore until every ore there has been named.",
+                "Ore leads: A lead you never finish can be named again.",
+                "Ore leads: The line reads Jack: Iron East. The direction is North, South, East, West, Up, or Down, whichever is farthest, and it changes as you move.",
+                "Ore leads: Within 3 blocks the lead is finished. It expires after 7 Minecraft days. Each player has a separate lead, and one miner can lead several players.",
                 "Residents: 18 points can attract a loot collector or a council member, 24 a jeweler, an armorsmith, or a wise teacher, and 30 a wealthy trader or a master armorsmith.",
                 "Residents: New residents prefer a type that has not appeared yet.",
                 "Residents: A job with more than twice as many residents as the smallest job this home can host is skipped.",
@@ -622,8 +649,8 @@ public final class InhabitantRules {
                 "Lessons: A mark in your line of sight gives off a red mist. A golden carrot mists every mark until you are not saturated. Sense Evil does that for 1 minute times its level.",
                 "Lessons: A golden carrot or Sense Evil also shows a white outline through blocks.",
                 "Lessons: The first creature is slightly larger, has 5 times the health, and resists knockback.",
-                "Lessons: It drops 10 times the experience and 3 times the loot, plus one diamond and emeralds from 10% to 20% of that health.",
-                "Lessons: The last creature has twice the first creature's health and hits 50% harder. It drops 3 times the loot, without the diamond, and emeralds from 10% to 20% of its health.",
+                "Lessons: It drops 10 times the experience and 3 times the loot, plus emeralds from 5% to 10% of that health.",
+                "Lessons: The last creature has twice the first creature's health and hits 50% harder. It drops 3 times the loot and emeralds from 5% to 10% of its health.",
                 "Lessons: A creeper that explodes goes back on the spawn queue. A first or last creeper returns with that same role.",
                 "Lessons: An unfinished hunt ends after 14 Minecraft days. Each wise teacher can give you a different hunt, and each player has his own.");
     }
@@ -638,7 +665,9 @@ public final class InhabitantRules {
                 "Shops: Each stock change rolls item amounts once from -25% to +25%, then adds 0 to 25 for house points and trading experience.",
                 "Shops: That total adds items when you buy and subtracts the items required when you sell to the resident. Emerald prices stay the same.",
                 "Shops: A hauler pays 1 emerald for 32 of a block. Each chest, barrel, or shulker box takes 2 off that stack, down to 16.",
-                "Shops: A farm neighbor may sell one seed or plantable vegetable for 6 to 16 emeralds. Pumpkin and melon seeds are 6, and nether wart is 2 for 6. Glow berries are 3 for 1 emerald.",
+                "Shops: A farm neighbor sells 8 wheat for 1 emerald. Seeds, carrots, berries, pods, and sugar cane are 3 for 1 emerald.",
+                "Shops: A smaller home may sell a sapling for 2 emeralds, 4 bone meal for 1, 1 pumpkin for 1, 1 melon for 1, or 12 beetroot for 1.",
+                "Shops: Potatoes, pumpkin seeds, melon seeds, cocoa beans, and nether wart need a larger home. Each is 1 for 1 emerald.",
                 "Shops: A trader also buys each thing he sells. The buy stack is 2 larger and pays the same number of emeralds.",
                 "Shops: Those buys start with no uses. Buying from him adds 1 use to each of them. Selling him anything spends 1 use on each of them.",
                 "Shops: A trader or a wealthy trader also offers other players' chests. A sign on the chest that says SELL or BUY is what he reads.",
@@ -903,6 +932,8 @@ public final class InhabitantRules {
         List<String> bag = new ArrayList<>();
         bag.add(TRADER);
         bag.add(TRADER);
+        bag.add(OLD_MINER);
+        bag.add(OLD_MINER);
         if (counts != null && counts.storage() >= 1) {
             bag.add(HAULER);
             bag.add(HAULER);
@@ -1118,12 +1149,74 @@ public final class InhabitantRules {
             case WISE_TEACHER -> "wise teacher";
             case JEWELER -> "jeweler";
             case COUNCIL -> "council member";
+            case OLD_MINER -> "old miner";
             default -> "traveler";
         };
     }
 
     public static String pickName(int roll) {
         return NAMES[Math.floorMod(roll, NAMES.length)];
+    }
+
+    /**
+     * Names already given this cycle and names still saved on homes.
+     * Only catalog names count. Order is the used list, then the home list.
+     */
+    public static List<String> namesInUse(Collection<String> used, Collection<String> homeNames) {
+        LinkedHashSet<String> taken = new LinkedHashSet<>();
+        addListedNames(taken, used);
+        addListedNames(taken, homeNames);
+        return List.copyOf(taken);
+    }
+
+    /**
+     * A name that is not in {@code blocked}. When every catalog name is blocked, the roll
+     * may repeat one, because every name has already been used.
+     */
+    public static String pickFreshName(Collection<String> blocked, int roll) {
+        List<String> open = new ArrayList<>();
+        Set<String> taken = new HashSet<>();
+        addListedNames(taken, blocked);
+        for (String name : NAMES) {
+            if (!taken.contains(name)) {
+                open.add(name);
+            }
+        }
+        if (open.isEmpty()) {
+            return pickName(roll);
+        }
+        return open.get(Math.floorMod(roll, open.size()));
+    }
+
+    /** True when {@code blocked} already holds every catalog name. */
+    public static boolean namesExhausted(Collection<String> blocked) {
+        Set<String> taken = new HashSet<>();
+        addListedNames(taken, blocked);
+        return taken.size() >= NAMES.length;
+    }
+
+    /**
+     * The set saved after a finished cycle. Living catalog names stay reserved, and so does
+     * the name just chosen.
+     */
+    public static List<String> nextNameCycle(Collection<String> livingNames, String chosen) {
+        LinkedHashSet<String> next = new LinkedHashSet<>();
+        addListedNames(next, livingNames);
+        if (listedName(chosen)) {
+            next.add(chosen);
+        }
+        return List.copyOf(next);
+    }
+
+    private static void addListedNames(Set<String> into, Collection<String> names) {
+        if (names == null) {
+            return;
+        }
+        for (String name : names) {
+            if (listedName(name)) {
+                into.add(name);
+            }
+        }
     }
 
     public static int nameCount() {
@@ -1484,7 +1577,7 @@ public final class InhabitantRules {
                     buyOf("minecraft:cooked_chicken", 8, 3),
                     buyOf("minecraft:baked_potato", 8, 3),
                     sellOf("minecraft:rabbit_stew", 1, 4, 3));
-            case FARM -> farmUsualListings(blight);
+            case FARM -> farmUsualListings();
             case BREWER -> brewerUsualListings();
             case BOUNTY -> List.of(
                     buyOf("minecraft:spider_eye", 4, 3),
@@ -1492,7 +1585,7 @@ public final class InhabitantRules {
                     buyOf("minecraft:bone", 8, 3));
             case ARMORSMITH -> armorUsualListings(false);
             case MASTER_ARMORSMITH -> armorUsualListings(true);
-            case WISE_TEACHER -> List.of();
+            case WISE_TEACHER, OLD_MINER -> List.of();
             case COUNCIL -> List.of(
                     sellOf("minecraft:paper", 12, 1, 3),
                     sellOf("minecraft:book", 1, 3, 3),
@@ -1552,7 +1645,7 @@ public final class InhabitantRules {
                     buyOf("minecraft:blaze_rod", 2, 3),
                     buyOf("minecraft:ghast_tear", 1, 3));
             case ARMORSMITH -> List.of(armorMetalBuy(false));
-            case WISE_TEACHER -> List.of();
+            case WISE_TEACHER, OLD_MINER -> List.of();
             case MASTER_ARMORSMITH -> List.of(armorMetalBuy(true));
             case COUNCIL -> List.of(
                     sellOf("minecraft:map", 1, 4, 3),
@@ -1618,7 +1711,7 @@ public final class InhabitantRules {
             String specialty, double score, int storage, boolean blight, Random random) {
         Random rng = random == null ? new Random(0L) : random;
         String type = specialty == null || specialty.isEmpty() ? TRADER : specialty;
-        if (WISE_TEACHER.equals(type)) {
+        if (WISE_TEACHER.equals(type) || OLD_MINER.equals(type)) {
             return List.of();
         }
         List<TradeListing> defaults;
@@ -1631,14 +1724,15 @@ public final class InhabitantRules {
             defaults = new ArrayList<>(pool.subList(0, n));
             extras = new ArrayList<>(pool.subList(n, pool.size()));
         } else if (FARM.equals(type)) {
-            List<TradeListing> plants = new ArrayList<>(FARM_PLANT_SELLS);
+            List<TradeListing> plants = new ArrayList<>(FARM_LOWER_SELLS);
             Collections.shuffle(plants, rng);
             int usualSells = Math.min(FARM_USUAL_SELLS, plants.size());
             defaults = new ArrayList<>();
-            defaults.add(buyOf("minecraft:wheat", farmWheatBuy(blight), 3));
+            defaults.add(farmWheatSell());
             defaults.addAll(plants.subList(0, usualSells));
             Collections.shuffle(defaults, rng);
             extras = new ArrayList<>(plants.subList(usualSells, plants.size()));
+            extras.addAll(FARM_HIGHER_SELLS);
             extras.addAll(farmSideListings(blight));
         } else if (ARMORSMITH.equals(type) || MASTER_ARMORSMITH.equals(type)) {
             boolean master = MASTER_ARMORSMITH.equals(type);
@@ -1748,31 +1842,34 @@ public final class InhabitantRules {
         Collections.shuffle(extras, rng);
     }
 
-    /** Wheat buy plus the first plant sells. The live shop draws those sells at random. */
-    static List<TradeListing> farmUsualListings(boolean blight) {
+    /** Eight wheat for one emerald. */
+    static TradeListing farmWheatSell() {
+        return sellOf("minecraft:wheat", FARM_WHEAT_COUNT, 1, FARM_PLANT_USES);
+    }
+
+    /** Wheat sale plus the first lower-list sells. The live shop draws those sells at random. */
+    static List<TradeListing> farmUsualListings() {
         List<TradeListing> listings = new ArrayList<>();
-        listings.add(buyOf("minecraft:wheat", farmWheatBuy(blight), 3));
-        int sells = Math.min(FARM_USUAL_SELLS, FARM_PLANT_SELLS.size());
-        listings.addAll(FARM_PLANT_SELLS.subList(0, sells));
+        listings.add(farmWheatSell());
+        int sells = Math.min(FARM_USUAL_SELLS, FARM_LOWER_SELLS.size());
+        listings.addAll(FARM_LOWER_SELLS.subList(0, sells));
         return List.copyOf(listings);
     }
 
-    /** Plant sells past the usual pair, then saplings, bone meal, and crop buys. */
+    /** Lower-list sells past the usual pair, then the larger-home sales, then crop buys. */
     static List<TradeListing> farmExtraListings(boolean blight) {
         List<TradeListing> listings = new ArrayList<>();
-        if (FARM_PLANT_SELLS.size() > FARM_USUAL_SELLS) {
-            listings.addAll(FARM_PLANT_SELLS.subList(FARM_USUAL_SELLS, FARM_PLANT_SELLS.size()));
+        if (FARM_LOWER_SELLS.size() > FARM_USUAL_SELLS) {
+            listings.addAll(FARM_LOWER_SELLS.subList(FARM_USUAL_SELLS, FARM_LOWER_SELLS.size()));
         }
+        listings.addAll(FARM_HIGHER_SELLS);
         listings.addAll(farmSideListings(blight));
         return List.copyOf(listings);
     }
 
+    /** Crop buys that stay with the larger home. Beetroot follows the old wheat quantity, including blight. */
     static List<TradeListing> farmSideListings(boolean blight) {
         return List.of(
-                sellOf("minecraft:oak_sapling", 1, 2, 3),
-                sellOf("minecraft:birch_sapling", 1, 2, 3),
-                sellOf("minecraft:spruce_sapling", 1, 2, 3),
-                sellOf("minecraft:bone_meal", 4, 1, 3),
                 buyOf("minecraft:beetroot", farmWheatBuy(blight), 3),
                 buyOf("minecraft:apple", 8, 3));
     }

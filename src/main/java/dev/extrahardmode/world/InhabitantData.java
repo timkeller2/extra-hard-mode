@@ -3,7 +3,9 @@ package dev.extrahardmode.world;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.extrahardmode.ExtraHardModeMod;
+import dev.extrahardmode.feature.InhabitantRules;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -42,7 +44,11 @@ public final class InhabitantData extends SavedData {
                     Codec.STRING
                             .listOf()
                             .optionalFieldOf("spawned_specialties", List.of())
-                            .forGetter(InhabitantData::spawnedSpecialtyList))
+                            .forGetter(InhabitantData::spawnedSpecialtyList),
+                    Codec.STRING
+                            .listOf()
+                            .optionalFieldOf("used_names", List.of())
+                            .forGetter(InhabitantData::usedNameList))
             .apply(instance, InhabitantData::new));
 
     public static final SavedDataType<InhabitantData> TYPE = new SavedDataType<>(
@@ -50,12 +56,19 @@ public final class InhabitantData extends SavedData {
 
     private final Map<String, Home> homes = new LinkedHashMap<>();
     private final LinkedHashSet<String> spawnedSpecialties = new LinkedHashSet<>();
+    /** Names given in the current cycle. A name waits here until every catalog name has been used. */
+    private final LinkedHashSet<String> usedNames = new LinkedHashSet<>();
     private long lastDawnDay = -1L;
     private long lastRestockDay = -1L;
 
     public InhabitantData() {}
 
-    public InhabitantData(List<Home> homes, long lastDawnDay, long lastRestockDay, List<String> spawnedSpecialties) {
+    public InhabitantData(
+            List<Home> homes,
+            long lastDawnDay,
+            long lastRestockDay,
+            List<String> spawnedSpecialties,
+            List<String> usedNames) {
         for (Home home : homes) {
             this.homes.put(home.id(), home);
             rememberSpecialty(home.specialty());
@@ -65,6 +78,11 @@ public final class InhabitantData extends SavedData {
         if (spawnedSpecialties != null) {
             for (String type : spawnedSpecialties) {
                 rememberSpecialty(type);
+            }
+        }
+        if (usedNames != null) {
+            for (String name : usedNames) {
+                rememberName(name);
             }
         }
     }
@@ -126,6 +144,35 @@ public final class InhabitantData extends SavedData {
 
     private List<String> spawnedSpecialtyList() {
         return new ArrayList<>(spawnedSpecialties);
+    }
+
+    public Set<String> usedNames() {
+        return Set.copyOf(usedNames);
+    }
+
+    public void rememberUsedName(String name) {
+        if (rememberName(name)) {
+            setDirty();
+        }
+    }
+
+    /** Replaces the cycle after every catalog name has been used. */
+    public void setUsedNames(Collection<String> names) {
+        usedNames.clear();
+        if (names != null) {
+            for (String name : names) {
+                rememberName(name);
+            }
+        }
+        setDirty();
+    }
+
+    private boolean rememberName(String name) {
+        return InhabitantRules.listedName(name) && usedNames.add(name);
+    }
+
+    private List<String> usedNameList() {
+        return new ArrayList<>(usedNames);
     }
 
     public Home get(String id) {
