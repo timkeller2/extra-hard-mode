@@ -20,6 +20,9 @@ import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.particles.ColorParticleOption;
+import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -72,6 +75,10 @@ import org.jspecify.annotations.Nullable;
  */
 public final class Inhabitants implements FeatureModule {
     public static final Identifier ID = ExtraHardModeMod.id("inhabitants");
+    private static final int SHIMMER_RED = 1;
+    private static final int SHIMMER_GREEN = 2;
+    private static final DustParticleOptions RED_SHIMMER = new DustParticleOptions(0xE02020, 1.0F);
+    private static final DustParticleOptions GREEN_SHIMMER = new DustParticleOptions(0x33E05A, 1.0F);
 
     @Override
     public Identifier id() {
@@ -94,6 +101,9 @@ public final class Inhabitants implements FeatureModule {
 
     @Override
     public void serverTick(ServerLevel level) {
+        for (ServerPlayer player : level.players()) {
+            tickWiseShimmer(player, level);
+        }
         long now = level.getGameTime();
         if (now % 5L == 0L) {
             WiseLessons.mist(level);
@@ -455,6 +465,7 @@ public final class Inhabitants implements FeatureModule {
             player.sendSystemMessage(Component.translatableWithFallback(
                     "tougher.wise.learned", "You have learned more about %s.", name));
         }
+        startWiseShimmer(player, SHIMMER_GREEN, InhabitantRules.lessonShimmerTicks(uses));
         level.playSound(null, villager.blockPosition(), SoundEvents.VILLAGER_YES, SoundSource.NEUTRAL, 1.0F, 1.0F);
     }
 
@@ -478,9 +489,49 @@ public final class Inhabitants implements FeatureModule {
                 Component.literal(InhabitantRules.learningLabel(gain)),
                 Component.literal(InhabitantRules.learningLabel(effective)),
                 Component.literal(taken)));
+        startWiseShimmer(player, SHIMMER_RED, InhabitantRules.redstoneShimmerTicks(take));
         level.playSound(
                 null, villager.blockPosition(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.NEUTRAL, 1.0F, 1.0F);
         Achievements.sendMana(player);
+    }
+
+    /** A new shimmer replaces one already playing. Zero ticks leaves the current one alone. */
+    private static void startWiseShimmer(ServerPlayer player, int kind, int ticks) {
+        if (player == null || ticks <= 0) {
+            return;
+        }
+        player.setAttached(EhmAttachments.EHM_WISE_SHIMMER_KIND, kind);
+        player.setAttached(EhmAttachments.EHM_WISE_SHIMMER_TICKS, ticks);
+    }
+
+    private static void tickWiseShimmer(ServerPlayer player, ServerLevel level) {
+        if (player == null || level == null) {
+            return;
+        }
+        int ticks = Math.max(0, player.getAttachedOrElse(EhmAttachments.EHM_WISE_SHIMMER_TICKS, 0));
+        if (ticks <= 0) {
+            return;
+        }
+        if (!player.isAlive()) {
+            player.setAttached(EhmAttachments.EHM_WISE_SHIMMER_TICKS, 0);
+            return;
+        }
+        spawnWiseShimmer(player, level, player.getAttachedOrElse(EhmAttachments.EHM_WISE_SHIMMER_KIND, 0));
+        player.setAttached(EhmAttachments.EHM_WISE_SHIMMER_TICKS, ticks - 1);
+    }
+
+    private static void spawnWiseShimmer(ServerPlayer player, ServerLevel level, int kind) {
+        double x = player.getX();
+        double y = player.getY() + player.getBbHeight() * 0.6;
+        double z = player.getZ();
+        boolean red = kind != SHIMMER_GREEN;
+        level.sendParticles(red ? RED_SHIMMER : GREEN_SHIMMER, x, y, z, 8, 0.35, 0.5, 0.35, 0.0);
+        level.sendParticles(ParticleTypes.END_ROD, x, y, z, 3, 0.3, 0.45, 0.3, 0.01);
+        float r = red ? 0.95F : 0.25F;
+        float g = red ? 0.15F : 0.95F;
+        float b = red ? 0.12F : 0.35F;
+        level.sendParticles(
+                ColorParticleOption.create(ParticleTypes.ENTITY_EFFECT, r, g, b), x, y, z, 6, 0.35, 0.5, 0.35, 0.0);
     }
 
     private static void explainLesson(ServerPlayer player, String ability, int offers, int price, int redstoneCap) {

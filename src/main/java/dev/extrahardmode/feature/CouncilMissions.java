@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -55,6 +57,7 @@ public final class CouncilMissions {
     /** Ground search stays with the player: this far down, and {@link #SCAN_UP} above. */
     private static final int SCAN_DOWN = 24;
     private static final int SCAN_UP = 16;
+    private static final Map<UUID, String> LAST_HUD = new ConcurrentHashMap<>();
 
     private CouncilMissions() {}
 
@@ -83,11 +86,31 @@ public final class CouncilMissions {
     }
 
     public static void sendHud(ServerPlayer player) {
+        if (player == null) {
+            return;
+        }
+        LAST_HUD.remove(player.getUUID());
         sendHud(player, boardOf(player));
     }
 
+    public static void clearHud(ServerPlayer player) {
+        if (player != null) {
+            LAST_HUD.remove(player.getUUID());
+        }
+    }
+
     static void sendHud(ServerPlayer player, List<CouncilMissionRules.Mission> board) {
-        ServerPlayNetworking.send(player, ClientboundCouncilBountyPayload.from(CouncilMissionRules.hudLines(board)));
+        long clock = 0L;
+        if (player.level() instanceof ServerLevel level) {
+            clock = level.getOverworldClockTime();
+        }
+        List<String> lines = CouncilMissionRules.hudLines(board, clock);
+        String text = String.join("\n", lines);
+        if (text.equals(LAST_HUD.get(player.getUUID()))) {
+            return;
+        }
+        LAST_HUD.put(player.getUUID(), text);
+        ServerPlayNetworking.send(player, ClientboundCouncilBountyPayload.from(lines));
     }
 
     public static void tick(ServerPlayer player, long today) {
@@ -105,6 +128,8 @@ public final class CouncilMissions {
         }
         if (changed) {
             save(player, next);
+        } else {
+            sendHud(player, next);
         }
         maybeSpawn(player, today);
     }

@@ -649,14 +649,15 @@ public final class CouncilMissionRules {
         return best.withGiver(residentId, keptName);
     }
 
-    public static List<String> hudLines(List<Mission> missions) {
+    public static List<String> hudLines(List<Mission> missions, long clockTime) {
         List<String> lines = new ArrayList<>();
         if (missions == null) {
             return lines;
         }
         for (Mission mission : missions) {
             if (mission.active()) {
-                lines.add(hudLabel(mission));
+                long expire = mission.assignedDay() < 0L ? -1L : mission.assignedDay() + MISSION_DAYS;
+                lines.add(MissionTimerRules.append(hudLabel(mission), expire, clockTime));
             }
         }
         return lines;

@@ -160,18 +160,19 @@ class OldMinerRulesTest {
         assertEquals("Jack: Iron East", OldMinerRules.leadLine("Jack", "iron", "East"));
         OldMinerRules.Lead lead = OldMinerRules.Lead.blank("b", "Jack")
                 .assigned("iron", 10, 0, 0, "minecraft:overworld", 0);
+        long clock = 24_000L;
         assertEquals(
-                List.of("Jack: Iron East"),
-                OldMinerRules.hudLines(List.of(lead), "minecraft:overworld", 0, 0, 0, 1));
+                List.of("Jack: Iron East (6d 0h)"),
+                OldMinerRules.hudLines(List.of(lead), "minecraft:overworld", 0, 0, 0, 1, clock));
         assertEquals(
-                List.of("Jack: Iron West"),
-                OldMinerRules.hudLines(List.of(lead), "minecraft:overworld", 20, 0, 0, 1));
+                List.of("Jack: Iron West (6d 0h)"),
+                OldMinerRules.hudLines(List.of(lead), "minecraft:overworld", 20, 0, 0, 1, clock));
         assertEquals(
-                List.of("Jack: Iron Up"),
-                OldMinerRules.hudLines(List.of(lead), "minecraft:overworld", 10, -8, 0, 1));
-        assertTrue(OldMinerRules.hudLines(List.of(lead), "minecraft:the_nether", 0, 0, 0, 1).isEmpty());
-        assertTrue(OldMinerRules.hudLines(List.of(lead), "minecraft:overworld", 10, 0, 0, 1).isEmpty());
-        assertTrue(OldMinerRules.hudLines(List.of(lead), "minecraft:overworld", 0, 0, 0, 7).isEmpty());
+                List.of("Jack: Iron Up (6d 0h)"),
+                OldMinerRules.hudLines(List.of(lead), "minecraft:overworld", 10, -8, 0, 1, clock));
+        assertTrue(OldMinerRules.hudLines(List.of(lead), "minecraft:the_nether", 0, 0, 0, 1, clock).isEmpty());
+        assertTrue(OldMinerRules.hudLines(List.of(lead), "minecraft:overworld", 10, 0, 0, 1, clock).isEmpty());
+        assertTrue(OldMinerRules.hudLines(List.of(lead), "minecraft:overworld", 0, 0, 0, 7, 7L * 24_000L).isEmpty());
     }
 
     @Test

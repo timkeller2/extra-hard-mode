@@ -341,9 +341,9 @@ class CouncilMissionRulesTest {
         assertEquals("a", CouncilMissionRules.findGiver(legacy, "a").giverId());
         assertEquals("Ada", CouncilMissionRules.findGiver(legacy, "a").giverName());
         assertNull(CouncilMissionRules.findGiver(legacy, ""));
-        List<String> lines = CouncilMissionRules.hudLines(List.of(first, second));
-        assertEquals(List.of("Ada: 6 Zombies", "Bea: 6 Zombies"), lines);
-        assertEquals(List.of("Ada: 6 Zombies"), CouncilMissionRules.hudLines(List.of(first)));
+        List<String> lines = CouncilMissionRules.hudLines(List.of(first, second), 0L);
+        assertEquals(List.of("Ada: 6 Zombies (14d 0h)", "Bea: 6 Zombies (14d 0h)"), lines);
+        assertEquals(List.of("Ada: 6 Zombies (14d 0h)"), CouncilMissionRules.hudLines(List.of(first), 0L));
         assertFalse(CouncilMissionRules.worthMigrating(CouncilMissionRules.NONE));
         assertTrue(CouncilMissionRules.worthMigrating(first));
         assertTrue(CouncilMissionRules.worthMigrating(first.clearHunt()));

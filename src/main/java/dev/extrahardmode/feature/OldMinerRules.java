@@ -366,7 +366,8 @@ public final class OldMinerRules {
         return Math.max(0L, nextDay - today);
     }
 
-    public static List<String> hudLines(List<Lead> leads, String dimension, int px, int py, int pz, long today) {
+    public static List<String> hudLines(
+            List<Lead> leads, String dimension, int px, int py, int pz, long today, long clockTime) {
         if (leads == null || leads.isEmpty()) {
             return List.of();
         }
@@ -390,10 +391,13 @@ public final class OldMinerRules {
                 .thenComparing(Lead::minerId, Comparator.nullsFirst(String::compareTo)));
         List<String> lines = new ArrayList<>(active.size());
         for (Lead lead : active) {
-            lines.add(leadLine(
-                    lead.minerName(),
-                    lead.ore(),
-                    direction(lead.x() - px, lead.y() - py, lead.z() - pz)));
+            lines.add(MissionTimerRules.append(
+                    leadLine(
+                            lead.minerName(),
+                            lead.ore(),
+                            direction(lead.x() - px, lead.y() - py, lead.z() - pz)),
+                    lead.expireDay(),
+                    clockTime));
         }
         return List.copyOf(lines);
     }

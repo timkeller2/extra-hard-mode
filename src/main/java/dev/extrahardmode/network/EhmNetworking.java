@@ -67,6 +67,7 @@ public final class EhmNetworking {
             ManaAbilities.clearStrongCastHud(handler.player);
             WiseLessons.clearHud(handler.player);
             OldMiners.clearHud(handler.player);
+            CouncilMissions.clearHud(handler.player);
         });
         ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.register((player, origin, destination) -> {
             sendSync(player);

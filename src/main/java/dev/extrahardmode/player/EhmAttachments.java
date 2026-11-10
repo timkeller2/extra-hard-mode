@@ -336,6 +336,14 @@ public final class EhmAttachments {
     public static final AttachmentType<Long> EHM_GOLD_SHIMMER_UNTIL = AttachmentRegistry.create(
             ExtraHardModeMod.id("gold_shimmer_until"),
             builder -> builder.initializer(() -> -1L));
+    /** Ticks left on a wise-teacher shimmer. Zero means none. Not kept across death. */
+    public static final AttachmentType<Integer> EHM_WISE_SHIMMER_TICKS = AttachmentRegistry.create(
+            ExtraHardModeMod.id("wise_shimmer_ticks"),
+            builder -> builder.initializer(() -> 0));
+    /** 1 is the red redstone-block shimmer. 2 is the green lesson shimmer. */
+    public static final AttachmentType<Integer> EHM_WISE_SHIMMER_KIND = AttachmentRegistry.create(
+            ExtraHardModeMod.id("wise_shimmer_kind"),
+            builder -> builder.initializer(() -> 0));
 
     /** Slot to {@code itemId|gameTime} for gold armor and held golden items. */
     public static final AttachmentType<Map<String, String>> EHM_GOLD_WEAR = AttachmentRegistry.create(

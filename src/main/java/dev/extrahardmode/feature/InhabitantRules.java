@@ -846,6 +846,7 @@ public final class InhabitantRules {
                 "Ore leads: Finishing an easier ore lets the next harder ore there join the list. He will not repeat an ore until every ore there has been named.",
                 "Ore leads: A lead you never finish can be named again.",
                 "Ore leads: The line reads Jack: Iron East. The direction is North, South, East, West, Up, or Down, whichever is farthest, and it changes as you move.",
+                "Ore leads: The time left ends that line, like (2d 3h).",
                 "Ore leads: Within 3 blocks the lead is finished. It expires after 7 Minecraft days. Each player has a separate lead, and one miner can lead several players.",
                 "Residents: 18 points can attract a loot collector or a council member, 24 a jeweler, an armorsmith, or a wise teacher, and 30 a wealthy trader or a master armorsmith.",
                 "Residents: New residents prefer a type that has not appeared yet.",
@@ -866,6 +867,7 @@ public final class InhabitantRules {
                 "Lessons: The first hunts are easier. Every 4 hunts, they are harder. It lies 200 to 500 blocks north, south, east, or west, plus 33% of that for each of those hunts, rounded.",
                 "Lessons: He only sends creatures from the dimension where he lives.",
                 "Lessons: His name, how many are left, and the direction show on your screen. That number falls as you kill them. At that distance it says near here.",
+                "Lessons: The time left ends that line, like (2d 3h).",
                 "Lessons: Come back closer than that distance and the direction returns.",
                 "Lessons: After 2 minutes out there, on land, at night or below ground, half appear within a few seconds. The rest spawn every 5 to 15 seconds, 20 to 40 blocks out.",
                 "Lessons: Each mark has 50% to 100% more health. They give triple experience and double loot, and they always drop both. They vanish after 3 Minecraft days.",
@@ -935,6 +937,7 @@ public final class InhabitantRules {
                 "Bounties: You also get a congratulations message and a sound. Return to that resident for emeralds equal to one tenth of that XP.",
                 "Bounties: Collecting plays a sound. When that wait is over, that resident offers a new bounty.",
                 "Bounties: A bounty reads Ada: 9 Zombies above the ability icons. The line is the council member, how many are left, and the mob. Lines stack upward.",
+                "Bounties: The time left ends that line, like (2d 3h).",
                 "Bounties: A loot collector warns you when a biome boss is out, and names the compass direction from that resident. East is the rising sun.");
     }
 
@@ -1602,6 +1605,27 @@ public final class InhabitantRules {
             return 0.0;
         }
         return Math.sqrt(blocksTaken);
+    }
+
+    /** One second of red shimmer for each redstone block he actually takes. */
+    public static int redstoneShimmerTicks(int blocks) {
+        return shimmerTicks(blocks, 20);
+    }
+
+    /** Half a second of green shimmer for each use the lesson grants. One use is 10 ticks. */
+    public static int lessonShimmerTicks(int uses) {
+        return shimmerTicks(uses, 10);
+    }
+
+    private static int shimmerTicks(int count, int ticksEach) {
+        if (count <= 0 || ticksEach <= 0) {
+            return 0;
+        }
+        long ticks = (long) count * ticksEach;
+        if (ticks > Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        }
+        return (int) ticks;
     }
 
     /** Whole numbers stay whole. Other values show one decimal. */

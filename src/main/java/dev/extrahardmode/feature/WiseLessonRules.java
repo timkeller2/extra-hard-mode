@@ -482,7 +482,8 @@ public final class WiseLessonRules {
         return Math.max(0, lesson.size() - gone);
     }
 
-    public static List<String> hudLines(List<Lesson> lessons, String playerDimension, double x, double z) {
+    public static List<String> hudLines(
+            List<Lesson> lessons, String playerDimension, double x, double z, long clockTime) {
         if (lessons == null || lessons.isEmpty()) {
             return List.of();
         }
@@ -493,8 +494,11 @@ public final class WiseLessonRules {
             }
             boolean near = atRange(
                     lesson.dimension(), playerDimension, lesson.originX(), lesson.originZ(), x, z, lesson.distance());
-            lines.add(statusLine(
-                    lesson.teacherName(), marksLeft(lesson), lesson.plural(), lesson.direction(), near));
+            long expire = lesson.assignedDay() < 0L ? -1L : lesson.assignedDay() + MISSION_DAYS;
+            lines.add(MissionTimerRules.append(
+                    statusLine(lesson.teacherName(), marksLeft(lesson), lesson.plural(), lesson.direction(), near),
+                    expire,
+                    clockTime));
         }
         return lines;
     }

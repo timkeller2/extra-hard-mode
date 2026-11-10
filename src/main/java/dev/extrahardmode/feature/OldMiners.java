@@ -292,7 +292,8 @@ public final class OldMiners {
                 player.getBlockX(),
                 player.getBlockY(),
                 player.getBlockZ(),
-                today);
+                today,
+                level.getOverworldClockTime());
         String key = String.join("\n", lines);
         String previous = LAST_HUD.put(player.getUUID(), key);
         if (key.equals(previous)) {

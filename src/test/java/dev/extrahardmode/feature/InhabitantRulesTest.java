@@ -336,6 +336,14 @@ class InhabitantRulesTest {
         assertEquals(1, InhabitantRules.wiseEmeraldUses(1));
         assertEquals(0, InhabitantRules.wiseEmeraldUses(0));
         assertEquals(0, InhabitantRules.wiseEmeraldUses(-4));
+        assertEquals(60, InhabitantRules.redstoneShimmerTicks(3));
+        assertEquals(20, InhabitantRules.redstoneShimmerTicks(1));
+        assertEquals(0, InhabitantRules.redstoneShimmerTicks(0));
+        assertEquals(0, InhabitantRules.redstoneShimmerTicks(-2));
+        assertEquals(120, InhabitantRules.lessonShimmerTicks(InhabitantRules.wiseFocusUses(24)));
+        assertEquals(240, InhabitantRules.lessonShimmerTicks(InhabitantRules.wiseEmeraldUses(24)));
+        assertEquals(10, InhabitantRules.lessonShimmerTicks(1));
+        assertEquals(0, InhabitantRules.lessonShimmerTicks(0));
         assertEquals(30, InhabitantRules.wiseAbilityPrice(24));
         assertEquals(28, InhabitantRules.wiseAbilityPrice(25));
         assertEquals(30, InhabitantRules.wiseAbilityPrice(12));

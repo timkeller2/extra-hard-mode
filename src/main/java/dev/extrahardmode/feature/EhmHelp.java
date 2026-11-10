@@ -463,6 +463,8 @@ public final class EhmHelp {
                         "Abilities: A focus gives half the house points in uses, rounded down. Hold emeralds and he picks an ability for the house points.",
                         "Abilities: He offers a lesson when a new hunt begins, and again when you kill more than half the marks before they vanish.",
                         "Abilities: Hold redstone blocks instead. The first gift takes 1, then up to 4, 9, and so on. Mana learning grows by the square root of the blocks he takes.",
+                        "Abilities: Redstone blocks he takes shimmer red on you, one second for each block.",
+                        "Abilities: A lesson he teaches shimmers green for half a second per use.",
                         "Abilities: Hold an item and press ? for details, or type /tougher ability help <name>.",
                         "Abilities: /tougher me lists your mana level and ability skill levels.",
                         "Abilities: Bottom-right icons list abilities above level 2, highest first. Each icon is 5% of normal size times that level, and that level sits on its right at the same scale.",

@@ -1140,7 +1140,11 @@ public final class WiseLessons {
 
     private static void publish(ServerPlayer player, List<WiseLessonRules.Lesson> lessons) {
         String dimension = player.level().dimension().identifier().toString();
-        List<String> lines = WiseLessonRules.hudLines(lessons, dimension, player.getX(), player.getZ());
+        long clock = 0L;
+        if (player.level() instanceof ServerLevel level) {
+            clock = level.getOverworldClockTime();
+        }
+        List<String> lines = WiseLessonRules.hudLines(lessons, dimension, player.getX(), player.getZ(), clock);
         String text = String.join("\n", lines);
         if (text.equals(LAST_HUD.get(player.getUUID()))) {
             return;
