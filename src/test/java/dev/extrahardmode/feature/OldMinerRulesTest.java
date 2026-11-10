@@ -162,14 +162,20 @@ class OldMinerRulesTest {
                 .assigned("iron", 10, 0, 0, "minecraft:overworld", 0);
         long clock = 24_000L;
         assertEquals(
-                List.of("Jack: Iron East (6d 0h)"),
+                List.of("Jack: Iron East"),
                 OldMinerRules.hudLines(List.of(lead), "minecraft:overworld", 0, 0, 0, 1, clock));
         assertEquals(
-                List.of("Jack: Iron West (6d 0h)"),
+                List.of("Jack: Iron West"),
                 OldMinerRules.hudLines(List.of(lead), "minecraft:overworld", 20, 0, 0, 1, clock));
         assertEquals(
-                List.of("Jack: Iron Up (6d 0h)"),
+                List.of("Jack: Iron Up"),
                 OldMinerRules.hudLines(List.of(lead), "minecraft:overworld", 10, -8, 0, 1, clock));
+        assertEquals(
+                List.of("Jack: Iron East (2d)"),
+                OldMinerRules.hudLines(List.of(lead), "minecraft:overworld", 0, 0, 0, 5, 5L * 24_000L));
+        assertEquals(
+                List.of("Jack: Iron East (13h)"),
+                OldMinerRules.hudLines(List.of(lead), "minecraft:overworld", 0, 0, 0, 6, 7L * 24_000L - 13_000L));
         assertTrue(OldMinerRules.hudLines(List.of(lead), "minecraft:the_nether", 0, 0, 0, 1, clock).isEmpty());
         assertTrue(OldMinerRules.hudLines(List.of(lead), "minecraft:overworld", 10, 0, 0, 1, clock).isEmpty());
         assertTrue(OldMinerRules.hudLines(List.of(lead), "minecraft:overworld", 0, 0, 0, 7, 7L * 24_000L).isEmpty());

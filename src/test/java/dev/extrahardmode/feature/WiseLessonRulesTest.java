@@ -110,11 +110,14 @@ class WiseLessonRulesTest {
         WiseLessonRules.Lesson lesson = hunt();
         long clock = 10L * 24000L;
         assertEquals(
-                List.of("Alden the Wise Teacher: 5 zombies east (14d 0h)"),
+                List.of("Alden the Wise Teacher: 5 zombies east"),
                 WiseLessonRules.hudLines(List.of(lesson), "minecraft:overworld", 0, 0, clock));
         assertEquals(
-                List.of("Alden the Wise Teacher: 5 zombies near here (14d 0h)"),
+                List.of("Alden the Wise Teacher: 5 zombies near here"),
                 WiseLessonRules.hudLines(List.of(lesson), "minecraft:overworld", 250, 0, clock));
+        assertEquals(
+                List.of("Alden the Wise Teacher: 5 zombies east (2d)"),
+                WiseLessonRules.hudLines(List.of(lesson), "minecraft:overworld", 0, 0, 525_000L));
         WiseLessonRules.Lesson done = lesson.withActive(false);
         assertTrue(WiseLessonRules.hudLines(List.of(done), "minecraft:overworld", 250, 0, clock).isEmpty());
     }
@@ -157,11 +160,11 @@ class WiseLessonRulesTest {
         long clock = 10L * 24000L;
         assertEquals(
                 List.of(
-                        "Alden the Wise Teacher: 5 zombies east (14d 0h)",
-                        "Bran the Wise Teacher: 4 skeletons west (16d 0h)"),
+                        "Alden the Wise Teacher: 5 zombies east",
+                        "Bran the Wise Teacher: 4 skeletons west"),
                 WiseLessonRules.hudLines(List.of(open, other), "minecraft:overworld", 0, 0, clock));
         assertEquals(
-                List.of("Bran the Wise Teacher: 4 skeletons west (16d 0h)"),
+                List.of("Bran the Wise Teacher: 4 skeletons west"),
                 WiseLessonRules.hudLines(List.of(ended, other), "minecraft:overworld", 0, 0, clock));
         assertFalse(WiseLessonRules.nightTime(12999));
         assertTrue(WiseLessonRules.nightTime(13000));
@@ -302,7 +305,7 @@ class WiseLessonRulesTest {
         WiseLessonRules.Lesson hunted = hunt().withSpawn(3, 40, List.of("aaa|13", "bbb|13"), true);
         assertEquals(4, WiseLessonRules.marksLeft(hunted));
         assertEquals(
-                List.of("Alden the Wise Teacher: 4 zombies east (14d 0h)"),
+                List.of("Alden the Wise Teacher: 4 zombies east"),
                 WiseLessonRules.hudLines(List.of(hunted), "minecraft:overworld", 0, 0, 10L * 24000L));
         WiseLessonRules.Lesson oneLess = hunted.withoutMob("aaa");
         assertEquals(3, WiseLessonRules.marksLeft(oneLess));
