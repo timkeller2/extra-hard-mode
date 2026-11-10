@@ -989,6 +989,10 @@ public final class WiseLessons {
     }
 
     private static void mentionBossBiomes(ServerPlayer player, ServerLevel level, String teacherId, long assignedDay) {
+        // A living boss, loaded or not, is already out. Name biomes only once none remain.
+        if (BiomeBosses.anySpawned(level.getServer())) {
+            return;
+        }
         List<String> eligible = eligibleBossBiomes(player, level);
         List<WiseLessonRules.BossHint> stored = hintsOf(player);
         WiseLessonRules.BossHint prior = findHint(stored, teacherId);

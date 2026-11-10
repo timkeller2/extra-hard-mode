@@ -234,6 +234,7 @@ public final class EhmHelp {
                         "Building: Torches and campfires have their own topic. Type /tougher help torches.",
                         "Building: Breaking a block that is on fire sets you on fire, the same as putting that fire out by hand.",
                         "Building: Sneak with a compass to point it at your bed or respawn anchor. With none set, it still points at world spawn.",
+                        "Building: One right-click with a compass says the biome you are in and the direction you face. The second click within half a second casts Detect ore.",
                         "Building: A bed placed in the Nether or the End vanishes. It does not explode.",
                         "Building: Breaking a bed destroys it and drops nothing: no bed, wool, or planks.",
                         "Building: A lodestone is crafted with an iron block in the middle, surrounded by chiseled stone bricks."));
@@ -382,7 +383,12 @@ public final class EhmHelp {
                         "Combat: Players in or near it are told this area is being cleared for the alliance, and gain 25 experience and an emerald.",
                         "Combat: Once a Minecraft day, entering each full chunk at Y=48 or above plays a quiet chime.",
                         "Combat: Below Y=0 in the overworld, hostile mobs can spawn in block light of 1 per 15 blocks down. Y=-15 allows 1. Y=-30 allows 2.",
-                        "Combat: Within 64 blocks, a biome boss shows a health bar with its name."));
+                        "Combat: Within 64 blocks, a biome boss shows a health bar with its name.",
+                        "Combat: player.death.lives starts at -1, which leaves this off. 0 or above is on. Each player starts with that many lives. Each death spends one, and the count can go below 0.",
+                        "Combat: At 0 lives, base health stays 10 hearts. Below 0 it is 20 plus 2 for each life, and at least 6, which is 3 hearts.",
+                        "Combat: Alone, the death that spends your last life above 0 says You lose! and the credits roll soon after.",
+                        "Combat: When others are online and only one still has lives, that player sees You win!!! and the rest see You lose!!!.",
+                        "Combat: Restore Life Available starts on, as player.death.restoreLifeAvailable. It applies only while lives are on."));
     }
 
     private static Page armor() {

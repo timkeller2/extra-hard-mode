@@ -1364,4 +1364,52 @@ class InhabitantRulesTest {
         assertNull(InhabitantRules.hintFor(pruned, other));
         assertEquals(InhabitantRules.HINT_BED, InhabitantRules.hintFor(pruned, bed).improvement());
     }
+
+    @Test
+    void clockNamesThreeNewSuggestionsEachMinecraftDay() {
+        assertEquals(3, InhabitantRules.HOUSE_HINTS_PER_DAY);
+        assertTrue(InhabitantRules.hintAllowed(null, 4L));
+        assertTrue(InhabitantRules.hintAllowed(new InhabitantRules.HouseHintBudget(4L, 2), 4L));
+        assertFalse(InhabitantRules.hintAllowed(new InhabitantRules.HouseHintBudget(4L, 3), 4L));
+        assertTrue(InhabitantRules.hintAllowed(new InhabitantRules.HouseHintBudget(4L, 3), 5L));
+        assertEquals(new InhabitantRules.HouseHintBudget(4L, 1), InhabitantRules.noteHint(null, 4L));
+        assertEquals(
+                new InhabitantRules.HouseHintBudget(4L, 3),
+                InhabitantRules.noteHint(new InhabitantRules.HouseHintBudget(4L, 2), 4L));
+        assertEquals(
+                new InhabitantRules.HouseHintBudget(5L, 1),
+                InhabitantRules.noteHint(new InhabitantRules.HouseHintBudget(4L, 3), 5L));
+
+        List<String> open = List.of(InhabitantRules.HINT_ART, InhabitantRules.HINT_BOOKS, InhabitantRules.HINT_BED);
+        long now = 10_000L;
+        long until = now + InhabitantRules.HOUSE_HINT_MILLIS;
+        InhabitantRules.HouseHintBudget full = new InhabitantRules.HouseHintBudget(4L, 3);
+        InhabitantRules.HintLook repeat =
+                InhabitantRules.lookHint(open, InhabitantRules.HINT_BOOKS, now, until, 0, full, 4L);
+        assertEquals(InhabitantRules.HINT_BOOKS, repeat.improvement());
+        assertFalse(repeat.spent());
+        assertEquals(full, repeat.budget());
+
+        InhabitantRules.HintLook blocked =
+                InhabitantRules.lookHint(open, InhabitantRules.HINT_BOOKS, until, until, 0, full, 4L);
+        assertEquals("", blocked.improvement());
+        assertFalse(blocked.spent());
+
+        InhabitantRules.HintLook third = InhabitantRules.lookHint(
+                open, "", now, 0L, 0, new InhabitantRules.HouseHintBudget(4L, 2), 4L);
+        assertEquals(InhabitantRules.HINT_ART, third.improvement());
+        assertTrue(third.spent());
+        assertEquals(new InhabitantRules.HouseHintBudget(4L, 3), third.budget());
+
+        InhabitantRules.HintLook nextDay = InhabitantRules.lookHint(open, "", now, 0L, 1, full, 5L);
+        assertEquals(InhabitantRules.HINT_BOOKS, nextDay.improvement());
+        assertTrue(nextDay.spent());
+        assertEquals(new InhabitantRules.HouseHintBudget(5L, 1), nextDay.budget());
+
+        InhabitantRules.HintLook none =
+                InhabitantRules.lookHint(List.of(), "", now, 0L, 0, new InhabitantRules.HouseHintBudget(4L, 0), 4L);
+        assertEquals("", none.improvement());
+        assertFalse(none.spent());
+        assertEquals(0, none.budget().given());
+    }
 }

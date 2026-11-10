@@ -576,6 +576,9 @@ public final class AbilityReadyRules {
         if (AbilityRules.DIAMOND_SKIN.equals(ability)) {
             return AbilityRules.DIAMOND_ID;
         }
+        if (AbilityRules.RESTORE_LIFE.equals(ability)) {
+            return AbilityRules.DIAMOND_BLOCK_ID;
+        }
         if (AbilityRules.EMPOWER.equals(ability)) {
             return AbilityRules.GLOWSTONE_DUST_ID;
         }

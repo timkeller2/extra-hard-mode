@@ -2,6 +2,7 @@ package dev.extrahardmode.config;
 
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import dev.extrahardmode.feature.ArmorSpeedRules;
+import dev.extrahardmode.feature.LivesRules;
 import dev.extrahardmode.feature.ShieldRules;
 
 /** Per-dimension player death / environment / weight / armor settings. RootNode defaults. */
@@ -36,6 +37,8 @@ public final class PlayerSettings {
     private boolean respawnHealthEnable = true;
     private int respawnHealthPercent = 25;
     private int respawnFood = 6;
+    private int lives = LivesRules.DEFAULT_LIVES;
+    private boolean restoreLifeAvailable = true;
 
     private boolean weightEnable = true;
     private boolean blockWaterfalls = true;
@@ -152,6 +155,16 @@ public final class PlayerSettings {
         return respawnFood;
     }
 
+    /** Starting lives. Below 0 is off. 0 or above is on. The overworld file is the value the server uses. */
+    public int lives() {
+        return lives;
+    }
+
+    /** Restore Life Available? Applies only while lives are on. The overworld file is the value the server uses. */
+    public boolean restoreLifeAvailable() {
+        return restoreLifeAvailable;
+    }
+
     public boolean weightEnable() {
         return weightEnable;
     }
@@ -259,6 +272,16 @@ public final class PlayerSettings {
         setIfMissing(file, "player.death.respawnHealthEnable", true);
         setIfMissing(file, "player.death.respawnHealthPercent", 25);
         setIfMissing(file, "player.death.respawnFood", 6);
+        comment(
+                file,
+                "player.death.lives",
+                "Lives each player starts with. -1 is off. 0 or above is on. Each death spends one, and the count can go below 0. Below 0, base max health is 20 plus 2 per life, and at least 6. At 0 lives, base health stays 20. The overworld file is the value the server uses. Alone, the death that spends the last life above 0 says You lose! and the credits roll 7 seconds later. With others online, the last player who still has lives sees You win!!! and the rest see You lose!!!.");
+        setIfMissing(file, "player.death.lives", LivesRules.DEFAULT_LIVES);
+        comment(
+                file,
+                "player.death.restoreLifeAvailable",
+                "Restore Life Available? When yes, and lives are on, the Restore Life ability can give one life back. The target must have fewer lives than player.death.lives. Defaults to yes. The overworld file is the value the server uses.");
+        setIfMissing(file, "player.death.restoreLifeAvailable", true);
 
         comment(
                 file,
@@ -349,6 +372,8 @@ public final class PlayerSettings {
         respawnHealthEnable = file.getOrElse("player.death.respawnHealthEnable", true);
         respawnHealthPercent = file.getOrElse("player.death.respawnHealthPercent", 25);
         respawnFood = file.getOrElse("player.death.respawnFood", 6);
+        lives = file.getOrElse("player.death.lives", LivesRules.DEFAULT_LIVES);
+        restoreLifeAvailable = file.getOrElse("player.death.restoreLifeAvailable", true);
 
         weightEnable = file.getOrElse("player.weight.enable", true);
         blockWaterfalls = file.getOrElse("player.weight.blockWaterfalls", true);
@@ -403,6 +428,8 @@ public final class PlayerSettings {
         file.set("player.death.respawnHealthEnable", respawnHealthEnable);
         file.set("player.death.respawnHealthPercent", respawnHealthPercent);
         file.set("player.death.respawnFood", respawnFood);
+        file.set("player.death.lives", lives);
+        file.set("player.death.restoreLifeAvailable", restoreLifeAvailable);
 
         file.set("player.weight.enable", weightEnable);
         file.set("player.weight.blockWaterfalls", blockWaterfalls);

@@ -35,8 +35,20 @@ public final class AbilityRules {
     public static final String LAPIS_SHIELD = "lapis_shield";
     public static final String WRITE_TOME = "write_tome";
     public static final String READ_TOME = "read_tome";
+    public static final String RESTORE_LIFE = "restore_life";
     public static final int MANA_COST = 1;
     public static final int DIAMOND_SKIN_MANA_COST = 2;
+    /** Restore Life spends this much mana, and only when the cast can happen. */
+    public static final int RESTORE_LIFE_MANA_COST = 4;
+    /** Diamond price before the target's lives and the caster's Restore Life level. */
+    public static final int RESTORE_LIFE_DIAMOND_BASE = 17;
+    /** Lowest diamond price for Restore Life. */
+    public static final int RESTORE_LIFE_DIAMOND_MIN = 3;
+    public static final String RESTORE_LIFE_NO_LIVES = "This world has no lives to restore.";
+    public static final String RESTORE_LIFE_UNAVAILABLE = "Restore Life is not available.";
+    public static final String RESTORE_LIFE_AT_CAP = "%s has %s lives. Restore Life needs fewer than %s.";
+    public static final String RESTORE_LIFE_MANA_NEED = "Restore Life needs 4 mana.";
+    public static final String RESTORE_LIFE_DIAMONDS = "Restore Life needs %s diamonds. You have %s.";
     public static final int DETECT_ORE_MANA_COST = 1;
     /** Smite Evil spends a quarter mana. Four casts spend one. */
     public static final double SMITE_EVIL_MANA_COST = 0.25;
@@ -112,6 +124,7 @@ public final class AbilityRules {
     /** Master Builder lasts this many seconds per point of effective ability level. */
     public static final int MASTER_BUILDER_SECONDS_PER_POWER = 30;
     public static final String DIAMOND_ID = "minecraft:diamond";
+    public static final String DIAMOND_BLOCK_ID = "minecraft:diamond_block";
     public static final String GLOWSTONE_DUST_ID = "minecraft:glowstone_dust";
     /** Empower lasts this many seconds per point of effective ability level, and at least {@link #EMPOWER_MIN_SECONDS}. */
     public static final int EMPOWER_SECONDS_PER_POWER = 30;
@@ -174,7 +187,8 @@ public final class AbilityRules {
                     BATTERY,
                     LAPIS_SHIELD,
                     WRITE_TOME,
-                    READ_TOME);
+                    READ_TOME,
+                    RESTORE_LIFE);
 
     private AbilityRules() {}
 
@@ -215,6 +229,9 @@ public final class AbilityRules {
         }
         if (DIAMOND_ID.equals(itemId)) {
             return DIAMOND_SKIN;
+        }
+        if (DIAMOND_BLOCK_ID.equals(itemId)) {
+            return RESTORE_LIFE;
         }
         if (GLOWSTONE_DUST_ID.equals(itemId)) {
             return EMPOWER;
@@ -499,6 +516,7 @@ public final class AbilityRules {
             case LAPIS_SHIELD -> "Amethyst Shield";
             case WRITE_TOME -> "Write Tome of the Wise";
             case READ_TOME -> "Read Tome of the Wise";
+            case RESTORE_LIFE -> "Restore Life";
             default -> "this ability";
         };
     }
@@ -526,6 +544,7 @@ public final class AbilityRules {
             case LAPIS_SHIELD -> "Amethyst can stand in the air between a body and the blow.";
             case WRITE_TOME -> "Experience can be set down in a book, and carried.";
             case READ_TOME -> "A careful reading gives back only a share of what was written down.";
+            case RESTORE_LIFE -> "A life can be handed back, if the diamonds agree to the price.";
             default -> "There is a lesson here, if you can pay for it.";
         };
     }
@@ -566,6 +585,8 @@ public final class AbilityRules {
                 "Hold a book at experience level 7 or higher and double-right-click. It costs 1 mana. Two or more books add +2. Three, four, or five books make 2, 3, or 4 tomes and split the experience. More than five still uses five and makes 4.";
             case READ_TOME ->
                 "Hold a tome that holds experience and double-right-click. It costs 1 mana and returns 80% of what was saved, plus 2% per ability level.";
+            case RESTORE_LIFE ->
+                "Hold a diamond block and double-right-click in the air or on a player. Clicking a block still places it. It costs 4 mana and diamonds from your inventory.";
             default -> "";
         };
     }
@@ -600,7 +621,8 @@ public final class AbilityRules {
                 "battery",
                 "amethyst shield",
                 "write tome",
-                "read tome");
+                "read tome",
+                "restore life");
     }
 
     public static String abilityByTopic(String topic) {
@@ -630,6 +652,7 @@ public final class AbilityRules {
                     "lapusshield", "lapus" -> LAPIS_SHIELD;
             case "book", "write tome", "write tome of the wise", "writetome" -> WRITE_TOME;
             case "read tome", "read tome of the wise", "readtome", "tome" -> READ_TOME;
+            case "restore life", "restorelife", "restore" -> RESTORE_LIFE;
             default -> null;
         };
     }
@@ -683,6 +706,7 @@ public final class AbilityRules {
                     "Power mining: Pickaxe bonus: wood/stone 0, copper +1, iron +2, diamond +3, gold +4, netherite +5.");
             case DETECT_ORE -> List.of(
                     "Detect ore: Double-right-click while holding a compass. The compass is kept. Costs 1 mana. Nether quartz is not required.",
+                    "Detect ore: One right-click says the biome you are in and the direction you face.",
                     "Detect ore: The largest nether quartz stack in your hotbar or inventory, not a bundle, adds the square root of its count, rounded. That many quartz are consumed from that stack.",
                     "Detect ore: Ores within 2 blocks of your height come first, then farther up or down, out to your rounded ability level minus the ore difficulty, through walls.",
                     "Detect ore: It tells you the ore and approximate distance. You only sense ores at or below your ability level.",
@@ -751,6 +775,13 @@ public final class AbilityRules {
             case READ_TOME -> List.of(
                     "Read Tome of the Wise: Double-right-click a tome that holds experience, at any level. Costs 1 mana and the tome. Below 1 the tome is kept.",
                     "Read Tome of the Wise: You gain 80% of the saved experience, plus 2% per ability level, above or below level 30. Sneak and right-click to open it instead.");
+            case RESTORE_LIFE -> List.of(
+                    "Restore Life: Double-right-click in the air or on a player while holding a diamond block. Clicking a block with it still places the block.",
+                    "Restore Life: It targets a friendly player within 2 plus ability level blocks, the way Healing does, and otherwise you.",
+                    "Restore Life: It gives one life. The target must have fewer lives than player.death.lives. Lives must be on, and Restore Life Available starts on.",
+                    "Restore Life: It costs 4 mana and diamonds in your hotbar or inventory. The count is 17 minus their lives minus your level, rounded down, and at least 3.",
+                    "Restore Life: A missing requirement spends nothing and says what is required. Below 1, practice spends the 4 mana and the block, and keeps the diamonds.",
+                    "Restore Life: One diamond block is consumed on a real cast. Two in hand consume both and add +2. The diamonds that pay for the life are separate.");
             default -> null;
         };
     }
@@ -829,8 +860,10 @@ public final class AbilityRules {
                 "tougher.ability.index.lapis_shield",
                 "tougher.ability.index.write_tome",
                 "tougher.ability.index.read_tome",
+                "tougher.ability.index.restore_life",
                 "tougher.ability.index.unlock",
                 "tougher.ability.index.unlock.2",
+                "tougher.ability.index.restore_life_keep",
                 "tougher.ability.index.redstone_offhand",
                 "tougher.ability.index.wise",
                 "tougher.ability.index.wise.cap",
@@ -858,8 +891,10 @@ public final class AbilityRules {
                 "Amethyst shard: Amethyst Shield",
                 "Book: Write Tome of the Wise",
                 "Tome: Read Tome of the Wise",
+                "Diamond block: Restore Life",
                 "Every ability's level is its skill plus item bonuses, minus 2, and at least 0.",
                 "Below 1 the cast is practice: mana and focus are spent, the cooldown starts, and you gain one use. Diamond Skin practices below 2 and keeps the diamond. Read Tome keeps the tome.",
+                "Restore Life: a missing requirement spends nothing. Below 1, practice spends 4 mana and the diamond block, and keeps the diamonds.",
                 "Redstone dust in the offhand adds half your skill, up to the square root of that stack rounded down. Success consumes that bonus, rounded down. Practice keeps the dust.",
                 "Hold a focus and he teaches that ability for half the house points in uses. At 24 points, 30 emeralds from inventory or either hand; each point above takes 2 off, down to free.",
                 "Hold emeralds and he picks an ability at random for the house points. A new hunt, or killing more than half the marks, offers the lesson. He names what to hold only then.",
@@ -941,6 +976,9 @@ public final class AbilityRules {
         }
         if (DIAMOND_SKIN.equals(ability)) {
             return DIAMOND_SKIN_MANA_COST;
+        }
+        if (RESTORE_LIFE.equals(ability)) {
+            return RESTORE_LIFE_MANA_COST;
         }
         if (BATTERY.equals(ability)) {
             return 0;
@@ -1264,6 +1302,15 @@ public final class AbilityRules {
                 || MASTER_BUILDER.equals(ability)
                 || DIAMOND_SKIN.equals(ability)
                 || BATTERY.equals(ability);
+    }
+
+    /**
+     * Diamonds Restore Life takes from the hotbar and backpack.
+     * 17 minus the target's lives, minus the caster's effective level rounded down, and at least 3.
+     */
+    public static int restoreLifeDiamonds(int targetLives, double effectiveLevel) {
+        int fromLevel = (int) Math.floor(Math.max(0.0, effectiveLevel));
+        return Math.max(RESTORE_LIFE_DIAMOND_MIN, RESTORE_LIFE_DIAMOND_BASE - targetLives - fromLevel);
     }
 
     public static double healRange(double power) {

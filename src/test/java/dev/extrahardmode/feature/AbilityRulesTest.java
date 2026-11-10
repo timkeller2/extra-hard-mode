@@ -78,7 +78,7 @@ class AbilityRulesTest {
         assertEquals(null, AbilityRules.abilityForItem("minecraft:stone_bricks"));
         assertEquals(null, AbilityRules.abilityForItem("minecraft:bricks"));
         assertEquals(AbilityRules.DIAMOND_SKIN, AbilityRules.abilityForItem("minecraft:diamond"));
-        assertEquals(null, AbilityRules.abilityForItem("minecraft:diamond_block"));
+        assertEquals(AbilityRules.RESTORE_LIFE, AbilityRules.abilityForItem("minecraft:diamond_block"));
         assertEquals(null, AbilityRules.abilityForItem("minecraft:stick"));
         assertEquals(null, AbilityRules.abilityForItem("minecraft:spectral_arrow"));
         assertEquals(null, AbilityRules.abilityForItem("minecraft:tipped_arrow"));
@@ -105,6 +105,7 @@ class AbilityRulesTest {
             "tougher:heavy_golden_sword",
             "minecraft:glowstone_dust",
             "minecraft:quartz_block",
+            "minecraft:diamond_block",
             "minecraft:amethyst_shard",
             "minecraft:book"
         }) {
@@ -318,8 +319,25 @@ class AbilityRulesTest {
         assertTrue(AbilityRules.helpFallback(AbilityRules.READ_TOME).contains("Sneak and right-click"));
         assertEquals(1.0, AbilityRules.manaCost(AbilityRules.WRITE_TOME), 1e-9);
         assertEquals(1.0, AbilityRules.manaCost(AbilityRules.READ_TOME), 1e-9);
-        assertEquals(AbilityRules.WRITE_TOME, AbilityRules.ABILITY_IDS.get(AbilityRules.ABILITY_IDS.size() - 2));
-        assertEquals(AbilityRules.READ_TOME, AbilityRules.ABILITY_IDS.getLast());
+        assertEquals(4.0, AbilityRules.manaCost(AbilityRules.RESTORE_LIFE), 1e-9);
+        assertEquals(AbilityRules.WRITE_TOME, AbilityRules.ABILITY_IDS.get(AbilityRules.ABILITY_IDS.size() - 3));
+        assertEquals(AbilityRules.READ_TOME, AbilityRules.ABILITY_IDS.get(AbilityRules.ABILITY_IDS.size() - 2));
+        assertEquals(AbilityRules.RESTORE_LIFE, AbilityRules.ABILITY_IDS.getLast());
+        assertEquals(17, AbilityRules.restoreLifeDiamonds(0, 0));
+        assertEquals(13, AbilityRules.restoreLifeDiamonds(0, 4));
+        assertEquals(12, AbilityRules.restoreLifeDiamonds(0, 5));
+        assertEquals(12, AbilityRules.restoreLifeDiamonds(0, 5.9));
+        assertEquals(3, AbilityRules.restoreLifeDiamonds(14, 0));
+        assertEquals(19, AbilityRules.restoreLifeDiamonds(-2, 0));
+        assertEquals(11, AbilityRules.restoreLifeDiamonds(5, 1));
+        assertEquals(3, AbilityRules.restoreLifeDiamonds(0, 40));
+        assertEquals(
+                "Restore Life needs " + AbilityRules.RESTORE_LIFE_MANA_COST + " mana.",
+                AbilityRules.RESTORE_LIFE_MANA_NEED);
+        assertEquals(AbilityRules.RESTORE_LIFE, AbilityRules.abilityByTopic("restore life"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.RESTORE_LIFE).contains("at least 3"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.RESTORE_LIFE).contains("still places the block"));
+        assertTrue(AbilityRules.indexHelpFallback().contains("Diamond block: Restore Life"));
         assertEquals(null, AbilityRules.abilityByTopic("mining"));
         for (String line : AbilityRules.indexHelpLines()) {
             assertTrue(line.length() <= EhmHelp.MAX_LINE_CHARS, line);
@@ -366,6 +384,7 @@ class AbilityRulesTest {
         assertEquals("Battery", AbilityRules.nameFallback(AbilityRules.BATTERY));
         assertEquals("Write Tome of the Wise", AbilityRules.nameFallback(AbilityRules.WRITE_TOME));
         assertEquals("Read Tome of the Wise", AbilityRules.nameFallback(AbilityRules.READ_TOME));
+        assertEquals("Restore Life", AbilityRules.nameFallback(AbilityRules.RESTORE_LIFE));
         assertEquals("this ability", AbilityRules.nameFallback(AbilityRules.LIGHT));
         assertEquals("tougher.ability.detect_ore", AbilityRules.nameKey(AbilityRules.DETECT_ORE));
         assertTrue(AbilityRules.lockedFallback(AbilityRules.HEAL).contains("Healing"));

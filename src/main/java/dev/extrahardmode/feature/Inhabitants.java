@@ -614,7 +614,7 @@ public final class Inhabitants implements FeatureModule {
         }
     }
 
-    /** One remaining point gain for this bed. Kept for 3 minutes, or replaced as soon as it no longer adds points. */
+    /** One remaining point gain for this bed. Three new ones a Minecraft day, then none until the next day. */
     private static String houseSuggestion(ServerPlayer player, ServerLevel level, ResidenceScan.Result result) {
         List<String> open = InhabitantRules.openImprovements(
                 result.amenities(), result.volume(), result.rooms(), result.gates().isolation());
@@ -628,14 +628,23 @@ public final class Inhabitants implements FeatureModule {
         InhabitantRules.HouseHint prior = InhabitantRules.hintFor(stored, bedKey);
         String remembered = prior == null ? "" : prior.improvement();
         long until = prior == null ? 0L : prior.until();
-        String chosen = InhabitantRules.chooseImprovement(open, remembered, now, until, level.getRandom().nextInt());
-        if (!InhabitantRules.keepImprovement(open, remembered, now, until)) {
-            List<InhabitantRules.HouseHint> next = InhabitantRules.rememberHint(stored, bedKey, chosen, now);
-            if (stored == null || !next.equals(stored)) {
+        InhabitantRules.HintLook look = InhabitantRules.lookHint(
+                open,
+                remembered,
+                now,
+                until,
+                level.getRandom().nextInt(),
+                player.getAttached(EhmAttachments.EHM_HOUSE_HINT_DAY),
+                AntiFarming.overworldDay(level));
+        if (look.spent()) {
+            player.setAttached(EhmAttachments.EHM_HOUSE_HINT_DAY, look.budget());
+            List<InhabitantRules.HouseHint> next =
+                    InhabitantRules.rememberHint(stored, bedKey, look.improvement(), now);
+            if (!next.equals(stored)) {
                 player.setAttached(EhmAttachments.EHM_HOUSE_HINTS, next);
             }
         }
-        return InhabitantRules.improvementText(chosen);
+        return InhabitantRules.improvementText(look.improvement());
     }
 
     static void tickHomes(ServerLevel level) {

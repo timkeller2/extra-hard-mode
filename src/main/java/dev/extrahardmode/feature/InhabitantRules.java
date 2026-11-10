@@ -417,6 +417,19 @@ public final class InhabitantRules {
     /** One sticky clock suggestion for one bed. {@code until} is epoch milliseconds. */
     public record HouseHint(String bed, String improvement, long until) {}
 
+    /** New clock suggestions already named on one Minecraft day. */
+    public static final int HOUSE_HINTS_PER_DAY = 3;
+
+    /** How many new suggestions this player has been given on {@code day}. */
+    public record HouseHintBudget(long day, int given) {
+        public HouseHintBudget {
+            given = Math.max(0, given);
+        }
+    }
+
+    /** What the clock shows, and whether this look spent one of the day's suggestions. */
+    public record HintLook(String improvement, HouseHintBudget budget, boolean spent) {}
+
     private InhabitantRules() {}
 
     public static boolean volumeOk(int volume) {
@@ -673,6 +686,47 @@ public final class InhabitantRules {
         return open.get(Math.floorMod(roll, open.size()));
     }
 
+    /** A new suggestion is allowed until three have been named on this Minecraft day. */
+    public static boolean hintAllowed(HouseHintBudget budget, long day) {
+        if (budget == null || budget.day() != day) {
+            return true;
+        }
+        return budget.given() < HOUSE_HINTS_PER_DAY;
+    }
+
+    /** Counts one new suggestion. A different day starts again at one. */
+    public static HouseHintBudget noteHint(HouseHintBudget budget, long day) {
+        int given = budget != null && budget.day() == day ? budget.given() : 0;
+        return new HouseHintBudget(day, given + 1);
+    }
+
+    /**
+     * The suggestion still on the clock, without spending another of the day's three.
+     * After three new ones, an expired or finished suggestion stays quiet until the next day.
+     * An empty open list spends nothing.
+     */
+    public static HintLook lookHint(
+            List<String> open,
+            String remembered,
+            long now,
+            long until,
+            int roll,
+            HouseHintBudget budget,
+            long day) {
+        HouseHintBudget current = budget == null ? new HouseHintBudget(day, 0) : budget;
+        if (keepImprovement(open, remembered, now, until)) {
+            return new HintLook(remembered, current, false);
+        }
+        if (!hintAllowed(current, day)) {
+            return new HintLook("", current, false);
+        }
+        String chosen = chooseImprovement(open, remembered, now, until, roll);
+        if (chosen.isEmpty()) {
+            return new HintLook("", current, false);
+        }
+        return new HintLook(chosen, noteHint(current, day), true);
+    }
+
     public static String houseHintBed(String dimension, int x, int y, int z) {
         String dim = dimension == null ? "" : dimension;
         return dim + " " + x + " " + y + " " + z;
@@ -743,6 +797,7 @@ public final class InhabitantRules {
         return List.of(
                 "Homes: Right-click a bed with a clock to score the room. Type /tougher help homes anytime for this list.",
                 "Homes: The clock names one improvement that would still raise the score. It stays for 3 minutes, or changes at once when that improvement no longer adds points.",
+                "Homes: Three new suggestions are named in one Minecraft day, across every home. The one still on the clock can be read again. After three, no more until the next day.",
                 "Homes: An enclosed, well-lit room with a bed, a door, and furnishings may attract one traveler. They dislike crowding.",
                 "Homes: Subjects: rooms, furnishings, residents, shops, bounties. Each is also /tougher help <subject>.",
                 "Homes: Residents may buy spare blocks, trade food, post bounties, keep a shop, teach a mana ability, or sell armor.",

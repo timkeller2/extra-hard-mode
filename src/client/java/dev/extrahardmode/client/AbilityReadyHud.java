@@ -150,6 +150,9 @@ public final class AbilityReadyHud {
         if (AbilityRules.DIAMOND_SKIN.equals(ability)) {
             return new ItemStack(Items.DIAMOND);
         }
+        if (AbilityRules.RESTORE_LIFE.equals(ability)) {
+            return new ItemStack(Items.DIAMOND_BLOCK);
+        }
         if (AbilityRules.EMPOWER.equals(ability)) {
             return new ItemStack(Items.GLOWSTONE_DUST);
         }

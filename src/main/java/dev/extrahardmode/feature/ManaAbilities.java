@@ -101,8 +101,12 @@ public final class ManaAbilities implements FeatureModule {
     private static final Set<UUID> SENSE_OUTLINE_VISIBLE = ConcurrentHashMap.newKeySet();
     /** The right-click that can pair with the next one. Same-tick repeats keep the first answer. */
     private static final Map<UUID, CastArm> CAST_CLICKS = new ConcurrentHashMap<>();
+    /** A lone compass click, sent after the double-click window closes. */
+    private static final Map<UUID, CompassGlance> COMPASS_GLANCE = new ConcurrentHashMap<>();
 
     private record CastArm(long tick, String itemId, boolean accepted) {}
+
+    private record CompassGlance(long tick, Component message) {}
 
     @Override
     public Identifier id() {
@@ -122,6 +126,7 @@ public final class ManaAbilities implements FeatureModule {
                 endLapisShieldOn(player, LAPIS_SILENT);
                 SENSE_OUTLINE_VISIBLE.remove(player.getUUID());
                 CAST_CLICKS.remove(player.getUUID());
+                COMPASS_GLANCE.remove(player.getUUID());
             }
         });
     }
@@ -162,6 +167,7 @@ public final class ManaAbilities implements FeatureModule {
             tickDiamondSkinSparkle(player);
             tickSenseSparkle(player);
             tickSenseOutlineHud(player);
+            tickCompassGlance(player);
             maybeSendAbilityDurations(player);
             syncStrongCastHud(player, false);
         }
@@ -181,6 +187,9 @@ public final class ManaAbilities implements FeatureModule {
                 && WorldGate.isModuleActive(serverLevel, ID)
                 && !targetingUsableBlock(serverPlayer)) {
             if (abilityClick(serverPlayer, false)) {
+                if (serverPlayer.getMainHandItem().is(Items.COMPASS)) {
+                    cancelCompassGlance(serverPlayer);
+                }
                 if (serverPlayer.getMainHandItem().is(ItemTags.PICKAXES)) {
                     tryPowerMine(serverPlayer);
                 } else if (serverPlayer.getMainHandItem().is(Items.COMPASS) && tryDetectOre(serverPlayer)) {
@@ -207,6 +216,8 @@ public final class ManaAbilities implements FeatureModule {
                     return InteractionResult.FAIL;
                 } else if (serverPlayer.getMainHandItem().is(Items.QUARTZ_BLOCK) && tryBattery(serverPlayer)) {
                     return InteractionResult.FAIL;
+                } else if (serverPlayer.getMainHandItem().is(Items.DIAMOND_BLOCK) && tryRestoreLife(serverPlayer, null)) {
+                    return InteractionResult.FAIL;
                 } else if (serverPlayer.getMainHandItem().is(Items.AMETHYST_SHARD) && tryLapisShield(serverPlayer, null)) {
                     return InteractionResult.FAIL;
                 } else if (tryReadTome(serverPlayer)) {
@@ -215,6 +226,7 @@ public final class ManaAbilities implements FeatureModule {
                     return InteractionResult.FAIL;
                 }
             } else if (holdsAbilityGesture(serverPlayer, false)) {
+                rememberCompassGlance(serverPlayer);
                 return InteractionResult.FAIL;
             }
         }
@@ -250,6 +262,9 @@ public final class ManaAbilities implements FeatureModule {
                 && level instanceof ServerLevel serverLevel
                 && WorldGate.isModuleActive(serverLevel, ID)) {
             if (abilityClick(serverPlayer, true)) {
+                if (serverPlayer.getMainHandItem().is(Items.COMPASS)) {
+                    cancelCompassGlance(serverPlayer);
+                }
                 if (serverPlayer.getMainHandItem().is(ItemTags.PICKAXES)) {
                     tryPowerMine(serverPlayer);
                 } else if (serverPlayer.getMainHandItem().is(Items.COMPASS) && tryDetectOre(serverPlayer)) {
@@ -280,6 +295,7 @@ public final class ManaAbilities implements FeatureModule {
                     return InteractionResult.FAIL;
                 }
             } else if (holdsAbilityGesture(serverPlayer, true)) {
+                rememberCompassGlance(serverPlayer);
                 return InteractionResult.FAIL;
             }
         }
@@ -299,6 +315,10 @@ public final class ManaAbilities implements FeatureModule {
             }
             if (serverPlayer.getMainHandItem().is(Items.PAPER)
                     && tryHeal(serverPlayer, entity instanceof LivingEntity living ? living : null)) {
+                return InteractionResult.FAIL;
+            }
+            if (serverPlayer.getMainHandItem().is(Items.DIAMOND_BLOCK)
+                    && tryRestoreLife(serverPlayer, entity instanceof LivingEntity living ? living : null)) {
                 return InteractionResult.FAIL;
             }
             if (serverPlayer.getMainHandItem().is(Items.IRON_INGOT)
@@ -405,6 +425,118 @@ public final class ManaAbilities implements FeatureModule {
         startHealSparkle(target, (float) power);
         tellAbilityUse(player, AbilityRules.HEAL, power);
         return true;
+    }
+
+    static boolean tryRestoreLife(ServerPlayer player, LivingEntity clicked) {
+        if (!player.getMainHandItem().is(Items.DIAMOND_BLOCK) || Achievements.skipPlayer(player)) {
+            return false;
+        }
+        if (alreadyHandled(player, (ServerLevel) player.level())) {
+            return true;
+        }
+        int bonus = AbilityRules.catalystBonus(player.getMainHandItem().getCount());
+        double power = abilityPower(player, AbilityRules.RESTORE_LIFE, bonus);
+        ServerPlayer target = restoreLifeTarget(player, clicked, AbilityRules.healRange(power));
+        if (target == null) {
+            return false;
+        }
+        if (restoreLifeCooling(player)) {
+            return true;
+        }
+        if (restoreLifeBlocked(player, target, power)) {
+            return true;
+        }
+        if (practiceInstead(player, AbilityRules.RESTORE_LIFE, Items.DIAMOND_BLOCK, power)) {
+            return true;
+        }
+        int lives = Lives.livesOf(target);
+        int need = AbilityRules.restoreLifeDiamonds(lives, power);
+        if (!InventorySearch.consumeMain(player, Items.DIAMOND, need)) {
+            int have = InventorySearch.countMain(player, Items.DIAMOND);
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.restore_life_diamonds",
+                    AbilityRules.RESTORE_LIFE_DIAMONDS,
+                    Component.literal(Integer.toString(need)),
+                    Component.literal(Integer.toString(have))));
+            markHandled(player);
+            return true;
+        }
+        spend(player, Items.DIAMOND_BLOCK, AbilityRules.RESTORE_LIFE);
+        Lives.grantLife(target);
+        castEffect(target, SoundEvents.AMETHYST_BLOCK_CHIME, ParticleTypes.END_ROD, null);
+        tellAbilityUse(player, AbilityRules.RESTORE_LIFE, power);
+        return true;
+    }
+
+    /** Cooldown only. A short mana pool is reported with the other Restore Life requirements. */
+    static boolean restoreLifeCooling(ServerPlayer player) {
+        tickGoldWear(player);
+        ServerLevel overworld = player.level().getServer().overworld();
+        long now = overworld.getGameTime();
+        int remaining = AbilityRules.remainingCooldownTicks(
+                now,
+                lastUse(player, AbilityRules.RESTORE_LIFE),
+                AbilityRules.cooldownTicks(
+                        AbilityRules.RESTORE_LIFE, Achievements.manaLevel(player), uses(player, AbilityRules.RESTORE_LIFE)));
+        if (remaining <= 0) {
+            return false;
+        }
+        player.sendSystemMessage(Component.translatableWithFallback(
+                "tougher.message.ability_cooldown",
+                "%s is ready in %s.",
+                abilityName(AbilityRules.RESTORE_LIFE),
+                AbilityRules.cooldownLabel(remaining)));
+        markHandled(player);
+        return true;
+    }
+
+    /**
+     * Hard requirements. Any miss spends nothing. Lives off is the only line.
+     * The other misses are all reported.
+     */
+    static boolean restoreLifeBlocked(ServerPlayer player, ServerPlayer target, double power) {
+        if (!Lives.systemOn(player)) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.restore_life_off", AbilityRules.RESTORE_LIFE_NO_LIVES));
+            markHandled(player);
+            return true;
+        }
+        boolean blocked = false;
+        if (!Lives.restoreAvailable(player)) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.restore_life_unavailable", AbilityRules.RESTORE_LIFE_UNAVAILABLE));
+            blocked = true;
+        }
+        int configured = Lives.configuredLives(player);
+        int lives = Lives.livesOf(target);
+        if (!LivesRules.canRestore(lives, configured)) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.restore_life_cap",
+                    AbilityRules.RESTORE_LIFE_AT_CAP,
+                    target.getName(),
+                    Component.literal(Integer.toString(lives)),
+                    Component.literal(Integer.toString(configured))));
+            blocked = true;
+        }
+        if (!AbilityRules.hasManaToUse(AbilityRules.RESTORE_LIFE, Achievements.currentMana(player))) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.restore_life_mana", AbilityRules.RESTORE_LIFE_MANA_NEED));
+            blocked = true;
+        }
+        int need = AbilityRules.restoreLifeDiamonds(lives, power);
+        int have = InventorySearch.countMain(player, Items.DIAMOND);
+        if (have < need) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.restore_life_diamonds",
+                    AbilityRules.RESTORE_LIFE_DIAMONDS,
+                    Component.literal(Integer.toString(need)),
+                    Component.literal(Integer.toString(have))));
+            blocked = true;
+        }
+        if (blocked) {
+            markHandled(player);
+        }
+        return blocked;
     }
 
     static boolean tryIronHeart(ServerPlayer player, LivingEntity clicked) {
@@ -2196,6 +2328,42 @@ public final class ManaAbilities implements FeatureModule {
         trySenseEvil(player);
     }
 
+    /** One compass click names the biome and facing once the double-click window closes. */
+    static void rememberCompassGlance(ServerPlayer player) {
+        if (player == null || !player.getMainHandItem().is(Items.COMPASS) || DetectOre.targetingLodestone(player)) {
+            return;
+        }
+        long tick = player.level().getGameTime();
+        CompassGlance prior = COMPASS_GLANCE.get(player.getUUID());
+        if (prior != null && prior.tick == tick) {
+            return;
+        }
+        COMPASS_GLANCE.put(player.getUUID(), new CompassGlance(tick, compassPlaceMessage(player)));
+    }
+
+    static void cancelCompassGlance(ServerPlayer player) {
+        if (player != null) {
+            COMPASS_GLANCE.remove(player.getUUID());
+        }
+    }
+
+    static void tickCompassGlance(ServerPlayer player) {
+        CompassGlance glance = COMPASS_GLANCE.get(player.getUUID());
+        if (glance == null || player.level().getGameTime() <= glance.tick + AbilityClickRules.DOUBLE_CLICK_TICKS) {
+            return;
+        }
+        COMPASS_GLANCE.remove(player.getUUID(), glance);
+        player.sendSystemMessage(glance.message);
+    }
+
+    static Component compassPlaceMessage(ServerPlayer player) {
+        return Component.translatableWithFallback(
+                "tougher.message.compass_place",
+                "You are in the %s facing %s.",
+                Exploration.biomeName(player.level().getBiome(player.blockPosition())),
+                Component.literal(CompassRules.facingName(player.getYRot())));
+    }
+
     /**
      * True on the second right-click of the same held item within half a second.
      * A second callback from the same press stays on that answer and does not cast by itself.
@@ -2220,7 +2388,7 @@ public final class ManaAbilities implements FeatureModule {
 
     /**
      * A catalyst that casts from this click. A lodestone compass, a spider eye the player can eat,
-     * and a sneaked tome stay with vanilla. Quartz blocks and bricks still place onto blocks.
+     * and a sneaked tome stay with vanilla. Quartz blocks, bricks, and diamond blocks still place onto blocks.
      */
     static boolean holdsAbilityGesture(ServerPlayer player, boolean block) {
         if (player == null) {
@@ -2236,7 +2404,7 @@ public final class ManaAbilities implements FeatureModule {
         if (player.isSecondaryUseActive() && tomeXp(held) > 0) {
             return false;
         }
-        if (block && (held.is(Items.QUARTZ_BLOCK) || held.is(Items.BRICK))) {
+        if (block && (held.is(Items.QUARTZ_BLOCK) || held.is(Items.BRICK) || held.is(Items.DIAMOND_BLOCK))) {
             return false;
         }
         return held.is(ItemTags.PICKAXES)
@@ -2250,6 +2418,7 @@ public final class ManaAbilities implements FeatureModule {
                 || isSmiteSword(held)
                 || held.is(Items.BRICK)
                 || held.is(Items.DIAMOND)
+                || held.is(Items.DIAMOND_BLOCK)
                 || held.is(Items.GLOWSTONE_DUST)
                 || held.is(Items.QUARTZ_BLOCK)
                 || held.is(Items.AMETHYST_SHARD)
@@ -2267,6 +2436,7 @@ public final class ManaAbilities implements FeatureModule {
             return false;
         }
         if (held.is(Items.PAPER)
+                || held.is(Items.DIAMOND_BLOCK)
                 || held.is(Items.ARROW)
                 || isSmiteSword(held)
                 || held.is(Items.AMETHYST_SHARD)
@@ -2868,6 +3038,7 @@ public final class ManaAbilities implements FeatureModule {
                 || held.is(Items.IRON_INGOT)
                 || held.is(Items.BRICK)
                 || held.is(Items.DIAMOND)
+                || held.is(Items.DIAMOND_BLOCK)
                 || held.is(Items.GLOWSTONE_DUST)
                 || held.is(Items.QUARTZ_BLOCK)
                 || held.is(Items.PAPER)
@@ -2905,6 +3076,7 @@ public final class ManaAbilities implements FeatureModule {
                 || isSmiteSword(held)
                 || held.is(Items.BRICK)
                 || held.is(Items.DIAMOND)
+                || held.is(Items.DIAMOND_BLOCK)
                 || held.is(Items.GLOWSTONE_DUST)
                 || held.is(Items.QUARTZ_BLOCK)
                 || held.is(Items.AMETHYST_SHARD)
@@ -3587,6 +3759,9 @@ public final class ManaAbilities implements FeatureModule {
         if (held.is(Items.DIAMOND)) {
             return AbilityRules.DIAMOND_SKIN;
         }
+        if (held.is(Items.DIAMOND_BLOCK)) {
+            return AbilityRules.RESTORE_LIFE;
+        }
         if (held.is(Items.GLOWSTONE_DUST)) {
             return AbilityRules.EMPOWER;
         }
@@ -3836,6 +4011,31 @@ public final class ManaAbilities implements FeatureModule {
             return player;
         }
         return caster;
+    }
+
+    /** Clicked friendly player, else the one under the crosshair, else the caster. */
+    static ServerPlayer restoreLifeTarget(ServerPlayer caster, LivingEntity clicked, double range) {
+        if (clicked instanceof ServerPlayer player && isRestoreLifeTarget(caster, player, range)) {
+            return player;
+        }
+        EntityHitResult hit = raycast(caster, range);
+        if (hit != null && hit.getEntity() instanceof ServerPlayer player && isRestoreLifeTarget(caster, player, range)) {
+            return player;
+        }
+        if (caster.isAlive()) {
+            return caster;
+        }
+        return null;
+    }
+
+    static boolean isRestoreLifeTarget(ServerPlayer caster, ServerPlayer target, double range) {
+        if (target == caster || !target.isAlive()) {
+            return false;
+        }
+        if (caster.distanceTo(target) > range) {
+            return false;
+        }
+        return friendly(caster, target);
     }
 
     static boolean isIronHeartable(ServerPlayer caster, ServerPlayer target, double range) {

@@ -25,6 +25,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
@@ -65,8 +66,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 
 /**
- * Player-triggered Tougher rules: death forfeit, weak respawn, bed-camp
- * clear, environmental injuries, punching fire, inventory-weight sinking,
+ * Player-triggered Tougher rules: death forfeit, weak respawn, shared lives,
+ * bed-camp clear, environmental injuries, punching fire, inventory-weight sinking,
  * armor slowdown, leaky shields, and boats that smash on long falls.
  */
 public final class Players implements FeatureModule {
@@ -95,11 +96,15 @@ public final class Players implements FeatureModule {
         bus.listen(
                 ServerPlayConnectionEvents.JOIN,
                 ID,
-                (handler, sender, server) -> PlayerLocator.refresh(handler.player));
+                (handler, sender, server) -> {
+                    PlayerLocator.refresh(handler.player);
+                    Lives.maintain(handler.player);
+                });
         bus.listen(ServerPlayerEvents.LEAVE, ID, player -> {
             ArmorWeightTask.clear(player);
             PENDING_BED_CLEARS.remove(player.getUUID());
         });
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> Lives.clearPending());
         bus.listen(UseBlockCallback.EVENT, ID, Players::onUseBlock);
         bus.listen(ServerLivingEntityEvents.AFTER_DEATH, ID, ChunkClear::onDeath);
         ServerTickEvents.END_LEVEL_TICK.register(ChunkClear::tickLevel);
@@ -134,11 +139,13 @@ public final class Players implements FeatureModule {
         ArmorWeightTask.run(level, world);
         for (ServerPlayer player : level.players()) {
             FragileTools.rescaleInventory(player);
+            Lives.maintain(player);
         }
     }
 
     /** Server tick count, not per-dimension gameTime — nether/end respawns must not be eaten by overworld. */
     private static void flushRespawns(MinecraftServer server) {
+        Lives.flushCredits(server);
         if (PENDING_RESPAWNS.isEmpty()) {
             return;
         }
@@ -304,6 +311,7 @@ public final class Players implements FeatureModule {
 
     static void onAfterRespawn(ServerPlayer oldPlayer, ServerPlayer newPlayer, boolean alive) {
         PlayerLocator.refresh(newPlayer);
+        Lives.maintain(newPlayer);
         if (alive) {
             return;
         }
@@ -362,6 +370,7 @@ public final class Players implements FeatureModule {
         if (!WorldGate.isModuleActive(level, ID)) {
             return;
         }
+        Lives.onDeath(player);
         if (!EhmApi.playerBypasses(player) && !player.isSpectator()) {
             noteDeathNearBed(player);
         }

@@ -430,6 +430,8 @@ class EhmHelpTest {
         assertTrue(all.contains("clock"));
         assertTrue(all.contains("3 minutes"));
         assertTrue(all.contains("no longer adds points"));
+        assertTrue(all.contains("Three new suggestions"));
+        assertTrue(all.contains("no more until the next day"));
     }
 
     @Test
@@ -488,6 +490,7 @@ class EhmHelpTest {
         assertTrue(EhmHelp.resolve("lapis shield").lines().stream().anyMatch(line -> line.startsWith("Amethyst Shield:")));
         assertTrue(EhmHelp.resolve("write tome").lines().stream().anyMatch(line -> line.startsWith("Write Tome of the Wise:")));
         assertTrue(EhmHelp.resolve("read tome").lines().stream().anyMatch(line -> line.startsWith("Read Tome of the Wise:")));
+        assertTrue(EhmHelp.resolve("restore life").lines().stream().anyMatch(line -> line.startsWith("Restore Life:")));
         assertTrue(String.join(" ", EhmHelp.resolve("abilities").lines()).contains("Tome of the Wise"));
         assertTrue(EhmHelp.resolve("lapus").lines().stream().anyMatch(line -> line.startsWith("Amethyst Shield:")));
         assertTrue(EhmHelp.resolve("ability fire bolt").lines().stream().anyMatch(line -> line.contains("arrows burn")));
@@ -513,6 +516,14 @@ class EhmHelpTest {
         assertTrue(combatText.contains("quiet chime"));
         assertTrue(combatText.contains("each full chunk"));
         assertTrue(combatText.contains("of -1 is off"));
+        assertTrue(combatText.contains("player.death.lives"));
+        assertTrue(combatText.contains("starts at -1"));
+        assertTrue(combatText.contains("says You lose! and the credits"));
+        assertTrue(combatText.contains("You win!!!"));
+        assertTrue(combatText.contains("You lose!!!"));
+        assertTrue(combatText.contains("at least 6"));
+        assertTrue(combatText.contains("3 hearts"));
+        assertTrue(combatText.contains("restoreLifeAvailable"));
         String armorText = String.join(" ", EhmHelp.resolve("armor").lines());
         assertTrue(armorText.contains("move 10% faster than usual"));
         assertTrue(armorText.contains("slows that pace by 10%"));
@@ -521,6 +532,11 @@ class EhmHelpTest {
         assertTrue(armorText.contains("one quarter"));
         assertTrue(armorText.contains("copperIronGoldSlowdownPercent"));
         assertTrue(armorText.contains("heavyExtraSlowdownPercent"));
+        String buildingText = String.join(" ", EhmHelp.resolve("building").lines());
+        assertTrue(buildingText.contains("One right-click with a compass"));
+        assertTrue(buildingText.contains("the direction you face"));
+        assertTrue(String.join(" ", EhmHelp.abilityPage(AbilityRules.DETECT_ORE).lines())
+                .contains("One right-click says the biome"));
         assertEquals(null, EhmHelp.resolve("nope"));
         assertEquals(null, EhmHelp.resolve("  "));
         var mining = EhmHelp.resolve("mining");

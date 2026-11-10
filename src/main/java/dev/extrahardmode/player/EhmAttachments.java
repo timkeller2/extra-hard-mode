@@ -45,6 +45,11 @@ public final class EhmAttachments {
             ExtraHardModeMod.id("bypass"),
             builder -> builder.persistent(Codec.BOOL).copyOnDeath().initializer(() -> Boolean.FALSE));
 
+    /** Lives left. Absent until the pool is on, then copied through death. The count can be negative. */
+    public static final AttachmentType<Integer> EHM_LIVES = AttachmentRegistry.create(
+            ExtraHardModeMod.id("lives"),
+            builder -> builder.persistent(Codec.INT).copyOnDeath());
+
     public static final AttachmentType<Double> EHM_WEIGHT_CACHE =
             AttachmentRegistry.create(ExtraHardModeMod.id("weight_cache"), builder -> builder.initializer(() -> 0.0));
 
@@ -662,12 +667,27 @@ public final class EhmAttachments {
                                     .forGetter(InhabitantRules.HouseHint::until))
                     .apply(instance, InhabitantRules.HouseHint::new));
 
+    public static final Codec<InhabitantRules.HouseHintBudget> HOUSE_HINT_BUDGET_CODEC = RecordCodecBuilder.create(
+            instance -> instance.group(
+                            Codec.LONG
+                                    .optionalFieldOf("day", 0L)
+                                    .forGetter(InhabitantRules.HouseHintBudget::day),
+                            Codec.INT
+                                    .optionalFieldOf("given", 0)
+                                    .forGetter(InhabitantRules.HouseHintBudget::given))
+                    .apply(instance, InhabitantRules.HouseHintBudget::new));
+
     /** One clock suggestion per bed, kept for the player who asked. */
     public static final AttachmentType<List<InhabitantRules.HouseHint>> EHM_HOUSE_HINTS = AttachmentRegistry.create(
             ExtraHardModeMod.id("house_hints"),
             builder -> builder.persistent(HOUSE_HINT_CODEC.listOf())
                     .copyOnDeath()
                     .initializer(ArrayList::new));
+
+    /** New house suggestions already named today. Three, then none until the next Minecraft day. */
+    public static final AttachmentType<InhabitantRules.HouseHintBudget> EHM_HOUSE_HINT_DAY = AttachmentRegistry.create(
+            ExtraHardModeMod.id("house_hint_day"),
+            builder -> builder.persistent(HOUSE_HINT_BUDGET_CODEC).copyOnDeath());
 
     /** One ore lead per old miner. Several miners can lead the same player, and one miner can lead several players. */
     public static final AttachmentType<List<OldMinerRules.Lead>> EHM_OLD_MINER_LEADS = AttachmentRegistry.create(
