@@ -535,6 +535,9 @@ class EhmHelpTest {
         String buildingText = String.join(" ", EhmHelp.resolve("building").lines());
         assertTrue(buildingText.contains("One right-click with a compass"));
         assertTrue(buildingText.contains("the direction you face"));
+        assertTrue(String.join(" ", EhmHelp.resolve("hunger").lines()).contains("raises saturation loss by 2%"));
+        assertTrue(String.join(" ", EhmHelp.resolve("abilities").lines())
+                .contains("Redstone dust in the offhand does not place when you right-click."));
         assertTrue(String.join(" ", EhmHelp.abilityPage(AbilityRules.DETECT_ORE).lines())
                 .contains("One right-click says the biome"));
         assertEquals(null, EhmHelp.resolve("nope"));

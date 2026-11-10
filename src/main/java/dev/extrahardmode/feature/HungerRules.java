@@ -50,6 +50,21 @@ public final class HungerRules {
         return 1.0F;
     }
 
+    /** Each point of weight above the limit adds this fraction to saturation drain. */
+    public static final float OVERWEIGHT_SATURATION_PER_POINT = 0.02F;
+
+    /**
+     * Saturation drain while carrying more than {@code maxPoints}. At or under the limit this is 1.
+     * Half a point over is 1%.
+     */
+    public static float overweightSaturationMultiplier(double weight, double maxPoints) {
+        double over = weight - maxPoints;
+        if (!(over > 0.0)) {
+            return 1.0F;
+        }
+        return (float) (1.0 + over * OVERWEIGHT_SATURATION_PER_POINT);
+    }
+
     public static boolean isMoving(double dx, double dy, double dz) {
         return dx * dx + dy * dy + dz * dz > STILL_EPSILON_SQR;
     }

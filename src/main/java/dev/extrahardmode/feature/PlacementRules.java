@@ -37,6 +37,11 @@ public final class PlacementRules {
         return enable && itemBlocked;
     }
 
+    /** Redstone dust in the offhand is a skill boost. A right-click must not place it. */
+    public static boolean denyOffhandRedstone(boolean offHand, boolean redstoneDust) {
+        return offHand && redstoneDust;
+    }
+
     public static boolean isOffhandLightId(String itemId) {
         if (itemId == null) {
             return false;

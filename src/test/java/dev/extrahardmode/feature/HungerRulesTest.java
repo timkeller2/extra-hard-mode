@@ -36,6 +36,16 @@ class HungerRulesTest {
     }
 
     @Test
+    void weightOverTheLimitRaisesSaturationLossByTwoPercentPerPoint() {
+        assertEquals(1.0F, HungerRules.overweightSaturationMultiplier(18.0, 18.0), 0.0001F);
+        assertEquals(1.0F, HungerRules.overweightSaturationMultiplier(17.5, 18.0), 0.0001F);
+        assertEquals(1.02F, HungerRules.overweightSaturationMultiplier(19.0, 18.0), 0.0001F);
+        assertEquals(1.01F, HungerRules.overweightSaturationMultiplier(18.5, 18.0), 0.0001F);
+        assertEquals(1.20F, HungerRules.overweightSaturationMultiplier(28.0, 18.0), 0.0001F);
+        assertEquals(0.02F, HungerRules.OVERWEIGHT_SATURATION_PER_POINT, 0.0001F);
+    }
+
+    @Test
     void lookingAndKeysCountAsActivity() {
         assertFalse(HungerRules.isLooking(0.0F, 0.0F));
         assertTrue(HungerRules.isLooking(1.0F, 0.0F));

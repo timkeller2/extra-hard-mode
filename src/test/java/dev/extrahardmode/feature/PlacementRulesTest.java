@@ -33,6 +33,13 @@ class PlacementRulesTest {
     }
 
     @Test
+    void offhandRedstoneDustDoesNotPlace() {
+        assertTrue(PlacementRules.denyOffhandRedstone(true, true));
+        assertFalse(PlacementRules.denyOffhandRedstone(false, true));
+        assertFalse(PlacementRules.denyOffhandRedstone(true, false));
+    }
+
+    @Test
     void offhandLightIsDeniedWhenEnabled() {
         assertTrue(PlacementRules.denyOffhandLight(true, true));
         assertFalse(PlacementRules.denyOffhandLight(true, false));

@@ -20,7 +20,8 @@ public abstract class PlayerFoodMixin {
             return;
         }
         float scale = WellFedRules.saturationMultiplier(WellFed.level(player));
-        if (scale >= 0.999F) {
+        scale *= Hunger.overweightSaturationMultiplier(player);
+        if (Math.abs(scale - 1.0F) < 0.001F) {
             return;
         }
         ci.cancel();

@@ -3,10 +3,12 @@ package dev.extrahardmode.feature;
 import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.api.EhmApi;
 import dev.extrahardmode.config.ConfigManager;
+import dev.extrahardmode.config.PlayerSettings;
 import dev.extrahardmode.config.WorldConfig;
 import dev.extrahardmode.network.ClientboundFoodCravingPayload;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.player.FoodHistory;
+import dev.extrahardmode.task.WeightCheckTask;
 import dev.extrahardmode.world.WorldGate;
 import java.util.List;
 import java.util.Map;
@@ -176,6 +178,27 @@ public final class Hunger implements FeatureModule {
         if (exhaustion > 0.0F) {
             player.causeFoodExhaustion(exhaustion);
         }
+    }
+
+    /**
+     * Extra saturation drain from weight above the limit. The players module and weight
+     * setting both have to be on. Bypass and spectator stay at 1. Well Fed is applied separately.
+     */
+    public static float overweightSaturationMultiplier(ServerPlayer player) {
+        if (player == null || !(player.level() instanceof ServerLevel level)) {
+            return 1.0F;
+        }
+        if (!WorldGate.isModuleActive(level, Players.ID)
+                || EhmApi.playerBypasses(player)
+                || player.isSpectator()) {
+            return 1.0F;
+        }
+        PlayerSettings settings = ConfigManager.world(level).player();
+        if (!settings.weightEnable()) {
+            return 1.0F;
+        }
+        double weight = WeightCheckTask.inventoryWeight(player, settings);
+        return HungerRules.overweightSaturationMultiplier(weight, settings.maxPoints());
     }
 
     /** Off the ground in water. Standing on the bottom stays at the land rate. */

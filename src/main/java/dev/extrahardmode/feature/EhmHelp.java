@@ -263,6 +263,7 @@ public final class EhmHelp {
                 List.of(
                         "Hunger: Your hunger drops while you move or act, not while AFK.",
                         "Hunger: Swimming drains saturation twice as fast, and sprint-swimming four times as fast. Hunger follows once saturation is gone.",
+                        "Hunger: Each point of weight over your limit raises saturation loss by 2%.",
                         "Hunger: A food not in your last 7 eaten gives +1 hunger, or +1 saturation if you are already full.",
                         "Hunger: Seven different foods in the last 7 meals gives an extra +1 hunger and saturation and 3 experience.",
                         "Hunger: The same food 5 times in the last 7 meals restores less; 7 of the last 7 restores even less. A meal still gives at least 1 hunger, and saturation does not fall.",
@@ -456,6 +457,7 @@ public final class EhmHelp {
                         "Abilities: Diamond Skin practices below 2 and keeps the diamond.",
                         "Abilities: Read Tome practice keeps the tome.",
                         "Abilities: Redstone dust in the offhand adds half your skill, up to the square root of that stack rounded down. Success consumes that bonus, rounded down. Practice keeps the dust.",
+                        "Abilities: Redstone dust in the offhand does not place when you right-click.",
                         "Abilities: Hold a focus and a wise teacher teaches that ability for 30 emeralds from your inventory or either hand.",
                         "Abilities: Each house point above 24 lowers that price by 2 emeralds, down to free. He names that count, a focus, or the next redstone gift when a lesson is offered.",
                         "Abilities: A focus gives half the house points in uses, rounded down. Hold emeralds and he picks an ability for the house points.",

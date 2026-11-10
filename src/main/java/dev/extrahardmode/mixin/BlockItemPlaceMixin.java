@@ -6,10 +6,13 @@ import dev.extrahardmode.feature.Dragon;
 import dev.extrahardmode.feature.FeatureBus;
 import dev.extrahardmode.feature.HardenedStone;
 import dev.extrahardmode.feature.LapisPortals;
+import dev.extrahardmode.feature.PlacementRules;
 import dev.extrahardmode.feature.Torches;
 import dev.extrahardmode.feature.UnsafeBeds;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.AbstractBedBlock;
@@ -24,6 +27,11 @@ public abstract class BlockItemPlaceMixin {
     @Inject(method = "place", at = @At("HEAD"), cancellable = true)
     private void tougher$blockOreAgainstStone(
             BlockPlaceContext context, CallbackInfoReturnable<InteractionResult> cir) {
+        if (PlacementRules.denyOffhandRedstone(
+                context.getHand() == InteractionHand.OFF_HAND, context.getItemInHand().is(Items.REDSTONE))) {
+            cir.setReturnValue(InteractionResult.FAIL);
+            return;
+        }
         Level level = context.getLevel();
         if (!FeatureBus.guard(level, Dragon.ID)
                 && !FeatureBus.guard(level, HardenedStone.ID)
