@@ -3,6 +3,7 @@ package dev.extrahardmode.player;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.extrahardmode.ExtraHardModeMod;
+import dev.extrahardmode.feature.CouncilMissionCodec;
 import dev.extrahardmode.feature.CouncilMissionRules;
 import dev.extrahardmode.feature.InhabitantRules;
 import dev.extrahardmode.feature.OldMinerRules;
@@ -573,47 +574,7 @@ public final class EhmAttachments {
     public static final AttachmentType<Long> EHM_EXPLORATION_LAST_POS = AttachmentRegistry.create(
             ExtraHardModeMod.id("exploration_last_pos"), builder -> builder.initializer(() -> Long.MIN_VALUE));
 
-    public static final Codec<CouncilMissionRules.Mission> COUNCIL_MISSION_CODEC = RecordCodecBuilder.create(
-            instance -> instance.group(
-                            Codec.STRING.optionalFieldOf("mob_id", "").forGetter(CouncilMissionRules.Mission::mobId),
-                            Codec.STRING.optionalFieldOf("label", "").forGetter(CouncilMissionRules.Mission::label),
-                            Codec.INT.optionalFieldOf("hp", 0).forGetter(CouncilMissionRules.Mission::hp),
-                            Codec.INT.optionalFieldOf("target", 0).forGetter(CouncilMissionRules.Mission::target),
-                            Codec.INT.optionalFieldOf("kills", 0).forGetter(CouncilMissionRules.Mission::kills),
-                            Codec.LONG
-                                    .optionalFieldOf("assigned_day", -1L)
-                                    .forGetter(CouncilMissionRules.Mission::assignedDay),
-                            Codec.INT
-                                    .optionalFieldOf("house_score", 0)
-                                    .forGetter(CouncilMissionRules.Mission::houseScore),
-                            Codec.BOOL
-                                    .optionalFieldOf("completed", false)
-                                    .forGetter(CouncilMissionRules.Mission::completed),
-                            Codec.INT
-                                    .optionalFieldOf("awarded_xp", 0)
-                                    .forGetter(CouncilMissionRules.Mission::awardedXp),
-                            Codec.INT
-                                    .optionalFieldOf("pending_emeralds", 0)
-                                    .forGetter(CouncilMissionRules.Mission::pendingEmeralds),
-                            Codec.INT
-                                    .optionalFieldOf("last_completed_target", 0)
-                                    .forGetter(CouncilMissionRules.Mission::lastCompletedTarget),
-                            Codec.INT
-                                    .optionalFieldOf("completed_count", 0)
-                                    .forGetter(CouncilMissionRules.Mission::completedCount),
-                            Codec.STRING
-                                    .optionalFieldOf("giver_id", "")
-                                    .forGetter(CouncilMissionRules.Mission::giverId),
-                            Codec.STRING
-                                    .optionalFieldOf("giver_name", "")
-                                    .forGetter(CouncilMissionRules.Mission::giverName),
-                            Codec.LONG
-                                    .optionalFieldOf("spawn_count_day", -1L)
-                                    .forGetter(CouncilMissionRules.Mission::spawnCountDay),
-                            Codec.INT
-                                    .optionalFieldOf("spawn_replacements", 0)
-                                    .forGetter(CouncilMissionRules.Mission::spawnReplacements))
-                    .apply(instance, CouncilMissionRules.Mission::new));
+    public static final Codec<CouncilMissionRules.Mission> COUNCIL_MISSION_CODEC = CouncilMissionCodec.CODEC;
 
     /** Per-player council kill bounty kept so older saves still load. New hunts use {@link #EHM_COUNCIL_MISSIONS}. */
     public static final AttachmentType<CouncilMissionRules.Mission> EHM_COUNCIL_MISSION = AttachmentRegistry.create(

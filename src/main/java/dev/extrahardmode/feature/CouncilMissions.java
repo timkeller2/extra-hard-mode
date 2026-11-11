@@ -155,9 +155,10 @@ public final class CouncilMissions {
     }
 
     /**
-     * One try per open bounty each second of the overworld night. A hit places a group of that bounty,
-     * from one sixth of the kills still owed through one third, and at least 1. A later miss ends
-     * that group. The other open bounties still roll on their own.
+     * One try per open bounty each second of the overworld night, and only while the player is in
+     * the dimension where that bounty was given. A hit places a group of that bounty, from one
+     * sixth of the kills still owed through one third, and at least 1. A later miss ends that
+     * group. The other open bounties still roll on their own.
      */
     private static void maybeSpawn(ServerPlayer player, long today) {
         if (!(player.level() instanceof ServerLevel level) || !WorldGate.isModuleActive(level, Inhabitants.ID)) {
@@ -173,8 +174,12 @@ public final class CouncilMissions {
         if (open.isEmpty()) {
             return;
         }
+        String here = level.dimension().identifier().toString();
         RandomSource random = level.getRandom();
         for (CouncilMissionRules.Mission mission : open) {
+            if (!CouncilMissionRules.spawnsIn(mission, here)) {
+                continue;
+            }
             if (!CouncilMissionRules.nightSpawn(random.nextInt(CouncilMissionRules.NIGHT_SPAWN_ONE_IN))) {
                 continue;
             }
@@ -224,11 +229,13 @@ public final class CouncilMissions {
         mob.setAttached(EhmAttachments.EHM_LOOTLESS, Boolean.FALSE);
         mob.setAttached(EhmAttachments.EHM_UNNATURAL_SPAWN, Boolean.FALSE);
         mob.setAttached(EhmAttachments.EHM_BOUNTY_SPAWN_DAY, today);
-        AttributeInstance follow = mob.getAttribute(Attributes.FOLLOW_RANGE);
-        if (follow != null) {
-            follow.setBaseValue(CouncilMissionRules.BOUNTY_SPAWN_NEAR_BLOCKS);
+        if (CouncilMissionRules.chasesOnSpawn(random.nextInt())) {
+            AttributeInstance follow = mob.getAttribute(Attributes.FOLLOW_RANGE);
+            if (follow != null) {
+                follow.setBaseValue(CouncilMissionRules.BOUNTY_SPAWN_NEAR_BLOCKS);
+            }
+            mob.setTarget(player);
         }
-        mob.setTarget(player);
         if (mob instanceof Phantom phantom) {
             ((PhantomAccess) phantom).tougher$setAnchorPoint(mob.blockPosition().above(PHANTOM_ANCHOR_ABOVE));
         }
@@ -556,6 +563,10 @@ public final class CouncilMissions {
             }
             return;
         }
+        if (slot != null && slot.offered()) {
+            offerOrGrant(player, board, slot, today, changed);
+            return;
+        }
         if (slot != null && !CouncilMissionRules.canTakeNext(slot, today)) {
             int wait = CouncilMissionRules.daysUntilNextMission(
                     slot.assignedDay(), today, slot.completedCount());
@@ -571,37 +582,83 @@ public final class CouncilMissions {
             return;
         }
         if (CouncilMissionRules.atCap(board)) {
-            player.sendSystemMessage(Component.translatableWithFallback(
-                    "tougher.message.council_mission_cap",
-                    "You already have 5 bounties. Finish one before taking another."));
+            tellCap(player);
             if (changed) {
                 save(player, board);
             }
             return;
         }
-        assign(player, level, board, giverId, giverName, home == null ? InhabitantRules.MIN_SCORE : home.score(), today);
+        CouncilMissionRules.Mission prior = CouncilMissionRules.findGiver(board, giverId);
+        CouncilMissionRules.Mission offer = CouncilMissionRules.assign(
+                        prior == null ? CouncilMissionRules.NONE : prior,
+                        giverId,
+                        giverName,
+                        home == null ? InhabitantRules.MIN_SCORE : home.score(),
+                        today,
+                        level.getRandom().nextInt(),
+                        level.getRandom().nextInt(),
+                        level.dimension().identifier().toString())
+                .asOffer();
+        offerOrGrant(player, board, offer, today, changed);
     }
 
-    static void assign(
+    /**
+     * The member has already named this bounty. Emeralds in the main hand take it. A short stack
+     * leaves the same bounty waiting.
+     */
+    static void offerOrGrant(
             ServerPlayer player,
-            ServerLevel level,
             List<CouncilMissionRules.Mission> board,
-            String giverId,
-            String giverName,
-            int houseScore,
-            long today) {
-        CouncilMissionRules.Mission prior = CouncilMissionRules.findGiver(board, giverId);
-        CouncilMissionRules.Mission next = CouncilMissionRules.assign(
-                prior == null ? CouncilMissionRules.NONE : prior,
-                giverId,
-                giverName,
-                houseScore,
-                today,
-                level.getRandom().nextInt(),
-                level.getRandom().nextInt(),
-                level.dimension().identifier().toString());
-        save(player, CouncilMissionRules.put(board, next));
-        tellBounty(player, "tougher.message.council_mission_new", next);
+            CouncilMissionRules.Mission offer,
+            long today,
+            boolean changed) {
+        if (holdsDeputationFee(player)) {
+            if (CouncilMissionRules.atCap(board)) {
+                tellCap(player);
+                if (changed) {
+                    save(player, board);
+                }
+                return;
+            }
+            takeDeputationFee(player);
+            CouncilMissionRules.Mission given = offer.accept(today);
+            save(player, CouncilMissionRules.put(board, given));
+            tellBounty(player, "tougher.message.council_mission_new", given);
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.council_mission_fee", "You pay 5 emeralds."));
+            return;
+        }
+        List<CouncilMissionRules.Mission> next = CouncilMissionRules.put(board, offer);
+        if (changed || !next.equals(board)) {
+            save(player, next);
+        }
+        tellOffer(player, offer);
+    }
+
+    static boolean holdsDeputationFee(ServerPlayer player) {
+        ItemStack hand = player.getMainHandItem();
+        return CouncilMissionRules.holdsDeputationFee(hand.is(Items.EMERALD), hand.getCount());
+    }
+
+    static void takeDeputationFee(ServerPlayer player) {
+        player.getMainHandItem().shrink(CouncilMissionRules.DEPUTATION_FEE);
+    }
+
+    static void tellCap(ServerPlayer player) {
+        player.sendSystemMessage(Component.translatableWithFallback(
+                "tougher.message.council_mission_cap",
+                "You already have 5 bounties. Finish one before taking another."));
+    }
+
+    static void tellOffer(ServerPlayer player, CouncilMissionRules.Mission mission) {
+        int left = mission.remaining();
+        String who = mission.giverName() == null || mission.giverName().isEmpty() ? "Council" : mission.giverName();
+        player.sendSystemMessage(Component.translatableWithFallback(
+                "tougher.message.council_mission_offer",
+                "%s: %s %s. Hold 5 emeralds to take this bounty.",
+                Component.literal(who),
+                Component.literal(Integer.toString(left)),
+                Component.literal(CouncilMissionRules.mobName(mission.label(), left))));
     }
 
     static void tellBounty(ServerPlayer player, String key, CouncilMissionRules.Mission mission) {

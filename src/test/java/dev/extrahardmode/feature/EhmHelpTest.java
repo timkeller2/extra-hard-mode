@@ -404,7 +404,12 @@ class EhmHelpTest {
         assertFalse(all.contains("Water mobs are left out"));
         assertTrue(all.contains("with that resident"));
         assertTrue(all.contains("A kill counts for every open bounty"));
-        assertTrue(all.contains("within 48 blocks"));
+        assertTrue(all.contains("Hold 5 emeralds in your hand"));
+        assertTrue(all.contains("Those 5 emeralds are spent"));
+        assertTrue(all.contains("within 64 blocks"));
+        assertTrue(all.contains("Half of those creatures come straight for you"));
+        assertTrue(all.contains("wander where they appeared until they notice you"));
+        assertTrue(all.contains("only in the dimension where that bounty was given"));
         assertTrue(all.contains("on or above a solid block"));
         assertTrue(all.contains("dark enough for a monster"));
         assertTrue(all.contains("1 in 250"));

@@ -87,7 +87,7 @@ class CouncilMissionRulesTest {
         assertEquals("minecraft:zombie", CouncilMissionRules.pickMob(12, 0, "minecraft:nowhere").id());
 
         CouncilMissionRules.Mission ladder = new CouncilMissionRules.Mission(
-                "", "", 0, 0, 0, -1L, 0, false, 0, 0, 6, 12, "a", "Ada", -1L, 0);
+                "", "", 0, 0, 0, -1L, 0, false, 0, 0, 6, 12, "a", "Ada", -1L, 0, "", true);
         CouncilMissionRules.Mission hunt = CouncilMissionRules.assign(
                 ladder, "a", "Ada", 12, 20, 0, 0, CouncilMissionRules.OVERWORLD);
         assertEquals("minecraft:ravager", hunt.mobId());
@@ -201,7 +201,13 @@ class CouncilMissionRulesTest {
         assertEquals(20, CouncilMissionRules.NIGHT_SPAWN_TICKS);
         assertEquals(250, CouncilMissionRules.NIGHT_SPAWN_ONE_IN);
         assertEquals(8, CouncilMissionRules.BOUNTY_SPAWN_MIN_BLOCKS);
-        assertEquals(48, CouncilMissionRules.BOUNTY_SPAWN_NEAR_BLOCKS);
+        assertEquals(64, CouncilMissionRules.BOUNTY_SPAWN_NEAR_BLOCKS);
+        assertEquals(2, CouncilMissionRules.BOUNTY_CHASE_ONE_IN);
+        assertTrue(CouncilMissionRules.chasesOnSpawn(0));
+        assertFalse(CouncilMissionRules.chasesOnSpawn(1));
+        assertTrue(CouncilMissionRules.chasesOnSpawn(2));
+        assertTrue(CouncilMissionRules.chasesOnSpawn(-2));
+        assertFalse(CouncilMissionRules.chasesOnSpawn(-1));
         assertTrue(CouncilMissionRules.night(13000));
         assertTrue(CouncilMissionRules.night(22999));
         assertFalse(CouncilMissionRules.night(23000));
@@ -398,5 +404,96 @@ class CouncilMissionRulesTest {
                 List.of(leftBehind, neighbor), "uuid-other", "333", "Ada", Map.of("111", "Ada", "333", "Ada"));
         assertEquals(1, CouncilMissionRules.findGiver(separate, "uuid-other").completedCount());
         assertEquals(4, CouncilMissionRules.findGiver(separate, "111").completedCount());
+    }
+
+    @Test
+    void bountyMarksStayInTheDimensionWhereTheyWereGiven() {
+        CouncilMissionRules.Mission nether = CouncilMissionRules.assign(
+                CouncilMissionRules.NONE, "a", "Ada", 12, 0, 0, 0, CouncilMissionRules.NETHER);
+        assertEquals(CouncilMissionRules.NETHER, nether.dimension());
+        assertTrue(CouncilMissionRules.spawnsIn(nether, CouncilMissionRules.NETHER));
+        assertFalse(CouncilMissionRules.spawnsIn(nether, CouncilMissionRules.OVERWORLD));
+        assertFalse(CouncilMissionRules.spawnsIn(nether, CouncilMissionRules.END));
+        assertEquals(CouncilMissionRules.NETHER, nether.withKills(1).dimension());
+        assertEquals(CouncilMissionRules.NETHER, nether.withReplacement(1).dimension());
+        assertEquals(CouncilMissionRules.NETHER, nether.asCompleted(1, 1).dimension());
+        assertEquals(CouncilMissionRules.NETHER, nether.withGiver("b", "Bea").dimension());
+        assertEquals(CouncilMissionRules.NETHER, nether.withProgress(1, 1).dimension());
+
+        CouncilMissionRules.Mission overworld =
+                CouncilMissionRules.assign(CouncilMissionRules.NONE, "a", "Ada", 12, 0, 0, 0);
+        assertEquals("minecraft:zombie", overworld.mobId());
+        assertEquals(CouncilMissionRules.OVERWORLD, overworld.dimension());
+        assertTrue(CouncilMissionRules.spawnsIn(overworld, CouncilMissionRules.OVERWORLD));
+        assertFalse(CouncilMissionRules.spawnsIn(overworld, CouncilMissionRules.NETHER));
+        assertFalse(CouncilMissionRules.spawnsIn(overworld, CouncilMissionRules.END));
+        assertFalse(CouncilMissionRules.spawnsIn(overworld, ""));
+        assertFalse(CouncilMissionRules.spawnsIn(overworld, null));
+        assertFalse(CouncilMissionRules.spawnsIn(null, CouncilMissionRules.OVERWORLD));
+        assertFalse(CouncilMissionRules.spawnsIn(overworld.asCompleted(1, 1), CouncilMissionRules.OVERWORLD));
+        assertFalse(CouncilMissionRules.spawnsIn(overworld.clearHunt(), CouncilMissionRules.OVERWORLD));
+
+        CouncilMissionRules.Mission legacyZombie = overworld.withDimension("");
+        assertTrue(CouncilMissionRules.spawnsIn(legacyZombie, CouncilMissionRules.OVERWORLD));
+        assertFalse(CouncilMissionRules.spawnsIn(legacyZombie, CouncilMissionRules.NETHER));
+        assertTrue(CouncilMissionRules.spawnsIn("minecraft:enderman", "", CouncilMissionRules.NETHER));
+        assertTrue(CouncilMissionRules.spawnsIn("minecraft:enderman", "", CouncilMissionRules.OVERWORLD));
+        assertTrue(CouncilMissionRules.spawnsIn("minecraft:enderman", "", CouncilMissionRules.END));
+        assertFalse(CouncilMissionRules.spawnsIn(
+                "minecraft:enderman", CouncilMissionRules.OVERWORLD, CouncilMissionRules.NETHER));
+        assertFalse(CouncilMissionRules.spawnsIn("minecraft:zombie", "", CouncilMissionRules.NETHER));
+        assertFalse(CouncilMissionRules.spawnsIn("minecraft:not_a_mob", "", CouncilMissionRules.OVERWORLD));
+
+        assertEquals(
+                CouncilMissionRules.OVERWORLD,
+                CouncilMissionRules.assign(CouncilMissionRules.NONE, "a", "Ada", 12, 0, 0, 0, "")
+                        .dimension());
+        assertEquals(
+                CouncilMissionRules.OVERWORLD,
+                CouncilMissionRules.assign(CouncilMissionRules.NONE, "a", "Ada", 12, 0, 0, 0, null)
+                        .dimension());
+    }
+
+    @Test
+    void aNamedBountyWaitsForFiveEmeraldsInHand() {
+        assertEquals(5, CouncilMissionRules.DEPUTATION_FEE);
+        assertTrue(CouncilMissionRules.holdsDeputationFee(true, 5));
+        assertTrue(CouncilMissionRules.holdsDeputationFee(true, 64));
+        assertFalse(CouncilMissionRules.holdsDeputationFee(true, 4));
+        assertFalse(CouncilMissionRules.holdsDeputationFee(false, 64));
+        assertFalse(CouncilMissionRules.holdsDeputationFee(true, 0));
+
+        CouncilMissionRules.Mission named = CouncilMissionRules.assign(
+                        CouncilMissionRules.NONE, "a", "Ada", 12, 0, 0, 0, CouncilMissionRules.NETHER)
+                .asOffer();
+        assertTrue(named.offered());
+        assertFalse(named.accepted());
+        assertFalse(named.active());
+        assertEquals(-1L, named.assignedDay());
+        assertEquals(CouncilMissionRules.NETHER, named.dimension());
+        assertEquals("", CouncilMissionRules.hudLabel(named));
+        assertFalse(CouncilMissionRules.spawnsIn(named, CouncilMissionRules.NETHER));
+        assertEquals(0, CouncilMissionRules.openMissions(List.of(named)));
+        assertFalse(CouncilMissionRules.atCap(List.of(named)));
+
+        CouncilMissionRules.Mission taken = named.accept(4L);
+        assertTrue(taken.accepted());
+        assertTrue(taken.active());
+        assertFalse(taken.offered());
+        assertEquals(4L, taken.assignedDay());
+        assertEquals(named.mobId(), taken.mobId());
+        assertEquals(named.target(), taken.target());
+        assertEquals(named.dimension(), taken.dimension());
+        assertEquals(1, CouncilMissionRules.openMissions(List.of(taken)));
+        assertTrue(CouncilMissionRules.spawnsIn(taken, CouncilMissionRules.NETHER));
+        assertFalse(CouncilMissionRules.spawnsIn(taken, CouncilMissionRules.OVERWORLD));
+
+        List<CouncilMissionRules.Mission> full = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            full.add(CouncilMissionRules.assign(CouncilMissionRules.NONE, "h" + i, "N" + i, 12, 0, i, i));
+        }
+        full.add(named);
+        assertEquals(5, CouncilMissionRules.openMissions(full));
+        assertTrue(CouncilMissionRules.atCap(full));
     }
 }

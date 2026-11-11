@@ -16,8 +16,10 @@ public final class CouncilMissionRules {
     public static final int COOLDOWN_DAYS = 7;
     /** Added to that wait for each bounty this resident has already finished with this player. */
     public static final int COOLDOWN_STEP_DAYS = 3;
-    /** Active hunts plus bounties waiting for their emerald payout. */
+    /** Accepted hunts plus bounties waiting for their emerald payout. A named bounty still waiting for its fee does not count. */
     public static final int MAX_OPEN_MISSIONS = 5;
+    /** Emeralds in the main hand. The member names the bounty before this fee is spent. */
+    public static final int DEPUTATION_FEE = 5;
     public static final int XP_FLAT = 25;
     public static final double XP_PER_EXTRA_POINT = 0.10;
     public static final int TIER_EVERY_COMPLETED = 4;
@@ -42,7 +44,9 @@ public final class CouncilMissionRules {
     public static final int NIGHT_SPAWN_ONE_IN = 250;
     /** The creature is placed at least this far out, and no farther than {@link #BOUNTY_SPAWN_NEAR_BLOCKS}. */
     public static final int BOUNTY_SPAWN_MIN_BLOCKS = 8;
-    public static final int BOUNTY_SPAWN_NEAR_BLOCKS = 48;
+    public static final int BOUNTY_SPAWN_NEAR_BLOCKS = 64;
+    /** Half of the marks start hunting. The rest keep their usual notice range. */
+    public static final int BOUNTY_CHASE_ONE_IN = 2;
 
     public record Mob(String id, String label, int hp, int tier, List<String> dimensions) {
         public Mob {
@@ -62,6 +66,10 @@ public final class CouncilMissionRules {
      * {@code lastCompletedTarget} and {@code completedCount} persist between hunts for this giver
      * only. Empty {@code mobId} means no active or turn-in bounty.
      * {@code giverId} is the resident's id. Older saves used the home id, which stays with the bed.
+     * {@code dimension} is the world where the bounty was given. Empty means an older save, and
+     * marks then use that mob's habitat.
+     * {@code accepted} is false while the member has named the bounty and the fee is still unpaid.
+     * Older saves omit it and load as already given.
      */
     public record Mission(
             String mobId,
@@ -79,13 +87,24 @@ public final class CouncilMissionRules {
             String giverId,
             String giverName,
             long spawnCountDay,
-            int spawnReplacements) {
+            int spawnReplacements,
+            String dimension,
+            boolean accepted) {
+        public Mission {
+            dimension = dimension == null ? "" : dimension;
+        }
+
         public boolean hasMob() {
             return mobId != null && !mobId.isEmpty();
         }
 
         public boolean active() {
-            return hasMob() && !completed;
+            return accepted && hasMob() && !completed;
+        }
+
+        /** Named, and still waiting for the emerald fee. */
+        public boolean offered() {
+            return hasMob() && !completed && !accepted;
         }
 
         public boolean awaitingTurnIn() {
@@ -114,7 +133,9 @@ public final class CouncilMissionRules {
                     giverId,
                     giverName,
                     spawnCountDay,
-                    spawnReplacements);
+                    spawnReplacements,
+                    dimension,
+                    accepted);
         }
 
         public Mission withGiver(String id, String name) {
@@ -134,7 +155,9 @@ public final class CouncilMissionRules {
                     id == null ? "" : id,
                     name == null ? "" : name,
                     spawnCountDay,
-                    spawnReplacements);
+                    spawnReplacements,
+                    dimension,
+                    accepted);
         }
 
         /** Keep this hunt and move the ladder that survives a home swap. */
@@ -155,7 +178,9 @@ public final class CouncilMissionRules {
                     giverId,
                     giverName,
                     spawnCountDay,
-                    spawnReplacements);
+                    spawnReplacements,
+                    dimension,
+                    accepted);
         }
 
         /**
@@ -181,7 +206,9 @@ public final class CouncilMissionRules {
                     giverId,
                     giverName,
                     spawnCountDay,
-                    spawnReplacements);
+                    spawnReplacements,
+                    dimension,
+                    accepted);
         }
 
         /** Drop the hunt; keep the giver and lifetime progress. */
@@ -202,7 +229,9 @@ public final class CouncilMissionRules {
                     giverId,
                     giverName,
                     -1L,
-                    0);
+                    0,
+                    "",
+                    true);
         }
 
         /** Advances the saved replacement count. Night spawns do not call this. */
@@ -224,12 +253,107 @@ public final class CouncilMissionRules {
                     giverId,
                     giverName,
                     today,
-                    used);
+                    used,
+                    dimension,
+                    accepted);
+        }
+
+        public Mission withDimension(String next) {
+            return new Mission(
+                    mobId,
+                    label,
+                    hp,
+                    target,
+                    kills,
+                    assignedDay,
+                    houseScore,
+                    completed,
+                    awardedXp,
+                    pendingEmeralds,
+                    lastCompletedTarget,
+                    completedCount,
+                    giverId,
+                    giverName,
+                    spawnCountDay,
+                    spawnReplacements,
+                    next,
+                    accepted);
+        }
+
+        public Mission withAccepted(boolean next) {
+            if (next == accepted) {
+                return this;
+            }
+            return new Mission(
+                    mobId,
+                    label,
+                    hp,
+                    target,
+                    kills,
+                    assignedDay,
+                    houseScore,
+                    completed,
+                    awardedXp,
+                    pendingEmeralds,
+                    lastCompletedTarget,
+                    completedCount,
+                    giverId,
+                    giverName,
+                    spawnCountDay,
+                    spawnReplacements,
+                    dimension,
+                    next);
+        }
+
+        /** The same quarry, waiting for the fee. The 14 days start when the player pays. */
+        public Mission asOffer() {
+            return new Mission(
+                    mobId,
+                    label,
+                    hp,
+                    target,
+                    0,
+                    -1L,
+                    houseScore,
+                    false,
+                    0,
+                    0,
+                    lastCompletedTarget,
+                    completedCount,
+                    giverId,
+                    giverName,
+                    -1L,
+                    0,
+                    dimension,
+                    false);
+        }
+
+        /** The fee has been paid. The hunt starts today. */
+        public Mission accept(long today) {
+            return new Mission(
+                    mobId,
+                    label,
+                    hp,
+                    target,
+                    kills,
+                    today,
+                    houseScore,
+                    completed,
+                    awardedXp,
+                    pendingEmeralds,
+                    lastCompletedTarget,
+                    completedCount,
+                    giverId,
+                    giverName,
+                    spawnCountDay,
+                    spawnReplacements,
+                    dimension,
+                    true);
         }
     }
 
     public static final Mission NONE =
-            new Mission("", "", 0, 0, 0, -1L, 0, false, 0, 0, 0, 0, "", "", -1L, 0);
+            new Mission("", "", 0, 0, 0, -1L, 0, false, 0, 0, 0, 0, "", "", -1L, 0, "", true);
 
     /**
      * Tier 0 in every dimension stays at {@link #REFERENCE_HP} or below, so the first recorded
@@ -458,7 +582,7 @@ public final class CouncilMissionRules {
             return 0;
         }
         for (Mission mission : missions) {
-            if (mission.hasMob()) {
+            if (mission.accepted() && mission.hasMob()) {
                 open++;
             }
         }
@@ -799,8 +923,9 @@ public final class CouncilMissionRules {
             int mobRoll,
             String dimension) {
         Mission prior = previous == null ? NONE : previous;
+        String world = dimension == null || dimension.isEmpty() ? OVERWORLD : dimension;
         int base = targetCount(prior.lastCompletedTarget(), countRoll);
-        Mob mob = pickMob(prior.completedCount(), mobRoll, dimension);
+        Mob mob = pickMob(prior.completedCount(), mobRoll, world);
         int target = healthScaledCount(base, mob.hp());
         return new Mission(
                 mob.id(),
@@ -818,6 +943,94 @@ public final class CouncilMissionRules {
                 giverId == null ? "" : giverId,
                 giverName == null ? "" : giverName,
                 -1L,
-                0);
+                0,
+                world,
+                true);
+    }
+
+    /** True when this stack is emeralds and holds at least {@link #DEPUTATION_FEE}. */
+    public static boolean holdsDeputationFee(boolean emeraldItem, int count) {
+        return emeraldItem && count >= DEPUTATION_FEE;
+    }
+
+    /** Half of all rolls, including negative ones, send the mark after the player immediately. */
+    public static boolean chasesOnSpawn(int roll) {
+        return Math.floorMod(roll, BOUNTY_CHASE_ONE_IN) == 0;
+    }
+
+    /**
+     * The sixteen fields older saves already have. A missing dimension stays empty so those
+     * bounties keep using the mob's habitat.
+     */
+    public static Mission stored(
+            String mobId,
+            String label,
+            int hp,
+            int target,
+            int kills,
+            long assignedDay,
+            int houseScore,
+            boolean completed,
+            int awardedXp,
+            int pendingEmeralds,
+            int lastCompletedTarget,
+            int completedCount,
+            String giverId,
+            String giverName,
+            long spawnCountDay,
+            int spawnReplacements) {
+        return new Mission(
+                mobId,
+                label,
+                hp,
+                target,
+                kills,
+                assignedDay,
+                houseScore,
+                completed,
+                awardedXp,
+                pendingEmeralds,
+                lastCompletedTarget,
+                completedCount,
+                giverId,
+                giverName,
+                spawnCountDay,
+                spawnReplacements,
+                "",
+                true);
+    }
+
+    /** An open bounty sends marks only in the dimension where it was given. */
+    public static boolean spawnsIn(Mission mission, String playerDimension) {
+        if (mission == null || !mission.active()) {
+            return false;
+        }
+        return spawnsIn(mission.mobId(), mission.dimension(), playerDimension);
+    }
+
+    /**
+     * A stored dimension must match the player's world. An older bounty with no dimension uses
+     * that mob's habitat. An unknown mob with no stored dimension does not spawn.
+     */
+    public static boolean spawnsIn(String mobId, String storedDimension, String playerDimension) {
+        if (playerDimension == null || playerDimension.isEmpty()) {
+            return false;
+        }
+        if (storedDimension != null && !storedDimension.isEmpty()) {
+            return storedDimension.equals(playerDimension);
+        }
+        return mobLivesIn(mobId, playerDimension);
+    }
+
+    public static boolean mobLivesIn(String mobId, String dimension) {
+        if (mobId == null || mobId.isEmpty() || dimension == null) {
+            return false;
+        }
+        for (Mob mob : MOBS) {
+            if (mob.id().equals(mobId)) {
+                return mob.livesIn(dimension);
+            }
+        }
+        return false;
     }
 }

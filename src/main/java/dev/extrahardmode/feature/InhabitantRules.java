@@ -922,7 +922,7 @@ public final class InhabitantRules {
 
     public static List<String> homesBountyLines() {
         return List.of(
-                "Bounties: Council members give each player a personal kill bounty when you check in.",
+                "Bounties: A council member names a kill bounty when you check in. Hold 5 emeralds in your hand to take it. Those 5 emeralds are spent.",
                 "Bounties: The first hunt from a resident is 6-18 common mobs. Each success with that resident makes the next 20% larger. Every 4 successes, their next hunt is rarer.",
                 "Bounties: A mob with more than 20 health is fewer creatures, in proportion to that health.",
                 "Bounties: The resident only sends mobs from the dimension where they live. Guardians are left out.",
@@ -930,7 +930,9 @@ public final class InhabitantRules {
                 "Bounties: The next bounty from that resident waits 7 Minecraft days after the last one was given, plus 3 per finished bounty with them, and only after you finish the previous one.",
                 "Bounties: Each council member can give you one. You can hold 5 at a time, counting hunts and unpaid emerald turn-ins.",
                 "Bounties: A kill counts for every open bounty on that mob.",
-                "Bounties: At night, each open bounty can send a group within 48 blocks, on or above a solid block dark enough for a monster.",
+                "Bounties: At night, each open bounty can send a group within 64 blocks, on or above a solid block dark enough for a monster.",
+                "Bounties: Half of those creatures come straight for you. The rest wander where they appeared until they notice you.",
+                "Bounties: Those creatures appear only in the dimension where that bounty was given.",
                 "Bounties: Each second of that night, each open bounty has a 1 in 250 chance. One bounty usually brings 1 or 2 groups. Zero, or 3 or more, is less common.",
                 "Bounties: Each creature stays until the next Minecraft day. A group is at least 1, from 1/6 of those still to kill through 1/3. Each open bounty rolls on its own.",
                 "Bounties: Finishing grants XP equal to one quarter of the slain mobs' health plus 25, with 10% more per extra house point.",

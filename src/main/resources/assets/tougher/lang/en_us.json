@@ -168,6 +168,8 @@
   "tougher.message.inhabitant_bounty_boss": "Something huge is out there. You would be wise to be careful.",
   "tougher.message.inhabitant_bounty_boss_way": "Something huge is out there, to the %s. You would be wise to be careful.",
   "tougher.message.council_mission_new": "%s: %s %s",
+  "tougher.message.council_mission_offer": "%s: %s %s. Hold 5 emeralds to take this bounty.",
+  "tougher.message.council_mission_fee": "You pay 5 emeralds.",
   "tougher.message.council_mission_wait": "Another bounty will be ready in %s.",
   "tougher.message.council_mission_cap": "You already have 5 bounties. Finish one before taking another.",
   "tougher.message.council_mission_progress": "%s: %s %s",
