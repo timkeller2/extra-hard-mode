@@ -421,6 +421,16 @@ def build():
             ],
             s["bullet"],
         ),
+        Paragraph("Nether portals", s["h"]),
+        bullets(
+            [
+                "A nether portal spends the weight you are carrying. Worn armor, stacks, and tools all count. The fuel is taken from your inventory and your offhand.",
+                "Fuel is redstone dust, nether quartz, and amethyst shards. One kind covers 100 points of weight per item, rounded up, and a trip with any weight costs at least 1. Two kinds cover 200 points per item. All three cover 300.",
+                "The kinds you are carrying set that range. Payment alternates across those kinds, largest stack first. When the largest stacks match, nether quartz is first, then redstone dust, then amethyst shards. Each item comes off the largest stack of that kind.",
+                "A trip with nothing to carry is free. After any trip you wait 15 seconds before a nether portal will take you again. Everyone on the trip pays their own weight. If anyone cannot pay, or is still waiting, nobody goes and nothing is spent.",
+            ],
+            s["bullet"],
+        ),
         Paragraph("Homes and residents", s["h"]),
         Paragraph(
             "Right-click a bed with a clock to score a room. An enclosed room of 24 to 400 air blocks, with block light 5 on every floor tile, a bed, and a door or fence gate facing outside, "

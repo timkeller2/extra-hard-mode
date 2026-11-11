@@ -507,7 +507,13 @@ public final class EhmHelp {
                         "Portals: A count shared by more than two booths does not link.",
                         "Portals: The booth is remembered when the last lapis block, door, or chest finishes the frame.",
                         "Portals: A trip plays thunder for everyone within 200 blocks of either booth. You are dizzy and nauseous for 10 seconds.",
-                        "Portals: Both booths then take 15 seconds to recharge."));
+                        "Portals: Both booths then take 15 seconds to recharge.",
+                        "Portals: A nether portal spends the weight you carry, including worn armor. Fuel comes from your inventory and your offhand.",
+                        "Portals: Fuel is redstone dust, nether quartz, and amethyst shards. One kind covers 100 points of weight per item, rounded up, and at least 1.",
+                        "Portals: Two kinds cover 200 points per item. All three cover 300. The kinds you are carrying set that range.",
+                        "Portals: Nether payment alternates those kinds, largest stack first. Ties start with nether quartz, then redstone dust, then amethyst shards.",
+                        "Portals: A trip with no weight is free. Any nether trip then makes you wait 15 seconds.",
+                        "Portals: Everyone on the trip pays their own weight. If anyone cannot pay, or is still waiting, nobody goes and nothing is spent."));
     }
 
     private static Page homes() {

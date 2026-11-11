@@ -777,6 +777,19 @@ public final class EhmAttachments {
             ExtraHardModeMod.id("wise_lesson_owner"),
             builder -> builder.persistent(UUIDUtil.CODEC));
 
+    /**
+     * Overworld game time when this player may take a nether portal again.
+     * Vanilla portal cooldown is forced back to half a second while they stand in the exit.
+     */
+    public static final AttachmentType<Long> EHM_NETHER_PORTAL_READY = AttachmentRegistry.create(
+            ExtraHardModeMod.id("nether_portal_ready"),
+            builder -> builder.persistent(Codec.LONG).copyOnDeath().initializer(() -> 0L));
+
+    /** Overworld game time of the last nether-portal denial, so the frame does not repeat the line. */
+    public static final AttachmentType<Long> EHM_NETHER_PORTAL_TOLD = AttachmentRegistry.create(
+            ExtraHardModeMod.id("nether_portal_told"),
+            builder -> builder.initializer(() -> 0L));
+
     /** Namespace used before the mod id became tougher. Saved animals still carry it. */
     static final String LEGACY_NAMESPACE = "extrahardmode";
 
