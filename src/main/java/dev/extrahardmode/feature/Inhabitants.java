@@ -433,7 +433,8 @@ public final class Inhabitants implements FeatureModule {
                 ability,
                 offers,
                 price,
-                InhabitantRules.redstoneBlockCap(WiseLessons.redstoneGifts(player, teacherId)));
+                InhabitantRules.redstoneBlockCap(WiseLessons.redstoneGifts(player, teacherId)),
+                WiseLessons.huntCooldownLabel(player, teacherId, level));
     }
 
     private static void teachFocus(
@@ -534,11 +535,16 @@ public final class Inhabitants implements FeatureModule {
                 ColorParticleOption.create(ParticleTypes.ENTITY_EFFECT, r, g, b), x, y, z, 6, 0.35, 0.5, 0.35, 0.0);
     }
 
-    private static void explainLesson(ServerPlayer player, String ability, int offers, int price, int redstoneCap) {
+    private static void explainLesson(
+            ServerPlayer player, String ability, int offers, int price, int redstoneCap, String cooldown) {
         if (offers <= 0) {
-            player.sendSystemMessage(Component.translatableWithFallback(
+            Component waiting = Component.translatableWithFallback(
                     "tougher.wise.no_offer",
-                    "I can teach when a new hunt is ready for you, or after you kill more than half of a hunt before the marks vanish."));
+                    "I can teach when a new hunt is ready for you, or after you kill more than half of a hunt before the marks vanish.");
+            if (cooldown != null && !cooldown.isEmpty()) {
+                waiting = waiting.copy().append(Component.literal(" " + cooldown));
+            }
+            player.sendSystemMessage(waiting);
         }
         if (ability != null) {
             String how = AbilityRules.teacherInstruction(ability);

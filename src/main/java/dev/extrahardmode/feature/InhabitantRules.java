@@ -865,6 +865,7 @@ public final class InhabitantRules {
                 "Residents: A home stops listing someone who has died or is no longer around the bed.",
                 "Lessons: Speak to a wise teacher and he tells of a hunt every 30 Minecraft days.",
                 "Lessons: While he waits to give another hunt, he names up to 3 explored biomes that can still spawn a boss. If more than 3 can, he picks 3 and keeps them until that wait ends.",
+                "Lessons: While the next hunt is not ready, his message ends with the time left, like (3d) or (5h).",
                 "Lessons: The pack is a 3 to 8 base from the home and his experience, plus 50% of that base for each hunt you have finished with him, rounded.",
                 "Lessons: The first hunts are easier. Every 4 hunts, they are harder. It lies 200 to 500 blocks north, south, east, or west, plus 33% of that for each of those hunts, rounded.",
                 "Lessons: He only sends creatures from the dimension where he lives.",

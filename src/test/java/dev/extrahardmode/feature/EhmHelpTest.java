@@ -242,6 +242,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("one of each brewing ingredient"));
         assertTrue(String.join(" ", lines).contains("every 30 Minecraft days"));
         assertTrue(String.join(" ", lines).contains("keeps them until that wait ends"));
+        assertTrue(String.join(" ", lines).contains("his message ends with the time left"));
         assertTrue(String.join(" ", lines).contains("near here"));
         assertTrue(String.join(" ", lines).contains("triple experience"));
         assertTrue(String.join(" ", lines).contains("5 times the health"));
@@ -375,6 +376,7 @@ class EhmHelpTest {
         assertTrue(all.contains("while those emeralds last"));
         assertTrue(all.contains("no experience to you or to the resident"));
         assertTrue(all.contains("every 30 Minecraft days"));
+        assertTrue(all.contains("his message ends with the time left"));
         assertTrue(all.contains("near here"));
         assertTrue(all.contains("triple experience"));
         assertTrue(all.contains("line of sight"));

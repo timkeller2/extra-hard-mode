@@ -1007,7 +1007,33 @@ public final class WiseLessons {
         if (hint.biomes().isEmpty()) {
             return;
         }
-        player.sendSystemMessage(bossBiomeLine(hint.biomes()));
+        player.sendSystemMessage(withCooldown(bossBiomeLine(hint.biomes()), cooldownLabel(level, assignedDay)));
+    }
+
+    /** Days or hours until this teacher's next hunt. Empty when that hunt is ready. */
+    public static String huntCooldownLabel(ServerPlayer player, String teacherId, ServerLevel level) {
+        if (player == null || level == null || teacherId == null) {
+            return "";
+        }
+        WiseLessonRules.Lesson lesson = find(boardOf(player), teacherId);
+        if (lesson == null || WiseLessonRules.offerDue(lesson.assignedDay(), AntiFarming.overworldDay(level))) {
+            return "";
+        }
+        return WiseLessonRules.cooldownLabel(lesson.assignedDay(), level.getOverworldClockTime());
+    }
+
+    private static String cooldownLabel(ServerLevel level, long assignedDay) {
+        if (level == null) {
+            return "";
+        }
+        return WiseLessonRules.cooldownLabel(assignedDay, level.getOverworldClockTime());
+    }
+
+    private static Component withCooldown(Component message, String cooldown) {
+        if (message == null || cooldown == null || cooldown.isEmpty()) {
+            return message;
+        }
+        return message.copy().append(Component.literal(" " + cooldown));
     }
 
     /** Visited biomes that can host a biome boss, in the order they were explored. */

@@ -296,6 +296,27 @@ public final class WiseLessonRules {
         return today >= assignedDay + INTERVAL_DAYS;
     }
 
+    /**
+     * Time until the next hunt. {@code (3d)} while a day or more remains, then {@code (5h)}.
+     * Empty once that day has started, and when there is no assigned day.
+     */
+    public static String cooldownLabel(long assignedDay, long clockTime) {
+        if (assignedDay < 0L) {
+            return "";
+        }
+        long now = Math.max(0L, clockTime);
+        long left = (assignedDay + INTERVAL_DAYS) * MissionTimerRules.TICKS_PER_DAY - now;
+        if (left <= 0L) {
+            return "";
+        }
+        long days = left / MissionTimerRules.TICKS_PER_DAY;
+        if (days >= 1L) {
+            return "(" + days + "d)";
+        }
+        long hours = (left % MissionTimerRules.TICKS_PER_DAY) / MissionTimerRules.TICKS_PER_HOUR;
+        return "(" + hours + "h)";
+    }
+
     /** Day window only. A negative assigned day has not been given. */
     public static boolean expired(long assignedDay, long today) {
         if (assignedDay < 0L) {

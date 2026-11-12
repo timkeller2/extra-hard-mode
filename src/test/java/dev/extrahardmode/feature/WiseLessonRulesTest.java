@@ -132,6 +132,12 @@ class WiseLessonRulesTest {
         assertFalse(WiseLessonRules.expired(10, 23));
         assertTrue(WiseLessonRules.expired(10, 24));
         assertFalse(WiseLessonRules.offerDue(10, 24));
+        assertEquals("(3d)", WiseLessonRules.cooldownLabel(10, 37L * 24000L));
+        assertEquals("(5h)", WiseLessonRules.cooldownLabel(10, 40L * 24000L - 5000L));
+        assertEquals("(0h)", WiseLessonRules.cooldownLabel(10, 40L * 24000L - 1L));
+        assertEquals("(30d)", WiseLessonRules.cooldownLabel(10, 10L * 24000L));
+        assertEquals("", WiseLessonRules.cooldownLabel(10, 40L * 24000L));
+        assertEquals("", WiseLessonRules.cooldownLabel(-1, 0L));
         WiseLessonRules.Lesson open = hunt();
         assertSame(open, WiseLessonRules.endIfExpired(open, 23));
         WiseLessonRules.Lesson ended = WiseLessonRules.endIfExpired(open, 24);
