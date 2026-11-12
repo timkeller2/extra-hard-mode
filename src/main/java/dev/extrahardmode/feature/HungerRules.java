@@ -7,6 +7,8 @@ public final class HungerRules {
     /** 80 exhaustion / 600s: a full bar with no saturation lasts 10 minutes. */
     public static final float DEFAULT_MOVING_EXHAUSTION_PER_SECOND = 4.0F / 30.0F;
     public static final int DEFAULT_FOOD_HISTORY = 7;
+    /** One slice of a cake block. Every slice is this same food. */
+    public static final String CAKE_SLICE_FOOD = "minecraft:cake";
     public static final int UNIQUE_WINDOW_EXPERIENCE = 3;
     public static final int TIRED_STREAK = 5;
     public static final int SICK_STREAK = 7;

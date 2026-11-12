@@ -158,6 +158,7 @@ def build():
             "A food you have not eaten in your last 7 meals gives +1 hunger, or +1 saturation if the bar is already full. "
             "Seven different foods in the last 7 meals gives another +1 hunger, +1 saturation, and 3 experience, "
             "and it can happen again on later meals that keep that streak. "
+            "A slice of cake counts as its own food. "
             "The same food 5 times in the last 7 meals restores less; 7 of the last 7 restores even less. "
             "A meal still gives at least 1 hunger, and saturation does not fall. "
             "Foods in an inventory, chest, bundle, shop, hotbar, or on the cursor show a small mark in the top right. A black X means very sick of it, and a brown down mark means sick of it. Those follow the same-food penalty, so Well Fed delays them. A brown number is how many meals ago you ate a food in the last 7. A yellow number is how many meals ago you last ate that food. It is a slight craving when eating it weakens the run, and within grace when the repeat still fits. A green minus maintains the Well Fed run. It is the oldest meal of that run, and that food appears only once. Above the offhand, a mana crystal shows Base Mana Cap when it is above 0, and a chicken above that shows your Well Fed level when it is above 0. A green up mark is a craving. Repeats fill the extra slots, so the oldest meals drop out of the variety run, and eating them builds it back up. "

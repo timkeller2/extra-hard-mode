@@ -27,6 +27,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("saturation"));
         assertTrue(String.join(" ", lines).contains("Well Fed"));
         assertTrue(String.join(" ", lines).contains("at least 1 hunger"));
+        assertTrue(String.join(" ", lines).contains("A slice of cake counts as its own food"));
         assertTrue(String.join(" ", lines).contains("small mark in the top right"));
         assertTrue(String.join(" ", lines).contains("stack on the cursor"));
         assertTrue(String.join(" ", lines).contains("brown number is how many meals ago"));

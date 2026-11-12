@@ -3,6 +3,7 @@ package dev.extrahardmode.client;
 import dev.extrahardmode.feature.FoodCraving;
 import dev.extrahardmode.feature.FoodCravingRules;
 import dev.extrahardmode.feature.Hunger;
+import dev.extrahardmode.feature.HungerRules;
 import dev.extrahardmode.network.ClientboundFoodCravingPayload;
 import dev.extrahardmode.network.ClientboundSyncPayload;
 import java.util.ArrayList;
@@ -118,11 +119,17 @@ public final class FoodCravingOutline {
     }
 
     static FoodCraving craving(ItemStack stack) {
-        if (!visible() || stack == null || stack.isEmpty() || stack.get(DataComponents.FOOD) == null) {
+        if (!visible() || stack == null || stack.isEmpty() || !countsAsFood(stack)) {
             return null;
         }
         ClientboundFoodCravingPayload payload = ExtraHardModeClient.lastFoodCraving();
         return FoodCravingRules.classify(payload.history(), payload.wellFed(), Hunger.itemId(stack));
+    }
+
+    /** Cake has no food component. A slice is still recorded as {@code minecraft:cake}. */
+    static boolean countsAsFood(ItemStack stack) {
+        return stack.get(DataComponents.FOOD) != null
+                || HungerRules.CAKE_SLICE_FOOD.equals(Hunger.itemId(stack));
     }
 
     static boolean visible() {

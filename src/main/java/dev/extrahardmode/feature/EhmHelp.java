@@ -266,6 +266,7 @@ public final class EhmHelp {
                         "Hunger: Each point of weight over your limit raises saturation loss by 2%.",
                         "Hunger: A food not in your last 7 eaten gives +1 hunger, or +1 saturation if you are already full.",
                         "Hunger: Seven different foods in the last 7 meals gives an extra +1 hunger and saturation and 3 experience.",
+                        "Hunger: A slice of cake counts as its own food.",
                         "Hunger: The same food 5 times in the last 7 meals restores less; 7 of the last 7 restores even less. A meal still gives at least 1 hunger, and saturation does not fall.",
                         "Hunger: Foods in an inventory or chest, including inside a bundle or a shop, show a small mark in the top right. The hotbar and a stack on the cursor do too.",
                         "Hunger: A black X means very sick of it, and a brown down mark means sick of it.",

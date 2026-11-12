@@ -109,6 +109,11 @@ class HungerRulesTest {
     }
 
     @Test
+    void aCakeSliceIsItsOwnFood() {
+        assertEquals("minecraft:cake", HungerRules.CAKE_SLICE_FOOD);
+    }
+
+    @Test
     void repeatFoodPenaltyStartsAtFiveAndWorsensAtSeven() {
         assertEquals(0, HungerRules.repeatFoodPenalty(1));
         assertEquals(0, HungerRules.repeatFoodPenalty(4));
