@@ -19,6 +19,9 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ColorParticleOption;
+import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -54,6 +57,9 @@ public final class Zombies implements FeatureModule {
     public static final Identifier SPEED_MOD = ExtraHardModeMod.id("zombie_speed");
     public static final Identifier DAMAGE_MOD = ExtraHardModeMod.id("zombie_damage");
     public static final Identifier SCALE_MOD = ExtraHardModeMod.id("zombie_scale");
+    public static final Identifier HEAD_SPEED_MOD = ExtraHardModeMod.id("zombie_head_speed");
+    public static final Identifier HEAD_DAMAGE_MOD = ExtraHardModeMod.id("zombie_head_damage");
+    private static final DustParticleOptions HEAD_SPARK = new DustParticleOptions(0xFF2020, 0.7F);
 
     private static final Map<Identifier, ArrayDeque<RespawnZombieTask>> PENDING = new ConcurrentHashMap<>();
 
@@ -144,6 +150,9 @@ public final class Zombies implements FeatureModule {
         if (Boolean.TRUE.equals(mob.getAttachedOrElse(EhmAttachments.EHM_BIOME_BOSS, Boolean.FALSE))) {
             return;
         }
+        if (Boolean.TRUE.equals(mob.getAttachedOrElse(EhmAttachments.EHM_HEAD_ZOMBIE, Boolean.FALSE))) {
+            grantHeadReturn(mob);
+        }
         AttributeInstance speed = mob.getAttribute(Attributes.MOVEMENT_SPEED);
         AttributeInstance damage = mob.getAttribute(Attributes.ATTACK_DAMAGE);
         AttributeInstance scale = mob.getAttribute(Attributes.SCALE);
@@ -169,6 +178,54 @@ public final class Zombies implements FeatureModule {
             return;
         }
         addVariance(scale, SCALE_MOD, ZombieRules.scaleDelta(existing.amount()));
+    }
+
+    /**
+     * A zombie that rose from a head. Half health is set by the respawn task.
+     * Damage is 30% higher and speed is 20% higher than the speed roll already gave it.
+     */
+    public static void grantHeadReturn(Mob mob) {
+        if (!isOrdinaryZombie(mob)) {
+            return;
+        }
+        mob.setAttached(EhmAttachments.EHM_HEAD_ZOMBIE, Boolean.TRUE);
+        AttributeInstance speed = mob.getAttribute(Attributes.MOVEMENT_SPEED);
+        AttributeInstance damage = mob.getAttribute(Attributes.ATTACK_DAMAGE);
+        addTotal(speed, HEAD_SPEED_MOD, ZombieRules.HEAD_SPEED_BONUS);
+        addTotal(damage, HEAD_DAMAGE_MOD, ZombieRules.HEAD_DAMAGE_BONUS);
+    }
+
+    /** Red sparkle at both hands while a head-risen zombie is alive. */
+    public static void sparkleHands(Zombie zombie, ServerLevel level) {
+        if (zombie == null || level == null || !zombie.isAlive() || !enabled(level)) {
+            return;
+        }
+        if (!Boolean.TRUE.equals(zombie.getAttachedOrElse(EhmAttachments.EHM_HEAD_ZOMBIE, Boolean.FALSE))) {
+            return;
+        }
+        for (ZombieRules.Hand hand : ZombieRules.hands(zombie.getYRot(), zombie.getBbHeight())) {
+            double x = zombie.getX() + hand.x();
+            double y = zombie.getY() + hand.y();
+            double z = zombie.getZ() + hand.z();
+            level.sendParticles(HEAD_SPARK, x, y, z, 1, 0.04, 0.05, 0.04, 0.012);
+            level.sendParticles(
+                    ColorParticleOption.create(ParticleTypes.ENTITY_EFFECT, 1.0F, 0.15F, 0.12F),
+                    x,
+                    y,
+                    z,
+                    1,
+                    0.02,
+                    0.03,
+                    0.02,
+                    0.0);
+        }
+    }
+
+    private static void addTotal(AttributeInstance instance, Identifier id, double amount) {
+        if (instance == null || instance.hasModifier(id)) {
+            return;
+        }
+        instance.addPermanentModifier(new AttributeModifier(id, amount, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
     }
 
     private static void addVariance(AttributeInstance instance, Identifier id, double amount) {

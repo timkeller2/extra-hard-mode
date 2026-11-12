@@ -183,6 +183,10 @@
   "tougher.miner.none": "I know of no vein nearby.",
   "tougher.miner.small": "This house is too small for me to name an ore.",
   "tougher.miner.elsewhere": "%s: %s is in another dimension.",
+  "tougher.miner.price": "%s: %s. Hold %s emeralds.",
+  "tougher.miner.price_one": "%s: %s. Hold 1 emerald.",
+  "tougher.miner.fee": "You pay %s emeralds.",
+  "tougher.miner.fee_one": "You pay 1 emerald.",
   "tougher.message.chunk_clear": "This area is being cleared for the alliance!",
   "tougher.message.chunk_peace": "The alliance holds this ground.",
   "tougher.message.explore_biome": "You discovered %s. +%s experience.",
@@ -355,6 +359,6 @@
   "tougher.tooltip.food_maintain": "Maintaining",
   "tougher.tooltip.food_great": "Craving",
   "tougher.tooltip.food_normal": "Eaten %s",
-  "tougher.tooltip.mana_learning": "Mana learning %s",
+  "tougher.tooltip.mana_learning": "Base Mana Cap %s",
   "tougher.tooltip.well_fed_level": "Well Fed %s"
 }

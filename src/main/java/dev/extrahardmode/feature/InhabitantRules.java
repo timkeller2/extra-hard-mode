@@ -841,6 +841,8 @@ public final class InhabitantRules {
                 "Residents: A cauldron favors a brewer, and a brewer can come to a 12-point home.",
                 "Residents: An old miner can come to a 12-point home.",
                 "Ore leads: Speak to an old miner for a lead. He does not keep a shop. Every 7 Minecraft days he names the largest vein in his chunk and the eight around it.",
+                "Ore leads: The fee is 1 emerald for each 8 house points, rounded down. Without those emeralds in hand he names the ore and the fee.",
+                "Ore leads: Hold that many emeralds and he takes them and names the direction. The 7 days start then.",
                 "Ore leads: He adds more of that ore beside the vein. He names only ores found in his chunk and the eight around it.",
                 "Ore leads: The list is the easiest of those ores he has not finished. Its length is the home's points plus finished leads with him, divided by 5, rounded up.",
                 "Ore leads: Finishing an easier ore lets the next harder ore there join the list. He will not repeat an ore until every ore there has been named.",

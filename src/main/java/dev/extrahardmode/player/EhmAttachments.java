@@ -211,6 +211,11 @@ public final class EhmAttachments {
             ExtraHardModeMod.id("reanimate_count"),
             builder -> builder.persistent(Codec.INT).initializer(() -> 0));
 
+    /** Rose from a zombie head. Keeps the extra damage, speed, and red hand sparkle. */
+    public static final AttachmentType<Boolean> EHM_HEAD_ZOMBIE = AttachmentRegistry.create(
+            ExtraHardModeMod.id("head_zombie"),
+            builder -> builder.persistent(Codec.BOOL).initializer(() -> Boolean.FALSE));
+
     public static final AttachmentType<Integer> EHM_BLAZE_SPLIT =
             AttachmentRegistry.create(ExtraHardModeMod.id("blaze_split"), builder -> builder.initializer(() -> 0));
 
@@ -620,7 +625,8 @@ public final class EhmAttachments {
                                     .forGetter(OldMinerRules.Lead::expireDay),
                             Codec.LONG
                                     .optionalFieldOf("next_day", -1L)
-                                    .forGetter(OldMinerRules.Lead::nextDay))
+                                    .forGetter(OldMinerRules.Lead::nextDay),
+                            Codec.INT.optionalFieldOf("fee", 0).forGetter(OldMinerRules.Lead::fee))
                     .apply(instance, OldMinerRules.Lead::new));
 
     public static final Codec<InhabitantRules.HouseHint> HOUSE_HINT_CODEC = RecordCodecBuilder.create(

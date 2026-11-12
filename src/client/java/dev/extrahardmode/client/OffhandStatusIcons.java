@@ -45,7 +45,7 @@ public final class OffhandStatusIcons {
             String label = OffhandStatusIconRules.capacityLabel(capacity);
             drawNumber(graphics, minecraft.font, label, x, y);
             if (OffhandStatusIconRules.hit(x, y, localX, localY)) {
-                tooltip(graphics, minecraft.font, "tougher.tooltip.mana_learning", "Mana learning %s", label, mouseX, mouseY);
+                tooltip(graphics, minecraft.font, "tougher.tooltip.mana_learning", "Base Mana Cap %s", label, mouseX, mouseY);
             }
         }
         int chickenRow = OffhandStatusIconRules.chickenRow(showCapacity, showWellFed);

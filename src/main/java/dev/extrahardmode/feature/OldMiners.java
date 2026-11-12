@@ -21,6 +21,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -112,6 +114,16 @@ public final class OldMiners {
                 return;
             }
         }
+        if (lead.quoted()) {
+            lead = collect(player, lead, today);
+            if (paidAndHere(lead, dimension, player)) {
+                tellFound(player, lead.ore());
+                lead = lead.completed();
+            }
+            put(board, index, lead);
+            save(player, board, today);
+            return;
+        }
         if (lead.nextDay() > today) {
             tellWait(player, today, lead.nextDay());
             put(board, index, lead);
@@ -125,15 +137,47 @@ public final class OldMiners {
             return;
         }
         lead = assign(player, level, home, lead, today, dimension);
-        if (lead.active()
-                && dimension.equals(lead.dimension())
-                && OldMinerRules.arrived(
-                        player.getBlockX(), player.getBlockY(), player.getBlockZ(), lead.x(), lead.y(), lead.z())) {
+        if (lead.quoted()) {
+            lead = collect(player, lead, today);
+        }
+        if (paidAndHere(lead, dimension, player)) {
             tellFound(player, lead.ore());
             lead = lead.completed();
         }
         put(board, index, lead);
         save(player, board, today);
+    }
+
+    /** Emeralds in the main hand buy the direction. A short stack leaves the same vein waiting. */
+    private static OldMinerRules.Lead collect(ServerPlayer player, OldMinerRules.Lead lead, long today) {
+        int fee = lead.fee();
+        ItemStack hand = player.getMainHandItem();
+        if (!OldMinerRules.holdsLeadFee(hand.is(Items.EMERALD), hand.getCount(), fee)) {
+            tellPrice(player, lead);
+            return lead;
+        }
+        if (fee > 0) {
+            hand.shrink(fee);
+            if (fee == 1) {
+                tell(player, "tougher.miner.fee_one", "You pay 1 emerald.");
+            } else {
+                tell(
+                        player,
+                        "tougher.miner.fee",
+                        "You pay %s emeralds.",
+                        Component.literal(Integer.toString(fee)));
+            }
+        }
+        OldMinerRules.Lead paid = lead.paid(today);
+        tellLead(player, paid, player.getBlockX(), player.getBlockY(), player.getBlockZ());
+        return paid;
+    }
+
+    private static boolean paidAndHere(OldMinerRules.Lead lead, String dimension, ServerPlayer player) {
+        return lead.active()
+                && dimension.equals(lead.dimension())
+                && OldMinerRules.arrived(
+                        player.getBlockX(), player.getBlockY(), player.getBlockZ(), lead.x(), lead.y(), lead.z());
     }
 
     private static OldMinerRules.Lead assign(
@@ -166,10 +210,15 @@ public final class OldMiners {
             }
             OldMinerRules.Spot anchor = OldMinerRules.anchor(vein, bedX, bedY, bedZ);
             grow(level, vein, offer.ore(), offer.poolSize());
-            OldMinerRules.Lead assigned = lead.withProgress(successes, offer.finished())
-                    .assigned(offer.ore(), anchor.x(), anchor.y(), anchor.z(), dimension, today);
-            tellLead(player, assigned, player.getBlockX(), player.getBlockY(), player.getBlockZ());
-            return assigned;
+            return lead.withProgress(successes, offer.finished())
+                    .quoted(
+                            offer.ore(),
+                            anchor.x(),
+                            anchor.y(),
+                            anchor.z(),
+                            dimension,
+                            today,
+                            OldMinerRules.leadFee(home.score()));
         }
         tell(player, "tougher.miner.none", "I know of no vein nearby.");
         return lead.waiting(today);
@@ -317,6 +366,23 @@ public final class OldMiners {
         } else {
             board.set(index, lead);
         }
+    }
+
+    private static void tellPrice(ServerPlayer player, OldMinerRules.Lead lead) {
+        int fee = lead.fee();
+        Component name = Component.literal(lead.minerName());
+        Component ore = Component.literal(OldMinerRules.oreTitle(lead.ore()));
+        if (fee == 1) {
+            tell(player, "tougher.miner.price_one", "%s: %s. Hold 1 emerald.", name, ore);
+            return;
+        }
+        tell(
+                player,
+                "tougher.miner.price",
+                "%s: %s. Hold %s emeralds.",
+                name,
+                ore,
+                Component.literal(Integer.toString(fee)));
     }
 
     private static void tellLead(ServerPlayer player, OldMinerRules.Lead lead, int px, int py, int pz) {

@@ -116,6 +116,42 @@ class OldMinerRulesTest {
     }
 
     @Test
+    void theFeeIsOneEmeraldForEachEightHousePoints() {
+        assertEquals(8, OldMinerRules.FEE_POINTS);
+        assertEquals(0, OldMinerRules.leadFee(0));
+        assertEquals(0, OldMinerRules.leadFee(-4));
+        assertEquals(0, OldMinerRules.leadFee(7));
+        assertEquals(1, OldMinerRules.leadFee(8));
+        assertEquals(1, OldMinerRules.leadFee(12));
+        assertEquals(1, OldMinerRules.leadFee(15));
+        assertEquals(2, OldMinerRules.leadFee(16));
+        assertEquals(3, OldMinerRules.leadFee(24));
+        assertEquals(4, OldMinerRules.leadFee(38));
+        assertTrue(OldMinerRules.holdsLeadFee(false, 0, 0));
+        assertFalse(OldMinerRules.holdsLeadFee(false, 5, 1));
+        assertFalse(OldMinerRules.holdsLeadFee(true, 1, 2));
+        assertTrue(OldMinerRules.holdsLeadFee(true, 2, 2));
+        assertEquals("Jack: Iron. Hold 1 emerald.", OldMinerRules.priceLine("Jack", "iron", 1));
+        assertEquals("Jack: Iron. Hold 2 emeralds.", OldMinerRules.priceLine("Jack", "iron", 2));
+        assertEquals("You pay 1 emerald.", OldMinerRules.paidLine(1));
+        assertEquals("You pay 3 emeralds.", OldMinerRules.paidLine(3));
+        OldMinerRules.Lead quote = OldMinerRules.Lead.blank("miner", "Jack")
+                .quoted("iron", 4, 5, 6, "minecraft:overworld", 10, 2);
+        assertTrue(quote.quoted());
+        assertFalse(quote.active());
+        assertEquals(2, quote.fee());
+        assertEquals(-1L, quote.expireDay());
+        assertTrue(OldMinerRules.hudLines(List.of(quote), "minecraft:overworld", 0, 0, 0, 10, 0L).isEmpty());
+        OldMinerRules.Lead paid = quote.paid(12);
+        assertTrue(paid.active());
+        assertFalse(paid.quoted());
+        assertEquals(19L, paid.expireDay());
+        assertEquals(19L, paid.nextDay());
+        assertEquals(2, paid.fee());
+        assertEquals("Jack: Iron East", OldMinerRules.leadLine(paid.minerName(), paid.ore(), "East"));
+    }
+
+    @Test
     void expiryWithoutAVisitLeavesTheOreAvailable() {
         OldMinerRules.Lead active = OldMinerRules.Lead.blank("miner", "Jack")
                 .assigned("iron", 4, 5, 6, "minecraft:overworld", 10);

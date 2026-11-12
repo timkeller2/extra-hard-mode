@@ -35,7 +35,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("within grace when the repeat still fits"));
         assertTrue(String.join(" ", lines).contains("green minus maintains"));
         assertTrue(String.join(" ", lines).contains("Above the offhand"));
-        assertTrue(String.join(" ", lines).contains("mana crystal shows mana learning"));
+        assertTrue(String.join(" ", lines).contains("mana crystal shows Base Mana Cap"));
         assertTrue(String.join(" ", lines).contains("chicken above that shows your Well Fed level"));
         assertTrue(String.join(" ", lines).contains("appears only once"));
         assertTrue(String.join(" ", lines).contains("green up mark is a craving"));
@@ -291,6 +291,8 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("1000 blocks or farther"));
         assertTrue(String.join(" ", lines).contains("look smaller"));
         assertTrue(String.join(" ", lines).contains("Shields absorb 100%"));
+        assertTrue(String.join(" ", lines).contains("rises from its head"));
+        assertTrue(String.join(" ", lines).contains("hands sparkle red"));
         assertTrue(String.join(" ", lines).contains("one-third as long"));
         assertTrue(String.join(" ", lines).contains("500 blocks or more"));
         assertTrue(String.join(" ", lines).contains("80 blocks"));
@@ -350,6 +352,8 @@ class EhmHelpTest {
         assertTrue(all.contains("Alden the Jeweler"));
         assertTrue(all.contains("Jack: Iron East"));
         assertTrue(all.contains("An old miner can come to a 12-point home"));
+        assertTrue(all.contains("1 emerald for each 8 house points"));
+        assertTrue(all.contains("Hold that many emeralds"));
         assertTrue(all.contains("eight around it"));
         assertTrue(all.contains("divided by 5, rounded up"));
         assertTrue(all.contains("next harder ore there"));

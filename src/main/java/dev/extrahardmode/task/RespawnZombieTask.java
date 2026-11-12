@@ -1,6 +1,7 @@
 package dev.extrahardmode.task;
 
 import dev.extrahardmode.api.event.ZombieRespawnEvent;
+import dev.extrahardmode.feature.monster.ZombieRules;
 import dev.extrahardmode.feature.monster.Zombies;
 import dev.extrahardmode.module.EntityHelper;
 import java.util.UUID;
@@ -76,10 +77,11 @@ public final class RespawnZombieTask {
             return;
         }
         zombie.snapTo(origin.x, origin.y, origin.z);
-        zombie.setHealth(zombie.getMaxHealth() / 2.0F);
         EntityHelper.markLootless(zombie);
         EntityHelper.setReanimateCount(zombie, reanimateCount);
         Zombies.applySpeedVariance(zombie);
+        Zombies.grantHeadReturn(zombie);
+        zombie.setHealth(ZombieRules.headHealth(zombie.getMaxHealth()));
         ServerPlayer target = targetId == null ? null : level.getServer().getPlayerList().getPlayer(targetId);
         if (target != null && target.isAlive() && target.level() == level) {
             zombie.setTarget(target);

@@ -19,6 +19,8 @@ import java.util.Set;
  */
 public final class OldMinerRules {
     public static final int INTERVAL_DAYS = 7;
+    /** One emerald in the main hand for each this many house points, rounded down. */
+    public static final int FEE_POINTS = 8;
     public static final int ARRIVE_BLOCKS = 3;
     public static final int ARRIVE_DIST_SQR = ARRIVE_BLOCKS * ARRIVE_BLOCKS;
     public static final int OFFER_DIVISOR = 5;
@@ -40,6 +42,39 @@ public final class OldMinerRules {
     };
 
     private OldMinerRules() {}
+
+    /** One emerald for each {@link #FEE_POINTS} house points, rounded down. A short house is free. */
+    public static int leadFee(int housePoints) {
+        if (housePoints <= 0) {
+            return 0;
+        }
+        return housePoints / FEE_POINTS;
+    }
+
+    /** A fee of zero is already paid. Otherwise the main hand must be emeralds enough for {@code fee}. */
+    public static boolean holdsLeadFee(boolean emeraldItem, int count, int fee) {
+        if (fee <= 0) {
+            return true;
+        }
+        return emeraldItem && count >= fee;
+    }
+
+    /** What he says before the emeralds are in hand. The direction stays back. */
+    public static String priceLine(String name, String family, int fee) {
+        String who = name == null || name.isBlank() ? "Miner" : name.trim();
+        int cost = Math.max(0, fee);
+        String hold = cost == 1 ? "Hold 1 emerald." : "Hold " + cost + " emeralds.";
+        return who + ": " + oreTitle(family) + ". " + hold;
+    }
+
+    /** Shown when the emeralds leave the main hand. */
+    public static String paidLine(int fee) {
+        int cost = Math.max(0, fee);
+        if (cost == 1) {
+            return "You pay 1 emerald.";
+        }
+        return "You pay " + cost + " emeralds.";
+    }
 
     /** Ceiling of {@code (house + successes) / 5}, capped at the ore list. Zero when that sum is not positive. */
     public static int offerCount(int houseValue, int successes) {
@@ -404,7 +439,8 @@ public final class OldMinerRules {
 
     /**
      * One player's lead from one old miner. {@code finished} is the cycle of ores already completed.
-     * {@code ore} is empty when no lead is active. The next offer waits until {@code nextDay} even if this one ends early.
+     * {@code ore} is empty when no vein is chosen. A quoted vein keeps a negative expire day until the fee is paid.
+     * The next offer waits until {@code nextDay} even if this one ends early.
      */
     public record Lead(
             String minerId,
@@ -418,7 +454,8 @@ public final class OldMinerRules {
             String dimension,
             long givenDay,
             long expireDay,
-            long nextDay) {
+            long nextDay,
+            int fee) {
         public Lead {
             minerId = minerId == null ? "" : minerId;
             minerName = minerName == null ? "" : minerName;
@@ -426,14 +463,21 @@ public final class OldMinerRules {
             ore = ore == null ? "" : ore;
             dimension = dimension == null ? "" : dimension;
             successes = Math.max(0, successes);
+            fee = Math.max(0, fee);
         }
 
         public static Lead blank(String minerId, String minerName) {
-            return new Lead(minerId, minerName, 0, "", "", 0, 0, 0, "", -1L, -1L, -1L);
+            return new Lead(minerId, minerName, 0, "", "", 0, 0, 0, "", -1L, -1L, -1L, 0);
         }
 
+        /** A paid lead. A quoted vein keeps {@code expireDay} negative until the emeralds are paid. */
         public boolean active() {
-            return !ore.isEmpty();
+            return !ore.isEmpty() && expireDay >= 0L;
+        }
+
+        /** The ore is chosen and the direction is still unpaid. */
+        public boolean quoted() {
+            return !ore.isEmpty() && expireDay < 0L;
         }
 
         public List<String> finishedOres() {
@@ -442,7 +486,7 @@ public final class OldMinerRules {
 
         public Lead named(String minerId, String minerName) {
             return new Lead(
-                    minerId, minerName, successes, finished, ore, x, y, z, dimension, givenDay, expireDay, nextDay);
+                    minerId, minerName, successes, finished, ore, x, y, z, dimension, givenDay, expireDay, nextDay, fee);
         }
 
         public Lead withProgress(int successes, List<String> finishedOres) {
@@ -458,17 +502,46 @@ public final class OldMinerRules {
                     "",
                     -1L,
                     -1L,
-                    nextDay);
+                    nextDay,
+                    0);
         }
 
         public Lead assigned(String ore, int x, int y, int z, String dimension, long today) {
             long due = today + INTERVAL_DAYS;
-            return new Lead(minerId, minerName, successes, finished, ore == null ? "" : ore, x, y, z, dimension, today, due, due);
+            return new Lead(
+                    minerId, minerName, successes, finished, ore == null ? "" : ore, x, y, z, dimension, today, due, due, fee);
+        }
+
+        /** The vein is chosen. The direction waits until {@link #paid}. */
+        public Lead quoted(String ore, int x, int y, int z, String dimension, long today, int fee) {
+            return new Lead(
+                    minerId,
+                    minerName,
+                    successes,
+                    finished,
+                    ore == null ? "" : ore,
+                    x,
+                    y,
+                    z,
+                    dimension == null ? "" : dimension,
+                    today,
+                    -1L,
+                    nextDay,
+                    fee);
+        }
+
+        /** The emeralds were in hand. The 7 days start now. */
+        public Lead paid(long today) {
+            if (!quoted()) {
+                return this;
+            }
+            long due = today + INTERVAL_DAYS;
+            return new Lead(minerId, minerName, successes, finished, ore, x, y, z, dimension, today, due, due, fee);
         }
 
         public Lead waiting(long today) {
             return new Lead(
-                    minerId, minerName, successes, finished, "", 0, 0, 0, "", givenDay, -1L, today + INTERVAL_DAYS);
+                    minerId, minerName, successes, finished, "", 0, 0, 0, "", givenDay, -1L, today + INTERVAL_DAYS, 0);
         }
 
         /** The player reached the vein. That ore stays finished for this cycle. */
@@ -490,7 +563,8 @@ public final class OldMinerRules {
                     "",
                     givenDay,
                     -1L,
-                    nextDay);
+                    nextDay,
+                    0);
         }
 
         /** Seven days passed without a visit. The ore is not finished, so it can be offered again. */
@@ -498,7 +572,7 @@ public final class OldMinerRules {
             if (!active()) {
                 return this;
             }
-            return new Lead(minerId, minerName, successes, finished, "", 0, 0, 0, "", givenDay, -1L, nextDay);
+            return new Lead(minerId, minerName, successes, finished, "", 0, 0, 0, "", givenDay, -1L, nextDay, 0);
         }
     }
 
