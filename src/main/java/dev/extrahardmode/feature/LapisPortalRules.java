@@ -132,9 +132,15 @@ public final class LapisPortalRules {
         return kinds;
     }
 
-    /** 100 blocks for one kind, 200 for two, and 300 for all three. An empty chest still prices at 100. */
+    /** Blocks one item covers when the chest holds all three fuel kinds. */
+    public static final int THREE_KINDS_BLOCKS = 400;
+
+    /** 100 blocks for one kind, 200 for two, and 400 for all three. An empty chest still prices at 100. */
     public static int blocksPerFuel(int kinds) {
         int present = Math.max(1, Math.min(FUELS.size(), kinds));
+        if (present >= FUELS.size()) {
+            return THREE_KINDS_BLOCKS;
+        }
         return BLOCKS_PER_FUEL * present;
     }
 

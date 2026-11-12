@@ -272,7 +272,9 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("remembered when the last lapis block"));
         assertTrue(String.join(" ", lines).contains("100 blocks per item"));
         assertTrue(String.join(" ", lines).contains("Two kinds cover 200"));
-        assertTrue(String.join(" ", lines).contains("All three cover 300"));
+        assertTrue(String.join(" ", lines).contains("All three cover 400"));
+        assertTrue(String.join(" ", lines).contains("1 point of weight"));
+        assertTrue(String.join(" ", lines).contains("All three cover 4."));
         assertTrue(String.join(" ", lines).contains("rounded up, and at least 1"));
         assertTrue(String.join(" ", lines).contains("largest stack first"));
         assertTrue(String.join(" ", lines).contains("amethyst shards"));
@@ -542,9 +544,11 @@ class EhmHelpTest {
         assertTrue(buildingText.contains("the direction you face"));
         assertTrue(String.join(" ", EhmHelp.resolve("hunger").lines()).contains("raises saturation loss by 2%"));
         String portalText = String.join(" ", EhmHelp.resolve("portals").lines());
-        assertTrue(portalText.contains("100 points of weight"));
+        assertTrue(portalText.contains("1 point of weight"));
+        assertTrue(portalText.contains("2 points of weight"));
         assertTrue(portalText.contains("Two kinds cover 200"));
-        assertTrue(portalText.contains("All three cover 300"));
+        assertTrue(portalText.contains("All three cover 400"));
+        assertTrue(portalText.contains("All three cover 4."));
         assertTrue(portalText.contains("your offhand"));
         assertTrue(portalText.contains("wait 15 seconds"));
         assertTrue(portalText.contains("nobody goes and nothing is spent"));

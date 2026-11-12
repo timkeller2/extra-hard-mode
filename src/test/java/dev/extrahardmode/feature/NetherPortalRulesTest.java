@@ -11,23 +11,32 @@ import org.junit.jupiter.api.Test;
 
 class NetherPortalRulesTest {
     @Test
-    void weightUsesTheLapisFuelRange() {
+    void weightCostsOneTwoOrFourPointsPerItem() {
         assertEquals(15, NetherPortalRules.COOLDOWN_SECONDS);
         assertEquals(300, NetherPortalRules.COOLDOWN_TICKS);
+        assertEquals(1, NetherPortalRules.ONE_KIND_WEIGHT);
+        assertEquals(2, NetherPortalRules.TWO_KINDS_WEIGHT);
+        assertEquals(4, NetherPortalRules.THREE_KINDS_WEIGHT);
+        assertEquals(1, NetherPortalRules.weightPerFuel(0));
+        assertEquals(1, NetherPortalRules.weightPerFuel(1));
+        assertEquals(2, NetherPortalRules.weightPerFuel(2));
+        assertEquals(4, NetherPortalRules.weightPerFuel(3));
+        assertEquals(4, NetherPortalRules.weightPerFuel(9));
         assertEquals(0, NetherPortalRules.travelCost(0, 3));
         assertEquals(0, NetherPortalRules.travelCost(-2, 1));
         assertEquals(1, NetherPortalRules.travelCost(0.5, 1));
-        assertEquals(1, NetherPortalRules.travelCost(18, 1));
-        assertEquals(1, NetherPortalRules.travelCost(18, 2));
-        assertEquals(1, NetherPortalRules.travelCost(18, 3));
-        assertEquals(1, NetherPortalRules.travelCost(100, 1));
-        assertEquals(2, NetherPortalRules.travelCost(100.5, 1));
-        assertEquals(2, NetherPortalRules.travelCost(200, 1));
-        assertEquals(1, NetherPortalRules.travelCost(200, 2));
-        assertEquals(2, NetherPortalRules.travelCost(201, 2));
-        assertEquals(1, NetherPortalRules.travelCost(300, 3));
-        assertEquals(2, NetherPortalRules.travelCost(301, 3));
-        assertEquals(4, NetherPortalRules.travelCost(301, 1));
+        assertEquals(1, NetherPortalRules.travelCost(1, 1));
+        assertEquals(2, NetherPortalRules.travelCost(1.1, 1));
+        assertEquals(18, NetherPortalRules.travelCost(18, 1));
+        assertEquals(9, NetherPortalRules.travelCost(18, 2));
+        assertEquals(5, NetherPortalRules.travelCost(18, 3));
+        assertEquals(1, NetherPortalRules.travelCost(4, 3));
+        assertEquals(2, NetherPortalRules.travelCost(4.1, 3));
+        assertEquals(6, NetherPortalRules.travelCost(22.5, 3));
+        assertEquals(8, NetherPortalRules.travelCost(8, 0));
+        assertEquals(8, NetherPortalRules.travelCost(8, 1));
+        assertEquals(4, NetherPortalRules.travelCost(8, 2));
+        assertEquals(2, NetherPortalRules.travelCost(8, 3));
     }
 
     @Test
@@ -47,7 +56,7 @@ class NetherPortalRulesTest {
     }
 
     @Test
-    void aNormalWeightTakesOneItemFromTheLargestStack() {
+    void threeKindsSpendSixItemsForANormalLoad() {
         List<Stack> slots = List.of(
                 new Stack(0, LapisPortalRules.QUARTZ, 2),
                 new Stack(1, LapisPortalRules.REDSTONE, 5),
@@ -55,24 +64,28 @@ class NetherPortalRulesTest {
         int kinds = LapisPortalRules.fuelKinds(slots);
         assertEquals(3, kinds);
         int cost = NetherPortalRules.travelCost(22.5, kinds);
-        assertEquals(1, cost);
+        assertEquals(6, cost);
         List<Stack> paid = LapisPortalRules.pay(slots, cost);
         assertNotNull(paid);
         assertEquals(5, LapisPortalRules.total(slots, LapisPortalRules.REDSTONE));
-        assertEquals(4, LapisPortalRules.total(paid, LapisPortalRules.REDSTONE));
-        assertEquals(5, LapisPortalRules.total(paid, LapisPortalRules.AMETHYST));
-        assertEquals(2, LapisPortalRules.total(paid, LapisPortalRules.QUARTZ));
+        assertEquals(3, LapisPortalRules.total(paid, LapisPortalRules.REDSTONE));
+        assertEquals(3, LapisPortalRules.total(paid, LapisPortalRules.AMETHYST));
+        assertEquals(0, LapisPortalRules.total(paid, LapisPortalRules.QUARTZ));
     }
 
     @Test
-    void threeKindsHalveTheCostOfAHeavyLoadComparedWithOne() {
+    void threeKindsQuarterTheCostComparedWithOne() {
         List<Stack> oneKind = List.of(new Stack(2, LapisPortalRules.QUARTZ, 10));
+        List<Stack> twoKinds = List.of(
+                new Stack(2, LapisPortalRules.QUARTZ, 10),
+                new Stack(3, LapisPortalRules.REDSTONE, 1));
         List<Stack> threeKinds = List.of(
                 new Stack(2, LapisPortalRules.QUARTZ, 10),
                 new Stack(3, LapisPortalRules.REDSTONE, 1),
                 new Stack(40, LapisPortalRules.AMETHYST, 1));
-        assertEquals(4, NetherPortalRules.travelCost(301, LapisPortalRules.fuelKinds(oneKind)));
-        assertEquals(2, NetherPortalRules.travelCost(301, LapisPortalRules.fuelKinds(threeKinds)));
+        assertEquals(8, NetherPortalRules.travelCost(8, LapisPortalRules.fuelKinds(oneKind)));
+        assertEquals(4, NetherPortalRules.travelCost(8, LapisPortalRules.fuelKinds(twoKinds)));
+        assertEquals(2, NetherPortalRules.travelCost(8, LapisPortalRules.fuelKinds(threeKinds)));
         List<Stack> paid = LapisPortalRules.pay(threeKinds, 2);
         assertNotNull(paid);
         assertEquals(9, LapisPortalRules.total(paid, LapisPortalRules.QUARTZ));

@@ -97,8 +97,9 @@ class LapisPortalRulesTest {
         assertEquals(100, LapisPortalRules.blocksPerFuel(0));
         assertEquals(100, LapisPortalRules.blocksPerFuel(1));
         assertEquals(200, LapisPortalRules.blocksPerFuel(2));
-        assertEquals(300, LapisPortalRules.blocksPerFuel(3));
-        assertEquals(300, LapisPortalRules.blocksPerFuel(9));
+        assertEquals(400, LapisPortalRules.blocksPerFuel(3));
+        assertEquals(400, LapisPortalRules.blocksPerFuel(9));
+        assertEquals(400, LapisPortalRules.THREE_KINDS_BLOCKS);
         assertEquals(0, LapisPortalRules.travelCost(0, 3));
         assertEquals(0, LapisPortalRules.travelCost(-5, 1));
         assertEquals(1, LapisPortalRules.travelCost(1, 1));
@@ -113,8 +114,9 @@ class LapisPortalRulesTest {
         assertEquals(3, LapisPortalRules.travelCost(500, 2));
         assertEquals(1, LapisPortalRules.travelCost(1, 3));
         assertEquals(1, LapisPortalRules.travelCost(300, 3));
-        assertEquals(2, LapisPortalRules.travelCost(301, 3));
-        assertEquals(2, LapisPortalRules.travelCost(600, 3));
+        assertEquals(1, LapisPortalRules.travelCost(400, 3));
+        assertEquals(2, LapisPortalRules.travelCost(401, 3));
+        assertEquals(2, LapisPortalRules.travelCost(800, 3));
         assertEquals(1, LapisPortalRules.travelCost(1, 0));
         assertEquals(1.0, LapisPortalRules.travelDistance(false, 0), 0.0);
         assertEquals(0.0, LapisPortalRules.travelDistance(true, 0), 0.0);

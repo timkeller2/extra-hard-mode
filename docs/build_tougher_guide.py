@@ -415,7 +415,7 @@ def build():
             [
                 "A door framed in lapis blocks is a portal. Lapis sits under the door, above it, and beside both halves on both sides and on the side the door faces. The chest sits on top of that facing column. The opening, on the other side, stays clear. Wood and iron doors both open. The booth is remembered when that frame is finished.",
                 "The largest stack of lapis lazuli in the chest is the link. A stack of 3 connects only to another booth whose largest stack is also 3. The lapis is not used up.",
-                "Stand in the doorway and close the open door. The chest pays in redstone dust, nether quartz, or amethyst shards. One kind covers 100 blocks per item, rounded up, and the cost is at least 1. Two kinds cover 200 blocks per item. All three cover 300. Thunder plays within 200 blocks of either booth. You are dizzy and nauseous for 10 seconds, and both booths recharge for 15.",
+                "Stand in the doorway and close the open door. The chest pays in redstone dust, nether quartz, or amethyst shards. One kind covers 100 blocks per item, rounded up, and the cost is at least 1. Two kinds cover 200 blocks per item. All three cover 400. Thunder plays within 200 blocks of either booth. You are dizzy and nauseous for 10 seconds, and both booths recharge for 15.",
                 "The kinds already in the chest set that range. Payment alternates across those kinds, largest stack first. When the largest stacks match, nether quartz is first, then redstone dust, then amethyst shards. Each item comes off the largest stack of that kind.",
                 "A count shared by more than two booths does not link.",
             ],
@@ -425,7 +425,7 @@ def build():
         bullets(
             [
                 "A nether portal spends the weight you are carrying. Worn armor, stacks, and tools all count. The fuel is taken from your inventory and your offhand.",
-                "Fuel is redstone dust, nether quartz, and amethyst shards. One kind covers 100 points of weight per item, rounded up, and a trip with any weight costs at least 1. Two kinds cover 200 points per item. All three cover 300.",
+                "Fuel is redstone dust, nether quartz, and amethyst shards. One kind covers 1 point of weight per item, rounded up, and a trip with any weight costs at least 1. Two kinds cover 2 points of weight per item. All three cover 4.",
                 "The kinds you are carrying set that range. Payment alternates across those kinds, largest stack first. When the largest stacks match, nether quartz is first, then redstone dust, then amethyst shards. Each item comes off the largest stack of that kind.",
                 "A trip with nothing to carry is free. After any trip you wait 15 seconds before a nether portal will take you again. Everyone on the trip pays their own weight. If anyone cannot pay, or is still waiting, nobody goes and nothing is spent.",
             ],
