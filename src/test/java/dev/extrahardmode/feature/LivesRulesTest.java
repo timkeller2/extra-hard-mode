@@ -20,9 +20,6 @@ class LivesRulesTest {
         assertEquals(0, LivesRules.spend(1));
         assertEquals(-1, LivesRules.spend(0));
         assertEquals(-4, LivesRules.spend(-3));
-        assertTrue(LivesRules.spentLast(1));
-        assertFalse(LivesRules.spentLast(2));
-        assertFalse(LivesRules.spentLast(0));
         assertTrue(LivesRules.canRestore(4, 5));
         assertFalse(LivesRules.canRestore(5, 5));
         assertTrue(LivesRules.canRestore(-1, 0));
@@ -47,17 +44,33 @@ class LivesRulesTest {
     }
 
     @Test
-    void soloLastLifeLosesAndOneSurvivorWins() {
-        assertEquals(LivesRules.Verdict.NONE, LivesRules.verdict(1, 1, false));
-        assertEquals(LivesRules.Verdict.SOLO_LOSS, LivesRules.verdict(1, 0, true));
-        assertEquals(LivesRules.Verdict.NONE, LivesRules.verdict(3, 2, true));
-        assertEquals(LivesRules.Verdict.LAST_SURVIVOR, LivesRules.verdict(3, 1, true));
-        assertEquals(LivesRules.Verdict.NONE, LivesRules.verdict(3, 0, true));
-        assertEquals(LivesRules.Verdict.NONE, LivesRules.verdict(2, 1, false));
-        assertEquals(LivesRules.Verdict.NONE, LivesRules.verdict(0, 0, true));
-        assertEquals("You lose!", LivesRules.LOSE_SOLO);
-        assertEquals("You lose!!!", LivesRules.LOSE_MANY);
-        assertEquals("You win!!!", LivesRules.WIN);
-        assertEquals(140, LivesRules.CREDITS_DELAY_TICKS);
+    void deathStatesLivesLeftOrHeartsDown() {
+        assertEquals("You have 3 lives remaining.", LivesRules.deathMessage(3));
+        assertEquals("You have 1 life remaining.", LivesRules.deathMessage(1));
+        assertEquals("You have 0 lives remaining.", LivesRules.deathMessage(0));
+        assertEquals("You are down 1 heart.", LivesRules.deathMessage(-1));
+        assertEquals("You are down 4 hearts.", LivesRules.deathMessage(-4));
+        String text = String.join(" ", EhmHelp.resolve("combat").lines());
+        assertTrue(text.contains("above -1 says how many lives remain"));
+        assertTrue(text.contains("you are down that many hearts"));
+        assertFalse(text.contains("You lose"));
+        assertFalse(text.contains("You win"));
+    }
+
+    @Test
+    void levelAbove32BuysAMissingLife() {
+        assertFalse(LivesRules.aboveRecoveryLevel(32));
+        assertTrue(LivesRules.aboveRecoveryLevel(33));
+        assertEquals(0, LivesRules.recoveryCost(5, 5, 10_000));
+        assertEquals(0, LivesRules.recoveryCost(1, -1, 10_000));
+        assertEquals(0, LivesRules.recoveryCost(2, 5, 0));
+        assertEquals(500, LivesRules.recoveryCost(4, 5, 10_000));
+        assertEquals(750, LivesRules.recoveryCost(3, 5, 10_000));
+        assertEquals(1000, LivesRules.recoveryCost(2, 5, 10_000));
+        assertEquals(2000, LivesRules.recoveryCost(-2, 5, 10_000));
+        assertEquals(40, LivesRules.recoveryCost(2, 5, 40));
+        String text = String.join(" ", EhmHelp.resolve("combat").lines());
+        assertTrue(text.contains("Past level 32"));
+        assertTrue(text.contains("250 experience plus 250 for each life below full"));
     }
 }

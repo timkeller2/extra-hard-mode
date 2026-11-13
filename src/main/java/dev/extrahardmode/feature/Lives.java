@@ -4,34 +4,15 @@ import dev.extrahardmode.api.EhmApi;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.world.WorldGate;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.game.ClientboundGameEventPacket;
-import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
-import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
-import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 
-/** Applies the shared life pool, the heart loss below 0 lives, and the win or lose lines. */
+/** Applies the shared life pool, the heart loss below 0 lives, and the death count. */
 public final class Lives {
-    private static final int TITLE_FADE_IN = 10;
-    private static final int TITLE_STAY = 100;
-    private static final int TITLE_FADE_OUT = 20;
-
-    private static final Map<UUID, Integer> PENDING_CREDITS = new ConcurrentHashMap<>();
-
     private Lives() {}
-
-    public static void clearPending() {
-        PENDING_CREDITS.clear();
-    }
 
     /** Grant a missing pool, and keep base health on the life count. */
     public static void maintain(ServerPlayer player) {
@@ -49,6 +30,7 @@ public final class Lives {
         }
         int lives = currentLives(player, configured);
         applyBaseHealth(player, LivesRules.baseHealth(configured, lives));
+        recoverFromLevel(player);
     }
 
     /** True when the players module is on and the overworld life pool is on. */
@@ -119,75 +101,86 @@ public final class Lives {
             player.setAttached(EhmAttachments.EHM_LIVES, after);
         }
         applyBaseHealth(player, LivesRules.baseHealth(configured, after));
-
-        int online = 0;
-        int withLives = 0;
-        for (ServerPlayer other : player.level().getServer().getPlayerList().getPlayers()) {
-            if (EhmApi.playerBypasses(other)) {
-                continue;
-            }
-            online++;
-            int lives = other.getUUID().equals(player.getUUID()) ? after : currentLives(other, configured);
-            if (lives > 0) {
-                withLives++;
-            }
-        }
-        switch (LivesRules.verdict(online, withLives, LivesRules.spentLast(before))) {
-            case SOLO_LOSS -> {
-                announce(player, "tougher.message.lives_lose", LivesRules.LOSE_SOLO);
-                scheduleCredits(player);
-            }
-            case LAST_SURVIVOR -> {
-                for (ServerPlayer other : player.level().getServer().getPlayerList().getPlayers()) {
-                    if (EhmApi.playerBypasses(other)) {
-                        continue;
-                    }
-                    int lives = other.getUUID().equals(player.getUUID()) ? after : currentLives(other, configured);
-                    if (lives > 0) {
-                        announce(other, "tougher.message.lives_win", LivesRules.WIN);
-                    } else {
-                        announce(other, "tougher.message.lives_lose_many", LivesRules.LOSE_MANY);
-                    }
-                }
-            }
-            case NONE -> {}
-        }
+        tellDeath(player, after);
+        recoverFromLevel(player);
     }
 
-    public static void flushCredits(MinecraftServer server) {
-        if (PENDING_CREDITS.isEmpty()) {
+    /** The count after this death, before experience buys a life back. */
+    private static void tellDeath(ServerPlayer player, int lives) {
+        if (lives < 0) {
+            int down = -lives;
+            if (down == 1) {
+                player.sendSystemMessage(Component.translatableWithFallback(
+                        "tougher.message.heart_down", LivesRules.HEART_DOWN));
+                return;
+            }
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.hearts_down",
+                    LivesRules.HEARTS_DOWN,
+                    Component.literal(Integer.toString(down))));
             return;
         }
-        int tick = server.getTickCount();
-        Iterator<Map.Entry<UUID, Integer>> iterator = PENDING_CREDITS.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<UUID, Integer> pending = iterator.next();
-            if (tick < pending.getValue()) {
-                continue;
-            }
-            iterator.remove();
-            ServerPlayer player = server.getPlayerList().getPlayer(pending.getKey());
-            if (player == null || player.connection == null) {
-                continue;
-            }
-            player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.WIN_GAME, 0.0F));
-        }
-    }
-
-    private static void scheduleCredits(ServerPlayer player) {
-        int ready = player.level().getServer().getTickCount() + LivesRules.CREDITS_DELAY_TICKS;
-        PENDING_CREDITS.put(player.getUUID(), ready);
-    }
-
-    private static void announce(ServerPlayer player, String key, String fallback) {
-        Component text = Component.translatableWithFallback(key, fallback);
-        player.sendSystemMessage(text);
-        if (player.connection == null) {
+        if (lives == 1) {
+            player.sendSystemMessage(
+                    Component.translatableWithFallback("tougher.message.life_remaining", LivesRules.LIFE_REMAINING));
             return;
         }
-        player.connection.send(new ClientboundSetTitlesAnimationPacket(TITLE_FADE_IN, TITLE_STAY, TITLE_FADE_OUT));
-        player.connection.send(new ClientboundSetSubtitleTextPacket(Component.empty()));
-        player.connection.send(new ClientboundSetTitleTextPacket(text));
+        player.sendSystemMessage(Component.translatableWithFallback(
+                "tougher.message.lives_remaining",
+                LivesRules.LIVES_REMAINING,
+                Component.literal(Integer.toString(lives))));
+    }
+
+    /**
+     * While experience level is above 32, each missing life is bought back.
+     * The price is 250 plus 250 for every life still below full, and at most the
+     * experience the player has. One purchase can spend the whole pool.
+     */
+    public static void recoverFromLevel(ServerPlayer player) {
+        if (player == null || player.isSpectator() || !systemOn(player) || EhmApi.playerBypasses(player)) {
+            return;
+        }
+        int configured = configured(player);
+        int gained = 0;
+        int spent = 0;
+        for (int guard = 0; guard < 64; guard++) {
+            if (!LivesRules.aboveRecoveryLevel(player.experienceLevel)) {
+                break;
+            }
+            int lives = livesOf(player);
+            int total = TomeRules.totalXp(player.experienceLevel, player.experienceProgress);
+            int cost = LivesRules.recoveryCost(lives, configured, total);
+            if (cost <= 0) {
+                break;
+            }
+            player.giveExperiencePoints(-cost);
+            int left = TomeRules.totalXp(player.experienceLevel, player.experienceProgress);
+            if (left >= total) {
+                break;
+            }
+            grantLife(player);
+            if (livesOf(player) <= lives) {
+                player.giveExperiencePoints(total - left);
+                break;
+            }
+            gained++;
+            spent += cost;
+        }
+        if (gained <= 0) {
+            return;
+        }
+        if (gained == 1) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.life_from_level",
+                    "You recover a life for %s experience.",
+                    Component.literal(Integer.toString(spent))));
+            return;
+        }
+        player.sendSystemMessage(Component.translatableWithFallback(
+                "tougher.message.lives_from_level",
+                "You recover %s lives for %s experience.",
+                Component.literal(Integer.toString(gained)),
+                Component.literal(Integer.toString(spent))));
     }
 
     private static int currentLives(ServerPlayer player, int configured) {

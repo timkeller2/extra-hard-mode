@@ -1,5 +1,6 @@
 package dev.extrahardmode.mixin;
 
+import dev.extrahardmode.feature.CopperChests;
 import dev.extrahardmode.feature.Explosions;
 import dev.extrahardmode.feature.FeatureBus;
 import java.util.List;
@@ -65,6 +66,11 @@ public abstract class ServerExplosionMixin
             return;
         }
         Explosions.applyEvent(this.level, (Explosion) (Object) this, this.source, this.fire);
+    }
+
+    @Inject(method = "interactWithBlocks", at = @At("HEAD"))
+    private void tougher$keepCopperChests(List<BlockPos> positions, CallbackInfo ci) {
+        CopperChests.protectFromExplosion(this.level, positions);
     }
 
     @Inject(method = "interactWithBlocks", at = @At("HEAD"))

@@ -275,7 +275,7 @@ public final class PlayerSettings {
         comment(
                 file,
                 "player.death.lives",
-                "Lives each player starts with. -1 is off. 0 or above is on. Each death spends one, and the count can go below 0. Below 0, base max health is 20 plus 2 per life, and at least 6. At 0 lives, base health stays 20. The overworld file is the value the server uses. Alone, the death that spends the last life above 0 says You lose! and the credits roll 7 seconds later. With others online, the last player who still has lives sees You win!!! and the rest see You lose!!!.");
+                "Lives each player starts with. -1 is off. 0 or above is on. Each death spends one, and the count can go below 0. Below 0, base max health is 20 plus 2 per life, and at least 6. At 0 lives, base health stays 20. The overworld file is the value the server uses. On death, a count above -1 says how many lives remain. Below 0 it says you are down that many hearts.");
         setIfMissing(file, "player.death.lives", LivesRules.DEFAULT_LIVES);
         comment(
                 file,

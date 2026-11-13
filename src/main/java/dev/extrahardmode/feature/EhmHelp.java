@@ -237,7 +237,16 @@ public final class EhmHelp {
                         "Building: One right-click with a compass says the biome you are in and the direction you face. The second click within half a second casts Detect ore.",
                         "Building: A bed placed in the Nether or the End vanishes. It does not explode.",
                         "Building: Breaking a bed destroys it and drops nothing: no bed, wool, or planks.",
-                        "Building: A lodestone is crafted with an iron block in the middle, surrounded by chiseled stone bricks."));
+                        "Building: A lodestone is crafted with an iron block in the middle, surrounded by chiseled stone bricks.",
+                        "Building: A copper chest you place is yours for 90 Minecraft days. Only you can open it, pick it up, break it, or change a sign on it. Opening it starts the 90 days again.",
+                        "Building: A sign on that chest names other players, one on each line. They can use it as you can, and opening it starts the 90 days again.",
+                        "Building: Anyone else who looks at the chest sees how many days remain until it is public.",
+                        "Building: A second copper chest joins another only when you own that one. Sneak to place yours beside a chest you do not own.",
+                        "Building: Pistons, explosions, and copper golems cannot empty or move a locked copper chest. Waxed and weathered chests keep the lock.",
+                        "Building: A hopper you place is yours for 90 Minecraft days. Only you can open it, pick it up, break it, or change a sign on it. Opening it starts the 90 days again.",
+                        "Building: A sign on that hopper names other players, one on each line. They can use it as you can, and opening it starts the 90 days again.",
+                        "Building: Anyone else who looks at the hopper sees how many days remain until it is public.",
+                        "Building: A hopper you own can pull from a copper chest or hopper you own, or one whose sign names you. It can put items into a copper chest with the same owner."));
     }
 
     private static Page torches() {
@@ -389,9 +398,9 @@ public final class EhmHelp {
                         "Combat: Within 64 blocks, a biome boss shows a health bar with its name.",
                         "Combat: player.death.lives starts at -1, which leaves this off. 0 or above is on. Each player starts with that many lives. Each death spends one, and the count can go below 0.",
                         "Combat: At 0 lives, base health stays 10 hearts. Below 0 it is 20 plus 2 for each life, and at least 6, which is 3 hearts.",
-                        "Combat: Alone, the death that spends your last life above 0 says You lose! and the credits roll soon after.",
-                        "Combat: When others are online and only one still has lives, that player sees You win!!! and the rest see You lose!!!.",
-                        "Combat: Restore Life Available starts on, as player.death.restoreLifeAvailable. It applies only while lives are on."));
+                        "Combat: On death, a count above -1 says how many lives remain. Below 0 it says you are down that many hearts.",
+                        "Combat: Restore Life Available starts on, as player.death.restoreLifeAvailable. It applies only while lives are on.",
+                        "Combat: Past level 32, a missing life returns. It costs 250 experience plus 250 for each life below full, and at most the experience you have."));
     }
 
     private static Page armor() {
@@ -511,9 +520,13 @@ public final class EhmHelp {
                         "Portals: A trip plays thunder for everyone within 200 blocks of either booth. You are dizzy and nauseous for 10 seconds.",
                         "Portals: Both booths then take 15 seconds to recharge.",
                         "Portals: A nether portal spends the weight you carry, including worn armor. Fuel comes from your inventory and your offhand.",
-                        "Portals: Fuel is redstone dust, nether quartz, and amethyst shards. One kind covers 1 point of weight per item, rounded up, and at least 1.",
-                        "Portals: Two kinds cover 2 points of weight per item. All three cover 4. The kinds you are carrying set that range.",
-                        "Portals: Nether payment alternates those kinds, largest stack first. Ties start with nether quartz, then redstone dust, then amethyst shards.",
+                        "Portals: Fuel is redstone blocks, quartz blocks, and amethyst blocks. One kind covers 1 point of weight per block, rounded up, and at least 1.",
+                        "Portals: Two kinds cover 2 points of weight per block. All three cover 4. The kinds you are carrying set that range.",
+                        "Portals: Nether payment alternates those kinds, largest stack first. Ties start with quartz blocks, then redstone blocks, then amethyst blocks.",
+                        "Portals: Leaving the overworld rolls a d20. A roll above the world counter, which starts at 0, raises that counter by 1.",
+                        "Portals: That counter damages animals within 64 blocks: armadillo, bee, camel, cat, chicken, cow, donkey, fox, frog, goat, horse, and llama.",
+                        "Portals: It also damages trader llama, mooshroom, mule, ocelot, panda, parrot, pig, polar bear, rabbit, sheep, skeleton horse, sniffer, strider, turtle, wolf, and happy ghast.",
+                        "Portals: What those animals do not lose hits the traveler.",
                         "Portals: A trip with no weight is free. Any nether trip then makes you wait 15 seconds.",
                         "Portals: Everyone on the trip pays their own weight. If anyone cannot pay, or is still waiting, nobody goes and nothing is spent."));
     }

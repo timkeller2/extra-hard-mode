@@ -1277,6 +1277,16 @@ public final class WorldConfig {
                         "modules.tougher.inhabitants",
                         "Homes can attract one traveler. Default true.",
                         true);
+                writeDefaultIfMissing(
+                        file,
+                        "modules.tougher.copper_chests",
+                        "A placed copper chest stays locked to its owner for 90 Minecraft days. Default true.",
+                        true);
+                writeDefaultIfMissing(
+                        file,
+                        "modules.tougher.owned_hoppers",
+                        "A placed hopper stays locked to its owner for 90 Minecraft days. That hopper can pull from, and put items into, a copper chest the same player owns. Default true.",
+                        true);
                 writeInhabitantDefaults(file);
                 migrate(file);
                 file.save();

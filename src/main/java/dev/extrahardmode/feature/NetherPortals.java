@@ -4,35 +4,48 @@ import dev.extrahardmode.api.EhmApi;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.task.WeightCheckTask;
+import dev.extrahardmode.world.NetherPortalTollData;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.PortalProcessor;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.NetherPortalBlock;
 import net.minecraft.world.level.portal.TeleportTransition;
+import net.minecraft.world.phys.AABB;
 
 /**
- * A nether portal spends the traveler's weight in redstone dust, nether quartz, and amethyst
- * shards from that player's inventory and offhand. The 15 second wait is stored on the player.
+ * A nether portal spends the traveler's weight in redstone blocks, quartz blocks, and
+ * amethyst blocks from that player's inventory and offhand. The 15 second wait is stored
+ * on the player. Leaving the overworld also rolls the shared backlash counter.
  * Vanilla portal cooldown is reset to half a second while someone stands in the exit, so it
  * cannot hold this wait.
  */
 public final class NetherPortals {
     static final String COST_KEY = "tougher.message.nether_portal_cost";
-    static final String COST = "You need %s redstone dust, nether quartz, or amethyst shards.";
+    static final String COST = "You need %s redstone blocks, quartz blocks, or amethyst blocks.";
     static final String WAIT_KEY = "tougher.message.nether_portal_wait";
     static final String WAIT = "You must wait to use a nether portal. %s";
     static final String PAID_KEY = "tougher.message.nether_portal_paid";
     static final String PAID = "The portal takes %s.";
     static final String SHUT_KEY = "tougher.message.nether_portal_shut";
     static final String SHUT = "Someone with you cannot take this portal yet.";
+
+    /** Same-tick guard so a mount and its rider do not roll the backlash twice. */
+    private static final Map<UUID, Long> BACKLASH_TICK = new ConcurrentHashMap<>();
 
     private NetherPortals() {}
 
@@ -57,10 +70,11 @@ public final class NetherPortals {
                 paying.add(player);
             }
         }
+        long now = from.getServer().overworld().getGameTime();
         if (paying.isEmpty()) {
+            backlash(from, entity, travelers, now);
             return false;
         }
-        long now = from.getServer().overworld().getGameTime();
         List<Bill> bills = new ArrayList<>();
         List<ServerPlayer> denied = new ArrayList<>();
         boolean shortFuel = false;
@@ -80,8 +94,8 @@ public final class NetherPortals {
             List<LapisPortalRules.Stack> slots = read(player);
             int cost = NetherPortalRules.travelCost(
                     WeightCheckTask.inventoryWeight(player, ConfigManager.world(from).player()),
-                    LapisPortalRules.fuelKinds(slots));
-            List<LapisPortalRules.Stack> paid = LapisPortalRules.pay(slots, cost);
+                    LapisPortalRules.fuelKinds(slots, NetherPortalRules.FUELS));
+            List<LapisPortalRules.Stack> paid = LapisPortalRules.pay(slots, cost, NetherPortalRules.FUELS);
             if (paid == null) {
                 denied.add(player);
                 shortFuel = true;
@@ -108,9 +122,104 @@ public final class NetherPortals {
         for (Bill bill : bills) {
             apply(bill.player, bill.paid);
             bill.player.setAttached(EhmAttachments.EHM_NETHER_PORTAL_READY, NetherPortalRules.readyAt(now));
-            String spent = LapisPortalRules.spentPhrase(bill.spentRedstone(), bill.spentQuartz(), bill.spentAmethyst());
+            String spent = NetherPortalRules.spentPhrase(bill.spentRedstone(), bill.spentQuartz(), bill.spentAmethyst());
             if (!spent.isEmpty()) {
                 tell(bill.player, PAID_KEY, PAID, Component.literal(spent));
+            }
+        }
+        backlash(from, entity, travelers, now);
+        return false;
+    }
+
+    /**
+     * Overworld departures only. One d20 per trip. The counter, after a raise when the
+     * roll beats it, is damage. Listed animals within 64 blocks lose health first.
+     * Whatever is left hits each traveler on this trip.
+     */
+    private static void backlash(ServerLevel from, Entity entity, List<ServerPlayer> travelers, long now) {
+        if (from == null || from.dimension() != Level.OVERWORLD) {
+            return;
+        }
+        List<ServerPlayer> riding = livingTravelers(travelers);
+        if (riding.isEmpty() || !backlashFresh(riding, now)) {
+            return;
+        }
+        for (ServerPlayer player : riding) {
+            BACKLASH_TICK.put(player.getUUID(), now);
+        }
+        int roll = from.getRandom().nextInt(NetherPortalRules.DIE_SIDES) + 1;
+        float left = strikeAnimals(from, entity, NetherPortalTollData.of(from).applyRoll(roll));
+        if (left <= 0.0F) {
+            return;
+        }
+        var source = from.damageSources().magic();
+        for (ServerPlayer player : riding) {
+            if (player.isAlive()) {
+                player.hurtServer(from, source, left);
+            }
+        }
+    }
+
+    private static float strikeAnimals(ServerLevel level, Entity origin, float damage) {
+        if (damage <= 0.0F || origin == null) {
+            return Math.max(0.0F, damage);
+        }
+        double range = NetherPortalRules.BACKLASH_RANGE;
+        AABB box = origin.getBoundingBox().inflate(range);
+        List<LivingEntity> found = level.getEntitiesOfClass(
+                LivingEntity.class,
+                box,
+                living -> backlashAnimal(living) && living.distanceToSqr(origin) <= range * range);
+        found.sort(Comparator.comparingDouble(living -> living.distanceToSqr(origin)));
+        float left = damage;
+        var source = level.damageSources().magic();
+        for (LivingEntity creature : found) {
+            if (left <= 0.0F) {
+                break;
+            }
+            if (!creature.isAlive()) {
+                continue;
+            }
+            float health = creature.getHealth();
+            if (health <= 0.0F) {
+                continue;
+            }
+            creature.hurtServer(level, source, Math.min(left, health));
+            float nowHealth = creature.isAlive() ? creature.getHealth() : 0.0F;
+            float lost = health - Math.max(0.0F, nowHealth);
+            if (lost <= 0.0F) {
+                continue;
+            }
+            left -= Math.min(left, lost);
+        }
+        return Math.max(0.0F, left);
+    }
+
+    /** Livestock and the other listed animals. Players, villagers, traders, golems, fish, allays, and bats are skipped. */
+    private static boolean backlashAnimal(LivingEntity entity) {
+        if (!(entity instanceof Mob mob) || !mob.isAlive()) {
+            return false;
+        }
+        return NetherPortalRules.backlashAnimal(BuiltInRegistries.ENTITY_TYPE.getKey(mob.getType()).toString());
+    }
+
+    private static List<ServerPlayer> livingTravelers(List<ServerPlayer> travelers) {
+        List<ServerPlayer> living = new ArrayList<>();
+        if (travelers == null) {
+            return living;
+        }
+        for (ServerPlayer player : travelers) {
+            if (player.isAlive() && !player.isSpectator()) {
+                living.add(player);
+            }
+        }
+        return living;
+    }
+
+    private static boolean backlashFresh(List<ServerPlayer> travelers, long now) {
+        for (ServerPlayer player : travelers) {
+            if (BACKLASH_TICK.getOrDefault(player.getUUID(), Long.MIN_VALUE) != now) {
+                return true;
             }
         }
         return false;
@@ -216,15 +325,15 @@ public final class NetherPortals {
         }
 
         private int spentRedstone() {
-            return spent(LapisPortalRules.REDSTONE);
+            return spent(NetherPortalRules.REDSTONE_BLOCK);
         }
 
         private int spentQuartz() {
-            return spent(LapisPortalRules.QUARTZ);
+            return spent(NetherPortalRules.QUARTZ_BLOCK);
         }
 
         private int spentAmethyst() {
-            return spent(LapisPortalRules.AMETHYST);
+            return spent(NetherPortalRules.AMETHYST_BLOCK);
         }
 
         private int spent(String itemId) {

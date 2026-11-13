@@ -40,6 +40,8 @@ public final class EhmNetworking {
         PayloadTypeRegistry.clientboundPlay()
                 .register(ClientboundLightLookPayload.TYPE, ClientboundLightLookPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay()
+                .register(ClientboundCopperChestLookPayload.TYPE, ClientboundCopperChestLookPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay()
                 .register(ClientboundCouncilBountyPayload.TYPE, ClientboundCouncilBountyPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay()
                 .register(ClientboundMinerLeadPayload.TYPE, ClientboundMinerLeadPayload.STREAM_CODEC);
@@ -85,6 +87,10 @@ public final class EhmNetworking {
     }
 
     public static void sendLightLook(ServerPlayer player, ClientboundLightLookPayload payload) {
+        ServerPlayNetworking.send(player, payload);
+    }
+
+    public static void sendCopperChestLook(ServerPlayer player, ClientboundCopperChestLookPayload payload) {
         ServerPlayNetworking.send(player, payload);
     }
 

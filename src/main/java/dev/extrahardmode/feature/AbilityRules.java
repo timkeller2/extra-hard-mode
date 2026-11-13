@@ -586,7 +586,7 @@ public final class AbilityRules {
             case READ_TOME ->
                 "Hold a tome that holds experience and double-right-click. It costs 1 mana and returns 80% of what was saved, plus 2% per ability level.";
             case RESTORE_LIFE ->
-                "Hold a diamond block and double-right-click in the air or on a player. Clicking a block still places it. It costs 4 mana and diamonds from your inventory.";
+                "Hold a diamond block and double-right-click in the air or on a player. Clicking a block still places it. It costs 4 mana and diamonds from your inventory. The block is kept.";
             default -> "";
         };
     }
@@ -780,8 +780,8 @@ public final class AbilityRules {
                     "Restore Life: It targets a friendly player within 2 plus ability level blocks, the way Healing does, and otherwise you.",
                     "Restore Life: It gives one life. The target must have fewer lives than player.death.lives. Lives must be on, and Restore Life Available starts on.",
                     "Restore Life: It costs 4 mana and diamonds in your hotbar or inventory. The count is 17 minus their lives minus your level, rounded down, and at least 3.",
-                    "Restore Life: A missing requirement spends nothing and says what is required. Below 1, practice spends the 4 mana and the block, and keeps the diamonds.",
-                    "Restore Life: One diamond block is consumed on a real cast. Two in hand consume both and add +2. The diamonds that pay for the life are separate.");
+                    "Restore Life: A missing requirement spends nothing and says what is required. Below 1, practice spends the 4 mana and keeps the diamond block and the diamonds.",
+                    "Restore Life: The diamond block stays in your hand, one or more. Two or more add +2. The diamonds that pay for the life are separate.");
             default -> null;
         };
     }
@@ -897,7 +897,7 @@ public final class AbilityRules {
                 "Diamond block: Restore Life",
                 "Every ability's level is its skill plus item bonuses, minus 2, and at least 0.",
                 "Below 1 the cast is practice: mana and focus are spent, the cooldown starts, and you gain one use. Diamond Skin practices below 2 and keeps the diamond. Read Tome keeps the tome.",
-                "Restore Life: a missing requirement spends nothing. Below 1, practice spends 4 mana and the diamond block, and keeps the diamonds.",
+                "Restore Life: a missing requirement spends nothing. Below 1, practice spends 4 mana and keeps the diamond block and the diamonds.",
                 "Redstone dust in the offhand adds half your skill, up to the square root of that stack rounded down. Success consumes that bonus, rounded down. Practice keeps the dust.",
                 "Redstone dust in the offhand does not place when you right-click.",
                 "Hold a focus and he teaches that ability for half the house points in uses. At 24 points, 30 emeralds from inventory or either hand; each point above takes 2 off, down to free.",

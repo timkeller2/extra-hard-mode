@@ -1,5 +1,6 @@
 package dev.extrahardmode.mixin;
 
+import dev.extrahardmode.feature.CopperChests;
 import dev.extrahardmode.feature.FeatureBus;
 import dev.extrahardmode.feature.HardenedStone;
 import java.util.List;
@@ -36,6 +37,16 @@ public abstract class PistonStructureMixin {
             return;
         }
         if (HardenedStone.blocksPistonMove(this.level, this.toPush, this.toDestroy)) {
+            cir.setReturnValue(false);
+        }
+    }
+
+    @Inject(method = "resolve", at = @At("RETURN"), cancellable = true)
+    private void tougher$blockCopperChest(CallbackInfoReturnable<Boolean> cir) {
+        if (!Boolean.TRUE.equals(cir.getReturnValue())) {
+            return;
+        }
+        if (CopperChests.blocksPiston(this.level, this.toPush, this.toDestroy)) {
             cir.setReturnValue(false);
         }
     }

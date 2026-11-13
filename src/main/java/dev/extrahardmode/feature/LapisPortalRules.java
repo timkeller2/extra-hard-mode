@@ -123,8 +123,16 @@ public final class LapisPortalRules {
 
     /** Fuel kinds in the chest before anything is spent. Lapis is not a kind. */
     public static int fuelKinds(List<Stack> slots) {
+        return fuelKinds(slots, FUELS);
+    }
+
+    /** Fuel kinds among {@code fuels}. Items outside that list do not count. */
+    public static int fuelKinds(List<Stack> slots, List<String> fuels) {
         int kinds = 0;
-        for (String fuel : FUELS) {
+        if (fuels == null) {
+            return 0;
+        }
+        for (String fuel : fuels) {
             if (total(slots, fuel) >= 1) {
                 kinds++;
             }
@@ -218,18 +226,28 @@ public final class LapisPortalRules {
      * redstone dust, then amethyst shards.
      */
     public static List<String> fuelOrder(List<Stack> slots) {
+        return fuelOrder(slots, FUELS);
+    }
+
+    /**
+     * Present fuels, largest stack first. Equal stacks follow {@code fuels}.
+     */
+    public static List<String> fuelOrder(List<Stack> slots, List<String> fuels) {
         List<String> present = new ArrayList<>();
-        for (String fuel : FUELS) {
-            if (total(slots, fuel) >= 1) {
-                present.add(fuel);
+        if (fuels != null) {
+            for (String fuel : fuels) {
+                if (total(slots, fuel) >= 1) {
+                    present.add(fuel);
+                }
             }
         }
+        List<String> order = fuels == null ? List.of() : fuels;
         present.sort((left, right) -> {
             int byStack = Integer.compare(largestCount(slots, right), largestCount(slots, left));
             if (byStack != 0) {
                 return byStack;
             }
-            return Integer.compare(FUELS.indexOf(left), FUELS.indexOf(right));
+            return Integer.compare(order.indexOf(left), order.indexOf(right));
         });
         return List.copyOf(present);
     }
@@ -240,6 +258,16 @@ public final class LapisPortalRules {
      * slot. Returns null when the chest cannot pay. Does not change {@code slots}.
      */
     public static List<Stack> pay(List<Stack> slots, int cost) {
+        return pay(slots, cost, FUELS);
+    }
+
+    /**
+     * Spend {@code cost} items of {@code fuels}, alternating kinds in {@link #fuelOrder}.
+     * A kind that runs out is skipped. Each item comes off the largest stack of that kind,
+     * and a tie uses the lowest slot. Returns null when those fuels cannot pay.
+     * Does not change {@code slots}.
+     */
+    public static List<Stack> pay(List<Stack> slots, int cost, List<String> fuels) {
         List<Stack> working = new ArrayList<>();
         if (slots != null) {
             for (Stack slot : slots) {
@@ -252,13 +280,15 @@ public final class LapisPortalRules {
             return List.copyOf(working);
         }
         int held = 0;
-        for (String fuel : FUELS) {
-            held += total(working, fuel);
+        if (fuels != null) {
+            for (String fuel : fuels) {
+                held += total(working, fuel);
+            }
         }
         if (held < cost) {
             return null;
         }
-        List<String> order = new ArrayList<>(fuelOrder(working));
+        List<String> order = new ArrayList<>(fuelOrder(working, fuels));
         int cursor = 0;
         for (int left = cost; left > 0; left--) {
             String take = nextFuel(working, order, cursor);

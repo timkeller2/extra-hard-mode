@@ -337,6 +337,9 @@ class AbilityRulesTest {
         assertEquals(AbilityRules.RESTORE_LIFE, AbilityRules.abilityByTopic("restore life"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.RESTORE_LIFE).contains("at least 3"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.RESTORE_LIFE).contains("still places the block"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.RESTORE_LIFE).contains("stays in your hand"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.RESTORE_LIFE).contains("Two or more add +2"));
+        assertFalse(AbilityRules.helpFallback(AbilityRules.RESTORE_LIFE).contains("consumed"));
         assertTrue(AbilityRules.indexHelpFallback().contains("Diamond block: Restore Life"));
         assertEquals(null, AbilityRules.abilityByTopic("mining"));
         for (String line : AbilityRules.indexHelpLines()) {

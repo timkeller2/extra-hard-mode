@@ -446,7 +446,8 @@ public final class ManaAbilities implements FeatureModule {
         if (restoreLifeBlocked(player, target, power)) {
             return true;
         }
-        if (practiceInstead(player, AbilityRules.RESTORE_LIFE, Items.DIAMOND_BLOCK, power)) {
+        // The diamond block stays in hand. Two or more still add +2 through catalystBonus.
+        if (practiceInstead(player, AbilityRules.RESTORE_LIFE, null, power)) {
             return true;
         }
         int lives = Lives.livesOf(target);
@@ -461,7 +462,7 @@ public final class ManaAbilities implements FeatureModule {
             markHandled(player);
             return true;
         }
-        spend(player, Items.DIAMOND_BLOCK, AbilityRules.RESTORE_LIFE);
+        spend(player, null, AbilityRules.RESTORE_LIFE);
         Lives.grantLife(target);
         castEffect(target, SoundEvents.AMETHYST_BLOCK_CHIME, ParticleTypes.END_ROD, null);
         tellAbilityUse(player, AbilityRules.RESTORE_LIFE, power);

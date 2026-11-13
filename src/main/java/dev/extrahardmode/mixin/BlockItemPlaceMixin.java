@@ -2,10 +2,12 @@ package dev.extrahardmode.mixin;
 
 import dev.extrahardmode.feature.Achievements;
 import dev.extrahardmode.feature.AntiFarming;
+import dev.extrahardmode.feature.CopperChests;
 import dev.extrahardmode.feature.Dragon;
 import dev.extrahardmode.feature.FeatureBus;
 import dev.extrahardmode.feature.HardenedStone;
 import dev.extrahardmode.feature.LapisPortals;
+import dev.extrahardmode.feature.OwnedHoppers;
 import dev.extrahardmode.feature.PlacementRules;
 import dev.extrahardmode.feature.Torches;
 import dev.extrahardmode.feature.UnsafeBeds;
@@ -30,6 +32,17 @@ public abstract class BlockItemPlaceMixin {
         if (PlacementRules.denyOffhandRedstone(
                 context.getHand() == InteractionHand.OFF_HAND, context.getItemInHand().is(Items.REDSTONE))) {
             cir.setReturnValue(InteractionResult.FAIL);
+            return;
+        }
+        Block placed = ((BlockItem) (Object) this).getBlock();
+        InteractionResult copperChest = CopperChests.denyPlacement(context, placed);
+        if (copperChest != InteractionResult.PASS) {
+            cir.setReturnValue(copperChest);
+            return;
+        }
+        InteractionResult hopper = OwnedHoppers.denyPlacement(context, placed);
+        if (hopper != InteractionResult.PASS) {
+            cir.setReturnValue(hopper);
             return;
         }
         Level level = context.getLevel();
@@ -75,5 +88,7 @@ public abstract class BlockItemPlaceMixin {
         AntiFarming.onCropPlanted(context, block);
         Torches.onPlaced(context, block);
         LapisPortals.onPlaced(context, block);
+        CopperChests.onPlaced(context, block);
+        OwnedHoppers.onPlaced(context, block);
     }
 }

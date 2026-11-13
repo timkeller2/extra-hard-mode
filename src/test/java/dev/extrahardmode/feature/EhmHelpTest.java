@@ -276,6 +276,9 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("Two kinds cover 200"));
         assertTrue(String.join(" ", lines).contains("All three cover 400"));
         assertTrue(String.join(" ", lines).contains("1 point of weight"));
+        assertTrue(String.join(" ", lines).contains("redstone blocks, quartz blocks, and amethyst blocks"));
+        assertTrue(String.join(" ", lines).contains("rolls a d20"));
+        assertTrue(String.join(" ", lines).contains("within 64 blocks"));
         assertTrue(String.join(" ", lines).contains("All three cover 4."));
         assertTrue(String.join(" ", lines).contains("rounded up, and at least 1"));
         assertTrue(String.join(" ", lines).contains("largest stack first"));
@@ -532,9 +535,10 @@ class EhmHelpTest {
         assertTrue(combatText.contains("of -1 is off"));
         assertTrue(combatText.contains("player.death.lives"));
         assertTrue(combatText.contains("starts at -1"));
-        assertTrue(combatText.contains("says You lose! and the credits"));
-        assertTrue(combatText.contains("You win!!!"));
-        assertTrue(combatText.contains("You lose!!!"));
+        assertTrue(combatText.contains("above -1 says how many lives remain"));
+        assertTrue(combatText.contains("you are down that many hearts"));
+        assertFalse(combatText.contains("You lose"));
+        assertFalse(combatText.contains("You win"));
         assertTrue(combatText.contains("at least 6"));
         assertTrue(combatText.contains("3 hearts"));
         assertTrue(combatText.contains("restoreLifeAvailable"));

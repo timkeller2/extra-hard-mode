@@ -25,7 +25,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
@@ -104,7 +103,6 @@ public final class Players implements FeatureModule {
             ArmorWeightTask.clear(player);
             PENDING_BED_CLEARS.remove(player.getUUID());
         });
-        ServerLifecycleEvents.SERVER_STOPPED.register(server -> Lives.clearPending());
         bus.listen(UseBlockCallback.EVENT, ID, Players::onUseBlock);
         bus.listen(ServerLivingEntityEvents.AFTER_DEATH, ID, ChunkClear::onDeath);
         ServerTickEvents.END_LEVEL_TICK.register(ChunkClear::tickLevel);
@@ -145,7 +143,6 @@ public final class Players implements FeatureModule {
 
     /** Server tick count, not per-dimension gameTime — nether/end respawns must not be eaten by overworld. */
     private static void flushRespawns(MinecraftServer server) {
-        Lives.flushCredits(server);
         if (PENDING_RESPAWNS.isEmpty()) {
             return;
         }

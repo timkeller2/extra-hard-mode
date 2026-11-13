@@ -9,6 +9,7 @@ import dev.extrahardmode.feature.Overgrazing;
 import dev.extrahardmode.feature.AntiFarming;
 import dev.extrahardmode.feature.BiomeBosses;
 import dev.extrahardmode.feature.CaveIns;
+import dev.extrahardmode.feature.CopperChests;
 import dev.extrahardmode.feature.Dragon;
 import dev.extrahardmode.feature.Exploration;
 import dev.extrahardmode.feature.Explosions;
@@ -17,6 +18,7 @@ import dev.extrahardmode.feature.FeatureRegistry;
 import dev.extrahardmode.feature.HardenedStone;
 import dev.extrahardmode.feature.LimitedBuilding;
 import dev.extrahardmode.feature.ManaAbilities;
+import dev.extrahardmode.feature.OwnedHoppers;
 import dev.extrahardmode.feature.NetherrackFire;
 import dev.extrahardmode.feature.Torches;
 import dev.extrahardmode.feature.RealisticChopping;
@@ -123,6 +125,8 @@ public class ExtraHardModeMod implements ModInitializer {
         FEATURES.register(new VillagerNerf());
         FEATURES.register(new Inhabitants());
         FEATURES.register(new LapisPortals());
+        FEATURES.register(new CopperChests());
+        FEATURES.register(new OwnedHoppers());
         ServerLevelEvents.LOAD.register((server, level) -> {
             WorldGate.onLevelLoad(server, level);
             FEATURES.onWorldLoad(level);

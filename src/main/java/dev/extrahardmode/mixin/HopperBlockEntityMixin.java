@@ -1,5 +1,6 @@
 package dev.extrahardmode.mixin;
 
+import dev.extrahardmode.feature.CopperChests;
 import dev.extrahardmode.feature.FurnaceXp;
 import dev.extrahardmode.feature.FurnaceXpRules;
 import dev.extrahardmode.world.WorldGate;
@@ -20,6 +21,18 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class HopperBlockEntityMixin {
     @Unique
     private static final ThreadLocal<int[]> EHM$MOVE = new ThreadLocal<>();
+
+    @Inject(method = "tryTakeInItemFromSlot", at = @At("HEAD"), cancellable = true)
+    private static void ehm$lockedCopperChestTake(
+            Hopper hopper,
+            Container container,
+            int slot,
+            Direction direction,
+            CallbackInfoReturnable<Boolean> cir) {
+        if (CopperChests.blocksTake(hopper, container)) {
+            cir.setReturnValue(false);
+        }
+    }
 
     @Inject(method = "tryTakeInItemFromSlot", at = @At("RETURN"))
     private static void ehm$furnaceXpFromResult(
@@ -53,13 +66,18 @@ public abstract class HopperBlockEntityMixin {
     @Inject(
             method =
                     "addItem(Lnet/minecraft/world/Container;Lnet/minecraft/world/Container;Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/core/Direction;)Lnet/minecraft/world/item/ItemStack;",
-            at = @At("HEAD"))
+            at = @At("HEAD"),
+            cancellable = true)
     private static void ehm$rememberMove(
             Container source,
             Container destination,
             ItemStack stack,
             Direction direction,
             CallbackInfoReturnable<ItemStack> cir) {
+        if (CopperChests.blocksInsert(source, destination)) {
+            cir.setReturnValue(stack == null ? ItemStack.EMPTY : stack);
+            return;
+        }
         int count = stack == null ? 0 : stack.getCount();
         EHM$MOVE.set(new int[] {FurnaceXp.countItems(source) + count, count});
     }

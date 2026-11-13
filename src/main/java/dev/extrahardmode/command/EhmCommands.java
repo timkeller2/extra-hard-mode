@@ -75,7 +75,9 @@ public final class EhmCommands {
         "achievements",
         "exploration",
         "mana_abilities",
-        "inhabitants"
+        "inhabitants",
+        "copper_chests",
+        "owned_hoppers"
     };
 
     private static final SuggestionProvider<CommandSourceStack> MODULE_SUGGESTOR =
