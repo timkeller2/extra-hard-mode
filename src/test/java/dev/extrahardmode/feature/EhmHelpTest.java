@@ -36,7 +36,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("within grace when the repeat still fits"));
         assertTrue(String.join(" ", lines).contains("green minus maintains"));
         assertTrue(String.join(" ", lines).contains("Above the offhand"));
-        assertTrue(String.join(" ", lines).contains("mana crystal shows Base Mana Cap"));
+        assertTrue(String.join(" ", lines).contains("mana crystal shows Mana as your base mana level"));
         assertTrue(String.join(" ", lines).contains("chicken above that shows your Well Fed level"));
         assertTrue(String.join(" ", lines).contains("appears only once"));
         assertTrue(String.join(" ", lines).contains("green up mark is a craving"));

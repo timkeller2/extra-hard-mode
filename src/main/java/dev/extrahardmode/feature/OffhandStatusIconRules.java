@@ -12,6 +12,8 @@ public final class OffhandStatusIconRules {
     /** Slot pitch. The first icon sits one slot above the offhand. */
     public static final int SLOT = 18;
     public static final int ICON = 16;
+    /** Both inventory numbers use this fraction of the GUI font, so they match. */
+    public static final float NUMBER_SCALE = 0.5F;
 
     private OffhandStatusIconRules() {}
 
@@ -27,6 +29,23 @@ public final class OffhandStatusIconRules {
 
     public static String capacityLabel(double capacity) {
         return InhabitantRules.learningLabel(capacity);
+    }
+
+    /** Stored mana level over learning capacity, such as {@code 3/7}. */
+    public static String manaLabel(int baseManaLevel, double capacity) {
+        return Math.max(0, baseManaLevel) + "/" + capacityLabel(capacity);
+    }
+
+    /**
+     * One scale for both numbers. Half the GUI font, and smaller when the wider
+     * measured width would still pass the icon. A hidden number passes width 0.
+     */
+    public static float numberScale(int firstWidth, int secondWidth) {
+        int widest = Math.max(Math.max(0, firstWidth), Math.max(0, secondWidth));
+        if (widest <= 0) {
+            return NUMBER_SCALE;
+        }
+        return Math.min(NUMBER_SCALE, (float) ICON / widest);
     }
 
     public static String wellFedLabel(int wellFed) {

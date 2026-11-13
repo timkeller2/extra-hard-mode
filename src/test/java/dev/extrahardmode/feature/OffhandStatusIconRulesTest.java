@@ -38,6 +38,14 @@ class OffhandStatusIconRulesTest {
         assertTrue(OffhandStatusIconRules.showCapacity(1.4));
         assertEquals("1.4", OffhandStatusIconRules.capacityLabel(Math.sqrt(2.0)));
         assertEquals("2", OffhandStatusIconRules.capacityLabel(2.0));
+        assertEquals("3/7", OffhandStatusIconRules.manaLabel(3, 7.0));
+        assertEquals("3/1.4", OffhandStatusIconRules.manaLabel(3, Math.sqrt(2.0)));
+        assertEquals("0/2", OffhandStatusIconRules.manaLabel(-4, 2.0));
+        assertEquals(0.5F, OffhandStatusIconRules.NUMBER_SCALE);
+        assertEquals(OffhandStatusIconRules.NUMBER_SCALE, OffhandStatusIconRules.numberScale(12, 18), 0.0001F);
+        assertEquals(OffhandStatusIconRules.numberScale(30, 10), OffhandStatusIconRules.numberScale(10, 30));
+        assertEquals(OffhandStatusIconRules.ICON / 40.0F, OffhandStatusIconRules.numberScale(40, 8), 0.0001F);
+        assertTrue(OffhandStatusIconRules.numberScale(40, 8) < OffhandStatusIconRules.NUMBER_SCALE);
         assertFalse(OffhandStatusIconRules.showWellFed(0));
         assertFalse(OffhandStatusIconRules.showWellFed(-3));
         assertTrue(OffhandStatusIconRules.showWellFed(1));

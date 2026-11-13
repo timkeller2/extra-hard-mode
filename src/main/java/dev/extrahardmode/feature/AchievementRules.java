@@ -222,7 +222,8 @@ public final class AchievementRules {
 
     /**
      * Mana learning capacity: the configured base plus capacity earned from redstone gifts.
-     * This is the number on the inventory crystal. The die uses {@link #manaDieFaces(int, double)}.
+     * The inventory crystal shows the stored mana level over this capacity. The die uses
+     * {@link #manaDieFaces(int, double)}.
      */
     public static double manaLearningTotal(int configBase, double earned) {
         double earnedSafe = earned > 0.0 && !Double.isNaN(earned) ? earned : 0.0;

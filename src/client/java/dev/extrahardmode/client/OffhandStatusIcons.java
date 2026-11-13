@@ -36,28 +36,40 @@ public final class OffhandStatusIcons {
         boolean showWellFed = OffhandStatusIconRules.showWellFed(wellFed);
         int localX = mouseX - leftPos;
         int localY = mouseY - topPos;
+        String manaLabel = showCapacity
+                ? OffhandStatusIconRules.manaLabel(ExtraHardModeClient.lastBaseManaLevel(), capacity)
+                : null;
+        String wellFedLabel = showWellFed ? OffhandStatusIconRules.wellFedLabel(wellFed) : null;
+        float numberScale = OffhandStatusIconRules.numberScale(
+                manaLabel == null ? 0 : minecraft.font.width(manaLabel),
+                wellFedLabel == null ? 0 : minecraft.font.width(wellFedLabel));
         int crystalRow = OffhandStatusIconRules.crystalRow(showCapacity, showWellFed);
-        if (crystalRow >= 0) {
+        if (crystalRow >= 0 && manaLabel != null) {
             int x = OffhandStatusIconRules.iconX();
             int y = OffhandStatusIconRules.rowY(crystalRow);
             blit(graphics, ManaHud.CONTAINER, x, y);
             blit(graphics, ManaHud.FULL, x, y);
-            String label = OffhandStatusIconRules.capacityLabel(capacity);
-            drawNumber(graphics, minecraft.font, label, x, y);
+            drawNumber(graphics, minecraft.font, manaLabel, x, y, numberScale);
             if (OffhandStatusIconRules.hit(x, y, localX, localY)) {
-                tooltip(graphics, minecraft.font, "tougher.tooltip.mana_learning", "Base Mana Cap %s", label, mouseX, mouseY);
+                tooltip(graphics, minecraft.font, "tougher.tooltip.mana_learning", "Mana %s", manaLabel, mouseX, mouseY);
             }
         }
         int chickenRow = OffhandStatusIconRules.chickenRow(showCapacity, showWellFed);
-        if (chickenRow >= 0) {
+        if (chickenRow >= 0 && wellFedLabel != null) {
             int x = OffhandStatusIconRules.iconX();
             int y = OffhandStatusIconRules.rowY(chickenRow);
             blit(graphics, FOOD_EMPTY, x, y);
             blit(graphics, FOOD_FULL, x, y);
-            String label = OffhandStatusIconRules.wellFedLabel(wellFed);
-            drawNumber(graphics, minecraft.font, label, x, y);
+            drawNumber(graphics, minecraft.font, wellFedLabel, x, y, numberScale);
             if (OffhandStatusIconRules.hit(x, y, localX, localY)) {
-                tooltip(graphics, minecraft.font, "tougher.tooltip.well_fed_level", "Well Fed %s", label, mouseX, mouseY);
+                tooltip(
+                        graphics,
+                        minecraft.font,
+                        "tougher.tooltip.well_fed_level",
+                        "Well Fed %s",
+                        wellFedLabel,
+                        mouseX,
+                        mouseY);
             }
         }
     }
@@ -76,9 +88,8 @@ public final class OffhandStatusIcons {
                 RenderPipelines.GUI_TEXTURED, sprite, x, y, OffhandStatusIconRules.ICON, OffhandStatusIconRules.ICON);
     }
 
-    private static void drawNumber(GuiGraphicsExtractor graphics, Font font, String text, int x, int y) {
+    private static void drawNumber(GuiGraphicsExtractor graphics, Font font, String text, int x, int y, float scale) {
         int width = Math.max(1, font.width(text));
-        float scale = width > OffhandStatusIconRules.ICON ? OffhandStatusIconRules.ICON / (float) width : 1.0F;
         float drawWidth = width * scale;
         float drawHeight = font.lineHeight * scale;
         float tx = x + OffhandStatusIconRules.ICON - drawWidth;

@@ -76,7 +76,8 @@ public final class Achievements implements FeatureModule {
         ServerPlayNetworking.send(
                 player,
                 new ClientboundManaPayload(manaLevel(player), (float) currentMana(player), WellFed.level(player)));
-        ServerPlayNetworking.send(player, new ClientboundManaLearningPayload(manaLearningTotal(player)));
+        ServerPlayNetworking.send(
+                player, new ClientboundManaLearningPayload(manaLearningTotal(player), storedManaLevel(player)));
     }
 
     public static void onPlaced(BlockPlaceContext context, Block block) {

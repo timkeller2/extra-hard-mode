@@ -374,6 +374,6 @@
   "tougher.tooltip.food_maintain": "Maintaining",
   "tougher.tooltip.food_great": "Craving",
   "tougher.tooltip.food_normal": "Eaten %s",
-  "tougher.tooltip.mana_learning": "Base Mana Cap %s",
+  "tougher.tooltip.mana_learning": "Mana %s",
   "tougher.tooltip.well_fed_level": "Well Fed %s"
 }

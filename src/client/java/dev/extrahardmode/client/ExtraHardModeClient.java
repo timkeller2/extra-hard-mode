@@ -67,6 +67,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
     private static volatile ClientboundSyncPayload lastSync;
     private static volatile ClientboundManaPayload lastMana;
     private static volatile double lastManaLearning;
+    private static volatile int lastBaseManaLevel;
     private static volatile ClientboundFoodCravingPayload lastFoodCraving;
     private static volatile ClientboundFlightPayload lastFlight;
     private static volatile ClientboundPowerMinePayload lastPowerMine;
@@ -90,6 +91,11 @@ public class ExtraHardModeClient implements ClientModInitializer {
 
     public static double lastManaLearning() {
         return lastManaLearning;
+    }
+
+    /** Stored mana level, before Well Fed and ready gold. */
+    public static int lastBaseManaLevel() {
+        return lastBaseManaLevel;
     }
 
     public static ClientboundFoodCravingPayload lastFoodCraving() {
@@ -368,7 +374,10 @@ public class ExtraHardModeClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(
                 ClientboundManaPayload.TYPE, (payload, context) -> lastMana = payload);
         ClientPlayNetworking.registerGlobalReceiver(
-                ClientboundManaLearningPayload.TYPE, (payload, context) -> lastManaLearning = payload.capacity());
+                ClientboundManaLearningPayload.TYPE, (payload, context) -> {
+                    lastManaLearning = payload.capacity();
+                    lastBaseManaLevel = payload.baseManaLevel();
+                });
         ClientPlayNetworking.registerGlobalReceiver(
                 ClientboundFoodCravingPayload.TYPE, (payload, context) -> lastFoodCraving = payload);
         ClientPlayNetworking.registerGlobalReceiver(
@@ -410,6 +419,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
             CopperLanterns.setClientActive(false);
             lastMana = null;
             lastManaLearning = 0.0;
+            lastBaseManaLevel = 0;
             lastFoodCraving = null;
             FoodCravingClient.disconnected();
             lastFlight = null;
