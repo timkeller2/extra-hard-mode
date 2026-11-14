@@ -1,7 +1,5 @@
 package dev.extrahardmode.feature;
 
-import java.util.List;
-
 /**
  * Ownership of a placed hopper. The wait, the sign names, and the public-day
  * label are the same rules as a copper chest. Minecraft-free so JUnit can cover it.
@@ -25,18 +23,20 @@ public final class HopperRules {
         }
     }
 
-    /** The hopper and the chest were placed by the same player. */
-    public static boolean sameOwner(String hopperOwnerId, String chestOwnerId) {
-        return hopperOwnerId != null && !hopperOwnerId.isEmpty() && hopperOwnerId.equals(chestOwnerId);
+    /** The hopper and the other container were placed by the same player. */
+    public static boolean sameOwner(String hopperOwnerId, String containerOwnerId) {
+        return hopperOwnerId != null && !hopperOwnerId.isEmpty() && hopperOwnerId.equals(containerOwnerId);
     }
 
     /**
-     * True when this hopper's placer may pull from a locked chest or hopper.
-     * The placer's id matches, or their placement name is a whole sign line.
+     * An owned hopper may pull from or push into a container with this owner.
+     * A blank owner means nobody owns that container.
      */
-    public static boolean mayPull(
-            String hopperOwnerId, String hopperOwnerName, String sourceOwnerId, List<String> signLines) {
-        return CopperChestRules.allowed(sourceOwnerId, hopperOwnerId, signLines, hopperOwnerName);
+    public static boolean mayTransfer(String hopperOwnerId, String containerOwnerId) {
+        if (containerOwnerId == null || containerOwnerId.isEmpty()) {
+            return true;
+        }
+        return sameOwner(hopperOwnerId, containerOwnerId);
     }
 
     public static String key(Claim claim) {

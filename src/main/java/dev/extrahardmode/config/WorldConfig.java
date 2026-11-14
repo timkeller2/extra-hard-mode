@@ -1285,7 +1285,7 @@ public final class WorldConfig {
                 writeDefaultIfMissing(
                         file,
                         "modules.tougher.owned_hoppers",
-                        "A placed hopper stays locked to its owner for 90 Minecraft days. That hopper can pull from, and put items into, a copper chest the same player owns. Default true.",
+                        "A placed hopper stays locked to its owner for 90 Minecraft days. That hopper can pull from, and put items into, a container that player owns or one nobody owns. Default true.",
                         true);
                 writeInhabitantDefaults(file);
                 migrate(file);

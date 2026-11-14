@@ -246,7 +246,7 @@ public final class EhmHelp {
                         "Building: A hopper you place is yours for 90 Minecraft days. Only you can open it, pick it up, break it, or change a sign on it. Opening it starts the 90 days again.",
                         "Building: A sign on that hopper names other players, one on each line. They can use it as you can, and opening it starts the 90 days again.",
                         "Building: Anyone else who looks at the hopper sees how many days remain until it is public.",
-                        "Building: A hopper you own can pull from a copper chest or hopper you own, or one whose sign names you. It can put items into a copper chest with the same owner."));
+                        "Building: A hopper you own can pull from and put items into a container you own, or one nobody owns. Another player's locked chest or hopper stays closed to it."));
     }
 
     private static Page torches() {

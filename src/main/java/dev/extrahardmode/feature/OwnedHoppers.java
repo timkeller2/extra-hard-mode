@@ -41,12 +41,14 @@ import net.minecraft.world.phys.BlockHitResult;
 
 /**
  * A hopper belongs to the player who placed it, for the same 90 Minecraft days as a
- * copper chest. That hopper can pull from a copper chest or hopper they own, and it
- * can put items into a copper chest placed by the same player. Other hoppers, pistons, explosions, and copper
- * golems leave it alone.
+ * copper chest. That hopper can pull from and push into a container the same player
+ * owns, and into a container nobody owns. Another player's lock stays closed to it.
+ * Other hoppers, droppers, pistons, explosions, and copper golems leave it alone.
  */
 public final class OwnedHoppers implements FeatureModule {
     public static final Identifier ID = ExtraHardModeMod.id("owned_hoppers");
+    /** The hopper currently taking an item, so that take is not treated as an outside push. */
+    private static final ThreadLocal<Hopper> PULLING = new ThreadLocal<>();
 
     static final String LOCKED_KEY = "tougher.message.hopper_locked";
     static final String LOCKED = "You cannot use this hopper. Public in %s.";
@@ -187,38 +189,46 @@ public final class OwnedHoppers implements FeatureModule {
         return live(server, pos) != null;
     }
 
-    /**
-     * True when this hopper may pull from every locked copper chest or hopper in the
-     * container. A hopper with no owner, and a minecart hopper, may not.
-     */
-    public static boolean mayPull(Hopper hopper, Container container) {
-        if (!(hopper instanceof BlockEntity entity) || !(entity.getLevel() instanceof ServerLevel level)) {
-            return false;
-        }
-        HopperRules.Claim claim = live(level, entity.getBlockPos());
-        if (claim == null) {
-            return false;
-        }
-        return sourcesAllow(container, claim.owner(), claim.ownerName());
+    /** Marks a hopper pull so the following insert into that hopper is the pull, not an outside push. */
+    public static void beginPull(Hopper hopper) {
+        PULLING.set(hopper);
+    }
+
+    public static void endPull() {
+        PULLING.remove();
     }
 
     /**
-     * True when {@code source} is a placed hopper and every locked chest in
-     * {@code destination} was placed by that same player. A locked hopper in the
-     * destination does not accept the push.
+     * True when this hopper must not take from the container. An owned hopper may take
+     * from a container with the same owner or with no owner. Any other hopper stops at a lock.
      */
-    public static boolean mayDeposit(Container source, Container destination) {
-        if (!(source instanceof Hopper) || !(source instanceof BlockEntity entity)) {
-            return false;
+    public static boolean blocksTake(Hopper hopper, Container container) {
+        String owner = hopperOwner(hopper);
+        if (owner != null) {
+            return !transferAllowed(owner, container);
         }
-        if (!(entity.getLevel() instanceof ServerLevel level)) {
-            return false;
+        return CopperChests.blocksContainer(container);
+    }
+
+    /**
+     * True when this transfer must not move items. A pull into the hopper that started
+     * it, and a push from an owned hopper, may use a same-owner container or one nobody
+     * owns. A dropper or another player's hopper still cannot push into a lock.
+     */
+    public static boolean blocksInsert(Container source, Container destination) {
+        Hopper pulling = PULLING.get();
+        if (pulling != null && destination == pulling) {
+            String owner = hopperOwner(pulling);
+            if (owner == null) {
+                return CopperChests.blocksContainer(source);
+            }
+            return !transferAllowed(owner, source);
         }
-        HopperRules.Claim claim = live(level, entity.getBlockPos());
-        if (claim == null) {
-            return false;
+        String sourceOwner = hopperOwner(source instanceof Hopper hopper ? hopper : null);
+        if (sourceOwner != null) {
+            return !transferAllowed(sourceOwner, destination);
         }
-        return classifyDeposit(destination, claim.owner()) == Deposit.SAME_OWNER;
+        return CopperChests.blocksContainer(source) || CopperChests.blocksContainer(destination);
     }
 
     /** Label for a non-owner looking at this hopper. Empty for an owner or a public hopper. */
@@ -269,56 +279,36 @@ public final class OwnedHoppers implements FeatureModule {
         HopperData.of(server).forget(dimension(server), pos.getX(), pos.getY(), pos.getZ());
     }
 
-    private enum Deposit {
-        NONE,
-        SAME_OWNER,
-        DENY
-    }
-
-    /** Locked chests with this owner pass. Any other lock refuses the whole insert. */
-    private static Deposit classifyDeposit(Container container, String ownerId) {
+    /** Blank when nobody owns the container. A double chest must pass on both halves. */
+    private static boolean transferAllowed(String hopperOwnerId, Container container) {
         if (container instanceof CompoundContainer compound) {
             CompoundContainerAccess access = (CompoundContainerAccess) compound;
-            Deposit first = classifyDeposit(access.tougher$container1(), ownerId);
-            Deposit second = classifyDeposit(access.tougher$container2(), ownerId);
-            if (first == Deposit.DENY || second == Deposit.DENY) {
-                return Deposit.DENY;
-            }
-            if (first == Deposit.SAME_OWNER || second == Deposit.SAME_OWNER) {
-                return Deposit.SAME_OWNER;
-            }
-            return Deposit.NONE;
+            return transferAllowed(hopperOwnerId, access.tougher$container1())
+                    && transferAllowed(hopperOwnerId, access.tougher$container2());
         }
+        return HopperRules.mayTransfer(hopperOwnerId, containerOwner(container));
+    }
+
+    /** Owner id of a locked copper chest or hopper. Null when this container is public. */
+    private static String containerOwner(Container container) {
         if (!(container instanceof BlockEntity entity) || !(entity.getLevel() instanceof ServerLevel level)) {
-            return Deposit.NONE;
+            return null;
         }
         BlockPos pos = entity.getBlockPos();
         if (CopperChests.isLocked(level, pos)) {
-            return HopperRules.sameOwner(ownerId, CopperChests.ownerId(level, pos)) ? Deposit.SAME_OWNER : Deposit.DENY;
+            return CopperChests.ownerId(level, pos);
         }
-        if (live(level, pos) != null) {
-            return Deposit.DENY;
-        }
-        return Deposit.NONE;
+        HopperRules.Claim claim = live(level, pos);
+        return claim == null ? null : claim.owner();
     }
 
-    private static boolean sourcesAllow(Container container, String ownerId, String ownerName) {
-        if (container instanceof CompoundContainer compound) {
-            CompoundContainerAccess access = (CompoundContainerAccess) compound;
-            return sourcesAllow(access.tougher$container1(), ownerId, ownerName)
-                    && sourcesAllow(access.tougher$container2(), ownerId, ownerName);
+    /** Placer id when this is a locked placed hopper. Null for a public hopper or a minecart. */
+    private static String hopperOwner(Hopper hopper) {
+        if (!(hopper instanceof BlockEntity entity) || !(entity.getLevel() instanceof ServerLevel level)) {
+            return null;
         }
-        if (!(container instanceof BlockEntity entity) || !(entity.getLevel() instanceof ServerLevel level)) {
-            return false;
-        }
-        BlockPos pos = entity.getBlockPos();
-        if (CopperChests.isLocked(level, pos)) {
-            return CopperChests.allows(level, pos, ownerId, ownerName);
-        }
-        if (live(level, pos) != null) {
-            return allows(level, pos, ownerId, ownerName);
-        }
-        return true;
+        HopperRules.Claim claim = live(level, entity.getBlockPos());
+        return claim == null ? null : claim.owner();
     }
 
     private static InteractionResult denySign(BlockPlaceContext context, ServerLevel level, ServerPlayer player) {
@@ -340,14 +330,6 @@ public final class OwnedHoppers implements FeatureModule {
     private static boolean allowed(ServerPlayer player, ServerLevel level, BlockPos pos, HopperRules.Claim claim) {
         return CopperChestRules.allowed(
                 claim.owner(), player.getStringUUID(), signLines(level, pos), player.getPlainTextName());
-    }
-
-    private static boolean allows(ServerLevel level, BlockPos pos, String playerId, String playerName) {
-        HopperRules.Claim claim = live(level, pos);
-        if (claim == null) {
-            return true;
-        }
-        return HopperRules.mayPull(playerId, playerName, claim.owner(), signLines(level, pos));
     }
 
     /** The claim while it is locked and the block is still a hopper. An expired claim is dropped. */

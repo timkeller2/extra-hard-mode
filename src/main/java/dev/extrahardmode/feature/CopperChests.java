@@ -51,8 +51,9 @@ import net.minecraft.world.phys.HitResult;
  * A copper chest belongs to the player who placed it. For 90 Minecraft days only that
  * player, or a player named on a sign attached to it, can open it, break it, or change
  * that sign. Opening it starts the 90 days again. Waxed and weathered copper chests
- * keep the claim. A hopper owned by that player can pull from it. Other hoppers, pistons,
- * explosions, and copper golems leave a locked chest alone.
+ * keep the claim. A hopper that player owns can pull from it and push into it. A hopper
+ * can also use a chest nobody owns. Other hoppers, pistons, explosions, and copper golems
+ * leave a locked chest alone.
  */
 public final class CopperChests implements FeatureModule {
     public static final Identifier ID = ExtraHardModeMod.id("copper_chests");
@@ -242,14 +243,11 @@ public final class CopperChests implements FeatureModule {
     }
 
     /**
-     * True when this hopper must not pull. A hopper owned by the chest's owner, or by
-     * a player named on its sign, may pull. Deposit uses {@link #blocksInsert}.
+     * True when this hopper must not pull. An owned hopper may take from a container
+     * with the same owner or with no owner.
      */
     public static boolean blocksTake(Hopper hopper, Container container) {
-        if (!blocksContainer(container)) {
-            return false;
-        }
-        return !OwnedHoppers.mayPull(hopper, container);
+        return OwnedHoppers.blocksTake(hopper, container);
     }
 
     /** True while this position is still a locked copper chest. */
@@ -264,14 +262,12 @@ public final class CopperChests implements FeatureModule {
     }
 
     /**
-     * True when this transfer must not move items. A hopper may push into a locked
-     * copper chest whose placer is the same player.
+     * True when this transfer must not move items. An owned hopper may push into a
+     * container with the same owner or with no owner. A pull into that hopper uses the
+     * same rule. Anything else stops at a locked chest or hopper.
      */
     public static boolean blocksInsert(Container source, Container destination) {
-        if (OwnedHoppers.mayDeposit(source, destination)) {
-            return false;
-        }
-        return blocksContainer(source) || blocksContainer(destination);
+        return OwnedHoppers.blocksInsert(source, destination);
     }
 
     /** The placer, or a player named on the chest. A missing claim allows everyone. */

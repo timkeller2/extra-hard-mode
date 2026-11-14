@@ -2,6 +2,7 @@ package dev.extrahardmode.mixin;
 
 import dev.extrahardmode.feature.CopperChests;
 import dev.extrahardmode.feature.FurnaceXp;
+import dev.extrahardmode.feature.OwnedHoppers;
 import dev.extrahardmode.feature.FurnaceXpRules;
 import dev.extrahardmode.world.WorldGate;
 import net.minecraft.core.Direction;
@@ -31,7 +32,9 @@ public abstract class HopperBlockEntityMixin {
             CallbackInfoReturnable<Boolean> cir) {
         if (CopperChests.blocksTake(hopper, container)) {
             cir.setReturnValue(false);
+            return;
         }
+        OwnedHoppers.beginPull(hopper);
     }
 
     @Inject(method = "tryTakeInItemFromSlot", at = @At("RETURN"))
@@ -41,6 +44,7 @@ public abstract class HopperBlockEntityMixin {
             int slot,
             Direction direction,
             CallbackInfoReturnable<Boolean> cir) {
+        OwnedHoppers.endPull();
         if (!Boolean.TRUE.equals(cir.getReturnValue())) {
             return;
         }

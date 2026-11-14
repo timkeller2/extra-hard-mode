@@ -5,17 +5,17 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class HopperRulesTest {
     @Test
-    void placerAndSignNameMayPull() {
-        assertTrue(HopperRules.mayPull("owner-id", "Ada", "owner-id", List.of()));
-        assertTrue(HopperRules.mayPull("guest-id", "Ada", "owner-id", List.of(" ada ")));
-        assertFalse(HopperRules.mayPull("guest-id", "Cara", "owner-id", List.of("Ada")));
-        assertFalse(HopperRules.mayPull("guest-id", "SELL", "owner-id", List.of("SELL")));
-        assertFalse(HopperRules.mayPull("", "", "owner-id", List.of()));
+    void ownedHopperTransfersWithItsOwnerOrNobody() {
+        assertTrue(HopperRules.mayTransfer("owner-id", null));
+        assertTrue(HopperRules.mayTransfer("owner-id", ""));
+        assertTrue(HopperRules.mayTransfer("owner-id", "owner-id"));
+        assertFalse(HopperRules.mayTransfer("owner-id", "other-id"));
+        assertFalse(HopperRules.mayTransfer("", "other-id"));
+        assertFalse(HopperRules.mayTransfer(null, "other-id"));
         assertTrue(HopperRules.sameOwner("owner-id", "owner-id"));
         assertFalse(HopperRules.sameOwner("guest-id", "owner-id"));
         assertFalse(HopperRules.sameOwner("", "owner-id"));
@@ -37,8 +37,8 @@ class HopperRulesTest {
     void helpTellsTheHopperOwnerAndThePull() {
         String text = String.join(" ", EhmHelp.resolve("building").lines());
         assertTrue(text.contains("A hopper you place is yours for 90 Minecraft days"));
-        assertTrue(text.contains("can pull from a copper chest or hopper you own"));
-        assertTrue(text.contains("put items into a copper chest with the same owner"));
+        assertTrue(text.contains("pull from and put items into a container you own, or one nobody owns"));
+        assertTrue(text.contains("Another player's locked chest or hopper stays closed"));
         assertTrue(text.contains("copper golems"));
     }
 }
