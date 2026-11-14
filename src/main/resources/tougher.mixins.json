@@ -55,6 +55,7 @@
     "FlintAndSteelItemMixin",
     "FishingHookMixin",
     "FoodDataMixin",
+    "FoodDataAccess",
     "PlayerFoodMixin",
     "FoodPropertiesMixin",
     "GhastMixin",

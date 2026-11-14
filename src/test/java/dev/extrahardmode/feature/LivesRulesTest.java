@@ -58,6 +58,23 @@ class LivesRulesTest {
     }
 
     @Test
+    void livesOnRespawnFillsHealthAndSaturation() {
+        assertEquals(20.0F, LivesRules.respawnHealth(true, 20.0F, 25), 0.001F);
+        assertEquals(18.0F, LivesRules.respawnHealth(true, 18.0F, 25), 0.001F);
+        assertEquals(6.0F, LivesRules.respawnHealth(true, 6.0F, 25), 0.001F);
+        assertEquals(5.0F, LivesRules.respawnHealth(false, 20.0F, 25), 0.001F);
+        assertEquals(20, LivesRules.respawnFood(true, 6, LivesRules.FULL_FOOD));
+        assertEquals(28, LivesRules.respawnFood(true, 6, 28));
+        assertEquals(6, LivesRules.respawnFood(false, 6, LivesRules.FULL_FOOD));
+        assertEquals(0, LivesRules.respawnFood(false, -3, LivesRules.FULL_FOOD));
+        assertEquals(20.0F, LivesRules.fullSaturation(20), 0.001F);
+        assertEquals(6.0F, LivesRules.fullSaturation(6), 0.001F);
+        String text = String.join(" ", EhmHelp.resolve("combat").lines());
+        assertTrue(text.contains("full health, a full hunger bar, and full saturation"));
+        assertTrue(text.contains("The usual limit on those does not apply"));
+    }
+
+    @Test
     void levelAbove32BuysAMissingLife() {
         assertFalse(LivesRules.aboveRecoveryLevel(32));
         assertTrue(LivesRules.aboveRecoveryLevel(33));

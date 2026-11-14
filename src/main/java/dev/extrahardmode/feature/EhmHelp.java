@@ -401,7 +401,8 @@ public final class EhmHelp {
                         "Combat: At 0 lives, base health stays 10 hearts. Below 0 it is 20 plus 2 for each life, and at least 6, which is 3 hearts.",
                         "Combat: On death, a count above -1 says how many lives remain. Below 0 it says you are down that many hearts.",
                         "Combat: Restore Life Available starts on, as player.death.restoreLifeAvailable. It applies only while lives are on.",
-                        "Combat: Past level 32, a missing life returns. It costs 250 experience plus 250 for each life below full, and at most the experience you have."));
+                        "Combat: Past level 32, a missing life returns. It costs 250 experience plus 250 for each life below full, and at most the experience you have.",
+                        "Combat: While lives are on, you come back at full health, a full hunger bar, and full saturation. The usual limit on those does not apply."));
     }
 
     private static Page armor() {

@@ -39,6 +39,41 @@ public final class LivesRules {
         return configured;
     }
 
+    /** Vanilla hunger bar. Full saturation is this high, because saturation cannot pass hunger. */
+    public static final int FULL_FOOD = 20;
+
+    /**
+     * Health after a death. Lives on fills the player's current max, including a max
+     * already lowered by lives below 0. Lives off uses {@code percent} of that max.
+     */
+    public static float respawnHealth(boolean livesOn, float maxHealth, int percent) {
+        float max = Math.max(0.0F, maxHealth);
+        if (livesOn) {
+            return max;
+        }
+        return max * percent / 100.0F;
+    }
+
+    /**
+     * Hunger after a death. Lives on fills the bar. Lives off uses the configured
+     * food, and it cannot pass {@code foodMax}.
+     */
+    public static int respawnFood(boolean livesOn, int configuredFood, int foodMax) {
+        int max = Math.max(0, foodMax);
+        if (livesOn) {
+            return max;
+        }
+        if (configuredFood < 0) {
+            return 0;
+        }
+        return Math.min(configuredFood, max);
+    }
+
+    /** Saturation that fills a hunger bar. It cannot rise above the food. */
+    public static float fullSaturation(int food) {
+        return Math.max(0, food);
+    }
+
     /** One death. The count is allowed to go negative. */
     public static int spend(int lives) {
         return lives - 1;

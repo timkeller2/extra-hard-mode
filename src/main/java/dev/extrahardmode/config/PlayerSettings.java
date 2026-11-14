@@ -275,7 +275,7 @@ public final class PlayerSettings {
         comment(
                 file,
                 "player.death.lives",
-                "Lives each player starts with. -1 is off. 0 or above is on. Each death spends one, and the count can go below 0. Below 0, base max health is 20 plus 2 per life, and at least 6. At 0 lives, base health stays 20. The overworld file is the value the server uses. On death, a count above -1 says how many lives remain. Below 0 it says you are down that many hearts.");
+                "Lives each player starts with. -1 is off. 0 or above is on. Each death spends one, and the count can go below 0. Below 0, base max health is 20 plus 2 per life, and at least 6. At 0 lives, base health stays 20. While lives are on, a death brings the player back at full health, a full hunger bar, and full saturation. The respawn health and food limits do not apply. The overworld file is the value the server uses. On death, a count above -1 says how many lives remain. Below 0 it says you are down that many hearts.");
         setIfMissing(file, "player.death.lives", LivesRules.DEFAULT_LIVES);
         comment(
                 file,

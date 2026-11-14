@@ -79,7 +79,7 @@ public final class Players implements FeatureModule {
 
     private Players() {}
 
-    private record PendingRespawn(UUID playerId, float health, int food, int readyTick) {}
+    private record PendingRespawn(UUID playerId, float health, int food, boolean fillSaturation, int readyTick) {}
 
     private record PendingBedClear(ResourceKey<Level> dimension, BlockPos bed) {}
 
@@ -162,7 +162,7 @@ public final class Players implements FeatureModule {
             if (!WorldGate.isModuleActive(level, ID) || EhmApi.playerBypasses(player)) {
                 continue;
             }
-            new SetPlayerHealthAndFoodTask(player, pending.health(), pending.food()).run();
+            new SetPlayerHealthAndFoodTask(player, pending.health(), pending.food(), pending.fillSaturation()).run();
         }
     }
 
@@ -319,14 +319,16 @@ public final class Players implements FeatureModule {
         }
         clearPendingBedHostiles(newPlayer);
         PlayerSettings settings = ConfigManager.world(level).player();
-        if (!settings.respawnHealthEnable()) {
+        boolean livesOn = Lives.systemOn(newPlayer);
+        if (!livesOn && !settings.respawnHealthEnable()) {
             return;
         }
-        float health = newPlayer.getMaxHealth() * settings.respawnHealthPercent() / 100.0f;
-        int food = settings.respawnFood();
-        new SetPlayerHealthAndFoodTask(newPlayer, health, food).run();
+        int foodMax = livesOn ? WellFedRules.foodMax(WellFed.level(newPlayer)) : WellFedRules.BASE_FOOD;
+        float health = LivesRules.respawnHealth(livesOn, newPlayer.getMaxHealth(), settings.respawnHealthPercent());
+        int food = LivesRules.respawnFood(livesOn, settings.respawnFood(), foodMax);
+        new SetPlayerHealthAndFoodTask(newPlayer, health, food, livesOn).run();
         MinecraftServer server = level.getServer();
-        PENDING_RESPAWNS.add(new PendingRespawn(newPlayer.getUUID(), health, food, server.getTickCount() + 1));
+        PENDING_RESPAWNS.add(new PendingRespawn(newPlayer.getUUID(), health, food, livesOn, server.getTickCount() + 1));
     }
 
     public static void hurtUnscaled(ServerPlayer player, DamageSource source, float amount) {
