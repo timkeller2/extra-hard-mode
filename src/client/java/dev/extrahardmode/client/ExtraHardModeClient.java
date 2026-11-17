@@ -16,6 +16,7 @@ import dev.extrahardmode.feature.monster.Horses;
 import dev.extrahardmode.module.MessageId;
 import dev.extrahardmode.network.ClientboundAbilityDurationsPayload;
 import dev.extrahardmode.network.ClientboundAchievementFloatPayload;
+import dev.extrahardmode.network.ClientboundBossRayPayload;
 import dev.extrahardmode.network.ClientboundAchievementScorePayload;
 import dev.extrahardmode.network.ClientboundCreditsPayload;
 import dev.extrahardmode.network.ClientboundAbilityReadyPayload;
@@ -409,6 +410,12 @@ public class ExtraHardModeClient implements ClientModInitializer {
                 client.execute(() -> AchievementFloater.spawn(payload));
             }
         });
+        ClientPlayNetworking.registerGlobalReceiver(ClientboundBossRayPayload.TYPE, (payload, context) -> {
+            Minecraft client = Minecraft.getInstance();
+            if (client != null) {
+                client.execute(() -> BossRayRenderer.accept(payload));
+            }
+        });
         ClientPlayNetworking.registerGlobalReceiver(
                 ClientboundAchievementScorePayload.TYPE, (payload, context) -> AchievementVictoryHud.onScore(payload));
         ClientPlayNetworking.registerGlobalReceiver(
@@ -434,6 +441,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
             lastWiseLesson = null;
             compassSpawn = null;
             AchievementFloater.clear();
+            BossRayRenderer.clear();
             AchievementVictoryHud.clear();
             SeasonAtmosphere.clearClient();
         });
@@ -449,6 +457,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
         AbilityHelp.register();
         FoodCravingClient.register();
         AchievementFloater.register();
+        BossRayRenderer.register();
         AchievementVictoryHud.register();
         UseEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {
             if (!level.isClientSide() || lastSync == null) {

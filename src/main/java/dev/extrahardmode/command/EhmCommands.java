@@ -77,7 +77,8 @@ public final class EhmCommands {
         "mana_abilities",
         "inhabitants",
         "copper_chests",
-        "owned_hoppers"
+        "owned_hoppers",
+        "enchanting"
     };
 
     private static final SuggestionProvider<CommandSourceStack> MODULE_SUGGESTOR =
@@ -398,6 +399,7 @@ public final class EhmCommands {
         for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
             if (player.level() == level) {
                 EhmNetworking.sendSync(player);
+                Achievements.sendMana(player);
             }
         }
         return true;

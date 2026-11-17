@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Weight label, mana learning crystal, and Well Fed chicken. {@code leftPos} and {@code topPos}
+ * Weight label, mana learning crystal, Well Fed chicken, and enchanting skill. {@code leftPos} and {@code topPos}
  * belong to the container screen, so this mixin extends it.
  */
 @Mixin(InventoryScreen.class)

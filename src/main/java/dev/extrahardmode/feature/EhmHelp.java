@@ -73,6 +73,7 @@ public final class EhmHelp {
                 "combat",
                 "armor",
                 "weapons",
+                "enchanting",
                 "mana",
                 "abilities",
                 "achievements",
@@ -93,7 +94,7 @@ public final class EhmHelp {
                 "tougher.help.overview.",
                 List.of(
                         "Tougher — harder survival. Type /tougher help <topic>, or /tougher ability help.",
-                        "Topics: mining, building, torches, hunger, farming, combat, armor, weapons, mana, abilities, achievements, homes, portals.",
+                        "Topics: mining, building, torches, hunger, farming, combat, armor, weapons, enchanting, mana, abilities, achievements, homes, portals.",
                         "Farming subjects: crops, animals, seasons, soil, processing.",
                         "Home subjects: rooms, furnishings, residents, shops, bounties. Checklist: /tougher help homes.",
                         "Mana abilities: /tougher ability help, or /tougher ability help <name>. /tougher me lists your skills.",
@@ -175,6 +176,7 @@ public final class EhmHelp {
                 combat(),
                 armor(),
                 weapons(),
+                enchanting(),
                 mana(),
                 abilities(),
                 achievements(),
@@ -197,6 +199,7 @@ public final class EhmHelp {
             case "combat", "mobs", "shields", "bosses" -> combat();
             case "armor" -> armor();
             case "weapons", "weapon" -> weapons();
+            case "enchanting", "enchant", "enchantment", "enchantments" -> enchanting();
             case "mana" -> mana();
             case "abilities", "ability" -> abilities();
             case "achievements", "achievement", "achieve" -> achievements();
@@ -285,6 +288,7 @@ public final class EhmHelp {
                         "Hunger: A green minus maintains the Well Fed run. It is the oldest meal of that run, and that food appears only once.",
                         "Hunger: Above the offhand, a mana crystal shows Mana as your base mana level over your learning capacity, like 3/7, when that capacity is above 0.",
                         "Hunger: A chicken above that shows your Well Fed level when it is above 0.",
+                        "Hunger: An enchantment table above that shows your enchanting skill.",
                         "Hunger: A green up mark is a craving. Those meals have dropped out of the variety run, and eating them builds that run back up.",
                         "Hunger: Black and brown follow that same-food penalty, including the extra repeats Well Fed allows.",
                         "Hunger: After those seven, every 2 more different meals raise Well Fed by one. Nine in a row is Well Fed 1.",
@@ -386,9 +390,13 @@ public final class EhmHelp {
                         "Combat: The same biome boss family can appear again 500 blocks or more from every earlier spawn of that family.",
                         "Combat: Bosses do not spawn within 80 blocks of a player or a chest.",
                         "Combat: Brood mothers chase when hit. Every few seconds they spit for half damage and a brief blind.",
-                        "Combat: A biome boss breaks blocks in its way at iron pickaxe speed when that is how it reaches you.",
+                        "Combat: A biome boss breaks blocks in its way at the speed of 3 diamond pickaxes times the boss number.",
+                        "Combat: Every 4 seconds in a fight, a biome boss jumps 4 blocks high and up to 4 blocks toward you.",
+                        "Combat: Below half health, it fires a green ray every 5 seconds. A hit pulls you toward the boss at 3 blocks a second for 5 seconds.",
                         "Combat: A biome boss stuck in a wall teleports to the nearest open spot and keeps fighting.",
-                        "Combat: Killing an overworld biome boss summons a vex, a witch, a skeleton, a creeper, a zombie, a phantom that ignores sunlight, and two pigmen.",
+                        "Combat: Killing an overworld biome boss summons, within 16 blocks, a vex, a witch, a skeleton, a creeper, a zombie, a phantom, an enderman, and a zombified piglin.",
+                        "Combat: The zombie, skeleton, and phantom ignore sunlight. The enderman starts angry. Later bosses repeat the group, up to 4 times, and minion health matches the boss number.",
+                        "Combat: Each minion targets a random survival player within 64 blocks of the dead boss, splitting the group across them.",
                         "Combat: Each defeated boss makes the next 30% harder and richer. The third is a world event.",
                         "Combat: The seventh rolls the Minecraft credits, and you can keep playing.",
                         "Combat: Below Y=48, a visited cave may spawn an extra hostile in light 11. Every 20 blocks you are deeper adds 1. Chance falls by 5% times that block's light.",
@@ -426,6 +434,15 @@ public final class EhmHelp {
                         "Weapons: Smith the heavy diamond sword or axe with a netherite upgrade template and a netherite ingot. That ingot repairs it.",
                         "Weapons: A heavy golden sword casts Smite Evil, the same as a golden sword.",
                         "Weapons: A slain biome boss can drop an enchanted heavy sword or axe. The chance starts at 25% and rises as that boss is richer."));
+    }
+
+    private static Page enchanting() {
+        return Page.of(
+                "tougher.help.enchanting.",
+                List.of(
+                        "Enchanting: At an enchantment table, you can only take a requirement level at or below your enchanting skill. It starts at 3.",
+                        "Enchanting: A requirement within 3 of that skill raises it by 1. An enchantment table above Well Fed shows it. Anvils and villager books do not.",
+                        "Enchanting: modules.tougher.enchanting starts on. /tougher set enchanting false turns off the table limit and the inventory icon."));
     }
 
     private static Page mana() {
@@ -479,7 +496,7 @@ public final class EhmHelp {
                         "Abilities: Redstone blocks he takes shimmer red on you, one second for each block.",
                         "Abilities: A lesson he teaches shimmers green for half a second per use.",
                         "Abilities: Hold an item and press ? for details, or type /tougher ability help <name>.",
-                        "Abilities: /tougher me lists your mana level and ability skill levels.",
+                        "Abilities: /tougher me lists your mana level, enchanting skill, and ability skill levels.",
                         "Abilities: Bottom-right icons list abilities above level 2, highest first. Each icon is 5% of normal size times that level, and that level sits on its right at the same scale.",
                         "Abilities: Hold a book to see every one of those icons. Otherwise only an active ability, one on cooldown, or the ability for the item in your hand is shown.",
                         "Abilities: A cooldown puts yellow seconds on the icon. The level number is golden."));

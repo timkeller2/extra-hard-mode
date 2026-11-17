@@ -22,6 +22,9 @@
   "tougher.command.me.line": "%s: %s",
   "tougher.command.me.paragraph": "Mana level: %s. Your mana abilities: %s",
   "tougher.command.me.paragraph_empty": "Mana level: %s. You have not used any mana abilities yet.",
+  "tougher.command.me.enchanting": "Enchanting skill: %s. The table only takes a requirement at or below this.",
+  "tougher.message.enchant_requirement": "That enchantment requires level %s. Your enchanting skill is %s.",
+  "tougher.message.enchant_skill": "Your enchanting skill is now %s.",
   "tougher.command.version": "Tougher %s (Minecraft %s, Fabric Loader %s)",
   "tougher.command.enabled.true": "Tougher is on in %s",
   "tougher.command.enabled.false": "Tougher is off in %s",
@@ -375,5 +378,6 @@
   "tougher.tooltip.food_great": "Craving",
   "tougher.tooltip.food_normal": "Eaten %s",
   "tougher.tooltip.mana_learning": "Mana %s",
-  "tougher.tooltip.well_fed_level": "Well Fed %s"
+  "tougher.tooltip.well_fed_level": "Well Fed %s",
+  "tougher.tooltip.enchant_ability": "Enchanting skill %s"
 }

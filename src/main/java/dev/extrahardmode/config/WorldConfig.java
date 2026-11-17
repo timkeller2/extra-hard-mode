@@ -1287,6 +1287,11 @@ public final class WorldConfig {
                         "modules.tougher.owned_hoppers",
                         "A placed hopper stays locked to its owner for 90 Minecraft days. That hopper can pull from, and put items into, a container that player owns or one nobody owns. Default true.",
                         true);
+                writeDefaultIfMissing(
+                        file,
+                        "modules.tougher.enchanting",
+                        "Enchantment-table skill limit and the inventory enchanting icon. The skill starts at 3. Default true.",
+                        true);
                 writeInhabitantDefaults(file);
                 migrate(file);
                 file.save();

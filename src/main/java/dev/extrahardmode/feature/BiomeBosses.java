@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Predicate;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -63,6 +64,7 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.monster.Enderman;
 import net.minecraft.world.entity.monster.cubemob.MagmaCube;
 import net.minecraft.world.entity.monster.hoglin.Hoglin;
 import net.minecraft.world.entity.monster.zombie.Zombie;
@@ -109,6 +111,7 @@ public final class BiomeBosses implements FeatureModule {
     private static final Identifier KNOCKBACK_MOD = ExtraHardModeMod.id("biome_boss_knockback");
     private static final Identifier DISTANCE_MOD = ExtraHardModeMod.id("biome_boss_distance");
     private static final Identifier DEFEAT_MOD = ExtraHardModeMod.id("biome_boss_defeats");
+    private static final Identifier FINALE_HEALTH_MOD = ExtraHardModeMod.id("biome_boss_finale_health");
     private static final Identifier BROOD_SPEED_MOD = ExtraHardModeMod.id("biome_boss_brood_speed");
     private static long creditsAtTick = -1L;
     /** Loaded bosses only. An unloaded boss drops its bar and gets a new one when the chunk loads. */
@@ -165,6 +168,7 @@ public final class BiomeBosses implements FeatureModule {
         if (WorldGate.isModuleActive(level, ID)) {
             tickBroods(level);
             BossMining.ensureGoals(level);
+            BossFight.tick(level);
         }
         if (level.getDifficulty() == Difficulty.PEACEFUL || level.dimension() == Level.END) {
             return;
@@ -991,7 +995,7 @@ public final class BiomeBosses implements FeatureModule {
                 name,
                 count);
         level.getServer().getPlayerList().broadcastSystemMessage(defeat, false);
-        localSpectacle(level, entity.getX(), entity.getY(), entity.getZ());
+        localSpectacle(level, entity.getX(), entity.getY(), entity.getZ(), defeated);
         if (BiomeBossesRules.isThirdMilestone(defeated)) {
             Component third = Component.translatableWithFallback(
                     "tougher.chat.third_boss",
@@ -1039,11 +1043,11 @@ public final class BiomeBosses implements FeatureModule {
         }
     }
 
-    static void localSpectacle(ServerLevel level, double x, double y, double z) {
+    static void localSpectacle(ServerLevel level, double x, double y, double z, int bossNumber) {
         for (int i = 0; i < 3; i++) {
             strikeLightning(level, x, y, z);
         }
-        spawnFinale(level, x, y, z);
+        spawnFinale(level, x, y, z, bossNumber);
         spawnFireworks(level, x, y + 1.0, z, 8);
         level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, x, y + 1.0, z, 2, 0.0, 0.0, 0.0, 0.0);
         level.sendParticles(ParticleTypes.TOTEM_OF_UNDYING, x, y + 1.0, z, 80, 1.5, 2.0, 1.5, 0.35);
@@ -1116,9 +1120,10 @@ public final class BiomeBosses implements FeatureModule {
 
     /**
      * Overworld death summons. Same gates as lightning pigmen: monsters allowed, and not a no-replacement
-     * biome or structure. Nether and End bosses keep the lightning show only.
+     * biome or structure. Nether and End bosses keep the lightning show only. The group repeats with the
+     * boss number, up to four times, and each minion's health matches that number.
      */
-    static void spawnFinale(ServerLevel level, double x, double y, double z) {
+    static void spawnFinale(ServerLevel level, double x, double y, double z, int bossNumber) {
         if (level.dimension() != Level.OVERWORLD) {
             return;
         }
@@ -1134,36 +1139,57 @@ public final class BiomeBosses implements FeatureModule {
                 .isValid()) {
             return;
         }
-        List<BiomeBossesRules.FinaleKind> roster = BiomeBossesRules.finaleRoster();
-        ServerPlayer target = nearestFighter(level, x, y, z);
+        List<BiomeBossesRules.FinaleKind> roster = BiomeBossesRules.finaleRoster(bossNumber);
+        List<ServerPlayer> fighters = fightersInRange(level, x, y, z);
+        shuffleFighters(fighters, level.getRandom());
         for (int i = 0; i < roster.size(); i++) {
+            int slot = BiomeBossesRules.finaleTargetSlot(i, fighters.size());
+            ServerPlayer target = slot < 0 ? null : fighters.get(slot);
             BiomeBossesRules.FinaleKind kind = roster.get(i);
             switch (kind) {
-                case PIGLIN -> placeFinale(level, EntityTypes.ZOMBIFIED_PIGLIN, kind, x, y, z, i, roster.size(), target);
-                case VEX -> placeFinale(level, EntityTypes.VEX, kind, x, y, z, i, roster.size(), target);
-                case WITCH -> placeFinale(level, EntityTypes.WITCH, kind, x, y, z, i, roster.size(), target);
-                case SKELETON -> placeFinale(level, EntityTypes.SKELETON, kind, x, y, z, i, roster.size(), target);
-                case CREEPER -> placeFinale(level, EntityTypes.CREEPER, kind, x, y, z, i, roster.size(), target);
-                case ZOMBIE -> placeFinale(level, EntityTypes.ZOMBIE, kind, x, y, z, i, roster.size(), target);
-                case PHANTOM -> placeFinale(level, EntityTypes.PHANTOM, kind, x, y, z, i, roster.size(), target);
+                case PIGLIN -> placeFinale(
+                        level, EntityTypes.ZOMBIFIED_PIGLIN, kind, x, y, z, i, roster.size(), bossNumber, target);
+                case ENDERMAN -> placeFinale(
+                        level, EntityTypes.ENDERMAN, kind, x, y, z, i, roster.size(), bossNumber, target);
+                case VEX -> placeFinale(
+                        level, EntityTypes.VEX, kind, x, y, z, i, roster.size(), bossNumber, target);
+                case WITCH -> placeFinale(
+                        level, EntityTypes.WITCH, kind, x, y, z, i, roster.size(), bossNumber, target);
+                case SKELETON -> placeFinale(
+                        level, EntityTypes.SKELETON, kind, x, y, z, i, roster.size(), bossNumber, target);
+                case CREEPER -> placeFinale(
+                        level, EntityTypes.CREEPER, kind, x, y, z, i, roster.size(), bossNumber, target);
+                case ZOMBIE -> placeFinale(
+                        level, EntityTypes.ZOMBIE, kind, x, y, z, i, roster.size(), bossNumber, target);
+                case PHANTOM -> placeFinale(
+                        level, EntityTypes.PHANTOM, kind, x, y, z, i, roster.size(), bossNumber, target);
             }
         }
     }
 
-    private static ServerPlayer nearestFighter(ServerLevel level, double x, double y, double z) {
-        double best = BiomeBossesRules.FINALE_AGGRO_BLOCKS * BiomeBossesRules.FINALE_AGGRO_BLOCKS;
-        ServerPlayer nearest = null;
+    private static List<ServerPlayer> fightersInRange(ServerLevel level, double x, double y, double z) {
+        double range = BiomeBossesRules.FINALE_AGGRO_BLOCKS;
+        double rangeSq = range * range;
+        List<ServerPlayer> found = new ArrayList<>();
         for (ServerPlayer player : level.players()) {
             if (!player.isAlive() || player.isCreative() || player.isSpectator()) {
                 continue;
             }
-            double distance = player.distanceToSqr(x, y, z);
-            if (distance <= best) {
-                best = distance;
-                nearest = player;
+            if (player.distanceToSqr(x, y, z) <= rangeSq) {
+                found.add(player);
             }
         }
-        return nearest;
+        return found;
+    }
+
+    /** Fisher-Yates with the level random, so the deal order is not the player-list order. */
+    private static void shuffleFighters(List<ServerPlayer> fighters, RandomSource random) {
+        for (int i = fighters.size() - 1; i > 0; i--) {
+            int swap = random.nextInt(i + 1);
+            ServerPlayer moving = fighters.get(i);
+            fighters.set(i, fighters.get(swap));
+            fighters.set(swap, moving);
+        }
     }
 
     private static <T extends Mob> void placeFinale(
@@ -1175,18 +1201,28 @@ public final class BiomeBosses implements FeatureModule {
             double z,
             int index,
             int count,
+            int bossNumber,
             ServerPlayer target) {
         T mob = type.create(level, EntitySpawnReason.EVENT);
         if (mob == null) {
             return;
         }
-        BiomeBossesRules.PlaneOffset ring = BiomeBossesRules.finaleRingOffset(index, count);
+        BiomeBossesRules.PlaneOffset ring = BiomeBossesRules.finaleOffset(index, count);
         Vec3 preferred = new Vec3(x + ring.x(), y, z + ring.z());
         mob.snapTo(preferred.x, preferred.y, preferred.z);
         boolean wantsFloor = BiomeBossesRules.finaleWantsFloor(kind);
-        Vec3 spot = nearestClear(level, mob, preferred, BiomeBossesRules.FINALE_SEARCH_RADIUS, wantsFloor);
+        Predicate<Vec3> inside = spot -> BiomeBossesRules.withinFinaleRadius(spot.x - x, spot.z - z);
+        Vec3 spot = nearestClear(level, mob, preferred, BiomeBossesRules.FINALE_SEARCH_RADIUS, wantsFloor, inside);
         if (spot == null && wantsFloor) {
-            spot = nearestClear(level, mob, preferred, BiomeBossesRules.FINALE_SEARCH_RADIUS, false);
+            spot = nearestClear(level, mob, preferred, BiomeBossesRules.FINALE_SEARCH_RADIUS, false, inside);
+        }
+        if (spot == null) {
+            int wide = (int) BiomeBossesRules.FINALE_SPAWN_RADIUS;
+            Vec3 death = new Vec3(x, y, z);
+            spot = nearestClear(level, mob, death, wide, wantsFloor, inside);
+            if (spot == null && wantsFloor) {
+                spot = nearestClear(level, mob, death, wide, false, inside);
+            }
         }
         if (spot == null) {
             return;
@@ -1195,14 +1231,25 @@ public final class BiomeBosses implements FeatureModule {
         mob.finalizeSpawn(
                 level, level.getCurrentDifficultyAt(BlockPos.containing(spot)), EntitySpawnReason.EVENT, null);
         mob.setAttached(EhmAttachments.EHM_SPAWN_PROCESSED, Boolean.TRUE);
-        if (kind == BiomeBossesRules.FinaleKind.PHANTOM) {
+        if (BiomeBossesRules.finaleIgnoresSun(kind)) {
             mob.setAttached(EhmAttachments.EHM_NO_SUN_BURN, Boolean.TRUE);
         }
+        applyModifier(
+                mob.getAttribute(Attributes.MAX_HEALTH),
+                FINALE_HEALTH_MOD,
+                BiomeBossesRules.extraMultiplierAmount(BiomeBossesRules.finaleHealthMultiplier(bossNumber)),
+                AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
+        mob.setHealth(mob.getMaxHealth());
         if (mob instanceof ZombifiedPiglin piglin) {
             PigMen.anger(piglin);
             if (target != null) {
                 piglin.setPersistentAngerTarget(EntityReference.of(target));
             }
+        }
+        if (mob instanceof Enderman enderman && target != null) {
+            enderman.setPersistentAngerTarget(EntityReference.of(target));
+            enderman.startPersistentAngerTimer();
+            enderman.setBeingStaredAt();
         }
         if (target != null) {
             mob.setTarget(target);
@@ -1273,14 +1320,20 @@ public final class BiomeBosses implements FeatureModule {
         return searchShells(level, boss, origin, BiomeBossesRules.UNSTUCK_RADIUS, false);
     }
 
-    private static Vec3 nearestClear(ServerLevel level, Entity entity, Vec3 origin, int radius, boolean needFloor) {
-        if (clearOfWall(level, entity, origin, needFloor)) {
+    private static Vec3 nearestClear(
+            ServerLevel level, Entity entity, Vec3 origin, int radius, boolean needFloor, Predicate<Vec3> accept) {
+        if (accepts(origin, accept) && clearOfWall(level, entity, origin, needFloor)) {
             return origin;
         }
-        return searchShells(level, entity, origin, radius, needFloor);
+        return searchShells(level, entity, origin, radius, needFloor, accept);
     }
 
     private static Vec3 searchShells(ServerLevel level, Entity entity, Vec3 origin, int radius, boolean needFloor) {
+        return searchShells(level, entity, origin, radius, needFloor, null);
+    }
+
+    private static Vec3 searchShells(
+            ServerLevel level, Entity entity, Vec3 origin, int radius, boolean needFloor, Predicate<Vec3> accept) {
         for (int ring = 1; ring <= radius; ring++) {
             for (int dy = -ring; dy <= ring; dy++) {
                 for (int dx = -ring; dx <= ring; dx++) {
@@ -1289,6 +1342,9 @@ public final class BiomeBosses implements FeatureModule {
                             continue;
                         }
                         Vec3 candidate = origin.add(dx, dy, dz);
+                        if (!accepts(candidate, accept)) {
+                            continue;
+                        }
                         if (clearOfWall(level, entity, candidate, needFloor)) {
                             return candidate;
                         }
@@ -1297,6 +1353,10 @@ public final class BiomeBosses implements FeatureModule {
             }
         }
         return null;
+    }
+
+    private static boolean accepts(Vec3 spot, Predicate<Vec3> accept) {
+        return accept == null || accept.test(spot);
     }
 
     private static boolean nearEnough(Entity entity, Vec3 feet) {

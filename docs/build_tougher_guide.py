@@ -168,7 +168,7 @@ def build():
             "A slice of cake counts as its own food. "
             "The same food 5 times in the last 7 meals restores less; 7 of the last 7 restores even less. "
             "A meal still gives at least 1 hunger, and saturation does not fall. "
-            "Foods in an inventory, chest, bundle, shop, hotbar, or on the cursor show a small mark in the top right. A black X means very sick of it, and a brown down mark means sick of it. Those follow the same-food penalty, so Well Fed delays them. A brown number is how many meals ago you ate a food in the last 7. A yellow number is how many meals ago you last ate that food. It is a slight craving when eating it weakens the run, and within grace when the repeat still fits. A green minus maintains the Well Fed run. It is the oldest meal of that run, and that food appears only once. Above the offhand, a mana crystal shows Mana as your base mana level over your learning capacity, like 3/7, when that capacity is above 0. A chicken above that shows your Well Fed level when it is above 0. A green up mark is a craving. Repeats fill the extra slots, so the oldest meals drop out of the variety run, and eating them builds it back up. "
+            "Foods in an inventory, chest, bundle, shop, hotbar, or on the cursor show a small mark in the top right. A black X means very sick of it, and a brown down mark means sick of it. Those follow the same-food penalty, so Well Fed delays them. A brown number is how many meals ago you ate a food in the last 7. A yellow number is how many meals ago you last ate that food. It is a slight craving when eating it weakens the run, and within grace when the repeat still fits. A green minus maintains the Well Fed run. It is the oldest meal of that run, and that food appears only once. Above the offhand, a mana crystal shows Mana as your base mana level over your learning capacity, like 3/7, when that capacity is above 0. A chicken above that shows your Well Fed level when it is above 0. An enchantment table above that shows your enchanting skill. A green up mark is a craving. Repeats fill the extra slots, so the oldest meals drop out of the variety run, and eating them builds it back up. "
             "The locator bar is off until you eat a golden carrot. It stays on until your saturation is gone. "
             "Another player sees you only while their own bar is on too.",
             s["body"],
@@ -277,9 +277,15 @@ def build():
             "Bosses do not spawn within 80 blocks of a player or a chest. "
             "Within 64 blocks, a biome boss shows a health bar with its name. "
             "A brood mother keeps chasing when hit, and every few seconds spits for half her bite damage and a brief blindness. "
-            "If a boss cannot walk to you, it breaks blocks in the way at iron-pickaxe speed. "
+            "If a boss cannot walk to you, it breaks blocks in the way at the speed of 3 diamond pickaxes times the boss number. "
+            "Every 4 seconds in a fight, it jumps 4 blocks high and up to 4 blocks toward you. "
+            "Below half health, it fires a green ray every 5 seconds. A hit pulls you toward the boss at 3 blocks a second for 5 seconds. "
             "If it is stuck inside a wall, it teleports to the nearest open spot and keeps fighting. "
-            "Killing an overworld boss summons a vex, a witch, a skeleton, a creeper, a zombie, a phantom that does not burn in sunlight, and two zombified piglins. "
+            "Killing an overworld boss summons, within 16 blocks, a vex, a witch, a skeleton, a creeper, a zombie, a phantom, an enderman, and a zombified piglin. "
+            "The zombie, skeleton, and phantom do not burn in sunlight, and the enderman arrives already angry at the player it chose. "
+            "Each minion targets a random survival player within 64 blocks of the dead boss, so the group splits across everyone there. "
+            "Later bosses repeat that group, up to four times. "
+            "Minion health matches the boss number, so the second boss doubles it and the fourth quadruples it, and later bosses keep raising it. "
             "Each defeat makes the next boss 30% harder and richer. The third is a world event. "
             "The seventh rolls the credits, and you can keep playing.",
             s["body"],
@@ -340,6 +346,15 @@ def build():
             "A heavy golden sword casts Smite Evil, the same as a golden sword. "
             "A slain biome boss can also drop an enchanted heavy sword or axe. "
             "The chance starts at 25% and rises as that boss is richer.",
+            s["body"],
+        ),
+        Paragraph("Enchanting", s["h"]),
+        Paragraph(
+            "At an enchantment table, you can only take a requirement level at or below your enchanting skill. "
+            "The skill starts at 3. Taking a requirement within 3 of that skill raises it by 1. "
+            "The survival inventory shows that skill above Well Fed, on an enchantment table, in the same small numbers. "
+            "modules.tougher.enchanting starts on. /tougher set enchanting false turns off the table limit and that icon. "
+            "Anvils and villager books do not use this skill.",
             s["body"],
         ),
         Paragraph("Mana", s["h"]),

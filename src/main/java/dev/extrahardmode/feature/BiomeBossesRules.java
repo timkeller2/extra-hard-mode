@@ -71,14 +71,48 @@ public final class BiomeBossesRules {
     public static final int UNSTUCK_RADIUS = 16;
     /** Ticks to wait before searching again when no open spot exists. */
     public static final int UNSTUCK_RETRY_TICKS = 20;
-    /** Horizontal blocks between the death site and each finale summon. */
-    public static final double FINALE_RING_RADIUS = 2.5;
-    /** Chebyshev blocks searched for a clear finale spawn. */
+    /** Horizontal blocks. Every finale summon stays inside this distance of the death site. */
+    public static final double FINALE_SPAWN_RADIUS = 16.0;
+    /** Chebyshev blocks searched around a preferred finale spot before a wider search. */
     public static final int FINALE_SEARCH_RADIUS = 8;
-    /** A finale mob targets a survival player inside this range. */
+    /** Survival players inside this range of the death site can be chosen as a finale target. */
     public static final double FINALE_AGGRO_BLOCKS = 64.0;
-    /** Zombified piglins kept in the death summon. The rest of the roster is one of each other kind. */
-    public static final int FINALE_PIGLIN_COUNT = 2;
+    /** The death group repeats this many times at most. Health is not capped. */
+    public static final int FINALE_COUNT_CAP = 4;
+    /** Vanilla diamond pickaxe destroy speed on stone and ore. */
+    public static final float DIAMOND_PICKAXE_SPEED = 8.0F;
+    /** A boss mines as if this many diamond pickaxes were swinging, times the boss number. */
+    public static final int MINE_PICKAXE_COUNT = 3;
+    /** 4 seconds between leaps while a boss is fighting. */
+    public static final int BOSS_JUMP_INTERVAL_TICKS = 80;
+    /** Peak height of a leap, in blocks. */
+    public static final double BOSS_JUMP_HEIGHT = 4.0;
+    /** Horizontal leap toward the target, in blocks, after leaving one block of room. */
+    public static final double BOSS_JUMP_DISTANCE = 4.0;
+    /** Default gravity attribute. Applied after the move, then scaled by the vertical drag. */
+    public static final double BOSS_JUMP_GRAVITY = 0.08;
+    /** Air vertical drag when the air-drag attribute is zero. */
+    public static final double BOSS_JUMP_VERTICAL_DRAG = 0.98;
+    /** Air horizontal drag when the air-drag attribute is zero. */
+    public static final double BOSS_JUMP_HORIZONTAL_DRAG = 0.91;
+    /** Long enough for a 4-block leap to land before fall damage is counted. */
+    public static final int BOSS_JUMP_FALL_SAFE_TICKS = 60;
+    /** 5 seconds between green rays once a boss is below half health. */
+    public static final int BOSS_RAY_INTERVAL_TICKS = 100;
+    /** A hit keeps pulling for 5 seconds. */
+    public static final int BOSS_RAY_PULL_TICKS = 100;
+    /** A blocked ray is shown briefly and does not pull. */
+    public static final int BOSS_RAY_MISS_TICKS = 10;
+    /** Pull speed. 3 blocks/second is 0.15 blocks/tick. */
+    public static final double BOSS_RAY_PULL_BLOCKS_PER_SECOND = 3.0;
+    /** The ray only aims at a survival player inside this range. */
+    public static final double BOSS_RAY_RANGE = 24.0;
+    /** Inside this distance of the boss center, the pull lets the player move. */
+    public static final double BOSS_RAY_STOP_DISTANCE = 1.75;
+    /** Resend the beam so a player who starts watching mid-pull can see it. */
+    public static final int BOSS_RAY_REFRESH_TICKS = 20;
+    /** Players within this range are sent the beam. */
+    public static final double BOSS_RAY_VIEW_BLOCKS = 64.0;
 
     private BiomeBossesRules() {}
 
@@ -294,9 +328,166 @@ public final class BiomeBossesRules {
         return speed / hardness / divisor;
     }
 
-    /** Creatures called when an overworld biome boss dies. Two piglins, then one of each other kind. */
+    /**
+     * 1-based boss number. {@code priorDefeats} is how many campaign bosses were already dead
+     * when this one spawned, which is what {@code EHM_BOSS_DEFEAT_COUNT} stores.
+     */
+    public static int livingBossNumber(int priorDefeats) {
+        if (priorDefeats >= Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        }
+        return Math.max(1, priorDefeats + 1);
+    }
+
+    /**
+     * Destroy speed of a diamond pickaxe, times {@link #MINE_PICKAXE_COUNT}, times the boss number.
+     * When the pick is the required tool and the block reports less than one diamond pickaxe,
+     * the speed is raised to {@link #DIAMOND_PICKAXE_SPEED} before the multiplier. Dirt and other
+     * blocks that do not require a pick keep the reported speed, then take the same multiplier.
+     */
+    public static float bossBlockMineSpeed(float diamondDestroySpeed, int bossNumber, boolean requiredTool) {
+        float speed = Math.max(0.0F, diamondDestroySpeed);
+        if (Float.isNaN(speed)) {
+            speed = 0.0F;
+        }
+        if (requiredTool && speed < DIAMOND_PICKAXE_SPEED) {
+            speed = DIAMOND_PICKAXE_SPEED;
+        }
+        int picks = Math.max(0, MINE_PICKAXE_COUNT);
+        int number = Math.max(1, bossNumber);
+        return speed * picks * number;
+    }
+
+    /**
+     * Initial vertical velocity whose peak is {@code height}. Matches air travel: the position
+     * advances by the current velocity, then {@code vy = (vy - gravity) * verticalDrag}.
+     * A boss in water uses fluid travel instead, so it will not reach this peak.
+     */
+    public static double jumpVelocity(double height) {
+        if (!(height > 0.0) || Double.isNaN(height) || Double.isInfinite(height)) {
+            return 0.0;
+        }
+        double lo = 0.0;
+        double hi = Math.max(1.0, height);
+        while (simulatedJumpPeak(hi) < height && hi < 64.0) {
+            hi *= 2.0;
+        }
+        for (int i = 0; i < 40; i++) {
+            double mid = (lo + hi) * 0.5;
+            if (simulatedJumpPeak(mid) < height) {
+                lo = mid;
+            } else {
+                hi = mid;
+            }
+        }
+        return (lo + hi) * 0.5;
+    }
+
+    /** Highest point reached from {@code initialVy} using the air-travel step above. */
+    public static double simulatedJumpPeak(double initialVy) {
+        if (!(initialVy > 0.0) || Double.isNaN(initialVy)) {
+            return 0.0;
+        }
+        double y = 0.0;
+        double vy = initialVy;
+        double peak = 0.0;
+        for (int i = 0; i < 400; i++) {
+            y += vy;
+            if (y > peak) {
+                peak = y;
+            } else {
+                break;
+            }
+            vy = (vy - BOSS_JUMP_GRAVITY) * BOSS_JUMP_VERTICAL_DRAG;
+        }
+        return peak;
+    }
+
+    /** Ticks until the leap falls back to the height it left, including the landing tick. */
+    public static int jumpAirTicks(double initialVy) {
+        if (!(initialVy > 0.0) || Double.isNaN(initialVy)) {
+            return 0;
+        }
+        double y = 0.0;
+        double vy = initialVy;
+        for (int tick = 1; tick <= 400; tick++) {
+            y += vy;
+            vy = (vy - BOSS_JUMP_GRAVITY) * BOSS_JUMP_VERTICAL_DRAG;
+            if (tick > 1 && y <= 0.0) {
+                return tick;
+            }
+        }
+        return 400;
+    }
+
+    /**
+     * Horizontal speed that covers {@code distance} blocks across {@code airTicks}.
+     * Each tick moves by the current speed, then multiplies it by {@link #BOSS_JUMP_HORIZONTAL_DRAG}.
+     */
+    public static double jumpHorizontalVelocity(double distance, int airTicks) {
+        if (!(distance > 0.0) || airTicks <= 0 || Double.isNaN(distance)) {
+            return 0.0;
+        }
+        double drag = BOSS_JUMP_HORIZONTAL_DRAG;
+        double series = (1.0 - Math.pow(drag, airTicks)) / (1.0 - drag);
+        if (!(series > 1.0E-6)) {
+            return 0.0;
+        }
+        return distance / series;
+    }
+
+    /** Leap length toward a target, capped, and shorter by one block so the boss does not land inside them. */
+    public static double jumpLeapDistance(double horizontalDistance) {
+        if (!(horizontalDistance > 0.0) || Double.isNaN(horizontalDistance)) {
+            return 0.0;
+        }
+        return Math.min(BOSS_JUMP_DISTANCE, Math.max(0.0, horizontalDistance - 1.0));
+    }
+
+    /** A passenger never leaps. A hovering boss may leap in the air. Others wait until they are supported. */
+    public static boolean canLeap(boolean passenger, boolean groundedOrSwimming, boolean hovering) {
+        if (passenger) {
+            return false;
+        }
+        return groundedOrSwimming || hovering;
+    }
+
+    /** Strictly below half. Exactly half does not fire. */
+    public static boolean belowHalfHealth(float health, float maxHealth) {
+        return maxHealth > 0.0F && health < maxHealth * 0.5F;
+    }
+
+    public static double pullBlocksPerTick() {
+        return BOSS_RAY_PULL_BLOCKS_PER_SECOND / 20.0;
+    }
+
+    /**
+     * One tick of pull toward the boss center. The result is zeros inside
+     * {@link #BOSS_RAY_STOP_DISTANCE} so the caller leaves the player's own velocity alone.
+     * Otherwise it is a unit step of {@link #pullBlocksPerTick()} along {@code dx,dy,dz}.
+     */
+    public static double[] pullStep(double dx, double dy, double dz) {
+        double[] none = {0.0, 0.0, 0.0};
+        if (Double.isNaN(dx) || Double.isNaN(dy) || Double.isNaN(dz)) {
+            return none;
+        }
+        double distSq = dx * dx + dy * dy + dz * dz;
+        double stop = BOSS_RAY_STOP_DISTANCE;
+        if (distSq <= stop * stop) {
+            return none;
+        }
+        double dist = Math.sqrt(distSq);
+        if (!(dist > 0.0)) {
+            return none;
+        }
+        double step = pullBlocksPerTick();
+        return new double[] {dx / dist * step, dy / dist * step, dz / dist * step};
+    }
+
+    /** Creatures called when an overworld biome boss dies. One of each kind. */
     public enum FinaleKind {
         PIGLIN,
+        ENDERMAN,
         VEX,
         WITCH,
         SKELETON,
@@ -308,23 +499,76 @@ public final class BiomeBossesRules {
     /** Horizontal offset from a death site. */
     public record PlaneOffset(double x, double z) {}
 
+    /** One of each finale kind. */
     public static List<FinaleKind> finaleRoster() {
-        List<FinaleKind> roster = new ArrayList<>();
-        for (int i = 0; i < FINALE_PIGLIN_COUNT; i++) {
-            roster.add(FinaleKind.PIGLIN);
+        return List.of(
+                FinaleKind.PIGLIN,
+                FinaleKind.ENDERMAN,
+                FinaleKind.VEX,
+                FinaleKind.WITCH,
+                FinaleKind.SKELETON,
+                FinaleKind.CREEPER,
+                FinaleKind.ZOMBIE,
+                FinaleKind.PHANTOM);
+    }
+
+    /**
+     * How many times the group appears. The first boss is one group. Later bosses
+     * repeat it, and the fourth and every boss after stay at {@link #FINALE_COUNT_CAP}.
+     */
+    public static int finaleCountMultiplier(int bossNumber) {
+        if (bossNumber <= 1) {
+            return 1;
         }
-        roster.add(FinaleKind.VEX);
-        roster.add(FinaleKind.WITCH);
-        roster.add(FinaleKind.SKELETON);
-        roster.add(FinaleKind.CREEPER);
-        roster.add(FinaleKind.ZOMBIE);
-        roster.add(FinaleKind.PHANTOM);
+        return Math.min(FINALE_COUNT_CAP, bossNumber);
+    }
+
+    /** Health multiplier. The first boss is unchanged. The second doubles it, and it keeps rising. */
+    public static int finaleHealthMultiplier(int bossNumber) {
+        return Math.max(1, bossNumber);
+    }
+
+    /** The base group, repeated for {@link #finaleCountMultiplier(int)}. */
+    public static List<FinaleKind> finaleRoster(int bossNumber) {
+        List<FinaleKind> base = finaleRoster();
+        int times = finaleCountMultiplier(bossNumber);
+        List<FinaleKind> roster = new ArrayList<>(base.size() * times);
+        for (int copy = 0; copy < times; copy++) {
+            roster.addAll(base);
+        }
         return List.copyOf(roster);
+    }
+
+    /** Zombie, skeleton, and phantom finale mobs do not burn in sunlight. */
+    public static boolean finaleIgnoresSun(FinaleKind kind) {
+        return kind == FinaleKind.ZOMBIE || kind == FinaleKind.SKELETON || kind == FinaleKind.PHANTOM;
+    }
+
+    /**
+     * Which in-range player a minion attacks after that list has been shuffled.
+     * Minions are dealt around the list, so the group splits across everyone nearby.
+     * Negative when nobody is in range.
+     */
+    public static int finaleTargetSlot(int minionIndex, int playerCount) {
+        if (playerCount <= 0) {
+            return -1;
+        }
+        int index = Math.max(0, minionIndex);
+        return Math.floorMod(index, playerCount);
     }
 
     /** Flyers do not need a sturdy block under them. */
     public static boolean finaleWantsFloor(FinaleKind kind) {
         return kind != FinaleKind.VEX && kind != FinaleKind.PHANTOM;
+    }
+
+    /**
+     * True when a horizontal offset is inside the finale spawn radius, including the edge.
+     * A little slack keeps a ring that lands on the radius inside after sine and cosine rounding.
+     */
+    public static boolean withinFinaleRadius(double dx, double dz) {
+        double limit = FINALE_SPAWN_RADIUS * FINALE_SPAWN_RADIUS;
+        return dx * dx + dz * dz <= limit + 1.0e-4;
     }
 
     public static int chebyshev(int dx, int dy, int dz) {
@@ -336,9 +580,16 @@ public final class BiomeBossesRules {
         return chebyshev(dx, dy, dz) <= UNSTUCK_RADIUS;
     }
 
-    public static PlaneOffset finaleRingOffset(int index, int count) {
+    /**
+     * A spot inside {@link #FINALE_SPAWN_RADIUS}. Copies share the circle and sit on
+     * rings of 4, 8, 12, and 16 blocks so a large group does not stack on the body.
+     */
+    public static PlaneOffset finaleOffset(int index, int count) {
         int size = Math.max(1, count);
-        double angle = (Math.PI * 2.0 * Math.floorMod(index, size)) / size;
-        return new PlaneOffset(Math.cos(angle) * FINALE_RING_RADIUS, Math.sin(angle) * FINALE_RING_RADIUS);
+        int slot = Math.floorMod(index, size);
+        double angle = (Math.PI * 2.0 * slot) / size;
+        int band = Math.floorMod(slot, 4);
+        double radius = FINALE_SPAWN_RADIUS * (band + 1) / 4.0;
+        return new PlaneOffset(Math.cos(angle) * radius, Math.sin(angle) * radius);
     }
 }

@@ -52,6 +52,8 @@ public final class EhmNetworking {
         PayloadTypeRegistry.clientboundPlay()
                 .register(ClientboundAchievementFloatPayload.TYPE, ClientboundAchievementFloatPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay()
+                .register(ClientboundBossRayPayload.TYPE, ClientboundBossRayPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay()
                 .register(ClientboundAchievementScorePayload.TYPE, ClientboundAchievementScorePayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay()
                 .register(ClientboundCreditsPayload.TYPE, ClientboundCreditsPayload.STREAM_CODEC);
@@ -73,6 +75,7 @@ public final class EhmNetworking {
         });
         ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.register((player, origin, destination) -> {
             sendSync(player);
+            Achievements.sendMana(player);
             ManaAbilities.onJoin(player);
             Achievements.onPlayerJoin(player);
         });
@@ -114,6 +117,7 @@ public final class EhmNetworking {
     public static void syncAll(MinecraftServer server) {
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             sendSync(player);
+            Achievements.sendMana(player);
         }
     }
 

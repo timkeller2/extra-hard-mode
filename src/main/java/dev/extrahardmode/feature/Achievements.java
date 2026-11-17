@@ -75,7 +75,11 @@ public final class Achievements implements FeatureModule {
     public static void sendMana(ServerPlayer player) {
         ServerPlayNetworking.send(
                 player,
-                new ClientboundManaPayload(manaLevel(player), (float) currentMana(player), WellFed.level(player)));
+                new ClientboundManaPayload(
+                        manaLevel(player),
+                        (float) currentMana(player),
+                        WellFed.level(player),
+                        Enchanting.displayAbility(player)));
         ServerPlayNetworking.send(
                 player, new ClientboundManaLearningPayload(manaLearningTotal(player), storedManaLevel(player)));
     }

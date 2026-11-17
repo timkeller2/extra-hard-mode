@@ -50,5 +50,20 @@ class OffhandStatusIconRulesTest {
         assertFalse(OffhandStatusIconRules.showWellFed(-3));
         assertTrue(OffhandStatusIconRules.showWellFed(1));
         assertEquals("12", OffhandStatusIconRules.wellFedLabel(12));
+        assertFalse(OffhandStatusIconRules.showEnchant(-1));
+        assertTrue(OffhandStatusIconRules.showEnchant(0));
+        assertTrue(OffhandStatusIconRules.showEnchant(3));
+        assertEquals("3", OffhandStatusIconRules.enchantLabel(3));
+        assertEquals(2, OffhandStatusIconRules.enchantRow(true, true, true));
+        assertEquals(1, OffhandStatusIconRules.enchantRow(false, true, true));
+        assertEquals(1, OffhandStatusIconRules.enchantRow(true, false, true));
+        assertEquals(0, OffhandStatusIconRules.enchantRow(false, false, true));
+        assertEquals(-1, OffhandStatusIconRules.enchantRow(true, true, false));
+        assertTrue(OffhandStatusIconRules.rowY(OffhandStatusIconRules.enchantRow(true, true, true))
+                < OffhandStatusIconRules.rowY(OffhandStatusIconRules.chickenRow(true, true)));
+        assertEquals(
+                OffhandStatusIconRules.numberScale(40, 8),
+                OffhandStatusIconRules.numberScale(8, 4, 40),
+                0.0001F);
     }
 }

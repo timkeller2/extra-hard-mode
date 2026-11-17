@@ -11,6 +11,7 @@ import dev.extrahardmode.feature.BiomeBosses;
 import dev.extrahardmode.feature.CaveIns;
 import dev.extrahardmode.feature.CopperChests;
 import dev.extrahardmode.feature.Dragon;
+import dev.extrahardmode.feature.Enchanting;
 import dev.extrahardmode.feature.Exploration;
 import dev.extrahardmode.feature.Explosions;
 import dev.extrahardmode.feature.FallingBlocks;
@@ -127,6 +128,7 @@ public class ExtraHardModeMod implements ModInitializer {
         FEATURES.register(new LapisPortals());
         FEATURES.register(new CopperChests());
         FEATURES.register(new OwnedHoppers());
+        FEATURES.register(new Enchanting());
         ServerLevelEvents.LOAD.register((server, level) -> {
             WorldGate.onLevelLoad(server, level);
             FEATURES.onWorldLoad(level);

@@ -215,6 +215,82 @@ class BiomeBossesRulesTest {
     }
 
     @Test
+    void bossMinesLikeThreeDiamondPicksTimesTheBossNumber() {
+        assertEquals(8.0F, BiomeBossesRules.DIAMOND_PICKAXE_SPEED, 0.0F);
+        assertEquals(3, BiomeBossesRules.MINE_PICKAXE_COUNT);
+        assertEquals(1, BiomeBossesRules.livingBossNumber(0));
+        assertEquals(2, BiomeBossesRules.livingBossNumber(1));
+        assertEquals(4, BiomeBossesRules.livingBossNumber(3));
+        assertEquals(1, BiomeBossesRules.livingBossNumber(-5));
+        assertEquals(24.0F, BiomeBossesRules.bossBlockMineSpeed(8.0F, 1, true), 0.0001F);
+        assertEquals(48.0F, BiomeBossesRules.bossBlockMineSpeed(8.0F, 2, true), 0.0001F);
+        assertEquals(96.0F, BiomeBossesRules.bossBlockMineSpeed(8.0F, 4, true), 0.0001F);
+        assertEquals(3.0F, BiomeBossesRules.bossBlockMineSpeed(1.0F, 1, false), 0.0001F);
+        assertEquals(12.0F, BiomeBossesRules.bossBlockMineSpeed(1.0F, 4, false), 0.0001F);
+        assertEquals(24.0F, BiomeBossesRules.bossBlockMineSpeed(2.0F, 1, true), 0.0001F);
+        float stone = BiomeBossesRules.toolDestroyProgress(1.5F, BiomeBossesRules.bossBlockMineSpeed(8.0F, 1, true), true);
+        float accumulated = 0.0F;
+        int ticks = 0;
+        while (accumulated < 1.0F && ticks < 10) {
+            accumulated += stone;
+            ticks++;
+        }
+        assertEquals(2, ticks);
+    }
+
+    @Test
+    void bossJumpPeaksAtFourBlocksAndLeapsFourTowardTheTarget() {
+        assertEquals(80, BiomeBossesRules.BOSS_JUMP_INTERVAL_TICKS);
+        assertEquals(4.0, BiomeBossesRules.BOSS_JUMP_HEIGHT, 0.0);
+        assertEquals(4.0, BiomeBossesRules.BOSS_JUMP_DISTANCE, 0.0);
+        double vy = BiomeBossesRules.jumpVelocity(BiomeBossesRules.BOSS_JUMP_HEIGHT);
+        assertEquals(4.0, BiomeBossesRules.simulatedJumpPeak(vy), 0.05);
+        int air = BiomeBossesRules.jumpAirTicks(vy);
+        assertTrue(air > 10);
+        double hv = BiomeBossesRules.jumpHorizontalVelocity(4.0, air);
+        double traveled = 0.0;
+        double vx = hv;
+        for (int i = 0; i < air; i++) {
+            traveled += vx;
+            vx *= BiomeBossesRules.BOSS_JUMP_HORIZONTAL_DRAG;
+        }
+        assertEquals(4.0, traveled, 0.02);
+        assertEquals(4.0, BiomeBossesRules.jumpLeapDistance(20.0), 0.0);
+        assertEquals(2.0, BiomeBossesRules.jumpLeapDistance(3.0), 0.0);
+        assertEquals(0.0, BiomeBossesRules.jumpLeapDistance(1.0), 0.0);
+        assertEquals(0.0, BiomeBossesRules.jumpLeapDistance(0.5), 0.0);
+        assertFalse(BiomeBossesRules.canLeap(true, true, true));
+        assertTrue(BiomeBossesRules.canLeap(false, true, false));
+        assertTrue(BiomeBossesRules.canLeap(false, false, true));
+        assertFalse(BiomeBossesRules.canLeap(false, false, false));
+        assertEquals(0.0, BiomeBossesRules.jumpVelocity(0.0), 0.0);
+    }
+
+    @Test
+    void bossRayPullsAtThreeBlocksPerSecondBelowHalfHealth() {
+        assertEquals(100, BiomeBossesRules.BOSS_RAY_INTERVAL_TICKS);
+        assertEquals(100, BiomeBossesRules.BOSS_RAY_PULL_TICKS);
+        assertEquals(10, BiomeBossesRules.BOSS_RAY_MISS_TICKS);
+        assertEquals(24.0, BiomeBossesRules.BOSS_RAY_RANGE, 0.0);
+        assertEquals(1.75, BiomeBossesRules.BOSS_RAY_STOP_DISTANCE, 0.0);
+        assertFalse(BiomeBossesRules.belowHalfHealth(50.0F, 100.0F));
+        assertTrue(BiomeBossesRules.belowHalfHealth(49.9F, 100.0F));
+        assertFalse(BiomeBossesRules.belowHalfHealth(1.0F, 0.0F));
+        assertEquals(0.15, BiomeBossesRules.pullBlocksPerTick(), 0.0000001);
+        double[] step = BiomeBossesRules.pullStep(10.0, 0.0, 0.0);
+        assertEquals(0.15, step[0], 0.00001);
+        assertEquals(0.0, step[1], 0.00001);
+        assertEquals(0.0, step[2], 0.00001);
+        double[] close = BiomeBossesRules.pullStep(1.75, 0.0, 0.0);
+        assertEquals(0.0, close[0], 0.0);
+        assertEquals(0.0, close[1], 0.0);
+        double[] diag = BiomeBossesRules.pullStep(3.0, 4.0, 0.0);
+        assertEquals(0.09, diag[0], 0.00001);
+        assertEquals(0.12, diag[1], 0.00001);
+        assertEquals(0.0, diag[2], 0.00001);
+    }
+
+    @Test
     void stuckBossSearchesSixteenChebyshevBlocks() {
         assertEquals(16, BiomeBossesRules.UNSTUCK_RADIUS);
         assertEquals(20, BiomeBossesRules.UNSTUCK_RETRY_TICKS);
@@ -228,34 +304,94 @@ class BiomeBossesRulesTest {
     }
 
     @Test
-    void finaleRosterKeepsTwoPiglinsAndAddsOneOfEachOther() {
+    void finaleRosterIsOneOfEachAndScalesWithTheBossNumber() {
         var roster = BiomeBossesRules.finaleRoster();
         assertEquals(8, roster.size());
-        assertEquals(2, roster.stream().filter(kind -> kind == BiomeBossesRules.FinaleKind.PIGLIN).count());
-        assertEquals(1, roster.stream().filter(kind -> kind == BiomeBossesRules.FinaleKind.VEX).count());
-        assertEquals(1, roster.stream().filter(kind -> kind == BiomeBossesRules.FinaleKind.WITCH).count());
-        assertEquals(1, roster.stream().filter(kind -> kind == BiomeBossesRules.FinaleKind.SKELETON).count());
-        assertEquals(1, roster.stream().filter(kind -> kind == BiomeBossesRules.FinaleKind.CREEPER).count());
-        assertEquals(1, roster.stream().filter(kind -> kind == BiomeBossesRules.FinaleKind.ZOMBIE).count());
-        assertEquals(1, roster.stream().filter(kind -> kind == BiomeBossesRules.FinaleKind.PHANTOM).count());
+        assertEquals(1, count(roster, BiomeBossesRules.FinaleKind.PIGLIN));
+        assertEquals(1, count(roster, BiomeBossesRules.FinaleKind.ENDERMAN));
+        assertEquals(1, count(roster, BiomeBossesRules.FinaleKind.VEX));
+        assertEquals(1, count(roster, BiomeBossesRules.FinaleKind.WITCH));
+        assertEquals(1, count(roster, BiomeBossesRules.FinaleKind.SKELETON));
+        assertEquals(1, count(roster, BiomeBossesRules.FinaleKind.CREEPER));
+        assertEquals(1, count(roster, BiomeBossesRules.FinaleKind.ZOMBIE));
+        assertEquals(1, count(roster, BiomeBossesRules.FinaleKind.PHANTOM));
         assertEquals(BiomeBossesRules.FinaleKind.PIGLIN, roster.get(0));
+        assertEquals(BiomeBossesRules.FinaleKind.ENDERMAN, roster.get(1));
         assertEquals(BiomeBossesRules.FinaleKind.PHANTOM, roster.get(roster.size() - 1));
+        assertEquals(roster, BiomeBossesRules.finaleRoster(1));
+        assertEquals(16, BiomeBossesRules.finaleRoster(2).size());
+        assertEquals(24, BiomeBossesRules.finaleRoster(3).size());
+        assertEquals(32, BiomeBossesRules.finaleRoster(4).size());
+        assertEquals(32, BiomeBossesRules.finaleRoster(7).size());
+        assertEquals(4, count(BiomeBossesRules.finaleRoster(4), BiomeBossesRules.FinaleKind.ENDERMAN));
+        assertEquals(1, BiomeBossesRules.finaleCountMultiplier(1));
+        assertEquals(2, BiomeBossesRules.finaleCountMultiplier(2));
+        assertEquals(4, BiomeBossesRules.finaleCountMultiplier(4));
+        assertEquals(4, BiomeBossesRules.finaleCountMultiplier(7));
+        assertEquals(1, BiomeBossesRules.finaleCountMultiplier(0));
+        assertEquals(1, BiomeBossesRules.finaleHealthMultiplier(1));
+        assertEquals(2, BiomeBossesRules.finaleHealthMultiplier(2));
+        assertEquals(4, BiomeBossesRules.finaleHealthMultiplier(4));
+        assertEquals(5, BiomeBossesRules.finaleHealthMultiplier(5));
+        assertEquals(7, BiomeBossesRules.finaleHealthMultiplier(7));
+        assertEquals(0.0, BiomeBossesRules.extraMultiplierAmount(BiomeBossesRules.finaleHealthMultiplier(1)), 0.0);
+        assertEquals(1.0, BiomeBossesRules.extraMultiplierAmount(BiomeBossesRules.finaleHealthMultiplier(2)), 0.0);
+        assertEquals(3.0, BiomeBossesRules.extraMultiplierAmount(BiomeBossesRules.finaleHealthMultiplier(4)), 0.0);
+        assertTrue(BiomeBossesRules.finaleIgnoresSun(BiomeBossesRules.FinaleKind.ZOMBIE));
+        assertTrue(BiomeBossesRules.finaleIgnoresSun(BiomeBossesRules.FinaleKind.SKELETON));
+        assertTrue(BiomeBossesRules.finaleIgnoresSun(BiomeBossesRules.FinaleKind.PHANTOM));
+        assertFalse(BiomeBossesRules.finaleIgnoresSun(BiomeBossesRules.FinaleKind.ENDERMAN));
+        assertFalse(BiomeBossesRules.finaleIgnoresSun(BiomeBossesRules.FinaleKind.PIGLIN));
         assertFalse(BiomeBossesRules.finaleWantsFloor(BiomeBossesRules.FinaleKind.VEX));
         assertFalse(BiomeBossesRules.finaleWantsFloor(BiomeBossesRules.FinaleKind.PHANTOM));
+        assertTrue(BiomeBossesRules.finaleWantsFloor(BiomeBossesRules.FinaleKind.ENDERMAN));
         assertTrue(BiomeBossesRules.finaleWantsFloor(BiomeBossesRules.FinaleKind.ZOMBIE));
         assertTrue(BiomeBossesRules.finaleWantsFloor(BiomeBossesRules.FinaleKind.CREEPER));
+        assertEquals(16.0, BiomeBossesRules.FINALE_SPAWN_RADIUS, 0.0);
+        assertEquals(4, BiomeBossesRules.FINALE_COUNT_CAP);
         assertEquals(8, BiomeBossesRules.FINALE_SEARCH_RADIUS);
         assertEquals(64.0, BiomeBossesRules.FINALE_AGGRO_BLOCKS, 0.0);
+        assertEquals(-1, BiomeBossesRules.finaleTargetSlot(0, 0));
+        assertEquals(0, BiomeBossesRules.finaleTargetSlot(0, 1));
+        assertEquals(0, BiomeBossesRules.finaleTargetSlot(7, 1));
+        assertEquals(0, BiomeBossesRules.finaleTargetSlot(0, 3));
+        assertEquals(1, BiomeBossesRules.finaleTargetSlot(1, 3));
+        assertEquals(2, BiomeBossesRules.finaleTargetSlot(2, 3));
+        assertEquals(0, BiomeBossesRules.finaleTargetSlot(3, 3));
+        assertEquals(1, BiomeBossesRules.finaleTargetSlot(7, 3));
+        int[] dealt = new int[3];
+        for (int minion = 0; minion < 8; minion++) {
+            dealt[BiomeBossesRules.finaleTargetSlot(minion, 3)]++;
+        }
+        assertEquals(3, dealt[0]);
+        assertEquals(3, dealt[1]);
+        assertEquals(2, dealt[2]);
     }
 
     @Test
-    void finaleRingSpreadsSummonsAroundTheDeathSite() {
-        BiomeBossesRules.PlaneOffset first = BiomeBossesRules.finaleRingOffset(0, 8);
-        BiomeBossesRules.PlaneOffset third = BiomeBossesRules.finaleRingOffset(2, 8);
-        assertEquals(2.5, Math.hypot(first.x(), first.z()), 0.0001);
-        assertEquals(2.5, Math.hypot(third.x(), third.z()), 0.0001);
-        assertTrue(Math.hypot(first.x() - third.x(), first.z() - third.z()) > 1.0);
-        assertEquals(first.x(), BiomeBossesRules.finaleRingOffset(8, 8).x(), 0.0001);
-        assertEquals(first.z(), BiomeBossesRules.finaleRingOffset(8, 8).z(), 0.0001);
+    void finaleOffsetStaysInsideSixteenBlocks() {
+        for (int count : new int[] {8, 16, 24, 32}) {
+            for (int index = 0; index < count; index++) {
+                BiomeBossesRules.PlaneOffset spot = BiomeBossesRules.finaleOffset(index, count);
+                int band = Math.floorMod(index, 4);
+                double expected = BiomeBossesRules.FINALE_SPAWN_RADIUS * (band + 1) / 4.0;
+                assertEquals(expected, Math.hypot(spot.x(), spot.z()), 0.0001);
+                assertTrue(BiomeBossesRules.withinFinaleRadius(spot.x(), spot.z()));
+            }
+        }
+        BiomeBossesRules.PlaneOffset first = BiomeBossesRules.finaleOffset(0, 8);
+        BiomeBossesRules.PlaneOffset next = BiomeBossesRules.finaleOffset(1, 8);
+        assertTrue(Math.hypot(first.x() - next.x(), first.z() - next.z()) > 1.0);
+        assertEquals(first.x(), BiomeBossesRules.finaleOffset(8, 8).x(), 0.0001);
+        assertEquals(first.z(), BiomeBossesRules.finaleOffset(8, 8).z(), 0.0001);
+        assertTrue(BiomeBossesRules.withinFinaleRadius(16.0, 0.0));
+        assertTrue(BiomeBossesRules.withinFinaleRadius(0.0, -16.0));
+        assertTrue(BiomeBossesRules.withinFinaleRadius(0.0, 0.0));
+        assertFalse(BiomeBossesRules.withinFinaleRadius(16.1, 0.0));
+        assertFalse(BiomeBossesRules.withinFinaleRadius(12.0, 12.0));
+    }
+
+    private static long count(List<BiomeBossesRules.FinaleKind> roster, BiomeBossesRules.FinaleKind kind) {
+        return roster.stream().filter(entry -> entry == kind).count();
     }
 }

@@ -30,12 +30,13 @@ import net.minecraft.world.level.ClipContext;
 
 /**
  * Biome bosses break the block in front of them when walking will not reach their player.
- * Break time matches an iron pickaxe with no haste, fatigue, or water penalty.
+ * Break time matches three diamond pickaxes times the boss number, with no haste, fatigue,
+ * or water penalty. The first living boss is number 1.
  */
 public final class BossMining {
     /** Vanilla {@code destroyBlock} neighbor-update limit. */
     private static final int DESTROY_LIMIT = 512;
-    private static ItemStack ironPickaxe;
+    private static ItemStack diamondPickaxe;
 
     private BossMining() {}
 
@@ -111,14 +112,17 @@ public final class BossMining {
             return;
         }
         BlockState state = level.getBlockState(pos);
-        ItemStack pick = ironPickaxe();
+        ItemStack pick = diamondPickaxe();
         if (!breakable(state, level, pos)) {
             stop(mob);
             return;
         }
         boolean correct = !state.requiresCorrectToolForDrops() || pick.isCorrectToolForDrops(state);
-        float added = BiomeBossesRules.toolDestroyProgress(
-                state.getDestroySpeed(level, pos), pick.getDestroySpeed(state), correct);
+        boolean requiredTool = state.requiresCorrectToolForDrops() && pick.isCorrectToolForDrops(state);
+        int bossNumber = BiomeBossesRules.livingBossNumber(
+                mob.getAttachedOrElse(EhmAttachments.EHM_BOSS_DEFEAT_COUNT, 0));
+        float speed = BiomeBossesRules.bossBlockMineSpeed(pick.getDestroySpeed(state), bossNumber, requiredTool);
+        float added = BiomeBossesRules.toolDestroyProgress(state.getDestroySpeed(level, pos), speed, correct);
         if (added <= 0.0F) {
             stop(mob);
             return;
@@ -226,11 +230,11 @@ public final class BossMining {
         return state.getDestroySpeed(level, pos) >= 0.0F;
     }
 
-    private static ItemStack ironPickaxe() {
-        if (ironPickaxe == null || ironPickaxe.isEmpty()) {
-            ironPickaxe = new ItemStack(Items.IRON_PICKAXE);
+    private static ItemStack diamondPickaxe() {
+        if (diamondPickaxe == null || diamondPickaxe.isEmpty()) {
+            diamondPickaxe = new ItemStack(Items.DIAMOND_PICKAXE);
         }
-        return ironPickaxe;
+        return diamondPickaxe;
     }
 
     static final class BossMineGoal extends Goal {

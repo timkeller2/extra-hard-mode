@@ -281,7 +281,7 @@ public final class EhmAttachments {
     /** Packed block position a boss is currently breaking. Not saved. */
     public static final AttachmentType<Long> EHM_BOSS_MINE_POS =
             AttachmentRegistry.create(ExtraHardModeMod.id("boss_mine_pos"));
-    /** Accumulated iron-pickaxe break progress, 0 to 1. Not saved. */
+    /** Accumulated break progress, 0 to 1. Not saved. */
     public static final AttachmentType<Float> EHM_BOSS_MINE_PROGRESS =
             AttachmentRegistry.create(ExtraHardModeMod.id("boss_mine_progress"));
     /** Game time of the last "can I walk there?" check. Not saved. */
@@ -293,6 +293,24 @@ public final class EhmAttachments {
     /** The dig goal was added to this entity instance. Not saved; goals are not reloaded. */
     public static final AttachmentType<Boolean> EHM_BOSS_MINE_GOAL =
             AttachmentRegistry.create(ExtraHardModeMod.id("boss_mine_goal"));
+    /** Game time of the last leap. Not saved; a reload waits out a fresh interval. */
+    public static final AttachmentType<Long> EHM_BOSS_JUMP_TICK =
+            AttachmentRegistry.create(ExtraHardModeMod.id("boss_jump_tick"));
+    /** Fall distance is cleared until this game time so the leap does not hurt the boss. Not saved. */
+    public static final AttachmentType<Long> EHM_BOSS_JUMP_SAFE_UNTIL =
+            AttachmentRegistry.create(ExtraHardModeMod.id("boss_jump_safe_until"));
+    /** Game time of the last green ray. Not saved; a reload waits out a fresh interval. */
+    public static final AttachmentType<Long> EHM_BOSS_RAY_TICK =
+            AttachmentRegistry.create(ExtraHardModeMod.id("boss_ray_tick"));
+    /** Game time when the current pull ends. Not saved. */
+    public static final AttachmentType<Long> EHM_BOSS_PULL_UNTIL =
+            AttachmentRegistry.create(ExtraHardModeMod.id("boss_pull_until"));
+    /** UUID string of the player being pulled. Not saved. */
+    public static final AttachmentType<String> EHM_BOSS_PULL_TARGET =
+            AttachmentRegistry.create(ExtraHardModeMod.id("boss_pull_target"));
+    /** Game time of the last beam packet for the current pull. Not saved. */
+    public static final AttachmentType<Long> EHM_BOSS_RAY_SEND =
+            AttachmentRegistry.create(ExtraHardModeMod.id("boss_ray_send"));
     /**
      * Persistent. A mob with this set does not burn in sunlight. The biome-boss finale phantom uses it,
      * and so do wise-teacher hunt zombies, skeletons, and phantoms.
@@ -332,6 +350,10 @@ public final class EhmAttachments {
     public static final AttachmentType<Integer> EHM_MANA_LEVEL = AttachmentRegistry.create(
             ExtraHardModeMod.id("mana_level"),
             builder -> builder.persistent(Codec.INT).copyOnDeath().initializer(() -> 0));
+    /** Enchantment-table requirement the player may take. Missing saves start at 3. */
+    public static final AttachmentType<Integer> EHM_ENCHANT_ABILITY = AttachmentRegistry.create(
+            ExtraHardModeMod.id("enchant_ability"),
+            builder -> builder.persistent(Codec.INT).copyOnDeath().initializer(() -> 3));
     public static final AttachmentType<Double> EHM_MANA_CURRENT = AttachmentRegistry.create(
             ExtraHardModeMod.id("mana_current"),
             builder -> builder.persistent(Codec.DOUBLE).copyOnDeath().initializer(() -> 0.0));

@@ -2764,6 +2764,7 @@ public final class ManaAbilities implements FeatureModule {
                     "tougher.command.me.paragraph_empty",
                     "Mana level: %s. You have not used any mana abilities yet.",
                     mana));
+            Enchanting.report(player, send);
             return 0;
         }
         var list = Component.empty();
@@ -2785,6 +2786,7 @@ public final class ManaAbilities implements FeatureModule {
                 "Mana level: %s. Your mana abilities: %s",
                 mana,
                 list));
+        Enchanting.report(player, send);
         return skills.size();
     }
 

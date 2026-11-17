@@ -8,15 +8,19 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import org.joml.Matrix3x2fStack;
 
 /**
- * Mana crystal and Well Fed chicken above the offhand slot. Each is omitted at 0.
- * The crystal uses the mana HUD sprite. The chicken uses the hunger-bar drumstick.
+ * Mana crystal, Well Fed chicken, and enchanting skill above the offhand slot.
+ * Mana and Well Fed are omitted at 0. The crystal uses the mana HUD sprite. The
+ * chicken uses the hunger-bar drumstick. The skill uses an enchantment table.
  */
 public final class OffhandStatusIcons {
     private static final Identifier FOOD_EMPTY = Identifier.withDefaultNamespace("hud/food_empty");
     private static final Identifier FOOD_FULL = Identifier.withDefaultNamespace("hud/food_full");
+    private static final ItemStack ENCHANTING_TABLE = new ItemStack(Items.ENCHANTING_TABLE);
     private static final int NUMBER = 0xFFFFFFFF;
 
     private OffhandStatusIcons() {}
@@ -31,18 +35,22 @@ public final class OffhandStatusIcons {
         }
         var mana = ExtraHardModeClient.lastMana();
         int wellFed = mana == null ? 0 : mana.wellFed();
+        int enchantAbility = mana == null ? -1 : mana.enchantAbility();
         double capacity = ExtraHardModeClient.lastManaLearning();
         boolean showCapacity = OffhandStatusIconRules.showCapacity(capacity);
         boolean showWellFed = OffhandStatusIconRules.showWellFed(wellFed);
+        boolean showEnchant = OffhandStatusIconRules.showEnchant(enchantAbility);
         int localX = mouseX - leftPos;
         int localY = mouseY - topPos;
         String manaLabel = showCapacity
                 ? OffhandStatusIconRules.manaLabel(ExtraHardModeClient.lastBaseManaLevel(), capacity)
                 : null;
         String wellFedLabel = showWellFed ? OffhandStatusIconRules.wellFedLabel(wellFed) : null;
+        String enchantLabel = showEnchant ? OffhandStatusIconRules.enchantLabel(enchantAbility) : null;
         float numberScale = OffhandStatusIconRules.numberScale(
                 manaLabel == null ? 0 : minecraft.font.width(manaLabel),
-                wellFedLabel == null ? 0 : minecraft.font.width(wellFedLabel));
+                wellFedLabel == null ? 0 : minecraft.font.width(wellFedLabel),
+                enchantLabel == null ? 0 : minecraft.font.width(enchantLabel));
         int crystalRow = OffhandStatusIconRules.crystalRow(showCapacity, showWellFed);
         if (crystalRow >= 0 && manaLabel != null) {
             int x = OffhandStatusIconRules.iconX();
@@ -68,6 +76,23 @@ public final class OffhandStatusIcons {
                         "tougher.tooltip.well_fed_level",
                         "Well Fed %s",
                         wellFedLabel,
+                        mouseX,
+                        mouseY);
+            }
+        }
+        int enchantRow = OffhandStatusIconRules.enchantRow(showCapacity, showWellFed, showEnchant);
+        if (enchantRow >= 0 && enchantLabel != null) {
+            int x = OffhandStatusIconRules.iconX();
+            int y = OffhandStatusIconRules.rowY(enchantRow);
+            graphics.item(ENCHANTING_TABLE, x, y);
+            drawNumber(graphics, minecraft.font, enchantLabel, x, y, numberScale);
+            if (OffhandStatusIconRules.hit(x, y, localX, localY)) {
+                tooltip(
+                        graphics,
+                        minecraft.font,
+                        "tougher.tooltip.enchant_ability",
+                        "Enchanting skill %s",
+                        enchantLabel,
                         mouseX,
                         mouseY);
             }
