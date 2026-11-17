@@ -1,6 +1,6 @@
 package dev.extrahardmode.mixin;
 
-import dev.extrahardmode.feature.CopperChests;
+import dev.extrahardmode.feature.CopperGolems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.ai.behavior.TransportItemsBetweenContainers;
 import net.minecraft.world.level.Level;
@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/** Copper golems pick a container here. A locked copper chest is not a target. */
+/** Copper golems pick a container here. A chest owned by someone else is not a target. */
 @Mixin(TransportItemsBetweenContainers.TransportItemTarget.class)
 public abstract class TransportItemsMixin {
     @Inject(
@@ -22,7 +22,7 @@ public abstract class TransportItemsMixin {
             BlockPos pos,
             Level level,
             CallbackInfoReturnable<TransportItemsBetweenContainers.TransportItemTarget> cir) {
-        if (CopperChests.blocksAutomation(level, pos)) {
+        if (CopperGolems.refuses(level, pos)) {
             cir.setReturnValue(null);
         }
     }
@@ -36,7 +36,7 @@ public abstract class TransportItemsMixin {
             BlockEntity entity,
             Level level,
             CallbackInfoReturnable<TransportItemsBetweenContainers.TransportItemTarget> cir) {
-        if (entity != null && CopperChests.blocksAutomation(level, entity.getBlockPos())) {
+        if (entity != null && CopperGolems.refuses(level, entity.getBlockPos())) {
             cir.setReturnValue(null);
         }
     }

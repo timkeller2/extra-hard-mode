@@ -52,8 +52,10 @@ import net.minecraft.world.phys.HitResult;
  * player, or a player named on a sign attached to it, can open it, break it, or change
  * that sign. Opening it starts the 90 days again. Waxed and weathered copper chests
  * keep the claim. A hopper that player owns can pull from it and push into it. A hopper
- * can also use a chest nobody owns. Other hoppers, pistons, explosions, and copper golems
- * leave a locked chest alone.
+ * can also use a chest nobody owns. Other hoppers, pistons, and explosions leave a locked
+ * chest alone. A copper golem summoned by the player who placed the chest can use it.
+ * Other copper golems ignore that chest. The chest created by that summon belongs to
+ * the summoner.
  */
 public final class CopperChests implements FeatureModule {
     public static final Identifier ID = ExtraHardModeMod.id("copper_chests");
@@ -110,18 +112,26 @@ public final class CopperChests implements FeatureModule {
                 || block == null
                 || !block.defaultBlockState().is(BlockTags.COPPER_CHESTS)
                 || !(context.getLevel() instanceof ServerLevel level)
-                || !WorldGate.isModuleActive(level, ID)
-                || !(context.getPlayer() instanceof ServerPlayer player)
-                || player.isSpectator()) {
+                || !(context.getPlayer() instanceof ServerPlayer player)) {
             return;
         }
-        BlockPos pos = context.getClickedPos();
+        claim(level, context.getClickedPos(), player);
+    }
+
+    /** Records this copper chest as the player's for 90 Minecraft days. Joining a chest they own copies that expiry. */
+    public static void claim(ServerLevel level, BlockPos pos, ServerPlayer player) {
+        if (level == null
+                || pos == null
+                || player == null
+                || player.isSpectator()
+                || !WorldGate.isModuleActive(level, ID)) {
+            return;
+        }
         BlockState state = level.getBlockState(pos);
         if (!state.is(BlockTags.COPPER_CHESTS)) {
             return;
         }
-        long now = now(level);
-        long expiry = CopperChestRules.expiresAt(now);
+        long expiry = CopperChestRules.expiresAt(now(level));
         BlockPos other = connected(level, pos, state);
         if (other != null) {
             CopperChestRules.Claim neighbor = live(level, other);

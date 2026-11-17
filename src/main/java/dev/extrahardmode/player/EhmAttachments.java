@@ -158,6 +158,10 @@ public final class EhmAttachments {
     public static final AttachmentType<UUID> EHM_SILVERFISH_OWNER = AttachmentRegistry.create(
             ExtraHardModeMod.id("silverfish_owner"), builder -> builder.persistent(UUIDUtil.CODEC));
 
+    /** Player who built this copper golem, or who used its spawn egg. Absent for a dispenser or command. */
+    public static final AttachmentType<UUID> EHM_COPPER_GOLEM_SUMMONER = AttachmentRegistry.create(
+            ExtraHardModeMod.id("copper_golem_summoner"), builder -> builder.persistent(UUIDUtil.CODEC));
+
     public static final AttachmentType<Integer> EHM_SILVERFISH_SPAWNED = AttachmentRegistry.create(
             ExtraHardModeMod.id("silverfish_spawned"),
             builder -> builder.persistent(Codec.INT).initializer(() -> 0));

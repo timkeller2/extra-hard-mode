@@ -3,6 +3,7 @@ package dev.extrahardmode.mixin;
 import dev.extrahardmode.feature.Achievements;
 import dev.extrahardmode.feature.AntiFarming;
 import dev.extrahardmode.feature.CopperChests;
+import dev.extrahardmode.feature.CopperGolems;
 import dev.extrahardmode.feature.Dragon;
 import dev.extrahardmode.feature.FeatureBus;
 import dev.extrahardmode.feature.HardenedStone;
@@ -29,19 +30,23 @@ public abstract class BlockItemPlaceMixin {
     @Inject(method = "place", at = @At("HEAD"), cancellable = true)
     private void tougher$blockOreAgainstStone(
             BlockPlaceContext context, CallbackInfoReturnable<InteractionResult> cir) {
+        CopperGolems.beginPlace(context);
         if (PlacementRules.denyOffhandRedstone(
                 context.getHand() == InteractionHand.OFF_HAND, context.getItemInHand().is(Items.REDSTONE))) {
+            CopperGolems.endPlace();
             cir.setReturnValue(InteractionResult.FAIL);
             return;
         }
         Block placed = ((BlockItem) (Object) this).getBlock();
         InteractionResult copperChest = CopperChests.denyPlacement(context, placed);
         if (copperChest != InteractionResult.PASS) {
+            CopperGolems.endPlace();
             cir.setReturnValue(copperChest);
             return;
         }
         InteractionResult hopper = OwnedHoppers.denyPlacement(context, placed);
         if (hopper != InteractionResult.PASS) {
+            CopperGolems.endPlace();
             cir.setReturnValue(hopper);
             return;
         }
@@ -54,6 +59,7 @@ public abstract class BlockItemPlaceMixin {
         if (FeatureBus.guard(level, Dragon.ID)) {
             InteractionResult endDeny = Dragon.denyPlacement(context);
             if (endDeny != InteractionResult.PASS) {
+                CopperGolems.endPlace();
                 cir.setReturnValue(endDeny);
                 return;
             }
@@ -61,6 +67,7 @@ public abstract class BlockItemPlaceMixin {
         if (FeatureBus.guard(level, Torches.ID)) {
             InteractionResult torchDeny = Torches.tryDenyPlacement(context);
             if (torchDeny != InteractionResult.PASS) {
+                CopperGolems.endPlace();
                 cir.setReturnValue(torchDeny);
                 return;
             }
@@ -70,12 +77,14 @@ public abstract class BlockItemPlaceMixin {
         }
         InteractionResult deny = HardenedStone.denyOrePlacement(context);
         if (deny != InteractionResult.PASS) {
+            CopperGolems.endPlace();
             cir.setReturnValue(deny);
         }
     }
 
     @Inject(method = "place", at = @At("RETURN"))
     private void tougher$builderPlace(BlockPlaceContext context, CallbackInfoReturnable<InteractionResult> cir) {
+        CopperGolems.endPlace();
         InteractionResult result = cir.getReturnValue();
         if (result == null || !result.consumesAction()) {
             return;
