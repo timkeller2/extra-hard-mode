@@ -15,8 +15,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(BoneMealItem.class)
 public abstract class BoneMealItemMixin {
+    @Inject(method = "useOn", at = @At("HEAD"))
+    private void tougher$beginBoneMeal(UseOnContext context, CallbackInfoReturnable<InteractionResult> cir) {
+        AntiFarming.beginBoneMeal(context.getPlayer());
+    }
+
     @Inject(method = "useOn", at = @At("RETURN"))
     private void tougher$boneMealSoil(UseOnContext context, CallbackInfoReturnable<InteractionResult> cir) {
+        AntiFarming.endBoneMeal();
         if (!(context.getLevel() instanceof ServerLevel level) || !WorldGate.isModuleActive(level, AntiFarming.ID)) {
             return;
         }

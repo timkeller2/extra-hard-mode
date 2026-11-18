@@ -38,6 +38,7 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -2358,11 +2359,17 @@ public final class ManaAbilities implements FeatureModule {
     }
 
     static Component compassPlaceMessage(ServerPlayer player) {
-        return Component.translatableWithFallback(
+        MutableComponent message = Component.translatableWithFallback(
                 "tougher.message.compass_place",
                 "You are in the %s facing %s.",
                 Exploration.biomeName(player.level().getBiome(player.blockPosition())),
                 Component.literal(CompassRules.facingName(player.getYRot())));
+        if (Exploration.homeHereWouldEarn(player)) {
+            message.append(" ")
+                    .append(Component.translatableWithFallback(
+                            "tougher.message.compass_no_residence", "No residence."));
+        }
+        return message;
     }
 
     /**

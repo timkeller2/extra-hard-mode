@@ -120,6 +120,8 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("lay eggs 6 times"));
         assertTrue(String.join(" ", lines).contains("Trees take 10 times"));
         assertTrue(String.join(" ", lines).contains("Nether wart grows at 1/20"));
+        assertTrue(String.join(" ", lines).contains("Sweet berry bushes grow and fruit at 1/20"));
+        assertTrue(String.join(" ", lines).contains("glow berry vine fails to fruit"));
         assertTrue(String.join(" ", lines).contains("1 or 2 beans"));
         assertTrue(String.join(" ", lines).contains("diamond 10, gold 20, netherite 30"));
         assertTrue(String.join(" ", lines).contains("plus the tree"));
@@ -577,6 +579,7 @@ class EhmHelpTest {
         assertTrue(armorText.contains("heavyExtraSlowdownPercent"));
         String buildingText = String.join(" ", EhmHelp.resolve("building").lines());
         assertTrue(buildingText.contains("One right-click with a compass"));
+        assertTrue(buildingText.contains("No residence."));
         assertTrue(buildingText.contains("the direction you face"));
         assertTrue(String.join(" ", EhmHelp.resolve("hunger").lines()).contains("raises saturation loss by 2%"));
         String portalText = String.join(" ", EhmHelp.resolve("portals").lines());

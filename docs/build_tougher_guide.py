@@ -130,7 +130,7 @@ def build():
                 "A boat that falls more than 3 blocks with you in it breaks and drops nothing.",
                 "Breaking a block that is on fire sets you on fire, the same as putting the fire out by hand. Water still works.",
                 "Sneak with a compass to point it at your bed or respawn anchor. With none set, it still points at world spawn.",
-                "One right-click with a compass says the biome you are in and the direction you face, such as You are in the Plains facing North. The second click within half a second casts Detect ore.",
+                "One right-click with a compass says the biome you are in and the direction you face, such as You are in the Plains facing North. It adds No residence. when a home built here can still earn experience. The second click within half a second casts Detect ore.",
                 "A bed placed in the Nether or the End vanishes. It does not explode. A bed already there is removed instead of exploding if you use it.",
                 "Breaking a bed destroys it and drops nothing: no bed, wool, or planks.",
                 "A lodestone is crafted with an iron block in the middle, surrounded by chiseled stone bricks.",
@@ -205,7 +205,7 @@ def build():
         Paragraph("Crops, trees, and hives", s["h"]),
         bullets(
             [
-                "Crops grow slowly. Sugar cane is one-tenth speed. Cocoa beans and nether wart are one-twentieth. Trees take 10 times as long, and leaves drop half as many saplings. Each sapling that would still drop has twice the crop loss rate as a percent chance not to, so at 50% loss or higher none drop.",
+                "Crops grow slowly. Sugar cane is one-tenth speed. Cocoa beans, nether wart, and sweet berry bushes are one-twentieth. Sweet berry bushes fruit at that same speed. Trees take 10 times as long, and leaves drop half as many saplings. Each sapling that would still drop has twice the crop loss rate as a percent chance not to, so at 50% loss or higher none drop.",
                 "A ripe cocoa pod drops 1 or 2 cocoa beans. One more bean drops when a d100 is under the hoe quality plus the tree. Quality is iron 0, diamond 10, gold 20, and netherite 30. Each Efficiency level adds 2. Wood, stone, and copper hoes are 0. Each other pod on that tree is -2%. Each jungle log is +2%, up to +20%.",
                 "A one-block cane that would grow a second segment may become a weed, using the current crop-loss rate plus the soil under it.",
                 "Pumpkins and melons fruit at one-tenth speed. After each fruit the vine may become a weed, starting at 0% and rising 5% per fruit. Broken vines drop no seeds.",
@@ -225,7 +225,7 @@ def build():
             "Each Efficiency level adds 0.25 to that target's hoe quality: wood or stone 0, copper 1, iron 2, diamond 3, gold 4, netherite 5. "
             "A worsening step is one-tenth of the gap (at least 1, at most 4). An improving step is 3. "
             "Harvesting without a hoe subtracts 5. Replanting the same crop subtracts 5. "
-            "Let it grow adds 3 under each plant it grows. Bone meal adds 5.",
+            "Let it grow adds 3 under each plant it grows. Bone meal adds 5. Bone meal on a glow berry vine fails to fruit at the current crop loss percent.",
             s["body"],
         ),
         Paragraph("Seasons", s["h"]),

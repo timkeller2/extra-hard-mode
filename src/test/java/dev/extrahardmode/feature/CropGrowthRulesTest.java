@@ -106,6 +106,34 @@ class CropGrowthRulesTest {
     }
 
     @Test
+    void berryBushDurationIsTwentyTimesVanilla() {
+        assertEquals(2000, CropGrowthRules.BERRY_BUSH_DURATION_PERCENT);
+        Random random = new Random(9L);
+        int allowed = 0;
+        for (int i = 0; i < 20_000; i++) {
+            if (CropGrowthRules.allowVanillaRandomTick(CropGrowthRules.BERRY_BUSH_DURATION_PERCENT, random)) {
+                allowed++;
+            }
+        }
+        assertTrue(allowed > 800 && allowed < 1200, "got " + allowed);
+    }
+
+    @Test
+    void glowBerryBonemealFailsAtTheCropLossPercent() {
+        assertEquals(0, CropGrowthRules.glowBerryFruitFailPercent(0.0));
+        assertEquals(13, CropGrowthRules.glowBerryFruitFailPercent(12.5));
+        assertEquals(25, CropGrowthRules.glowBerryFruitFailPercent(25.0));
+        assertEquals(100, CropGrowthRules.glowBerryFruitFailPercent(100.0));
+        assertEquals(100, CropGrowthRules.glowBerryFruitFailPercent(140.0));
+        assertFalse(CropGrowthRules.glowBerryBonemealFails(0, 0));
+        assertTrue(CropGrowthRules.glowBerryBonemealFails(100, 99));
+        assertTrue(CropGrowthRules.glowBerryBonemealFails(25, 0));
+        assertTrue(CropGrowthRules.glowBerryBonemealFails(25, 24));
+        assertFalse(CropGrowthRules.glowBerryBonemealFails(25, 25));
+        assertFalse(CropGrowthRules.glowBerryBonemealFails(25, 99));
+    }
+
+    @Test
     void netherWartDurationIsTwentyTimesVanilla() {
         assertEquals(2000, CropGrowthRules.NETHER_WART_DURATION_PERCENT);
         Random random = new Random(6L);

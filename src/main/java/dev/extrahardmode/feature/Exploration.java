@@ -3,6 +3,7 @@ package dev.extrahardmode.feature;
 import dev.extrahardmode.ExtraHardModeMod;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.world.ExplorationData;
+import dev.extrahardmode.world.WorldGate;
 import java.util.ArrayList;
 import java.util.List;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
@@ -114,6 +115,27 @@ public final class Exploration implements FeatureModule {
 
     static boolean markVisited(ServerPlayer player, String biomeId) {
         return markBiome(player, EhmAttachments.EHM_VISITED_BIOMES, biomeId);
+    }
+
+    /**
+     * True when a habitable home built at the player's feet would still pay them.
+     * Homes pay only while inhabitants are on, and only outside 250 blocks of an
+     * earlier paid home of this biome in this dimension.
+     */
+    public static boolean homeHereWouldEarn(ServerPlayer player) {
+        if (player == null || !(player.level() instanceof ServerLevel level)) {
+            return false;
+        }
+        if (!WorldGate.isModuleActive(level, Inhabitants.ID)) {
+            return false;
+        }
+        BlockPos pos = player.blockPosition();
+        return ExplorationRules.homeEarnsExperience(
+                player.getAttachedOrElse(EhmAttachments.EHM_HOME_BIOMES, List.of()),
+                biomeId(level.getBiome(pos)),
+                level.dimension().identifier().toString(),
+                pos.getX(),
+                pos.getZ());
     }
 
     /**

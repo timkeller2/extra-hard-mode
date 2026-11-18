@@ -20,6 +20,8 @@ public final class CropGrowthRules {
     public static final int NETHER_WART_DURATION_PERCENT = 2000;
     /** Cocoa random ticks fire 1/20 as often as vanilla. */
     public static final int COCOA_DURATION_PERCENT = 2000;
+    /** Sweet berry bush random ticks fire 1/20 as often as vanilla. Growth and fruit share that tick. */
+    public static final int BERRY_BUSH_DURATION_PERCENT = 2000;
     /** Ripe cocoa drops 1 or 2 beans before a hoe bonus. */
     public static final int COCOA_BEAN_MIN = 1;
     public static final int COCOA_BEAN_MAX = 2;
@@ -553,6 +555,29 @@ public final class CropGrowthRules {
 
     public static int lossChance(double seasonalLoss, int soilModifier) {
         return clampLossChance((int) Math.round(seasonalLoss) + soilModifier);
+    }
+
+    /**
+     * Fail chance for glow-berry bone meal, as a percent. This is the crop loss rate
+     * rounded, with no soil modifier. 0 never fails. 100 always fails.
+     */
+    public static int glowBerryFruitFailPercent(double cropLossPercent) {
+        return clampLossChance((int) Math.round(cropLossPercent));
+    }
+
+    /**
+     * True when this bone meal produces no glow berries. {@code roll} is 0–99.
+     * A roll under {@code failPercent} fails.
+     */
+    public static boolean glowBerryBonemealFails(int failPercent, int roll) {
+        int chance = clampLossChance(failPercent);
+        if (chance <= 0) {
+            return false;
+        }
+        if (chance >= 100) {
+            return true;
+        }
+        return Math.floorMod(roll, 100) < chance;
     }
 
     public static boolean rollLoss(int chance, Random random) {

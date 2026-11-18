@@ -237,7 +237,7 @@ public final class EhmHelp {
                         "Building: Torches and campfires have their own topic. Type /tougher help torches.",
                         "Building: Breaking a block that is on fire sets you on fire, the same as putting that fire out by hand.",
                         "Building: Sneak with a compass to point it at your bed or respawn anchor. With none set, it still points at world spawn.",
-                        "Building: One right-click with a compass says the biome you are in and the direction you face. The second click within half a second casts Detect ore.",
+                        "Building: One right-click with a compass says the biome and the direction you face, then No residence. if a home here can earn experience. The second click casts Detect ore.",
                         "Building: A bed placed in the Nether or the End vanishes. It does not explode.",
                         "Building: Breaking a bed destroys it and drops nothing: no bed, wool, or planks.",
                         "Building: A lodestone is crafted with an iron block in the middle, surrounded by chiseled stone bricks.",
@@ -309,7 +309,7 @@ public final class EhmHelp {
         return Page.of(
                 "tougher.help.crops.",
                 List.of(
-                        "Crops: Crops grow slowly. Sugar cane is 1/10 vanilla speed. Cocoa beans grow at 1/20 vanilla speed. Nether wart grows at 1/20 vanilla speed.",
+                        "Crops: Crops grow slowly. Sugar cane is 1/10 vanilla speed. Cocoa beans grow at 1/20. Sweet berry bushes grow and fruit at 1/20. Nether wart grows at 1/20 vanilla speed.",
                         "Crops: When a one-block cane would grow a second segment, it may become a weed at the current crop loss rate plus the soil under the cane.",
                         "Crops: Trees take 10 times as long to grow. Leaves drop half as many saplings.",
                         "Crops: Each sapling that would drop has twice the crop loss rate as a percent chance not to. At 50% loss or higher, none drop.",
@@ -363,7 +363,7 @@ public final class EhmHelp {
                         "Soil: If that would make the plot worse, the step is 1/10 of the gap to the target (at least 1, at most 4).",
                         "Soil: If it would improve the plot, the step is 3. Harvesting by any other means subtracts 5. Planting the same crop again on a plot subtracts 5.",
                         "Soil: Harvesting sugar cane updates the soil under the cane the same way.",
-                        "Soil: Let it grow adds 3 to the soil under each plant it grows. Bone meal on a plant adds 5 to that plot's shown soil modifier. Right-click a clock to see the current loss rate."));
+                        "Soil: Let it grow adds 3 to each plant. Bone meal on a plant adds 5. Bone meal on a glow berry vine fails to fruit at the current crop loss percent. A clock shows the loss rate."));
     }
 
     private static Page processing() {

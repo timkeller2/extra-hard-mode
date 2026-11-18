@@ -335,6 +335,7 @@
   "tougher.message.tome_write_many": "The tomes hold %s experience.",
   "tougher.message.tome_read": "The tome grants %s experience.",
   "tougher.message.compass_place": "You are in the %s facing %s.",
+  "tougher.message.compass_no_residence": "No residence.",
   "tougher.message.lives_remaining": "You have %s lives remaining.",
   "tougher.message.life_remaining": "You have 1 life remaining.",
   "tougher.message.hearts_down": "You are down %s hearts.",

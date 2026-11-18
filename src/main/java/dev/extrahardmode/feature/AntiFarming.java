@@ -639,6 +639,24 @@ public final class AntiFarming implements FeatureModule {
         data.setModifier(soil, next);
     }
 
+    /** Set while a bypassing player is using bone meal, so glow berries still fruit. */
+    private static final ThreadLocal<Boolean> BONE_MEAL_BYPASS = new ThreadLocal<>();
+
+    public static void beginBoneMeal(net.minecraft.world.entity.player.Player player) {
+        BONE_MEAL_BYPASS.remove();
+        if (player instanceof ServerPlayer server && EhmApi.playerBypasses(server)) {
+            BONE_MEAL_BYPASS.set(Boolean.TRUE);
+        }
+    }
+
+    public static void endBoneMeal() {
+        BONE_MEAL_BYPASS.remove();
+    }
+
+    public static boolean boneMealBypasses() {
+        return Boolean.TRUE.equals(BONE_MEAL_BYPASS.get());
+    }
+
     public static void onBoneMeal(ServerLevel level, BlockPos plant) {
         if (!WorldGate.isModuleActive(level, ID)) {
             return;
