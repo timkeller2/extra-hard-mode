@@ -3573,7 +3573,7 @@ public final class ManaAbilities implements FeatureModule {
         int keptLevel = TomeRules.levelAfterWrite(player.experienceLevel);
         int saved = TomeRules.share(TomeRules.bankedXp(player.experienceLevel, visible), power);
         int[] parts = TomeRules.split(saved, TomeRules.tomeCount(heldCount));
-        if (saved <= 0 || parts.length == 0) {
+        if (AbilityRules.writeTomeRefuses(saved, parts.length, power)) {
             player.sendSystemMessage(Component.translatableWithFallback(
                     "tougher.message.tome_empty", "That would save no experience."));
             markHandled(player);

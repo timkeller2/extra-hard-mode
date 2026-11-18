@@ -1288,6 +1288,17 @@ public final class AbilityRules {
         return level < need;
     }
 
+    /**
+     * A write that would store nothing says so, except below the practice line.
+     * Practice still spends the mana and the book and gains a use.
+     */
+    public static boolean writeTomeRefuses(int savedXp, int tomeParts, double level) {
+        if (practices(WRITE_TOME, level)) {
+            return false;
+        }
+        return savedXp <= 0 || tomeParts <= 0;
+    }
+
     public static String powerLabel(double power) {
         double value = Math.max(0.0, power);
         if (Math.abs(value - Math.round(value)) < 1.0E-6) {

@@ -410,6 +410,13 @@ class AbilityRulesTest {
         assertTrue(AbilityRules.practices(AbilityRules.DIAMOND_SKIN, 0.0));
         assertTrue(AbilityRules.practices(AbilityRules.DIAMOND_SKIN, 1.9));
         assertFalse(AbilityRules.practices(AbilityRules.DIAMOND_SKIN, 2.0));
+        assertFalse(AbilityRules.writeTomeRefuses(0, 0, 0.0));
+        assertFalse(AbilityRules.writeTomeRefuses(0, 0, 0.99));
+        assertFalse(AbilityRules.writeTomeRefuses(40, 1, 0.0));
+        assertTrue(AbilityRules.writeTomeRefuses(0, 0, 1.0));
+        assertTrue(AbilityRules.writeTomeRefuses(0, 1, 4.0));
+        assertTrue(AbilityRules.writeTomeRefuses(40, 0, 4.0));
+        assertFalse(AbilityRules.writeTomeRefuses(40, 1, 1.0));
     }
 
     @Test
