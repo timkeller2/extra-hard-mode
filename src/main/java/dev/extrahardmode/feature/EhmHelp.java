@@ -302,7 +302,8 @@ public final class EhmHelp {
                         "Hunger: Every 8 Well Fed levels add 1 melee damage, rounded down. Well Fed 8 is +1.",
                         "Hunger: Food regen is 1 second faster per 3 Well Fed levels, rounded down, never faster than every 5 seconds.",
                         "Hunger: Those bonuses leave when Well Fed drops. Eating does not restore mana.",
-                        "Hunger: The locator bar is off until you eat a golden carrot. It stays on until your saturation is gone. Another player sees you only while their bar is on too."));
+                        "Hunger: The locator bar is off until you eat a golden carrot. It stays on until your saturation is gone. Another player sees you only while their bar is on too.",
+                        "Hunger: A yellow outline on the hunger icons shows your saturation, including the extra icons from Well Fed."));
     }
 
     private static Page crops() {
@@ -434,7 +435,8 @@ public final class EhmHelp {
                         "Weapons: They last three times as long and deal 2 more damage. Repair them with those blocks.",
                         "Weapons: Smith the heavy diamond sword or axe with a netherite upgrade template and a netherite ingot. That ingot repairs it.",
                         "Weapons: A heavy golden sword casts Smite Evil, the same as a golden sword.",
-                        "Weapons: A slain biome boss can drop an enchanted heavy sword or axe. The chance starts at 25% and rises as that boss is richer."));
+                        "Weapons: A slain biome boss can drop an enchanted heavy sword or axe. The chance starts at 25% and rises as that boss is richer.",
+                        "Weapons: A fishing rod loses three times the durability. Unbreaking that prevents a point also prevents the extra loss on that point."));
     }
 
     private static Page enchanting() {

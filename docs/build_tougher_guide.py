@@ -117,6 +117,7 @@ def build():
             [
                 "Stone and deepslate need an iron pickaxe or better. Breaking coal or ore softens only the blocks around that ore. Dirt, cobble, and that softened stone can keep falling out to 50 blocks, one step at a time.",
                 "Wood, stone, and copper tools last one-third as long as usual.",
+                "A fishing rod loses three times the durability. Unbreaking that prevents a point also prevents the extra loss on that point.",
             ],
             s["bullet"],
         ),
@@ -162,6 +163,7 @@ def build():
         Paragraph(
             "Hunger drops while you move or act, not while you stand still. "
             "Swimming drains saturation twice as fast, and sprint-swimming four times as fast. Hunger follows once saturation is gone. "
+            "A yellow outline on the hunger icons shows your saturation, including the extra icons from Well Fed. "
             "Each point of weight over your limit raises saturation loss by 2%. "
             "A food you have not eaten in your last 7 meals gives +1 hunger, or +1 saturation if the bar is already full. "
             "Seven different foods in the last 7 meals gives another +1 hunger, +1 saturation, and 3 experience, "

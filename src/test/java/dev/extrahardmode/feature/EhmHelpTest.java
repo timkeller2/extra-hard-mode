@@ -26,6 +26,8 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("One sparkle appears for each point of mana"));
         assertTrue(String.join(" ", lines).contains("saturation"));
         assertTrue(String.join(" ", lines).contains("Well Fed"));
+        assertTrue(String.join(" ", lines).contains("yellow outline"));
+        assertTrue(String.join(" ", lines).contains("fishing rod"));
         assertTrue(String.join(" ", lines).contains("at least 1 hunger"));
         assertTrue(String.join(" ", lines).contains("A slice of cake counts as its own food"));
         assertTrue(String.join(" ", lines).contains("small mark in the top right"));
@@ -582,6 +584,8 @@ class EhmHelpTest {
         assertTrue(buildingText.contains("No residence."));
         assertTrue(buildingText.contains("the direction you face"));
         assertTrue(String.join(" ", EhmHelp.resolve("hunger").lines()).contains("raises saturation loss by 2%"));
+        assertTrue(String.join(" ", EhmHelp.resolve("hunger").lines()).contains("yellow outline"));
+        assertTrue(String.join(" ", EhmHelp.resolve("weapons").lines()).contains("fishing rod"));
         String portalText = String.join(" ", EhmHelp.resolve("portals").lines());
         assertTrue(portalText.contains("1 point of weight"));
         assertTrue(portalText.contains("2 points of weight"));

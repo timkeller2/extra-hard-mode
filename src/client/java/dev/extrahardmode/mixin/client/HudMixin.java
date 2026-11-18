@@ -2,9 +2,12 @@ package dev.extrahardmode.mixin.client;
 
 import dev.extrahardmode.client.ExtraHardModeClient;
 import dev.extrahardmode.client.FoodCravingOutline;
+import dev.extrahardmode.client.SaturationOutline;
 import dev.extrahardmode.client.SmiteCrosshair;
 import dev.extrahardmode.feature.HudCapacityRules;
+import dev.extrahardmode.feature.SaturationOutlineRules;
 import dev.extrahardmode.feature.WellFedRules;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -35,6 +38,8 @@ public abstract class HudMixin {
     private int tougher$heartIndex;
     private int tougher$maxPoints;
     private boolean tougher$clipContainer;
+    /** True when this food bar was drawn here, so the vanilla return does not draw it again. */
+    private boolean tougher$customFood;
 
     @Redirect(
             method = "extractCrosshair",
@@ -114,6 +119,7 @@ public abstract class HudMixin {
     @Inject(method = "extractFood", at = @At("HEAD"), cancellable = true)
     private void tougher$wellFedFood(
             GuiGraphicsExtractor graphics, Player player, int y, int right, CallbackInfo ci) {
+        tougher$customFood = false;
         if (player == null) {
             return;
         }
@@ -124,17 +130,40 @@ public abstract class HudMixin {
             return;
         }
         ci.cancel();
+        tougher$customFood = true;
+        tougher$drawFoodBar(graphics, player, y, right, maxFood);
+    }
+
+    /**
+     * Vanilla food drawing never reaches its return once the extra rows take over,
+     * so the outline is drawn with those rows. On the normal bar it is drawn here
+     * when AppleSkin is absent, then the drumsticks are drawn again over the gold.
+     */
+    @Inject(method = "extractFood", at = @At("RETURN"))
+    private void tougher$saturationOutline(
+            GuiGraphicsExtractor graphics, Player player, int y, int right, CallbackInfo ci) {
+        if (tougher$customFood || player == null || FabricLoader.getInstance().isModLoaded("appleskin")) {
+            return;
+        }
+        if (!(player.getFoodData().getSaturationLevel() > 0.0F)) {
+            return;
+        }
+        tougher$drawFoodBar(graphics, player, y, right, WellFedRules.BASE_FOOD);
+    }
+
+    private void tougher$drawFoodBar(
+            GuiGraphicsExtractor graphics, Player player, int y, int right, int maxFood) {
         int food = player.getFoodData().getFoodLevel();
         boolean hungry = player.hasEffect(MobEffects.HUNGER);
         Identifier empty = hungry ? FOOD_EMPTY_HUNGER : FOOD_EMPTY;
         Identifier halfSprite = hungry ? FOOD_HALF_HUNGER : FOOD_HALF;
         Identifier full = hungry ? FOOD_FULL_HUNGER : FOOD_FULL;
+        float saturation = player.getFoodData().getSaturationLevel();
         int icons = (maxFood + 1) / 2;
         for (int index = 0; index < icons; index++) {
-            int row = index / 10;
-            int column = index % 10;
-            int x = right - column * 8 - 9;
-            int iconY = y - row * 10;
+            int x = SaturationOutlineRules.iconX(right, index);
+            int iconY = SaturationOutlineRules.iconY(y, index);
+            SaturationOutline.draw(graphics, full, x, iconY, SaturationOutlineRules.coverage(saturation, index));
             if (HudCapacityRules.halfShadow(maxFood, index)) {
                 graphics.enableScissor(x, iconY, x + 5, iconY + 9);
             }

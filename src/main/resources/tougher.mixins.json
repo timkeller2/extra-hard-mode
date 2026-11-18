@@ -58,6 +58,7 @@
     "FlintAndSteelDispenseItemBehaviorMixin",
     "FlintAndSteelItemMixin",
     "FishingHookMixin",
+    "FishingRodItemMixin",
     "FoodDataMixin",
     "FoodDataAccess",
     "PlayerFoodMixin",
