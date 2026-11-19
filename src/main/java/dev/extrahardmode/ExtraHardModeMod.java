@@ -36,6 +36,7 @@ import dev.extrahardmode.feature.FishStocks;
 import dev.extrahardmode.feature.Hunger;
 import dev.extrahardmode.feature.Inhabitants;
 import dev.extrahardmode.feature.LapisPortals;
+import dev.extrahardmode.feature.LodestoneChunks;
 import dev.extrahardmode.feature.Players;
 import dev.extrahardmode.feature.Water;
 import dev.extrahardmode.feature.monster.Silverfish;
@@ -128,6 +129,7 @@ public class ExtraHardModeMod implements ModInitializer {
         FEATURES.register(new LapisPortals());
         FEATURES.register(new CopperChests());
         FEATURES.register(new OwnedHoppers());
+        FEATURES.register(new LodestoneChunks());
         FEATURES.register(new Enchanting());
         ServerLevelEvents.LOAD.register((server, level) -> {
             WorldGate.onLevelLoad(server, level);

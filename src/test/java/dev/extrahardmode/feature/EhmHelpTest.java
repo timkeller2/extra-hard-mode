@@ -583,6 +583,8 @@ class EhmHelpTest {
         assertTrue(buildingText.contains("One right-click with a compass"));
         assertTrue(buildingText.contains("No residence."));
         assertTrue(buildingText.contains("the direction you face"));
+        assertTrue(buildingText.contains("1 real hour"));
+        assertTrue(buildingText.contains("up to 24"));
         assertTrue(String.join(" ", EhmHelp.resolve("hunger").lines()).contains("raises saturation loss by 2%"));
         assertTrue(String.join(" ", EhmHelp.resolve("hunger").lines()).contains("yellow outline"));
         assertTrue(String.join(" ", EhmHelp.resolve("weapons").lines()).contains("fishing rod"));

@@ -250,7 +250,8 @@ public final class EhmHelp {
                         "Building: A hopper you place is yours for 90 Minecraft days. Only you can open it, pick it up, break it, or change a sign on it. Opening it starts the 90 days again.",
                         "Building: A sign on that hopper names other players, one on each line. They can use it as you can, and opening it starts the 90 days again.",
                         "Building: Anyone else who looks at the hopper sees how many days remain until it is public.",
-                        "Building: A hopper you own can pull from and put items into a container you own, or one nobody owns. Another player's locked chest or hopper stays closed to it."));
+                        "Building: A hopper you own can pull from and put items into a container you own, or one nobody owns. Another player's locked chest or hopper stays closed to it.",
+                        "Building: A redstone block on a lodestone is used up, by hand or from a dispenser. That chunk and the 8 around it stay active for 1 real hour, up to 24. Look to see the time left."));
     }
 
     private static Page torches() {

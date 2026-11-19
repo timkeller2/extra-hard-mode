@@ -1292,6 +1292,11 @@ public final class WorldConfig {
                         "modules.tougher.enchanting",
                         "Enchantment-table skill limit and the inventory enchanting icon. The skill starts at 3. Default true.",
                         true);
+                writeDefaultIfMissing(
+                        file,
+                        "modules.tougher.lodestone_chunks",
+                        "A redstone block on a lodestone keeps that chunk and the eight around it active for one real hour, up to 24. Default true.",
+                        true);
                 writeInhabitantDefaults(file);
                 migrate(file);
                 file.save();

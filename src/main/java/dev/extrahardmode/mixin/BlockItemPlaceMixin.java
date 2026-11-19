@@ -8,6 +8,7 @@ import dev.extrahardmode.feature.Dragon;
 import dev.extrahardmode.feature.FeatureBus;
 import dev.extrahardmode.feature.HardenedStone;
 import dev.extrahardmode.feature.LapisPortals;
+import dev.extrahardmode.feature.LodestoneChunks;
 import dev.extrahardmode.feature.OwnedHoppers;
 import dev.extrahardmode.feature.PlacementRules;
 import dev.extrahardmode.feature.Torches;
@@ -38,6 +39,12 @@ public abstract class BlockItemPlaceMixin {
             return;
         }
         Block placed = ((BlockItem) (Object) this).getBlock();
+        InteractionResult lodestone = LodestoneChunks.tryPlace(context, placed);
+        if (lodestone != InteractionResult.PASS) {
+            CopperGolems.endPlace();
+            cir.setReturnValue(lodestone);
+            return;
+        }
         InteractionResult copperChest = CopperChests.denyPlacement(context, placed);
         if (copperChest != InteractionResult.PASS) {
             CopperGolems.endPlace();

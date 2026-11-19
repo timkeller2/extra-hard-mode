@@ -32,6 +32,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CeilingHangingSignBlock;
 import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.StandingSignBlock;
@@ -505,6 +506,9 @@ public final class CopperChests implements FeatureModule {
         }
         if (OwnedHoppers.isHopper(state)) {
             return OwnedHoppers.lookLabel(player, level, pos);
+        }
+        if (state.is(Blocks.LODESTONE)) {
+            return LodestoneChunks.lookLabel(level, pos);
         }
         return "";
     }
