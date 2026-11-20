@@ -76,9 +76,9 @@ public final class InhabitantRules {
     public static final int WEALTHY_TRADE_USES = DEFAULT_TRADE_USES;
     /** One diamond. Matches a wealthy trader. */
     public static final int JEWELER_DIAMOND_EMERALDS = 8;
-    /** Four gold ingots for 2 emeralds. */
+    /** Four gold ingots for 4 emeralds. */
     public static final int JEWELER_GOLD_INGOT_COUNT = 4;
-    public static final int JEWELER_GOLD_EMERALDS = 2;
+    public static final int JEWELER_GOLD_EMERALDS = 4;
     /** One iron block. Nine ingots would be about 2 emeralds; the block costs more. */
     public static final int JEWELER_IRON_BLOCK_EMERALDS = 6;
     /** One copper block or one redstone block. Each is a small stack of the loose item, sold as a block. */
@@ -932,7 +932,7 @@ public final class InhabitantRules {
                 "Shops: A BUY chest uses the same prices above the bottom row. The bottom row holds the emeralds he pays with.",
                 "Shops: Bought items go on that bottom row, or the row above it. He keeps buying while those emeralds last and the chest has room.",
                 "Shops: A trade from another player's chest gives no experience to you or to the resident.",
-                "Shops: A jeweler sells a diamond for 8 emeralds, 4 gold ingots for 2, an iron block for 6, and a copper or redstone block for 2.",
+                "Shops: A jeweler sells a diamond for 8 emeralds, 4 gold ingots for 4, an iron block for 6, and a copper or redstone block for 2.",
                 "Shops: Larger jewelers also sell lapis, amethyst, quartz, gold nuggets, and blocks of gold, lapis, amethyst, quartz, and diamond.",
                 "Shops: A gold block is 6 emeralds and a diamond block is 32.",
                 "Shops: An armorsmith sells one heavy iron piece each restock, and the piece can change. Other sales are enchanted iron armor, each a different slot.",
