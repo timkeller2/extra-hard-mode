@@ -4,6 +4,7 @@ import dev.extrahardmode.command.EhmPermissions;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.config.WorldConfig;
 import dev.extrahardmode.feature.Achievements;
+import dev.extrahardmode.feature.Cartographers;
 import dev.extrahardmode.feature.Hunger;
 import dev.extrahardmode.feature.CouncilMissions;
 import dev.extrahardmode.feature.ManaAbilities;
@@ -46,6 +47,8 @@ public final class EhmNetworking {
         PayloadTypeRegistry.clientboundPlay()
                 .register(ClientboundMinerLeadPayload.TYPE, ClientboundMinerLeadPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay()
+                .register(ClientboundCartographyPayload.TYPE, ClientboundCartographyPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay()
                 .register(ClientboundWiseLessonPayload.TYPE, ClientboundWiseLessonPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay()
                 .register(ClientboundCompassSpawnPayload.TYPE, ClientboundCompassSpawnPayload.STREAM_CODEC);
@@ -71,6 +74,7 @@ public final class EhmNetworking {
             ManaAbilities.clearStrongCastHud(handler.player);
             WiseLessons.clearHud(handler.player);
             OldMiners.clearHud(handler.player);
+            Cartographers.clearHud(handler.player);
             CouncilMissions.clearHud(handler.player);
         });
         ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.register((player, origin, destination) -> {

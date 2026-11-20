@@ -22,6 +22,7 @@ import dev.extrahardmode.network.ClientboundCreditsPayload;
 import dev.extrahardmode.network.ClientboundAbilityReadyPayload;
 import dev.extrahardmode.network.ClientboundCompassSpawnPayload;
 import dev.extrahardmode.network.ClientboundCouncilBountyPayload;
+import dev.extrahardmode.network.ClientboundCartographyPayload;
 import dev.extrahardmode.network.ClientboundMinerLeadPayload;
 import dev.extrahardmode.network.ClientboundFlightPayload;
 import dev.extrahardmode.network.ClientboundFoodCravingPayload;
@@ -79,6 +80,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
     private static volatile ClientboundCopperChestLookPayload lastCopperChestLook;
     private static volatile ClientboundCouncilBountyPayload lastCouncilBounty;
     private static volatile ClientboundMinerLeadPayload lastMinerLead;
+    private static volatile ClientboundCartographyPayload lastCartography;
     private static volatile ClientboundWiseLessonPayload lastWiseLesson;
     private static volatile GlobalPos compassSpawn;
 
@@ -151,6 +153,10 @@ public class ExtraHardModeClient implements ClientModInitializer {
 
     public static ClientboundMinerLeadPayload lastMinerLead() {
         return lastMinerLead;
+    }
+
+    public static ClientboundCartographyPayload lastCartography() {
+        return lastCartography;
     }
 
     public static ClientboundWiseLessonPayload lastWiseLesson() {
@@ -400,6 +406,8 @@ public class ExtraHardModeClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(
                 ClientboundMinerLeadPayload.TYPE, (payload, context) -> lastMinerLead = payload);
         ClientPlayNetworking.registerGlobalReceiver(
+                ClientboundCartographyPayload.TYPE, (payload, context) -> lastCartography = payload);
+        ClientPlayNetworking.registerGlobalReceiver(
                 ClientboundWiseLessonPayload.TYPE, (payload, context) -> lastWiseLesson = payload);
         ClientPlayNetworking.registerGlobalReceiver(
                 ClientboundCompassSpawnPayload.TYPE,
@@ -438,6 +446,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
             lastCopperChestLook = null;
             lastCouncilBounty = null;
             lastMinerLead = null;
+            lastCartography = null;
             lastWiseLesson = null;
             compassSpawn = null;
             AchievementFloater.clear();
@@ -451,6 +460,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
         CouncilBountyHud.register();
         WiseLessonHud.register();
         MinerLeadHud.register();
+        CartographyHud.register();
         SoilLookHud.register();
         LightLookHud.register();
         CopperChestLookHud.register();

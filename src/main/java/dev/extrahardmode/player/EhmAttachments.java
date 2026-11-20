@@ -3,6 +3,7 @@ package dev.extrahardmode.player;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.extrahardmode.ExtraHardModeMod;
+import dev.extrahardmode.feature.CartographyRules;
 import dev.extrahardmode.feature.CouncilMissionCodec;
 import dev.extrahardmode.feature.CouncilMissionRules;
 import dev.extrahardmode.feature.InhabitantRules;
@@ -694,6 +695,43 @@ public final class EhmAttachments {
     public static final AttachmentType<List<OldMinerRules.Lead>> EHM_OLD_MINER_LEADS = AttachmentRegistry.create(
             ExtraHardModeMod.id("old_miner_leads"),
             builder -> builder.persistent(OLD_MINER_LEAD_CODEC.listOf())
+                    .copyOnDeath()
+                    .initializer(ArrayList::new));
+
+    public static final Codec<CartographyRules.Mission> CARTOGRAPHY_CODEC = RecordCodecBuilder.create(
+            instance -> instance.group(
+                            Codec.STRING
+                                    .optionalFieldOf("giver_id", "")
+                                    .forGetter(CartographyRules.Mission::giverId),
+                            Codec.STRING
+                                    .optionalFieldOf("giver_name", "")
+                                    .forGetter(CartographyRules.Mission::giverName),
+                            Codec.INT.optionalFieldOf("x", 0).forGetter(CartographyRules.Mission::x),
+                            Codec.INT.optionalFieldOf("z", 0).forGetter(CartographyRules.Mission::z),
+                            Codec.INT
+                                    .optionalFieldOf("distance", 0)
+                                    .forGetter(CartographyRules.Mission::distance),
+                            Codec.STRING
+                                    .optionalFieldOf("dimension", "")
+                                    .forGetter(CartographyRules.Mission::dimension),
+                            Codec.LONG
+                                    .optionalFieldOf("given_day", -1L)
+                                    .forGetter(CartographyRules.Mission::givenDay),
+                            Codec.LONG
+                                    .optionalFieldOf("expire_day", -1L)
+                                    .forGetter(CartographyRules.Mission::expireDay),
+                            Codec.LONG
+                                    .optionalFieldOf("next_day", -1L)
+                                    .forGetter(CartographyRules.Mission::nextDay),
+                            Codec.INT
+                                    .optionalFieldOf("successes", 0)
+                                    .forGetter(CartographyRules.Mission::successes))
+                    .apply(instance, CartographyRules.Mission::new));
+
+    /** One map mark per cartographer. Several can mark for the same player, and each player keeps his own. */
+    public static final AttachmentType<List<CartographyRules.Mission>> EHM_CARTOGRAPHY = AttachmentRegistry.create(
+            ExtraHardModeMod.id("cartography_marks"),
+            builder -> builder.persistent(CARTOGRAPHY_CODEC.listOf())
                     .copyOnDeath()
                     .initializer(ArrayList::new));
 

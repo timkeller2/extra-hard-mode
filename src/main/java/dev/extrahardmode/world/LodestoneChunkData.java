@@ -3,6 +3,7 @@ package dev.extrahardmode.world;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.extrahardmode.ExtraHardModeMod;
+import dev.extrahardmode.feature.LodestoneChunkRules;
 import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,11 +12,18 @@ import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 
-/** Real-world expiry, in epoch millis, for each chunk a lodestone is keeping active. */
+/**
+ * Time left, in real milliseconds, for each chunk a lodestone is keeping active.
+ * The value does not move while it is only sitting in this file.
+ */
 public final class LodestoneChunkData extends SavedData {
     public static final Codec<LodestoneChunkData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                     Codec.LONG.listOf().optionalFieldOf("chunks", List.of()).forGetter(LodestoneChunkData::chunkList),
-                    Codec.LONG.listOf().optionalFieldOf("expires", List.of()).forGetter(LodestoneChunkData::expiryList))
+                    Codec.LONG
+                            .listOf()
+                            .optionalFieldOf("remaining", List.of())
+                            .forGetter(LodestoneChunkData::remainingList),
+                    Codec.LONG.listOf().optionalFieldOf("expires", List.of()).forGetter(data -> List.of()))
             .apply(instance, LodestoneChunkData::new));
 
     public static final SavedDataType<LodestoneChunkData> TYPE = new SavedDataType<>(
@@ -24,20 +32,23 @@ public final class LodestoneChunkData extends SavedData {
             CODEC,
             DataFixTypes.SAVED_DATA_MAP_INDEX);
 
-    private final Long2LongOpenHashMap expiresAt = new Long2LongOpenHashMap();
+    private final Long2LongOpenHashMap remaining = new Long2LongOpenHashMap();
 
     {
-        expiresAt.defaultReturnValue(0L);
+        remaining.defaultReturnValue(0L);
     }
 
     public LodestoneChunkData() {}
 
-    public LodestoneChunkData(List<Long> chunks, List<Long> expires) {
-        int size = Math.min(chunks.size(), expires.size());
+    public LodestoneChunkData(List<Long> chunks, List<Long> remainingMillis, List<Long> legacyExpires) {
+        boolean legacy = remainingMillis.isEmpty();
+        List<Long> values = legacy ? legacyExpires : remainingMillis;
+        long now = System.currentTimeMillis();
+        int size = Math.min(chunks.size(), values.size());
         for (int i = 0; i < size; i++) {
-            long expiry = expires.get(i);
-            if (expiry > 0L) {
-                expiresAt.put(chunks.get(i).longValue(), expiry);
+            long left = LodestoneChunkRules.fromStored(values.get(i), now);
+            if (left > 0L) {
+                remaining.put(chunks.get(i).longValue(), left);
             }
         }
     }
@@ -46,35 +57,35 @@ public final class LodestoneChunkData extends SavedData {
         return level.getDataStorage().computeIfAbsent(TYPE);
     }
 
-    public long expiry(long packedChunk) {
-        return expiresAt.get(packedChunk);
+    public long remaining(long packedChunk) {
+        return remaining.get(packedChunk);
     }
 
-    public void setExpiry(long packedChunk, long expiry) {
-        if (expiresAt.get(packedChunk) == expiry) {
+    public void setRemaining(long packedChunk, long millis) {
+        if (remaining.get(packedChunk) == millis) {
             return;
         }
-        expiresAt.put(packedChunk, expiry);
+        remaining.put(packedChunk, millis);
         setDirty();
     }
 
     public void remove(long packedChunk) {
-        if (!expiresAt.containsKey(packedChunk)) {
+        if (!remaining.containsKey(packedChunk)) {
             return;
         }
-        expiresAt.remove(packedChunk);
+        remaining.remove(packedChunk);
         setDirty();
     }
 
     public int size() {
-        return expiresAt.size();
+        return remaining.size();
     }
 
     /** Packed chunk positions. The array is a copy. */
     public long[] packedChunks() {
-        long[] packed = new long[expiresAt.size()];
+        long[] packed = new long[remaining.size()];
         int index = 0;
-        var iterator = expiresAt.keySet().iterator();
+        var iterator = remaining.keySet().iterator();
         while (iterator.hasNext()) {
             packed[index++] = iterator.nextLong();
         }
@@ -82,14 +93,14 @@ public final class LodestoneChunkData extends SavedData {
     }
 
     private List<Long> chunkList() {
-        List<Long> list = new ArrayList<>(expiresAt.size());
-        expiresAt.long2LongEntrySet().forEach(entry -> list.add(entry.getLongKey()));
+        List<Long> list = new ArrayList<>(remaining.size());
+        remaining.long2LongEntrySet().forEach(entry -> list.add(entry.getLongKey()));
         return list;
     }
 
-    private List<Long> expiryList() {
-        List<Long> list = new ArrayList<>(expiresAt.size());
-        expiresAt.long2LongEntrySet().forEach(entry -> list.add(entry.getLongValue()));
+    private List<Long> remainingList() {
+        List<Long> list = new ArrayList<>(remaining.size());
+        remaining.long2LongEntrySet().forEach(entry -> list.add(entry.getLongValue()));
         return list;
     }
 }

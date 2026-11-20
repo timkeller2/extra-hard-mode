@@ -1295,7 +1295,7 @@ public final class WorldConfig {
                 writeDefaultIfMissing(
                         file,
                         "modules.tougher.lodestone_chunks",
-                        "A redstone block on a lodestone keeps that chunk and the eight around it active for one real hour, up to 24. Default true.",
+                        "A redstone block on a lodestone in a valid residence of at least 12 points keeps that chunk and the eight around it active. 12 points is one real hour. Each point over 12 adds 5 minutes, up to 24 hours. The time waits while the server is off, paused, or empty. Default true.",
                         true);
                 writeInhabitantDefaults(file);
                 migrate(file);

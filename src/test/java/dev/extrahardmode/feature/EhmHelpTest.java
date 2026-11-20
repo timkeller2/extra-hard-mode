@@ -363,6 +363,11 @@ class EhmHelpTest {
         assertTrue(all.contains("Alden the Jeweler"));
         assertTrue(all.contains("Jack: Iron East"));
         assertTrue(all.contains("An old miner can come to a 12-point home"));
+        assertTrue(all.contains("A cartographer can come to a 12-point home"));
+        assertTrue(all.contains("Within 50 blocks"));
+        assertTrue(all.contains("plus 30%"));
+        assertTrue(all.contains("1 experience for every 10 blocks"));
+        assertTrue(all.contains("Each further mark finished with him adds 3 days"));
         assertTrue(all.contains("1 emerald for each 8 house points"));
         assertTrue(all.contains("Hold that many emeralds"));
         assertTrue(all.contains("eight around it"));
@@ -399,6 +404,9 @@ class EhmHelpTest {
         assertTrue(all.contains("An unfinished hunt ends after 14 Minecraft days"));
         assertTrue(all.contains("each player has his own"));
         assertTrue(all.contains("master armorsmith"));
+        assertTrue(all.contains("Heavy diamond costs 24, 30, 42, or 48"));
+        assertTrue(all.contains("half its crafting materials, rounded up"));
+        assertTrue(all.contains("Heavy iron and heavy diamond take blocks"));
         assertTrue(all.contains("25-50%"));
         assertTrue(all.contains("175%"));
         assertTrue(all.contains("random trades"));
@@ -585,6 +593,10 @@ class EhmHelpTest {
         assertTrue(buildingText.contains("the direction you face"));
         assertTrue(buildingText.contains("1 real hour"));
         assertTrue(buildingText.contains("up to 24"));
+        assertTrue(buildingText.contains("Off or paused, time stops."));
+        assertTrue(buildingText.contains("at least 12 points"));
+        assertTrue(buildingText.contains("5 minutes"));
+        assertTrue(buildingText.contains("75 minutes"));
         assertTrue(String.join(" ", EhmHelp.resolve("hunger").lines()).contains("raises saturation loss by 2%"));
         assertTrue(String.join(" ", EhmHelp.resolve("hunger").lines()).contains("yellow outline"));
         assertTrue(String.join(" ", EhmHelp.resolve("weapons").lines()).contains("fishing rod"));

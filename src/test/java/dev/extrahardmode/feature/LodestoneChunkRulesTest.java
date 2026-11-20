@@ -17,26 +17,60 @@ class LodestoneChunkRulesTest {
 
     @Test
     void fuelAddsAnHourAndStopsAtADay() {
-        long now = 1_000_000L;
         long hour = LodestoneChunkRules.HOUR_MILLIS;
-        assertEquals(now + hour, LodestoneChunkRules.extendedExpiry(now, 0L));
-        assertEquals(now + hour, LodestoneChunkRules.extendedExpiry(now, now - 50L));
-        assertEquals(now + 2 * hour, LodestoneChunkRules.extendedExpiry(now, now + hour));
-        assertEquals(now + 24 * hour, LodestoneChunkRules.extendedExpiry(now, now + 23 * hour));
-        assertEquals(now + 24 * hour, LodestoneChunkRules.extendedExpiry(now, now + 23 * hour + hour / 2));
-        assertFalse(LodestoneChunkRules.extendsTime(now, now + 24 * hour));
-        assertEquals(now + 24 * hour, LodestoneChunkRules.extendedExpiry(now, now + 24 * hour));
-        assertFalse(LodestoneChunkRules.extendsTime(now, now + 25 * hour));
-        assertTrue(LodestoneChunkRules.extendsTime(now, now + 23 * hour));
+        assertEquals(hour, LodestoneChunkRules.extendedRemaining(0L, hour));
+        assertEquals(hour, LodestoneChunkRules.extendedRemaining(-50L, hour));
+        assertEquals(2 * hour, LodestoneChunkRules.extendedRemaining(hour, hour));
+        assertEquals(24 * hour, LodestoneChunkRules.extendedRemaining(23 * hour, hour));
+        assertEquals(24 * hour, LodestoneChunkRules.extendedRemaining(23 * hour + hour / 2, hour));
+        assertFalse(LodestoneChunkRules.extendsTime(24 * hour));
+        assertEquals(24 * hour, LodestoneChunkRules.extendedRemaining(24 * hour, hour));
+        assertFalse(LodestoneChunkRules.extendsTime(25 * hour));
+        assertTrue(LodestoneChunkRules.extendsTime(23 * hour));
     }
 
     @Test
-    void soonestExpiryIgnoresQuietChunks() {
-        long now = 5_000L;
-        assertEquals(0L, LodestoneChunkRules.soonestExpiry(now, new long[] {0L, now - 1L}));
-        assertEquals(now + 10L, LodestoneChunkRules.soonestExpiry(now, new long[] {now + 40L, 0L, now + 10L}));
-        assertEquals(10L, LodestoneChunkRules.remaining(now, now + 10L));
-        assertEquals(0L, LodestoneChunkRules.remaining(now, now));
+    void residencePointsSetTheFuel() {
+        long minute = LodestoneChunkRules.MINUTE_MILLIS;
+        assertEquals(60 * minute, LodestoneChunkRules.fuelMillis(12));
+        assertEquals(75 * minute, LodestoneChunkRules.fuelMillis(15));
+        assertEquals(110 * minute, LodestoneChunkRules.fuelMillis(22));
+        assertTrue(LodestoneChunkRules.acceptsResidence(true, 12));
+        assertTrue(LodestoneChunkRules.acceptsResidence(true, 22));
+        assertFalse(LodestoneChunkRules.acceptsResidence(true, 11));
+        assertFalse(LodestoneChunkRules.acceptsResidence(false, 15));
+        assertEquals(
+                "This lodestone is not in a residence.",
+                LodestoneChunkRules.residenceRefusal(false, false, 0, java.util.List.of()));
+        assertEquals(
+                "This residence has 9 points. It needs 12.",
+                LodestoneChunkRules.residenceRefusal(true, false, 9, java.util.List.of("more furnishings (see /tougher help homes)")));
+        assertEquals(
+                "This residence has 15 points but is not valid yet. Missing: a door to the outside.",
+                LodestoneChunkRules.residenceRefusal(true, false, 15, java.util.List.of("a door to the outside")));
+        assertEquals("", LodestoneChunkRules.residenceRefusal(true, true, 15, java.util.List.of()));
+    }
+
+    @Test
+    void soonestRemainingIgnoresQuietChunks() {
+        assertEquals(0L, LodestoneChunkRules.soonestRemaining(new long[] {0L, -1L}));
+        assertEquals(10L, LodestoneChunkRules.soonestRemaining(new long[] {40L, 0L, 10L}));
+    }
+
+    @Test
+    void idleAndOfflineTimeDoesNotRunDown() {
+        long hour = LodestoneChunkRules.HOUR_MILLIS;
+        long now = 5_000_000_000_000L;
+        assertEquals(0L, LodestoneChunkRules.elapsedRunning(0L, now));
+        assertEquals(1_000L, LodestoneChunkRules.elapsedRunning(now - 1_000L, now));
+        assertEquals(0L, LodestoneChunkRules.elapsedRunning(now - 60_000L, now));
+        assertEquals(hour, LodestoneChunkRules.afterRunning(hour, 0L));
+        assertEquals(hour - 1_000L, LodestoneChunkRules.afterRunning(hour, 1_000L));
+        assertEquals(0L, LodestoneChunkRules.afterRunning(400L, 1_000L));
+        assertEquals(hour, LodestoneChunkRules.fromStored(now + hour, now));
+        assertEquals(0L, LodestoneChunkRules.fromStored(now - 10L, now));
+        assertEquals(LodestoneChunkRules.CAP_MILLIS, LodestoneChunkRules.fromStored(now + hour * 30, now));
+        assertEquals(hour, LodestoneChunkRules.fromStored(hour, now));
     }
 
     @Test

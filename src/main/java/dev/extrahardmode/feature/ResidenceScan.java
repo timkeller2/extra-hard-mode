@@ -58,8 +58,63 @@ public final class ResidenceScan {
     }
 
     static House fillHouse(ServerLevel level, BlockPos bed) {
+        return fillRooms(level, starts(level, bed));
+    }
+
+    /**
+     * Bed of the enclosed home that contains this block, or null. The space above
+     * the block is tried first, then each side, so a floor block inside a room counts.
+     */
+    public static BlockPos bedOfHouseContaining(ServerLevel level, BlockPos block) {
+        if (level == null || block == null) {
+            return null;
+        }
+        BlockPos bed = bedFromOrigin(level, block, block.above());
+        if (bed != null) {
+            return bed;
+        }
+        for (Direction dir : Direction.values()) {
+            bed = bedFromOrigin(level, block, block.relative(dir));
+            if (bed != null) {
+                return bed;
+            }
+        }
+        return null;
+    }
+
+    private static BlockPos bedFromOrigin(ServerLevel level, BlockPos block, BlockPos origin) {
+        if (origin == null || !walkable(level, origin)) {
+            return null;
+        }
+        House house = fillRooms(level, List.of(origin.immutable()));
+        if (house.leaked() || house.interior().isEmpty() || !nearInterior(house.interior(), block)) {
+            return null;
+        }
+        return bedTouching(level, house.interior());
+    }
+
+    static BlockPos bedTouching(ServerLevel level, LongOpenHashSet interior) {
+        BlockPos best = null;
+        long bestKey = Long.MAX_VALUE;
+        for (long key : interior) {
+            BlockPos pos = BlockPos.of(key);
+            for (Direction dir : Direction.values()) {
+                BlockPos neighbor = pos.relative(dir);
+                if (!level.isLoaded(neighbor) || !level.getBlockState(neighbor).is(BlockTags.BEDS)) {
+                    continue;
+                }
+                if (neighbor.asLong() < bestKey) {
+                    best = neighbor.immutable();
+                    bestKey = neighbor.asLong();
+                }
+            }
+        }
+        return best;
+    }
+
+    static House fillRooms(ServerLevel level, java.util.Collection<BlockPos> origins) {
         LongOpenHashSet house = new LongOpenHashSet();
-        ArrayDeque<BlockPos> roomStarts = new ArrayDeque<>(starts(level, bed));
+        ArrayDeque<BlockPos> roomStarts = new ArrayDeque<>(origins);
         int rooms = 0;
         boolean leaked = false;
         boolean primary = true;

@@ -231,10 +231,10 @@ class InhabitantRulesTest {
         assertEquals(InhabitantRules.pickName(0), InhabitantRules.nameForHome(null));
         assertTrue(InhabitantRules.listedName(InhabitantRules.nameForHome("bed-1")));
         assertEquals(
-                List.of("hauler", "cook", "farm", "trader", "brewer", "old_miner"),
+                List.of("hauler", "cook", "farm", "trader", "brewer", "old_miner", "cartographer"),
                 InhabitantRules.unseenSpecialties(List.of(), 12));
         assertEquals(
-                List.of("hauler", "cook", "farm", "bounty", "trader", "council", "brewer", "old_miner"),
+                List.of("hauler", "cook", "farm", "bounty", "trader", "council", "brewer", "old_miner", "cartographer"),
                 InhabitantRules.unseenSpecialties(List.of(), 18));
         assertTrue(InhabitantRules.unseenSpecialties(List.of(), 24).contains(InhabitantRules.ARMORSMITH));
         assertTrue(InhabitantRules.unseenSpecialties(List.of(), 24).contains(InhabitantRules.WISE_TEACHER));
@@ -290,6 +290,15 @@ class InhabitantRulesTest {
         assertEquals("brewer", InhabitantRules.specialtyFallback(InhabitantRules.BREWER));
         assertEquals("old miner", InhabitantRules.specialtyFallback(InhabitantRules.OLD_MINER));
         assertEquals("Jack the Old Miner", InhabitantRules.nameplate("Jack", InhabitantRules.OLD_MINER));
+        assertEquals("cartographer", InhabitantRules.specialtyFallback(InhabitantRules.CARTOGRAPHER));
+        assertEquals("Jack the Cartographer", InhabitantRules.nameplate("Jack", InhabitantRules.CARTOGRAPHER));
+        assertFalse(InhabitantRules.specialtyAllowed(InhabitantRules.CARTOGRAPHER, 11));
+        assertTrue(InhabitantRules.specialtyAllowed(InhabitantRules.CARTOGRAPHER, 12));
+        assertTrue(InhabitantRules.defaultListings(InhabitantRules.CARTOGRAPHER, 0, false).isEmpty());
+        assertTrue(InhabitantRules.extraListings(InhabitantRules.CARTOGRAPHER, 0, false).isEmpty());
+        InhabitantRules.Outfit mapCoat = InhabitantRules.pickOutfit(InhabitantRules.CARTOGRAPHER, 4, 0, 0);
+        assertEquals("minecraft:cartographer", mapCoat.professionId());
+        assertEquals(2, mapCoat.level());
         assertEquals("Lumen the Brewer", InhabitantRules.nameplate("Lumen", InhabitantRules.BREWER));
         assertFalse(InhabitantRules.specialtyAllowed(InhabitantRules.OLD_MINER, 11));
         assertTrue(InhabitantRules.specialtyAllowed(InhabitantRules.OLD_MINER, 12));
@@ -398,6 +407,8 @@ class InhabitantRulesTest {
                 .isEmpty());
         assertTrue(InhabitantRules.scaledListings(InhabitantRules.OLD_MINER, 30, 4, false, new java.util.Random(1))
                 .isEmpty());
+        assertTrue(InhabitantRules.scaledListings(InhabitantRules.CARTOGRAPHER, 30, 0, false, new java.util.Random(1))
+                .isEmpty());
         for (String ability : AbilityRules.ABILITY_IDS) {
             assertFalse(AbilityRules.teacherFlavor(ability).isEmpty());
             assertFalse(AbilityRules.teacherInstruction(ability).isEmpty());
@@ -438,7 +449,7 @@ class InhabitantRulesTest {
                 council++;
             }
         }
-        assertTrue(council >= 42);
+        assertTrue(council >= 36);
         boolean emptyBrewer = false;
         for (int roll = 0; roll < 80; roll++) {
             if (InhabitantRules.BREWER.equals(
@@ -465,7 +476,8 @@ class InhabitantRulesTest {
                 InhabitantRules.FARM, 1,
                 InhabitantRules.TRADER, 5,
                 InhabitantRules.BREWER, 1,
-                InhabitantRules.OLD_MINER, 1);
+                InhabitantRules.OLD_MINER, 1,
+                InhabitantRules.CARTOGRAPHER, 1);
         assertEquals(1, InhabitantRules.lowestPossibleMembers(12, crowdedTrader));
         assertEquals(
                 5,
@@ -478,6 +490,7 @@ class InhabitantRulesTest {
                                 InhabitantRules.TRADER, 5,
                                 InhabitantRules.BREWER, 5,
                                 InhabitantRules.OLD_MINER, 5,
+                                InhabitantRules.CARTOGRAPHER, 5,
                                 InhabitantRules.MASTER_ARMORSMITH, 0)));
         InhabitantRules.AmenityCounts empty =
                 new InhabitantRules.AmenityCounts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, false);
@@ -501,6 +514,7 @@ class InhabitantRulesTest {
         assertFalse(InhabitantRules.specialtyBag(empty, 24).contains(InhabitantRules.WEALTHY));
         assertTrue(InhabitantRules.specialtyBag(empty, 30).contains(InhabitantRules.WEALTHY));
         assertTrue(InhabitantRules.specialtyBag(empty, 12).contains(InhabitantRules.OLD_MINER));
+        assertTrue(InhabitantRules.specialtyBag(empty, 12).contains(InhabitantRules.CARTOGRAPHER));
     }
 
     @Test
@@ -566,14 +580,25 @@ class InhabitantRulesTest {
 
     @Test
     void armorPricesAndWealthyShop() {
-        assertEquals(12, InhabitantRules.armorEmeralds(false, "boots"));
-        assertEquals(15, InhabitantRules.armorEmeralds(false, "helmet"));
-        assertEquals(21, InhabitantRules.armorEmeralds(false, "leggings"));
-        assertEquals(24, InhabitantRules.armorEmeralds(false, "chestplate"));
-        assertEquals(48, InhabitantRules.armorEmeralds(true, "boots"));
-        assertEquals(60, InhabitantRules.armorEmeralds(true, "helmet"));
-        assertEquals(84, InhabitantRules.armorEmeralds(true, "leggings"));
-        assertEquals(96, InhabitantRules.armorEmeralds(true, "chestplate"));
+        assertEquals(6, InhabitantRules.armorEmeralds(false, "boots"));
+        assertEquals(8, InhabitantRules.armorEmeralds(false, "helmet"));
+        assertEquals(11, InhabitantRules.armorEmeralds(false, "leggings"));
+        assertEquals(12, InhabitantRules.armorEmeralds(false, "chestplate"));
+        assertEquals(24, InhabitantRules.armorEmeralds(true, "boots"));
+        assertEquals(30, InhabitantRules.armorEmeralds(true, "helmet"));
+        assertEquals(42, InhabitantRules.armorEmeralds(true, "leggings"));
+        assertEquals(48, InhabitantRules.armorEmeralds(true, "chestplate"));
+        assertEquals(2, InhabitantRules.armorMaterialCount("boots"));
+        assertEquals(3, InhabitantRules.armorMaterialCount("helmet"));
+        assertEquals(4, InhabitantRules.armorMaterialCount("leggings"));
+        assertEquals(4, InhabitantRules.armorMaterialCount("chestplate"));
+        assertMaterial("tougher:heavy_diamond_boots", "minecraft:diamond_block", 2);
+        assertMaterial("tougher:heavy_iron_helmet", "minecraft:iron_block", 3);
+        assertMaterial("minecraft:iron_helmet", "minecraft:iron_ingot", 3);
+        assertMaterial("minecraft:diamond_chestplate", "minecraft:diamond", 4);
+        assertMaterial("tougher:heavy_iron_leggings", "minecraft:iron_block", 4);
+        assertFalse(InhabitantRules.armorMaterial("minecraft:iron_ingot").present());
+        assertFalse(InhabitantRules.armorMaterial("minecraft:diamond").present());
         assertEquals(1, InhabitantRules.ARMOR_TRADE_USES);
         assertEquals(3, InhabitantRules.DEFAULT_TRADE_USES);
         assertEquals(3, InhabitantRules.WEALTHY_TRADE_USES);
@@ -597,14 +622,14 @@ class InhabitantRulesTest {
                 assertEquals(1, listing.maxUses());
             }
         }
-        assertEquals(6, InhabitantRules.enchantedArmorEmeralds(false, "boots"));
-        assertEquals(8, InhabitantRules.enchantedArmorEmeralds(false, "helmet"));
-        assertEquals(11, InhabitantRules.enchantedArmorEmeralds(false, "leggings"));
-        assertEquals(12, InhabitantRules.enchantedArmorEmeralds(false, "chestplate"));
-        assertEquals(12, InhabitantRules.enchantedArmorEmeralds(true, "boots"));
-        assertEquals(15, InhabitantRules.enchantedArmorEmeralds(true, "helmet"));
-        assertEquals(21, InhabitantRules.enchantedArmorEmeralds(true, "leggings"));
-        assertEquals(24, InhabitantRules.enchantedArmorEmeralds(true, "chestplate"));
+        assertEquals(3, InhabitantRules.enchantedArmorEmeralds(false, "boots"));
+        assertEquals(4, InhabitantRules.enchantedArmorEmeralds(false, "helmet"));
+        assertEquals(6, InhabitantRules.enchantedArmorEmeralds(false, "leggings"));
+        assertEquals(6, InhabitantRules.enchantedArmorEmeralds(false, "chestplate"));
+        assertEquals(6, InhabitantRules.enchantedArmorEmeralds(true, "boots"));
+        assertEquals(8, InhabitantRules.enchantedArmorEmeralds(true, "helmet"));
+        assertEquals(11, InhabitantRules.enchantedArmorEmeralds(true, "leggings"));
+        assertEquals(12, InhabitantRules.enchantedArmorEmeralds(true, "chestplate"));
         assertEquals(20, InhabitantRules.armorEnchantLevel(false));
         assertEquals(30, InhabitantRules.armorEnchantLevel(true));
         List<InhabitantRules.WealthyListing> first = InhabitantRules.pickWealthyListings(1);
@@ -689,6 +714,7 @@ class InhabitantRulesTest {
                     assertEquals(1, listing.count());
                     assertEquals(InhabitantRules.ARMOR_TRADE_USES, listing.maxUses());
                     assertEquals(InhabitantRules.armorEmeralds(master, slot), listing.emeralds());
+                    assertArmorMaterial(listing.itemId());
                     heavySeen.add(slot);
                 } else if (listing.itemId().startsWith(plainPrefix)) {
                     String slot = listing.itemId().substring(plainPrefix.length());
@@ -697,6 +723,7 @@ class InhabitantRulesTest {
                     assertEquals(1, listing.count());
                     assertEquals(InhabitantRules.armorEnchantLevel(master), listing.enchantLevel());
                     assertEquals(InhabitantRules.enchantedArmorEmeralds(master, slot), listing.emeralds());
+                    assertArmorMaterial(listing.itemId());
                     assertTrue(enchanted.add(slot), listing.itemId());
                 } else {
                     fail("unexpected listing " + listing.itemId());
@@ -722,6 +749,7 @@ class InhabitantRulesTest {
                     assertFalse(listing.buy());
                     assertEquals(0, listing.enchantLevel());
                     assertEquals(InhabitantRules.armorEmeralds(master, slot), listing.emeralds());
+                    assertArmorMaterial(listing.itemId());
                     heavySeen.add(slot);
                 } else if (metal.equals(listing.itemId())) {
                     assertTrue(listing.buy());
@@ -734,6 +762,7 @@ class InhabitantRulesTest {
                     assertFalse(listing.buy());
                     assertEquals(InhabitantRules.armorEnchantLevel(master), listing.enchantLevel());
                     assertEquals(InhabitantRules.enchantedArmorEmeralds(master, slot), listing.emeralds());
+                    assertArmorMaterial(listing.itemId());
                     assertTrue(enchanted.add(slot), listing.itemId());
                 } else {
                     fail("unexpected listing " + listing.itemId());
@@ -751,6 +780,16 @@ class InhabitantRulesTest {
         assertEquals(slots, heavySeen);
         assertTrue(sawBuy);
         assertTrue(sawEveryEnchantedSlot);
+    }
+
+    private static void assertMaterial(String itemId, String paidId, int count) {
+        InhabitantRules.MaterialCost cost = InhabitantRules.armorMaterial(itemId);
+        assertEquals(paidId, cost.itemId(), itemId);
+        assertEquals(count, cost.count(), itemId);
+    }
+
+    private static void assertArmorMaterial(String itemId) {
+        assertTrue(InhabitantRules.armorMaterial(itemId).present(), itemId);
     }
 
     @Test

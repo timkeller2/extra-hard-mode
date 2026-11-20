@@ -102,16 +102,27 @@ public final class InhabitantRules {
     public static final int FARM_PLANT_USES = DEFAULT_TRADE_USES;
     /** Wheat a farm neighbor sells for one emerald. */
     public static final int FARM_WHEAT_COUNT = 8;
-    public static final int MASTER_ARMOR_PRICE_FACTOR = 4;
-    public static final int IRON_BOOTS_EMERALDS = 12;
-    public static final int IRON_HELMET_EMERALDS = 15;
-    public static final int IRON_LEGGINGS_EMERALDS = 21;
-    public static final int IRON_CHESTPLATE_EMERALDS = 24;
-    /** Enchanted iron sits under heavy iron. Half of 12, 15, 21, and 24, with the halves rounded. */
-    public static final int ENCHANTED_IRON_BOOTS_EMERALDS = 6;
-    public static final int ENCHANTED_IRON_HELMET_EMERALDS = 8;
-    public static final int ENCHANTED_IRON_LEGGINGS_EMERALDS = 11;
-    public static final int ENCHANTED_IRON_CHESTPLATE_EMERALDS = 12;
+    /**
+     * Heavy iron emeralds. Half of the old 12, 15, 21, and 24, with the halves rounded up.
+     * The second cost is half the iron blocks in the recipe, also rounded up.
+     */
+    public static final int IRON_BOOTS_EMERALDS = 6;
+    public static final int IRON_HELMET_EMERALDS = 8;
+    public static final int IRON_LEGGINGS_EMERALDS = 11;
+    public static final int IRON_CHESTPLATE_EMERALDS = 12;
+    /**
+     * Heavy diamond emeralds. Half of the old four-times prices 48, 60, 84, and 96.
+     * Halving the new iron price and then multiplying by four would miss 30 and 42.
+     */
+    public static final int DIAMOND_BOOTS_EMERALDS = 24;
+    public static final int DIAMOND_HELMET_EMERALDS = 30;
+    public static final int DIAMOND_LEGGINGS_EMERALDS = 42;
+    public static final int DIAMOND_CHESTPLATE_EMERALDS = 48;
+    /** Enchanted iron. Half of the old 6, 8, 11, and 12, with the halves rounded up. */
+    public static final int ENCHANTED_IRON_BOOTS_EMERALDS = 3;
+    public static final int ENCHANTED_IRON_HELMET_EMERALDS = 4;
+    public static final int ENCHANTED_IRON_LEGGINGS_EMERALDS = 6;
+    public static final int ENCHANTED_IRON_CHESTPLATE_EMERALDS = 6;
     /** Enchanting-table power applied to an armorsmith's iron armor. */
     public static final int ARMOR_ENCHANT_LEVEL = 20;
     /** Enchanting-table power applied to a master armorsmith's diamond armor. */
@@ -188,6 +199,7 @@ public final class InhabitantRules {
     public static final String JEWELER = "jeweler";
     public static final String COUNCIL = "council";
     public static final String OLD_MINER = "old_miner";
+    public static final String CARTOGRAPHER = "cartographer";
     /** Emeralds a wise teacher charges in a 24-point home. Each point above that takes {@link #WISE_PRICE_PER_POINT} off, down to free. */
     public static final int WISE_ABILITY_EMERALDS = 30;
     public static final int WISE_PRICE_PER_POINT = 2;
@@ -205,7 +217,8 @@ public final class InhabitantRules {
             JEWELER,
             COUNCIL,
             BREWER,
-            OLD_MINER);
+            OLD_MINER,
+            CARTOGRAPHER);
 
     public record WealthyListing(String itemId, int count, int emeralds) {}
 
@@ -839,7 +852,7 @@ public final class InhabitantRules {
                 "Residents: Houses in unloaded chunks can still fill. Chance starts at 8% at 12 points and rises with extra points (halved in blight).",
                 "Residents: Chests bias a hauler, a kitchen biases a cook, and plants or workstations bias a farm neighbor.",
                 "Residents: A cauldron favors a brewer, and a brewer can come to a 12-point home.",
-                "Residents: An old miner can come to a 12-point home.",
+                "Residents: An old miner can come to a 12-point home. A cartographer can come to a 12-point home.",
                 "Ore leads: Speak to an old miner for a lead. He does not keep a shop. Every 7 Minecraft days he names the largest vein in his chunk and the eight around it.",
                 "Ore leads: The fee is 1 emerald for each 8 house points, rounded down. Without those emeralds in hand he names the ore and the fee.",
                 "Ore leads: Hold that many emeralds and he takes them and names the direction. The 7 days start then.",
@@ -850,6 +863,13 @@ public final class InhabitantRules {
                 "Ore leads: The line reads Jack: Iron East. The direction is North, South, East, West, Up, or Down, whichever is farthest, and it changes as you move.",
                 "Ore leads: With under 4 days left, that line ends like (2d). On the last day it ends like (13h).",
                 "Ore leads: Within 3 blocks the lead is finished. It expires after 7 Minecraft days. Each player has a separate lead, and one miner can lead several players.",
+                "Maps: Speak to a cartographer for a mark. He does not keep a shop. The line reads Jack: East, and the direction changes as you move.",
+                "Maps: The direction is North, South, East, or West, whichever is farthest. Up and down do not matter. Within 50 blocks the mark is finished.",
+                "Maps: It expires after 14 Minecraft days. Each player has a separate mark, and one cartographer can mark for several players.",
+                "Maps: The place is (house points + 3d6) times 25 blocks away, plus 30% for each mark already finished with him, then plus or minus up to 25%.",
+                "Maps: Reaching it pays 1 experience for every 10 blocks of that distance, and 1 emerald for every 100 blocks.",
+                "Maps: After a finished mark, the next waits 7 Minecraft days. Each further mark finished with him adds 3 days. An expired mark can be replaced at once.",
+                "Maps: With under 4 days left, that line ends like (2d). On the last day it ends like (13h).",
                 "Residents: 18 points can attract a loot collector or a council member, 24 a jeweler, an armorsmith, or a wise teacher, and 30 a wealthy trader or a master armorsmith.",
                 "Residents: New residents prefer a type that has not appeared yet.",
                 "Residents: A job with more than twice as many residents as the smallest job this home can host is skipped.",
@@ -914,8 +934,10 @@ public final class InhabitantRules {
                 "Shops: A gold block is 6 emeralds and a diamond block is 32.",
                 "Shops: An armorsmith sells one heavy iron piece each restock, and the piece can change. Other sales are enchanted iron armor, each a different slot.",
                 "Shops: A larger iron shop may buy iron. A master armorsmith sells one heavy diamond piece the same way, plus enchanted diamond armor, and may buy diamonds.",
-                "Shops: Heavy iron costs 12, 15, 21, or 24 emeralds for boots, a helmet, leggings, or a chestplate. Heavy diamond costs four times that.",
-                "Shops: Enchanted iron armor costs 6, 8, 11, or 12 emeralds for those slots. Enchanted diamond armor costs the same as heavy iron.",
+                "Shops: Heavy iron costs 6, 8, 11, or 12 emeralds for boots, a helmet, leggings, or a chestplate. Heavy diamond costs 24, 30, 42, or 48.",
+                "Shops: Enchanted iron costs 3 emeralds for boots, 4 for a helmet, and 6 for leggings or a chestplate. Enchanted diamond matches heavy iron.",
+                "Shops: Each piece also costs half its crafting materials, rounded up. Boots take 2, a helmet 3, and leggings or a chestplate 4.",
+                "Shops: Heavy iron and heavy diamond take blocks of that metal. Enchanted iron takes ingots, and enchanted diamond takes diamonds.",
                 "Shops: A brewer sells one level 2 potion each restock, and that potion can change. Up to 3 other potions cost 1 emerald.",
                 "Shops: A larger brewer sells one of each brewing ingredient for 1 emerald, such as nether wart, blaze powder, glowstone, and ghast tears.",
                 "Shops: A loot collector pays 1 emerald for 4 spider eyes, 4 gunpowder, or 8 bones.",
@@ -1167,6 +1189,8 @@ public final class InhabitantRules {
         bag.add(TRADER);
         bag.add(OLD_MINER);
         bag.add(OLD_MINER);
+        bag.add(CARTOGRAPHER);
+        bag.add(CARTOGRAPHER);
         if (counts != null && counts.storage() >= 1) {
             bag.add(HAULER);
             bag.add(HAULER);
@@ -1231,6 +1255,8 @@ public final class InhabitantRules {
             "minecraft:butcher",
             "minecraft:mason",
             "minecraft:leatherworker");
+    /** A cartographer always wears the cartographer coat. */
+    public static final List<String> CARTOGRAPHER_OUTFITS = List.of("minecraft:cartographer");
     /** Nicer coats and robes. Iron through emerald rank. */
     public static final List<String> FINE_OUTFITS = List.of(
             "minecraft:librarian",
@@ -1280,6 +1306,7 @@ public final class InhabitantRules {
             case MASTER_ARMORSMITH, COUNCIL -> ELITE_OUTFITS;
             case ARMORSMITH, WISE_TEACHER -> NOTABLE_OUTFITS;
             case WEALTHY, BOUNTY, JEWELER -> FINE_OUTFITS;
+            case CARTOGRAPHER -> CARTOGRAPHER_OUTFITS;
             default -> COMMON_OUTFITS;
         };
     }
@@ -1288,7 +1315,7 @@ public final class InhabitantRules {
         return switch (specialty == null ? "" : specialty) {
             case MASTER_ARMORSMITH, COUNCIL -> 4;
             case ARMORSMITH, WISE_TEACHER -> 3;
-            case WEALTHY, BOUNTY, JEWELER -> 2;
+            case WEALTHY, BOUNTY, JEWELER, CARTOGRAPHER -> 2;
             default -> 1;
         };
     }
@@ -1297,7 +1324,7 @@ public final class InhabitantRules {
         return switch (specialty == null ? "" : specialty) {
             case MASTER_ARMORSMITH, COUNCIL -> 5;
             case ARMORSMITH, WISE_TEACHER -> 5;
-            case WEALTHY, BOUNTY, JEWELER -> 4;
+            case WEALTHY, BOUNTY, JEWELER, CARTOGRAPHER -> 4;
             default -> 2;
         };
     }
@@ -1383,6 +1410,7 @@ public final class InhabitantRules {
             case JEWELER -> "jeweler";
             case COUNCIL -> "council member";
             case OLD_MINER -> "old miner";
+            case CARTOGRAPHER -> "cartographer";
             default -> "traveler";
         };
     }
@@ -1653,17 +1681,87 @@ public final class InhabitantRules {
     }
 
     public static int armorEmeralds(boolean master, String slot) {
-        int iron = switch (slot == null ? "" : slot) {
+        String named = slot == null ? "" : slot;
+        if (master) {
+            return switch (named) {
+                case "boots" -> DIAMOND_BOOTS_EMERALDS;
+                case "helmet" -> DIAMOND_HELMET_EMERALDS;
+                case "leggings" -> DIAMOND_LEGGINGS_EMERALDS;
+                case "chestplate" -> DIAMOND_CHESTPLATE_EMERALDS;
+                default -> 0;
+            };
+        }
+        return switch (named) {
             case "boots" -> IRON_BOOTS_EMERALDS;
             case "helmet" -> IRON_HELMET_EMERALDS;
             case "leggings" -> IRON_LEGGINGS_EMERALDS;
             case "chestplate" -> IRON_CHESTPLATE_EMERALDS;
             default -> 0;
         };
-        return master ? iron * MASTER_ARMOR_PRICE_FACTOR : iron;
     }
 
-    /** Enchanted diamond armor uses the heavy iron price for that slot. */
+    /** The second item on an armor sale. Empty when this item is not one of those pieces. */
+    public record MaterialCost(String itemId, int count) {
+        public static final MaterialCost NONE = new MaterialCost("", 0);
+
+        public boolean present() {
+            return count > 0 && itemId != null && !itemId.isEmpty();
+        }
+    }
+
+    /** Ingredients in the shaped recipe for this armor slot. A helmet is 5. Boots are 4. */
+    public static int armorRecipePieces(String slot) {
+        return switch (slot == null ? "" : slot) {
+            case "boots" -> 4;
+            case "helmet" -> 5;
+            case "leggings" -> 7;
+            case "chestplate" -> 8;
+            default -> 0;
+        };
+    }
+
+    /** Half the recipe, rounded up. A helmet is 3. Boots are 2. */
+    public static int armorMaterialCount(String slot) {
+        int pieces = armorRecipePieces(slot);
+        return pieces <= 0 ? 0 : (pieces + 1) / 2;
+    }
+
+    /**
+     * Half the materials used to craft this piece, rounded up.
+     * Heavy armor pays in blocks. Enchanted armor pays in ingots or diamonds.
+     */
+    public static MaterialCost armorMaterial(String itemId) {
+        if (itemId == null || itemId.isEmpty()) {
+            return MaterialCost.NONE;
+        }
+        String path = itemId;
+        int colon = path.indexOf(':');
+        if (colon >= 0) {
+            path = path.substring(colon + 1);
+        }
+        boolean heavy = path.startsWith("heavy_");
+        if (heavy) {
+            path = path.substring("heavy_".length());
+        }
+        String metal;
+        String slot;
+        if (path.startsWith("iron_")) {
+            metal = heavy ? "minecraft:iron_block" : "minecraft:iron_ingot";
+            slot = path.substring("iron_".length());
+        } else if (path.startsWith("diamond_")) {
+            metal = heavy ? "minecraft:diamond_block" : "minecraft:diamond";
+            slot = path.substring("diamond_".length());
+        } else {
+            return MaterialCost.NONE;
+        }
+        int count = armorMaterialCount(slot);
+        if (count <= 0) {
+            return MaterialCost.NONE;
+        }
+        return new MaterialCost(metal, count);
+    }
+
+    /** Enchanted diamond armor uses the heavy iron emerald price for that slot. */
     public static int enchantedArmorEmeralds(boolean master, String slot) {
         if (master) {
             return armorEmeralds(false, slot);
@@ -1839,7 +1937,7 @@ public final class InhabitantRules {
                     buyOf("minecraft:bone", 8, 3));
             case ARMORSMITH -> armorUsualListings(false);
             case MASTER_ARMORSMITH -> armorUsualListings(true);
-            case WISE_TEACHER, OLD_MINER -> List.of();
+            case WISE_TEACHER, OLD_MINER, CARTOGRAPHER -> List.of();
             case COUNCIL -> List.of(
                     sellOf("minecraft:paper", 12, 1, 3),
                     sellOf("minecraft:book", 1, 3, 3),
@@ -1899,7 +1997,7 @@ public final class InhabitantRules {
                     buyOf("minecraft:blaze_rod", 2, 3),
                     buyOf("minecraft:ghast_tear", 1, 3));
             case ARMORSMITH -> List.of(armorMetalBuy(false));
-            case WISE_TEACHER, OLD_MINER -> List.of();
+            case WISE_TEACHER, OLD_MINER, CARTOGRAPHER -> List.of();
             case MASTER_ARMORSMITH -> List.of(armorMetalBuy(true));
             case COUNCIL -> List.of(
                     sellOf("minecraft:map", 1, 4, 3),
@@ -1965,7 +2063,7 @@ public final class InhabitantRules {
             String specialty, double score, int storage, boolean blight, Random random) {
         Random rng = random == null ? new Random(0L) : random;
         String type = specialty == null || specialty.isEmpty() ? TRADER : specialty;
-        if (WISE_TEACHER.equals(type) || OLD_MINER.equals(type)) {
+        if (WISE_TEACHER.equals(type) || OLD_MINER.equals(type) || CARTOGRAPHER.equals(type)) {
             return List.of();
         }
         List<TradeListing> defaults;

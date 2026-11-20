@@ -127,6 +127,7 @@ public final class Inhabitants implements FeatureModule {
             long minerDay = AntiFarming.overworldDay(level);
             for (ServerPlayer player : level.players()) {
                 OldMiners.tick(player, level, minerDay);
+                Cartographers.tick(player, level, minerDay);
             }
         }
         if (level.dimension() != Level.OVERWORLD) {
@@ -186,6 +187,13 @@ public final class Inhabitants implements FeatureModule {
                 return InteractionResult.SUCCESS;
             }
             OldMiners.onTalk(serverPlayer, server, home, villager.getUUID());
+            return InteractionResult.SUCCESS;
+        }
+        if (InhabitantRules.CARTOGRAPHER.equals(home.specialty())) {
+            if (hand != InteractionHand.MAIN_HAND || !(player instanceof ServerPlayer serverPlayer)) {
+                return InteractionResult.SUCCESS;
+            }
+            Cartographers.onTalk(serverPlayer, server, home, villager);
             return InteractionResult.SUCCESS;
         }
         return InteractionResult.PASS;
@@ -1111,7 +1119,7 @@ public final class Inhabitants implements FeatureModule {
         if (listing.enchantLevel() > 0 && random != null && registries != null) {
             result = enchantTrade(random, result, listing.enchantLevel(), registries);
         }
-        return sell(result, listing.emeralds(), listing.maxUses());
+        return sell(result, listing.emeralds(), listing.maxUses(), listing.itemId());
     }
 
     /** A drinkable potion for this registry id, or null when the id is not a potion. */
@@ -1173,10 +1181,24 @@ public final class Inhabitants implements FeatureModule {
     }
 
     static MerchantOffer sell(ItemStack result, int emeralds, int maxUses) {
+        return sell(result, emeralds, maxUses, "");
+    }
+
+    /**
+     * Emeralds in the first slot. Armor also asks for half its crafting materials.
+     * A price above 64 emeralds uses the second slot only when there is no material.
+     */
+    static MerchantOffer sell(ItemStack result, int emeralds, int maxUses, String soldItemId) {
         int total = Math.max(1, emeralds);
         int first = Math.min(64, total);
         Optional<ItemCost> extra = Optional.empty();
-        if (total > 64) {
+        InhabitantRules.MaterialCost material = InhabitantRules.armorMaterial(soldItemId);
+        if (material.present()) {
+            net.minecraft.world.item.Item paid = itemFromId(material.itemId());
+            if (paid != null && paid != Items.AIR) {
+                extra = Optional.of(new ItemCost(paid, Math.min(64, material.count())));
+            }
+        } else if (total > 64) {
             extra = Optional.of(new ItemCost(Items.EMERALD, Math.min(64, total - 64)));
         }
         ItemStack sold = result == null || result.isEmpty() ? new ItemStack(Items.AIR) : result.copy();

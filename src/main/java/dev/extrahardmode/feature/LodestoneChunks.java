@@ -1,8 +1,12 @@
 package dev.extrahardmode.feature;
 
 import dev.extrahardmode.ExtraHardModeMod;
+import dev.extrahardmode.config.ConfigManager;
+import dev.extrahardmode.config.WorldConfig;
 import dev.extrahardmode.world.LodestoneChunkData;
 import dev.extrahardmode.world.WorldGate;
+import java.util.HashMap;
+import java.util.Map;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -14,6 +18,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.Level;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -36,17 +41,19 @@ import net.minecraft.world.level.TicketStorage;
 
 /**
  * A redstone block placed on a lodestone is used up. That chunk and the eight
- * around it keep ticking until a real-world expiry, at most 24 hours from now.
- * Another block adds one hour to the time still left. The time stays on the
- * chunks if the lodestone is broken.
+ * around it keep ticking. A valid residence of 12 points adds one real hour, and
+ * each point above 12 adds 5 minutes, at most 24 hours of time left. The time
+ * stays on the chunks if the lodestone is broken. It does not run while the
+ * server is off, paused, or empty of players.
  */
 public final class LodestoneChunks implements FeatureModule {
     public static final Identifier ID = ExtraHardModeMod.id("lodestone_chunks");
 
     /**
-     * Loads and simulates, and keeps the dimension awake. The expiry lives in
-     * {@link LodestoneChunkData}, so the ticket itself does not persist: a restart
-     * puts it back only while the real hour is still left.
+     * Loads and simulates, and keeps that dimension ticking while a player is online
+     * somewhere. The time left lives in {@link LodestoneChunkData}, so the ticket
+     * does not persist. With nobody online the tickets are taken off, which lets an
+     * empty server pause, and the saved time stays where it is.
      */
     public static final TicketType TICKET = Registry.register(
             BuiltInRegistries.TICKET_TYPE,
@@ -56,6 +63,9 @@ public final class LodestoneChunks implements FeatureModule {
                     TicketType.FLAG_LOADING
                             | TicketType.FLAG_SIMULATION
                             | TicketType.FLAG_KEEP_DIMENSION_ACTIVE));
+
+    /** Wall-clock sample of the last second a player was online. Not saved. */
+    private static final Map<ResourceKey<Level>, Long> LAST_RUNNING_AT = new HashMap<>();
 
     @Override
     public Identifier id() {
@@ -70,7 +80,8 @@ public final class LodestoneChunks implements FeatureModule {
 
     @Override
     public void onWorldLoad(ServerLevel level) {
-        sync(level, true);
+        LAST_RUNNING_AT.remove(level.dimension());
+        refresh(level, playersOnline(level), 0L);
     }
 
     /**
@@ -93,15 +104,18 @@ public final class LodestoneChunks implements FeatureModule {
             return InteractionResult.PASS;
         }
         ServerPlayer serverPlayer = player instanceof ServerPlayer playing ? playing : null;
-        if (!fuel(level, pos.below(), serverPlayer)) {
+        FuelOutcome outcome = fuel(level, pos.below(), serverPlayer);
+        if (outcome == FuelOutcome.REFUSED) {
+            correctPredictedBlock(serverPlayer, level, pos);
+            return InteractionResult.FAIL;
+        }
+        if (outcome != FuelOutcome.SPENT) {
             return InteractionResult.PASS;
         }
         if (player == null || !player.hasInfiniteMaterials()) {
             context.getItemInHand().shrink(1);
         }
-        if (serverPlayer != null && serverPlayer.connection != null) {
-            serverPlayer.connection.send(new ClientboundBlockUpdatePacket(level, pos));
-        }
+        correctPredictedBlock(serverPlayer, level, pos);
         return InteractionResult.SUCCESS;
     }
 
@@ -113,28 +127,40 @@ public final class LodestoneChunks implements FeatureModule {
         if (!level.getBlockState(lodestonePos).is(Blocks.LODESTONE)) {
             return "";
         }
-        long now = System.currentTimeMillis();
-        long soonest = LodestoneChunkRules.soonestExpiry(now, expiries(level, lodestonePos));
-        return LodestoneChunkRules.lookLabel(LodestoneChunkRules.remaining(now, soonest));
+        return LodestoneChunkRules.lookLabel(LodestoneChunkRules.soonestRemaining(remainings(level, lodestonePos)));
     }
 
     /**
-     * Adds one real hour to each of the nine chunks that is under the cap.
-     * Returns false when every one of them is already at 24 hours.
+     * Adds this residence's fuel to each of the nine chunks that is under the cap.
+     * A lodestone outside a valid residence of 12 points refuses the block.
      */
-    public static boolean fuel(ServerLevel level, BlockPos lodestonePos, ServerPlayer player) {
-        long now = System.currentTimeMillis();
+    public static FuelOutcome fuel(ServerLevel level, BlockPos lodestonePos, ServerPlayer player) {
+        ResidenceScan.Result residence = residenceAt(level, lodestonePos);
+        boolean found = residence != null;
+        boolean eligible = found && residence.gates().eligible();
+        int score = found ? residence.gates().score() : 0;
+        if (!LodestoneChunkRules.acceptsResidence(eligible, score)) {
+            if (player != null) {
+                tellResidence(player, found, eligible, score, found ? residence.gates().missing() : java.util.List.of());
+            }
+            return FuelOutcome.REFUSED;
+        }
+        long added = LodestoneChunkRules.fuelMillis(score);
         LodestoneChunkData data = LodestoneChunkData.of(level);
         ChunkPos origin = ChunkPos.unpack(ChunkPos.pack(lodestonePos));
+        boolean online = playersOnline(level);
         boolean any = false;
         for (int dx = -LodestoneChunkRules.RADIUS; dx <= LodestoneChunkRules.RADIUS; dx++) {
             for (int dz = -LodestoneChunkRules.RADIUS; dz <= LodestoneChunkRules.RADIUS; dz++) {
                 long packed = ChunkPos.pack(origin.x() + dx, origin.z() + dz);
-                if (!LodestoneChunkRules.extendsTime(now, data.expiry(packed))) {
+                long existing = data.remaining(packed);
+                if (!LodestoneChunkRules.extendsTime(existing)) {
                     continue;
                 }
-                data.setExpiry(packed, LodestoneChunkRules.extendedExpiry(now, data.expiry(packed)));
-                ensureTicket(level, packed);
+                data.setRemaining(packed, LodestoneChunkRules.extendedRemaining(existing, added));
+                if (online) {
+                    ensureTicket(level, packed);
+                }
                 any = true;
             }
         }
@@ -143,57 +169,116 @@ public final class LodestoneChunks implements FeatureModule {
                 player.sendOverlayMessage(Component.translatableWithFallback(
                         LodestoneChunkRules.CAP_KEY, LodestoneChunkRules.CAP));
             }
-            return false;
+            return FuelOutcome.FULL;
         }
-        long soonest = LodestoneChunkRules.soonestExpiry(now, expiries(level, lodestonePos));
-        String label = LodestoneChunkRules.lookLabel(LodestoneChunkRules.remaining(now, soonest));
+        String label = LodestoneChunkRules.lookLabel(
+                LodestoneChunkRules.soonestRemaining(remainings(level, lodestonePos)));
         if (player != null && !label.isEmpty()) {
             player.sendOverlayMessage(Component.literal(label));
         }
         level.playSound(null, lodestonePos, SoundEvents.LODESTONE_COMPASS_LOCK, SoundSource.BLOCKS, 1.0F, 1.0F);
-        return true;
+        return FuelOutcome.SPENT;
+    }
+
+    private static ResidenceScan.Result residenceAt(ServerLevel level, BlockPos lodestonePos) {
+        BlockPos bed = ResidenceScan.bedOfHouseContaining(level, lodestonePos);
+        if (bed == null) {
+            return null;
+        }
+        WorldConfig cfg = ConfigManager.world(level);
+        return ResidenceScan.inspect(
+                level, bed, Inhabitants.occupiedBeds(level), cfg.inhabitantMinLight(), cfg.inhabitantSpacing());
+    }
+
+    private static void tellResidence(
+            ServerPlayer player, boolean found, boolean eligible, int score, java.util.List<String> missing) {
+        if (!found) {
+            player.sendOverlayMessage(
+                    Component.translatableWithFallback(LodestoneChunkRules.NO_HOME_KEY, LodestoneChunkRules.NO_HOME));
+            return;
+        }
+        if (score < LodestoneChunkRules.MIN_RESIDENCE_SCORE) {
+            player.sendOverlayMessage(Component.translatableWithFallback(
+                    LodestoneChunkRules.LOW_SCORE_KEY, LodestoneChunkRules.LOW_SCORE, Integer.toString(score)));
+            return;
+        }
+        String detail = LodestoneChunkRules.residenceRefusal(true, eligible, score, missing);
+        if (missing == null || missing.isEmpty()) {
+            player.sendOverlayMessage(Component.translatableWithFallback(
+                    LodestoneChunkRules.INVALID_KEY, LodestoneChunkRules.INVALID, Integer.toString(score)));
+            return;
+        }
+        player.sendOverlayMessage(Component.literal(detail));
+    }
+
+    private static void correctPredictedBlock(ServerPlayer serverPlayer, ServerLevel level, BlockPos pos) {
+        if (serverPlayer != null && serverPlayer.connection != null) {
+            serverPlayer.connection.send(new ClientboundBlockUpdatePacket(level, pos));
+        }
+    }
+
+    enum FuelOutcome {
+        SPENT,
+        FULL,
+        REFUSED
     }
 
     private static void onLevelTick(ServerLevel level) {
         if (level.getGameTime() % 20L != 0L) {
             return;
         }
-        sync(level, WorldGate.isModuleActive(level, ID));
+        boolean running = WorldGate.isModuleActive(level, ID) && playersOnline(level);
+        long elapsed = 0L;
+        if (running) {
+            long now = System.currentTimeMillis();
+            Long previous = LAST_RUNNING_AT.put(level.dimension(), now);
+            elapsed = LodestoneChunkRules.elapsedRunning(previous == null ? 0L : previous, now);
+        } else {
+            LAST_RUNNING_AT.remove(level.dimension());
+        }
+        refresh(level, running, elapsed);
     }
 
-    /** Puts tickets back for time still left, or takes them off when the hour has passed or the module is off. */
-    private static void sync(ServerLevel level, boolean keepActive) {
+    /**
+     * While players are online, counts down and keeps the tickets. While the server is
+     * empty, off, or the module is off, takes the tickets away and leaves the time left.
+     */
+    private static void refresh(ServerLevel level, boolean keepActive, long elapsedMillis) {
         LodestoneChunkData data = LodestoneChunkData.of(level);
         if (data.size() == 0) {
             return;
         }
-        long now = System.currentTimeMillis();
         TicketStorage tickets = tickets(level);
         for (long packed : data.packedChunks()) {
-            if (keepActive && data.expiry(packed) > now) {
+            long left = LodestoneChunkRules.afterRunning(data.remaining(packed), elapsedMillis);
+            if (keepActive && left > 0L) {
+                data.setRemaining(packed, left);
                 ensureTicket(tickets, packed);
+            } else if (left > 0L) {
+                data.setRemaining(packed, left);
+                removeTicket(tickets, packed);
             } else {
-                if (!keepActive && data.expiry(packed) > now) {
-                    removeTicket(tickets, packed);
-                    continue;
-                }
                 data.remove(packed);
                 removeTicket(tickets, packed);
             }
         }
     }
 
-    private static long[] expiries(ServerLevel level, BlockPos lodestonePos) {
+    private static boolean playersOnline(ServerLevel level) {
+        return level.getServer().getPlayerCount() > 0;
+    }
+
+    private static long[] remainings(ServerLevel level, BlockPos lodestonePos) {
         LodestoneChunkData data = LodestoneChunkData.of(level);
         ChunkPos origin = ChunkPos.unpack(ChunkPos.pack(lodestonePos));
-        long[] expiries = new long[LodestoneChunkRules.coveredChunks()];
+        long[] remainings = new long[LodestoneChunkRules.coveredChunks()];
         int index = 0;
         for (int dx = -LodestoneChunkRules.RADIUS; dx <= LodestoneChunkRules.RADIUS; dx++) {
             for (int dz = -LodestoneChunkRules.RADIUS; dz <= LodestoneChunkRules.RADIUS; dz++) {
-                expiries[index++] = data.expiry(ChunkPos.pack(origin.x() + dx, origin.z() + dz));
+                remainings[index++] = data.remaining(ChunkPos.pack(origin.x() + dx, origin.z() + dz));
             }
         }
-        return expiries;
+        return remainings;
     }
 
     private static void ensureTicket(ServerLevel level, long packed) {
@@ -242,7 +327,7 @@ public final class LodestoneChunks implements FeatureModule {
             if (!level.getBlockState(target.below()).is(Blocks.LODESTONE) || !occupied.canBeReplaced()) {
                 return super.execute(source, stack);
             }
-            if (!fuel(level, target.below(), null)) {
+            if (fuel(level, target.below(), null) != FuelOutcome.SPENT) {
                 setSuccess(false);
                 return stack;
             }
