@@ -89,6 +89,13 @@ public final class EhmAttachments {
     public static final AttachmentType<Boolean> EHM_INHABITANT = AttachmentRegistry.create(
             ExtraHardModeMod.id("inhabitant"),
             builder -> builder.persistent(Codec.BOOL).initializer(() -> Boolean.FALSE));
+    /**
+     * Overworld day when this villager may trade again. -1 means they are not mourning.
+     * Not copied onto a zombie villager.
+     */
+    public static final AttachmentType<Long> EHM_MOURN_UNTIL = AttachmentRegistry.create(
+            ExtraHardModeMod.id("mourn_until"),
+            builder -> builder.persistent(Codec.LONG).initializer(() -> -1L));
     public static final AttachmentType<String> EHM_INHABITANT_HOME = AttachmentRegistry.create(
             ExtraHardModeMod.id("inhabitant_home"),
             builder -> builder.persistent(Codec.STRING).initializer(() -> ""));

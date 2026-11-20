@@ -168,6 +168,8 @@
   "tougher.message.house_suggestion": "Suggestion: %s",
   "tougher.message.inhabitant_lives_here": "%s the %s lives here.",
   "tougher.message.inhabitant_near_villager": "A villager is within 35 blocks, so no resident will appear.",
+  "tougher.message.villager_mourning": "I am in a time of mourning for %s more days...",
+  "tougher.message.villager_mourning_one": "I am in a time of mourning for 1 more day...",
   "tougher.message.inhabitant_bounty_boss": "Something huge is out there. You would be wise to be careful.",
   "tougher.message.inhabitant_bounty_boss_way": "Something huge is out there, to the %s. You would be wise to be careful.",
   "tougher.message.council_mission_new": "%s: %s %s",

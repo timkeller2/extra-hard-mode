@@ -34,8 +34,12 @@ public final class InhabitantData extends SavedData {
                     Codec.LONG.optionalFieldOf("empty_until_day", -1L).forGetter(Home::emptyUntilDay),
                     Codec.BOOL.optionalFieldOf("uneasy", false).forGetter(Home::uneasy),
                     Codec.LONG.optionalFieldOf("last_restock_day", -1L).forGetter(Home::lastRestockDay),
-                    Codec.LONG.optionalFieldOf("last_roll_day", -1L).forGetter(Home::lastRollDay))
-            .apply(instance, Home::new));
+                    Codec.LONG.optionalFieldOf("last_roll_day", -1L).forGetter(Home::lastRollDay),
+                    BlockPos.CODEC
+                            .listOf()
+                            .optionalFieldOf("claimed_beds", List.of())
+                            .forGetter(Home::claimedBeds))
+            .apply(instance, Home::create));
 
     public static final Codec<InhabitantData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                     HOME_CODEC.listOf().optionalFieldOf("homes", List.of()).forGetter(InhabitantData::homes),
@@ -213,44 +217,189 @@ public final class InhabitantData extends SavedData {
             long emptyUntilDay,
             boolean uneasy,
             long lastRestockDay,
-            long lastRollDay) {
+            long lastRollDay,
+            List<BlockPos> claimedBeds) {
+        public Home {
+            claimedBeds = claimedBeds == null || claimedBeds.isEmpty() ? List.of() : List.copyOf(claimedBeds);
+        }
+
+        /** Older saves have no claimed beds. The home bed is still occupied. */
+        public Home(
+                String id,
+                BlockPos bed,
+                int score,
+                String specialty,
+                String name,
+                Optional<UUID> living,
+                long leaveAfterDay,
+                long emptyUntilDay,
+                boolean uneasy,
+                long lastRestockDay,
+                long lastRollDay) {
+            this(
+                    id,
+                    bed,
+                    score,
+                    specialty,
+                    name,
+                    living,
+                    leaveAfterDay,
+                    emptyUntilDay,
+                    uneasy,
+                    lastRestockDay,
+                    lastRollDay,
+                    List.of());
+        }
+
+        public static Home create(
+                String id,
+                BlockPos bed,
+                int score,
+                String specialty,
+                String name,
+                Optional<UUID> living,
+                long leaveAfterDay,
+                long emptyUntilDay,
+                boolean uneasy,
+                long lastRestockDay,
+                long lastRollDay,
+                List<BlockPos> claimedBeds) {
+            return new Home(
+                    id,
+                    bed,
+                    score,
+                    specialty,
+                    name,
+                    living,
+                    leaveAfterDay,
+                    emptyUntilDay,
+                    uneasy,
+                    lastRestockDay,
+                    lastRollDay,
+                    claimedBeds);
+        }
+
         public Home withLiving(Optional<UUID> next) {
             return new Home(
-                    id, bed, score, specialty, name, next, leaveAfterDay, emptyUntilDay, uneasy, lastRestockDay, lastRollDay);
+                    id,
+                    bed,
+                    score,
+                    specialty,
+                    name,
+                    next,
+                    leaveAfterDay,
+                    emptyUntilDay,
+                    uneasy,
+                    lastRestockDay,
+                    lastRollDay,
+                    claimedBeds);
         }
 
         public Home withName(String next) {
             return new Home(
-                    id, bed, score, specialty, next, living, leaveAfterDay, emptyUntilDay, uneasy, lastRestockDay, lastRollDay);
+                    id,
+                    bed,
+                    score,
+                    specialty,
+                    next,
+                    living,
+                    leaveAfterDay,
+                    emptyUntilDay,
+                    uneasy,
+                    lastRestockDay,
+                    lastRollDay,
+                    claimedBeds);
         }
 
         public Home withScore(int next) {
             return new Home(
-                    id, bed, next, specialty, name, living, leaveAfterDay, emptyUntilDay, uneasy, lastRestockDay, lastRollDay);
+                    id,
+                    bed,
+                    next,
+                    specialty,
+                    name,
+                    living,
+                    leaveAfterDay,
+                    emptyUntilDay,
+                    uneasy,
+                    lastRestockDay,
+                    lastRollDay,
+                    claimedBeds);
         }
 
         public Home withLeave(long day, boolean uneasy) {
             return new Home(
-                    id, bed, score, specialty, name, living, day, emptyUntilDay, uneasy, lastRestockDay, lastRollDay);
+                    id,
+                    bed,
+                    score,
+                    specialty,
+                    name,
+                    living,
+                    day,
+                    emptyUntilDay,
+                    uneasy,
+                    lastRestockDay,
+                    lastRollDay,
+                    claimedBeds);
         }
 
         public Home withEmptyUntil(long day) {
-            return new Home(id, bed, score, specialty, name, Optional.empty(), -1L, day, false, lastRestockDay, lastRollDay);
+            return new Home(
+                    id, bed, score, specialty, name, Optional.empty(), -1L, day, false, lastRestockDay, lastRollDay, claimedBeds);
         }
 
         public Home withLastRestock(long day) {
             return new Home(
-                    id, bed, score, specialty, name, living, leaveAfterDay, emptyUntilDay, uneasy, day, lastRollDay);
+                    id,
+                    bed,
+                    score,
+                    specialty,
+                    name,
+                    living,
+                    leaveAfterDay,
+                    emptyUntilDay,
+                    uneasy,
+                    day,
+                    lastRollDay,
+                    claimedBeds);
         }
 
         public Home withLastRoll(long day) {
             return new Home(
-                    id, bed, score, specialty, name, living, leaveAfterDay, emptyUntilDay, uneasy, lastRestockDay, day);
+                    id,
+                    bed,
+                    score,
+                    specialty,
+                    name,
+                    living,
+                    leaveAfterDay,
+                    emptyUntilDay,
+                    uneasy,
+                    lastRestockDay,
+                    day,
+                    claimedBeds);
         }
 
         /** This house keeps its bed and score. The person, job, and restock clock are replaced. */
         public Home withResident(String specialty, String name, Optional<UUID> living, long lastRestockDay) {
-            return new Home(id, bed, score, specialty, name, living, -1L, emptyUntilDay, false, lastRestockDay, lastRollDay);
+            return new Home(
+                    id, bed, score, specialty, name, living, -1L, emptyUntilDay, false, lastRestockDay, lastRollDay, claimedBeds);
+        }
+
+        public Home withClaimedBeds(List<BlockPos> beds) {
+            return new Home(
+                    id,
+                    bed,
+                    score,
+                    specialty,
+                    name,
+                    living,
+                    leaveAfterDay,
+                    emptyUntilDay,
+                    uneasy,
+                    lastRestockDay,
+                    lastRollDay,
+                    beds);
         }
     }
 }

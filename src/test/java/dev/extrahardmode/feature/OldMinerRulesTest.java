@@ -22,6 +22,18 @@ class OldMinerRulesTest {
         assertEquals(5, OldMinerRules.offerCount(24, 0));
         assertEquals(10, OldMinerRules.offerCount(100, 100));
         assertEquals(3, OldMinerRules.offerCount(12, -2));
+        assertEquals(1, OldMinerRules.searchRadius(23, 0));
+        assertEquals(1, OldMinerRules.searchRadius(12, 11));
+        assertEquals(1, OldMinerRules.searchRadius(0, 23));
+        assertEquals(1, OldMinerRules.searchRadius(-4, -2));
+        assertEquals(2, OldMinerRules.searchRadius(24, 0));
+        assertEquals(2, OldMinerRules.searchRadius(12, 12));
+        assertEquals(2, OldMinerRules.searchRadius(35, 0));
+        assertEquals(2, OldMinerRules.searchRadius(23, 12));
+        assertEquals(3, OldMinerRules.searchRadius(36, 0));
+        assertEquals(3, OldMinerRules.searchRadius(35, 1));
+        assertEquals(3, OldMinerRules.searchRadius(12, 24));
+        assertEquals(3, OldMinerRules.searchRadius(38, 0));
         assertEquals(
                 List.of("coal", "quartz", "copper"),
                 OldMinerRules.offerPool(12, 0, OldMinerRules.ORES));
@@ -166,16 +178,23 @@ class OldMinerRulesTest {
                 "iron",
                 OldMinerRules.pickOffer(20, missed.successes(), OldMinerRules.ORES, missed.finishedOres(), Set.of(), 3)
                         .ore());
-        OldMinerRules.Lead done = active.completed();
+        assertEquals(0, OldMinerRules.cooldownDays(0));
+        assertEquals(10, OldMinerRules.cooldownDays(1));
+        assertEquals(13, OldMinerRules.cooldownDays(2));
+        assertEquals(16, OldMinerRules.cooldownDays(3));
+        OldMinerRules.Lead done = active.completed(10L);
         assertEquals(1, done.successes());
         assertEquals("iron", done.finished());
         assertFalse(done.active());
-        assertEquals(17L, done.nextDay());
+        assertEquals(20L, done.nextDay());
+        OldMinerRules.Lead again = done.assigned("coal", 1, 2, 3, "minecraft:overworld", 20L).completed(20L);
+        assertEquals(2, again.successes());
+        assertEquals(33L, again.nextDay());
         assertEquals(
                 "coal",
                 OldMinerRules.pickOffer(12, done.successes(), OldMinerRules.ORES, done.finishedOres(), Set.of(), 0)
                         .ore());
-        assertEquals(3L, OldMinerRules.daysUntil(14, done.nextDay()));
+        assertEquals(6L, OldMinerRules.daysUntil(14, done.nextDay()));
     }
 
     @Test

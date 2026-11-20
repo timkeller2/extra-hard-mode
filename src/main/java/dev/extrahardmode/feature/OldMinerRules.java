@@ -12,18 +12,25 @@ import java.util.Set;
 
 /**
  * Ore leads for an old miner. Minecraft-free for JUnit.
- * Only ores found in his chunk and the eight around it can be named.
+ * Only ores found in the square of chunks he searches can be named.
+ * That square is his chunk and the eight around it until house points plus finished leads pass 23, then 5 by 5, and past 35 it is 7 by 7.
  * The draw is the easiest of those he has not finished. Finishing an easier ore lets the next harder one there join the list.
  * A finished ore stays out until every ore in that ground has been finished.
  * An expired lead that the player never reached was never finished, so that ore can be drawn again.
  */
 public final class OldMinerRules {
     public static final int INTERVAL_DAYS = 7;
+    /** Added to the wait between leads for each lead this player has finished with this miner. */
+    public static final int COOLDOWN_STEP_DAYS = 3;
     /** One emerald in the main hand for each this many house points, rounded down. */
     public static final int FEE_POINTS = 8;
     public static final int ARRIVE_BLOCKS = 3;
     public static final int ARRIVE_DIST_SQR = ARRIVE_BLOCKS * ARRIVE_BLOCKS;
     public static final int OFFER_DIVISOR = 5;
+    /** House points plus finished leads. At or below this, he searches a 3 by 3 of chunks. */
+    public static final int SEARCH_NEAR = 23;
+    /** Above this, he searches a 7 by 7. From just above {@link #SEARCH_NEAR} through this, he searches a 5 by 5. */
+    public static final int SEARCH_FAR = 35;
     /** Easiest Detect Ore families first. A mission list is a slice of the ones present in the miner's ground. */
     public static final List<String> ORES = List.of(
             "coal",
@@ -42,6 +49,40 @@ public final class OldMinerRules {
     };
 
     private OldMinerRules() {}
+
+    /**
+     * Days after this many finished leads before that miner names another for this player.
+     * None finished imposes no wait. Each finished lead waits {@link #INTERVAL_DAYS} plus
+     * {@link #COOLDOWN_STEP_DAYS} for every lead finished with him, counted from the day it is finished.
+     * An expired lead does not count.
+     */
+    public static int cooldownDays(int completedCount) {
+        int done = Math.max(0, completedCount);
+        if (done <= 0) {
+            return 0;
+        }
+        long days = (long) INTERVAL_DAYS + (long) COOLDOWN_STEP_DAYS * done;
+        if (days > Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        }
+        return (int) days;
+    }
+
+    /**
+     * Chunks from the miner's chunk to the edge of the square he searches.
+     * 1 is a 3 by 3, 2 is a 5 by 5, and 3 is a 7 by 7.
+     * The sum is house points plus leads this player has already finished with him.
+     */
+    public static int searchRadius(int housePoints, int completed) {
+        long sum = (long) Math.max(0, housePoints) + Math.max(0, completed);
+        if (sum > SEARCH_FAR) {
+            return 3;
+        }
+        if (sum > SEARCH_NEAR) {
+            return 2;
+        }
+        return 1;
+    }
 
     /** One emerald for each {@link #FEE_POINTS} house points, rounded down. A short house is free. */
     public static int leadFee(int housePoints) {
@@ -544,17 +585,22 @@ public final class OldMinerRules {
                     minerId, minerName, successes, finished, "", 0, 0, 0, "", givenDay, -1L, today + INTERVAL_DAYS, 0);
         }
 
-        /** The player reached the vein. That ore stays finished for this cycle. */
-        public Lead completed() {
+        /**
+         * The player reached the vein. That ore stays finished for this cycle.
+         * The next lead for this player waits from today, and that wait is 3 days longer
+         * for each lead he has finished with this miner.
+         */
+        public Lead completed(long today) {
             if (!active()) {
                 return this;
             }
             List<String> done = new ArrayList<>(finishedOres());
             done.add(ore);
+            int finishedCount = successes + 1;
             return new Lead(
                     minerId,
                     minerName,
-                    successes + 1,
+                    finishedCount,
                     formatFinished(done),
                     "",
                     0,
@@ -563,7 +609,7 @@ public final class OldMinerRules {
                     "",
                     givenDay,
                     -1L,
-                    nextDay,
+                    today + cooldownDays(finishedCount),
                     0);
         }
 

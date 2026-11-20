@@ -2,14 +2,14 @@
 name: commit
 description: >
   Commit the Tougher working tree, push extra-hard-mode to origin/main, and
-  update the Hostinger and Witherfen servers when they have no players.
+  update the Witherfen server when it has no players.
   Use when the user says "Commit", "commit and push", or "commit and update
   the servers", or runs /commit.
 ---
 
 # Commit
 
-"Commit" means the whole sequence: commit, push `origin/main`, then update both live servers. Stop after the push only when the user says to leave the servers alone.
+"Commit" means the whole sequence: commit, push `origin/main`, then update Witherfen. Stop after the push only when the user says to leave the server alone.
 
 Hosts, `JAVA_HOME`, the no-password rule, eased world settings, and the restart policy live in the tougher skill. Read that skill before the SSH steps. Do not print an RCON password, a management secret, or `server.properties`.
 
@@ -31,31 +31,20 @@ Write the message to a temp file with UTF-8 and no BOM, then `git commit -F` tha
 
 Push with `git push origin HEAD:main`. Do not poll the GitHub release unless the user asks.
 
-If the tree is clean and the branch is already on `origin/main`, skip to the servers. If it is clean but ahead, push, then update the servers.
+If the tree is clean and the branch is already on `origin/main`, skip to Witherfen. If it is clean but ahead, push, then update Witherfen.
 
 ## 3. Count players
 
-Write the two scripts below to `%TEMP%`, convert them to LF UTF-8 with no BOM, and `scp` them. Run each one, then delete it on the host and locally. A count above 0 skips that host. Do not kick.
+Write the script below to `%TEMP%`, convert it to LF UTF-8 with no BOM, and `scp` it. Run it, then delete it on the host and locally. A count above 0 skips the update. Do not kick.
 
-Hostinger:
-
-```powershell
-scp -o BatchMode=yes -o ConnectTimeout=20 -i $env:USERPROFILE\.ssh\id_rsa "$env:TEMP\tougher-rcon-hostinger.py" root@srv1977903.hstgr.cloud:/tmp/tougher-rcon-hostinger.py
-ssh -o BatchMode=yes -o ConnectTimeout=20 -i $env:USERPROFILE\.ssh\id_rsa root@srv1977903.hstgr.cloud "python3 /tmp/tougher-rcon-hostinger.py; rm -f /tmp/tougher-rcon-hostinger.py"
-```
-
-The Hostinger script reads `rcon.password` from `/opt/minecraft/server/server.properties` and prints only `PLAYERS n/max`.
-
-Witherfen uses port 28920 and reads `MCRCON_PASS` from `/opt/minecraft/minecraft.env`. Same packet code. Print only `PLAYERS n/max`.
+Witherfen uses port 28920 and reads `MCRCON_PASS` from `/opt/minecraft/minecraft.env`. Print only `PLAYERS n/max`.
 
 ```powershell
 scp -o BatchMode=yes -o ConnectTimeout=20 -P 28920 -i $env:USERPROFILE\.ssh\id_rsa "$env:TEMP\tougher-rcon-witherfen.py" root@partycentral.tplinkdns.com:/tmp/tougher-rcon-witherfen.py
 ssh -o BatchMode=yes -o ConnectTimeout=20 -p 28920 -i $env:USERPROFILE\.ssh\id_rsa root@partycentral.tplinkdns.com "python3 /tmp/tougher-rcon-witherfen.py; rm -f /tmp/tougher-rcon-witherfen.py"
 ```
 
-If Hostinger SSH fails, update Witherfen and say Hostinger was skipped.
-
-Packet script, shared by both files. Change only the password load.
+Packet script. The password line is `MCRCON_PASS=` in `/opt/minecraft/minecraft.env`. Strip quotes.
 
 ```python
 #!/usr/bin/env python3
@@ -65,11 +54,10 @@ import struct
 from pathlib import Path
 
 password = ""
-# Hostinger: line.startswith("rcon.password=") in /opt/minecraft/server/server.properties
-# Witherfen: stripped.startswith("MCRCON_PASS=") in /opt/minecraft/minecraft.env, then strip quotes
-for line in Path("REPLACE").read_text(errors="replace").splitlines():
-    if line.startswith("REPLACE="):
-        password = line.split("=", 1)[1].strip().strip('"').strip("'")
+for line in Path("/opt/minecraft/minecraft.env").read_text(errors="replace").splitlines():
+    stripped = line.strip()
+    if stripped.startswith("MCRCON_PASS="):
+        password = stripped.split("=", 1)[1].strip().strip('"').strip("'")
         break
 
 def packet(request_id, packet_type, payload):
@@ -120,15 +108,15 @@ print(f"PLAYERS {match.group(1)}/{match.group(2)}")
 
 ## 4. Install and boot
 
-For each empty host, allow about 150 seconds for stop. Witherfen's unit fails RCON auth and then waits out its stop timeout.
+Allow about 150 seconds for the stop. Witherfen's unit fails RCON auth and then waits out its stop timeout.
 
 ```powershell
 ssh ... "systemctl stop minecraft.service; systemctl is-active minecraft.service; pgrep -x java || echo NOJAVA"
 ```
 
-Hostinger `is-active` reports `failed` after a stop. Witherfen may report `inactive`. Continue only when the Java line is `NOJAVA`. `pgrep -af` can match the ssh command, so use `pgrep -x java`.
+Witherfen may report `inactive`. Continue only when the Java line is `NOJAVA`. `pgrep -af` can match the ssh command, so use `pgrep -x java`.
 
-Upload the jar and this install script to `/tmp/` on each empty host. Convert the script to LF first. The `scp` of two local files onto `/tmp/` keeps their base names.
+Upload the jar and this install script to `/tmp/`. Convert the script to LF first. The `scp` of two local files onto `/tmp/` keeps their base names.
 
 ```bash
 #!/bin/bash
@@ -154,6 +142,6 @@ Start the service, wait about 45 seconds, and read `systemctl show minecraft.ser
 
 ## 5. Record it
 
-Re-read before editing. Update the recent-state sections of `topics/tougher-server.md`, `topics/extra-hard-mode-repo.md`, and `topics/minecraft-client.md` with the commit, jar size, sha256, and both boot timestamps. Do not edit `MEMORY.md`.
+Re-read before editing. Update the recent-state sections of `topics/tougher-server.md`, `topics/extra-hard-mode-repo.md`, and `topics/minecraft-client.md` with the commit, jar size, sha256, and the Witherfen boot timestamp. Do not edit `MEMORY.md`.
 
-Tell the user the commit, both boot times, and that the client must be restarted. The local dedicated server stays stopped.
+Tell the user the commit, the Witherfen boot time, and that the client must be restarted. The local dedicated server stays stopped.

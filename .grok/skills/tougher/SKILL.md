@@ -24,8 +24,7 @@ Local jar copy is in `Agents.md`. This skill is the rest of the standing setup.
 
 - `assemble` runs `deployJar`, which copies only `build/libs/tougher-*.jar` (never the sources jar) into the two local mods folders named in `Agents.md`, replacing older `tougher-*.jar` and `extrahardmode-*.jar` files.
 - Leave the local dedicated server stopped. Do not start it.
-- Two live servers share that layout: systemd unit `minecraft.service`, files in `/opt/minecraft/server`, mods in `/opt/minecraft/server/mods`, jar owner `minecraft:minecraft` mode `644`. Restart each one on its own, and only when nobody has joined since that server's current boot.
-- Hostinger SSH: `ssh -o BatchMode=yes -o ConnectTimeout=20 -i $env:USERPROFILE\.ssh\id_rsa root@srv1977903.hstgr.cloud`. Game port 57674.
+- The supported live server is Witherfen. Hostinger was shut down on 2026-11-20. Witherfen uses systemd unit `minecraft.service`, files in `/opt/minecraft/server`, mods in `/opt/minecraft/server/mods`, and jar owner `minecraft:minecraft` mode `644`. Restart it only when nobody has joined since the current boot.
 - Witherfen SSH: `ssh -o BatchMode=yes -o ConnectTimeout=20 -p 28920 -i $env:USERPROFILE\.ssh\id_rsa root@partycentral.tplinkdns.com`. Hostname `mc-witherfen`. Game port on the box is 25565. Public SSH is 28920; do not assume 25565 is forwarded. Leave `Chunky-Fabric-*.jar` in `mods/`. RCON is `127.0.0.1:25575`. The unit reads `/etc/minecraft.env` and `${RCON_PASSWORD}`, and that file is missing. The file on disk is `/opt/minecraft/minecraft.env` with `MCRCON_PASS`. Do not print it. Source that file and call `mcrcon` yourself. `systemctl stop` will not authenticate, then SIGINT after 90s.
 - PowerShell strips quotes inside the remote command, so remote `grep` patterns must not need spaces (`joined`, `Done`, `Tougher`, `For.help`). A remote script that needs quotes goes through `base64 -d`.
 - `joined` count `0` in `logs/latest.log` means the boot is empty. `Tougher loaded` is printed before the server is ready. A new boot is confirmed by `systemctl show minecraft.service -p ActiveEnterTimestamp` plus a later `Done` line.
@@ -34,7 +33,7 @@ Local jar copy is in `Agents.md`. This skill is the rest of the standing setup.
 ## Git and the guide
 
 - Branch `extra-hard-mode` tracks `origin/main`. Push only when asked, with `git push origin HEAD:main` to `https://github.com/timkeller2/extra-hard-mode.git`. Do not commit unless asked.
-- When the user says "Commit", follow the commit skill. That skill commits, pushes, and updates both live servers.
+- When the user says "Commit", follow the commit skill. That skill commits, pushes, and updates Witherfen.
 - Commit subjects already in the log look like `feat:`, `fix:`, and `docs:`.
 - Player guide source is `docs/build_tougher_guide.py`. It writes `docs/Tougher.pdf`. Regenerate it when a player-facing rule changes. The guide may be longer than 8 pages. Do not shorten player-facing rules to hold a page count.
 - Latest guide, always the file on `main`: `https://github.com/timkeller2/extra-hard-mode/raw/main/docs/Tougher.pdf`

@@ -123,6 +123,7 @@
     "TransportItemsBehaviorMixin",
     "TransportItemsMixin",
     "InhabitantTradeMixin",
+    "JobSiteLossMixin",
     "MerchantResultSlotMixin",
     "MerchantShopMixin",
     "SignShopMixin",

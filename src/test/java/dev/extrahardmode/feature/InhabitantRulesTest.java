@@ -549,6 +549,40 @@ class InhabitantRulesTest {
     }
 
     @Test
+    void oneResidentClaimsEveryBedInTheHouse() {
+        long bedA = 1L;
+        long bedB = 2L;
+        long outside = 9L;
+        assertEquals(List.of(bedA, bedB), InhabitantRules.claimedBedIds(bedA, List.of(bedB, bedA)));
+        assertEquals(List.of(bedA), InhabitantRules.claimedBedIds(bedA, List.of()));
+        assertEquals(List.of(bedA), InhabitantRules.claimedBedIds(bedA, null));
+
+        var living = new InhabitantRules.BedHold("home", true, -1L, List.of(bedA));
+        var secondBed = new InhabitantRules.BedHold("other", false, -1L, List.of(bedB));
+        var locked = new InhabitantRules.BedHold("locked", false, 20L, List.of(bedB));
+        List<Long> house = List.of(bedA, bedB);
+
+        assertEquals(1, InhabitantRules.houseOwnerIndex(List.of(secondBed, living), house, "other", 10L));
+        assertEquals(
+                0,
+                InhabitantRules.houseOwnerIndex(
+                        List.of(new InhabitantRules.BedHold("home", true, -1L, List.of(outside, bedB))),
+                        house,
+                        "other",
+                        10L));
+        assertEquals(1, InhabitantRules.houseOwnerIndex(List.of(secondBed, locked), house, "other", 10L));
+        assertEquals(0, InhabitantRules.houseOwnerIndex(List.of(secondBed, locked), house, "other", 20L));
+        assertEquals(0, InhabitantRules.houseOwnerIndex(List.of(secondBed), house, "missing", 10L));
+        assertEquals(-1, InhabitantRules.houseOwnerIndex(List.of(living), List.of(outside), "home", 10L));
+        assertEquals(-1, InhabitantRules.houseOwnerIndex(List.of(), house, "home", 10L));
+
+        assertFalse(InhabitantRules.emptyHomeSuperseded(true, -1L, List.of(bedB), List.of(bedA, bedB), 10L));
+        assertFalse(InhabitantRules.emptyHomeSuperseded(false, 20L, List.of(bedB), List.of(bedA, bedB), 10L));
+        assertTrue(InhabitantRules.emptyHomeSuperseded(false, -1L, List.of(bedB), List.of(bedA, bedB), 10L));
+        assertFalse(InhabitantRules.emptyHomeSuperseded(false, -1L, List.of(outside), List.of(bedA, bedB), 10L));
+    }
+
+    @Test
     void restockEveryFourteenDays() {
         assertEquals(14, InhabitantRules.RESTOCK_DAYS);
         assertTrue(InhabitantRules.shouldRestock(-1, 0));
@@ -1152,6 +1186,31 @@ class InhabitantRulesTest {
             assertEquals(1, listing.emeralds());
             assertEquals(InhabitantRules.DEFAULT_TRADE_USES, listing.maxUses());
         }
+        assertEquals(13, InhabitantRules.lootCatalog().size());
+        assertEquals(2, InhabitantRules.lootSellCount(4));
+        assertEquals(4, InhabitantRules.lootSellCount(8));
+        assertEquals(3, InhabitantRules.lootSellCount(6));
+        assertEquals(6, InhabitantRules.lootSellCount(12));
+        assertEquals(1, InhabitantRules.lootSellCount(2));
+        assertEquals(1, InhabitantRules.lootSellCount(1));
+        assertEquals(0, InhabitantRules.lootSellCount(0));
+        InhabitantRules.TradeListing eyes = InhabitantRules.lootSellOf(usual.get("minecraft:spider_eye"));
+        assertFalse(eyes.buy());
+        assertEquals("minecraft:spider_eye", eyes.itemId());
+        assertEquals(2, eyes.count());
+        assertEquals(1, eyes.emeralds());
+        InhabitantRules.TradeListing first =
+                InhabitantRules.rollLootSell(List.of(), 0);
+        assertEquals("minecraft:spider_eye", first.itemId());
+        assertEquals(2, first.count());
+        InhabitantRules.TradeListing skipped = InhabitantRules.rollLootSell(
+                List.of("minecraft:spider_eye", "minecraft:gunpowder", "minecraft:bone"), 0);
+        assertEquals("minecraft:rotten_flesh", skipped.itemId());
+        assertEquals(4, skipped.count());
+        assertFalse(skipped.buy());
+        InhabitantRules.TradeListing wrapped = InhabitantRules.rollLootSell(List.of(), -1);
+        assertEquals("minecraft:ghast_tear", wrapped.itemId());
+        assertEquals(1, wrapped.count());
     }
 
     @Test
@@ -1267,6 +1326,33 @@ class InhabitantRulesTest {
             assertTrue(palaceWealthy.size() >= 4);
             assertTrue(palaceWealthy.size() <= 7);
         }
+        Set<String> lootIds = new HashSet<>();
+        for (InhabitantRules.TradeListing listing : InhabitantRules.lootCatalog()) {
+            lootIds.add(listing.itemId());
+        }
+        Set<String> sold = new HashSet<>();
+        for (int seed = 0; seed < 80; seed++) {
+            for (double score : new double[] {18, 38}) {
+                List<InhabitantRules.TradeListing> shop =
+                        InhabitantRules.scaledListings(InhabitantRules.BOUNTY, score, 0, false, new Random(seed));
+                assertTrue(shop.size() >= 2);
+                InhabitantRules.TradeListing sale = shop.getLast();
+                assertFalse(sale.buy());
+                assertEquals(1, sale.emeralds());
+                assertTrue(lootIds.contains(sale.itemId()));
+                assertTrue(sale.count() >= 1);
+                int buys = 0;
+                for (int i = 0; i < shop.size() - 1; i++) {
+                    assertNotEquals(sale.itemId(), shop.get(i).itemId());
+                    if (shop.get(i).buy()) {
+                        buys++;
+                    }
+                }
+                assertTrue(buys >= 1);
+                sold.add(sale.itemId());
+            }
+        }
+        assertTrue(sold.size() > 1);
     }
 
     @Test

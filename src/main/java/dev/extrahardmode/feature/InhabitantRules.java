@@ -842,6 +842,7 @@ public final class InhabitantRules {
         return List.of(
                 "Residents: The name over their head is their name and occupation, such as Alden the Jeweler. Each name is used once before any name is used again.",
                 "Residents: Clock a resident, then clock another. They trade homes at once, even far apart. Each refuses a home below their job.",
+                "Residents: The one who moves in claims every bed in that house, including after a trade. Another bed does not replace him or add a second resident.",
                 "Residents: A loot collector or council member needs 18. A jeweler, armorsmith, or wise teacher needs 24. A wealthy trader or master armorsmith needs 30. Everyone else needs 12.",
                 "Residents: The trade costs half the points of the finer home, rounded down, in emeralds. Their shop stays until the next restock.",
                 "Residents: A council member keeps the hunts already finished with you when they trade homes.",
@@ -853,16 +854,18 @@ public final class InhabitantRules {
                 "Residents: Chests bias a hauler, a kitchen biases a cook, and plants or workstations bias a farm neighbor.",
                 "Residents: A cauldron favors a brewer, and a brewer can come to a 12-point home.",
                 "Residents: An old miner can come to a 12-point home. A cartographer can come to a 12-point home.",
-                "Ore leads: Speak to an old miner for a lead. He does not keep a shop. Every 7 Minecraft days he names the largest vein in his chunk and the eight around it.",
+                "Ore leads: Speak to an old miner for a lead. He does not keep a shop. He names the largest vein in his chunk and the eight around it.",
+                "Ore leads: House points plus leads you have finished with him, past 23, widen that search to a 5 by 5 of chunks. Past 35 it is a 7 by 7.",
                 "Ore leads: The fee is 1 emerald for each 8 house points, rounded down. Without those emeralds in hand he names the ore and the fee.",
                 "Ore leads: Hold that many emeralds and he takes them and names the direction. The 7 days start then.",
-                "Ore leads: He adds more of that ore beside the vein. He names only ores found in his chunk and the eight around it.",
+                "Ore leads: He adds more of that ore beside the vein. He names only ores found in his chunk and that searched square.",
                 "Ore leads: The list is the easiest of those ores he has not finished. Its length is the home's points plus finished leads with him, divided by 5, rounded up.",
                 "Ore leads: Finishing an easier ore lets the next harder ore there join the list. He will not repeat an ore until every ore there has been named.",
                 "Ore leads: A lead you never finish can be named again.",
                 "Ore leads: The line reads Jack: Iron East. The direction is North, South, East, West, Up, or Down, whichever is farthest, and it changes as you move.",
                 "Ore leads: With under 4 days left, that line ends like (2d). On the last day it ends like (13h).",
                 "Ore leads: Within 3 blocks the lead is finished. It expires after 7 Minecraft days. Each player has a separate lead, and one miner can lead several players.",
+                "Ore leads: After you finish a lead, the next waits 10 Minecraft days, then 13, then 16, adding 3 days each finish with him. A lead you never finish adds no days.",
                 "Maps: Speak to a cartographer for a mark. He does not keep a shop. The line reads Jack: East, and the direction changes as you move.",
                 "Maps: The direction is North, South, East, or West, whichever is farthest. Up and down do not matter. Within 50 blocks the mark is finished.",
                 "Maps: It expires after 14 Minecraft days. Each player has a separate mark, and one cartographer can mark for several players.",
@@ -942,7 +945,8 @@ public final class InhabitantRules {
                 "Shops: A larger brewer sells one of each brewing ingredient for 1 emerald, such as nether wart, blaze powder, glowstone, and ghast tears.",
                 "Shops: A loot collector pays 1 emerald for 4 spider eyes, 4 gunpowder, or 8 bones.",
                 "Shops: A larger loot collector also pays 1 emerald for 8 rotten flesh, 8 string, 4 slimeballs, 6 leather, or 12 arrows.",
-                "Shops: That shop also pays 1 emerald for 6 ink sacs, 2 phantom membranes, 2 ender pearls, 2 blaze rods, or 1 ghast tear.");
+                "Shops: That shop also pays 1 emerald for 6 ink sacs, 2 phantom membranes, 2 ender pearls, 2 blaze rods, or 1 ghast tear.",
+                "Shops: He also sells one other of those drops, chosen at random. Half what he pays for it, rounded up, costs 1 emerald.");
     }
 
     public static List<String> homesBountyLines() {
@@ -1534,6 +1538,116 @@ public final class InhabitantRules {
     }
 
     /**
+     * Every bed block one resident claims in a house. The home bed is always included,
+     * so a second bed cannot open a separate home.
+     */
+    public static List<Long> claimedBedIds(long homeBed, Collection<Long> houseBeds) {
+        LinkedHashSet<Long> ids = new LinkedHashSet<>();
+        ids.add(homeBed);
+        if (houseBeds != null) {
+            for (Long bed : houseBeds) {
+                if (bed != null) {
+                    ids.add(bed);
+                }
+            }
+        }
+        return List.copyOf(ids);
+    }
+
+    /**
+     * One saved home. {@code beds} is that home's own bed plus any beds it already claims.
+     */
+    public record BedHold(String id, boolean living, long emptyUntilDay, Collection<Long> beds) {}
+
+    /**
+     * Index of the home that already owns this house, or -1. A living resident wins,
+     * then a home still locked after a death, then an empty home. Among empty homes
+     * the canonical bed wins, so a second bed rolls the same record.
+     */
+    public static int houseOwnerIndex(
+            List<BedHold> holds, Collection<Long> houseBeds, String canonicalId, long today) {
+        if (holds == null || holds.isEmpty() || houseBeds == null || houseBeds.isEmpty()) {
+            return -1;
+        }
+        HashSet<Long> house = new HashSet<>();
+        for (Long bed : houseBeds) {
+            if (bed != null) {
+                house.add(bed);
+            }
+        }
+        if (house.isEmpty()) {
+            return -1;
+        }
+        int locked = -1;
+        int empty = -1;
+        int canonical = -1;
+        for (int i = 0; i < holds.size(); i++) {
+            BedHold hold = holds.get(i);
+            if (hold == null || !holdIntersects(hold.beds(), house)) {
+                continue;
+            }
+            if (hold.living()) {
+                return i;
+            }
+            if (spawnBlocked(today, hold.emptyUntilDay())) {
+                if (locked < 0) {
+                    locked = i;
+                }
+                continue;
+            }
+            if (canonicalId != null && canonicalId.equals(hold.id())) {
+                canonical = i;
+            } else if (empty < 0) {
+                empty = i;
+            }
+        }
+        if (locked >= 0) {
+            return locked;
+        }
+        if (canonical >= 0) {
+            return canonical;
+        }
+        return empty;
+    }
+
+    /**
+     * An empty, unlocked home sitting on a bed the resident now claims.
+     * A death lock is left in place so that bed is not freed early.
+     */
+    public static boolean emptyHomeSuperseded(
+            boolean living, long emptyUntilDay, Collection<Long> homeBeds, Collection<Long> claimed, long today) {
+        if (living || spawnBlocked(today, emptyUntilDay)) {
+            return false;
+        }
+        return holdIntersects(homeBeds, claimedIds(claimed));
+    }
+
+    private static HashSet<Long> claimedIds(Collection<Long> claimed) {
+        HashSet<Long> held = new HashSet<>();
+        if (claimed == null) {
+            return held;
+        }
+        for (Long bed : claimed) {
+            if (bed != null) {
+                held.add(bed);
+            }
+        }
+        return held;
+    }
+
+    private static boolean holdIntersects(Collection<Long> beds, Set<Long> house) {
+        if (beds == null || beds.isEmpty() || house == null || house.isEmpty()) {
+            return false;
+        }
+        for (Long bed : beds) {
+            if (bed != null && house.contains(bed)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Arrival rolls owed since the home was timestamped. Zero until the first
      * stamp (the day it became inhabitable) and when {@code today} is not later.
      */
@@ -2055,6 +2169,8 @@ public final class InhabitantRules {
      * A larger roll may add another piece or a buy of iron or diamonds. Generic goods are not added.
      * A brewer keeps one rolled level 2 potion, then up to three other potions.
      * A larger roll may add brewing ingredients. Generic goods are not added.
+     * A loot collector also sells one drop he is not already buying. The stack is half
+     * the amount he pays 1 emerald for, rounded up, and the sale costs 1 emerald.
      * Usual shops keep at most {@link #USUAL_TRADE_TYPES} kinds. Further catalog listings are extras.
      * Item amounts share one roll from -25% to +25%, plus 0 to 25 from the score.
      * Purchases gain that percent; sales to the resident require that percent fewer.
@@ -2152,10 +2268,59 @@ public final class InhabitantRules {
             int count = adjustedQuantity(listing.count(), quantityPercent, listing.buy());
             scaled.add(listing.withCount(count).withUses(scaledAmount(listing.maxUses(), usePercent)));
         }
+        if (BOUNTY.equals(type)) {
+            Set<String> offered = new HashSet<>();
+            for (TradeListing listing : scaled) {
+                offered.add(listing.itemId());
+            }
+            TradeListing sale = rollLootSell(offered, rng.nextInt());
+            int usePercent = rollTradePercent(minPercent, maxPercent, rng.nextInt());
+            int count = adjustedQuantity(sale.count(), quantityPercent, sale.buy());
+            scaled.add(sale.withCount(count).withUses(scaledAmount(sale.maxUses(), usePercent)));
+        }
         if (TRADER.equals(type)) {
             return traderBuybacks(scaled);
         }
         return scaled;
+    }
+
+    /** Drops a loot collector buys for 1 emerald. The usual three come first. */
+    public static List<TradeListing> lootCatalog() {
+        List<TradeListing> catalog = new ArrayList<>();
+        catalog.addAll(defaultListings(BOUNTY, 0, false));
+        catalog.addAll(extraListings(BOUNTY, 0, false));
+        return List.copyOf(catalog);
+    }
+
+    /** Half the stack he buys, rounded up. One ghast tear stays one. */
+    public static int lootSellCount(int buyCount) {
+        if (buyCount <= 0) {
+            return 0;
+        }
+        return Math.max(1, (buyCount + 1) / 2);
+    }
+
+    /** One emerald for half of the stack he buys, rounded up. */
+    public static TradeListing lootSellOf(TradeListing buy) {
+        return sellOf(buy.itemId(), lootSellCount(buy.count()), 1, buy.maxUses());
+    }
+
+    /**
+     * One sale from {@link #lootCatalog}. Skips drops already on offer when another remains.
+     * {@code roll} may be negative.
+     */
+    public static TradeListing rollLootSell(Collection<String> alreadyOffered, int roll) {
+        List<TradeListing> catalog = lootCatalog();
+        List<TradeListing> open = new ArrayList<>();
+        for (TradeListing buy : catalog) {
+            if (alreadyOffered == null || !alreadyOffered.contains(buy.itemId())) {
+                open.add(buy);
+            }
+        }
+        if (open.isEmpty()) {
+            open = new ArrayList<>(catalog);
+        }
+        return lootSellOf(open.get(Math.floorMod(roll, open.size())));
     }
 
     /**

@@ -7,6 +7,7 @@ import dev.extrahardmode.feature.FletcherTrades;
 import dev.extrahardmode.feature.Inhabitants;
 import dev.extrahardmode.feature.JobClaimRules;
 import dev.extrahardmode.feature.JobClaims;
+import dev.extrahardmode.feature.JobSiteLoss;
 import dev.extrahardmode.feature.LibrarianBooks;
 import dev.extrahardmode.feature.VillagerNerf;
 import dev.extrahardmode.feature.VillagerRestockRules;
@@ -97,6 +98,18 @@ public abstract class VillagerTradesMixin {
         self.releasePoi(MemoryModuleType.JOB_SITE);
         self.getBrain().eraseMemory(MemoryModuleType.JOB_SITE);
         ci.cancel();
+    }
+
+    @Inject(method = "tick", at = @At("HEAD"))
+    private void tougher$missingWorkBlock(CallbackInfo ci) {
+        Villager self = (Villager) (Object) this;
+        if (!(self.level() instanceof ServerLevel level) || !WorldGate.isActive(level)) {
+            return;
+        }
+        if (self.tickCount % 20 != 0) {
+            return;
+        }
+        JobSiteLoss.nitwitIfWorkBlockMissing(level, self);
     }
 
     @Inject(method = "mobInteract", at = @At("HEAD"))

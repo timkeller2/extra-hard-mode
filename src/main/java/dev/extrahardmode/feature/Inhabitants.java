@@ -159,44 +159,85 @@ public final class Inhabitants implements FeatureModule {
 
     static InteractionResult onUseEntity(
             Player player, Level level, InteractionHand hand, Entity entity, net.minecraft.world.phys.EntityHitResult hit) {
-        if (!(entity instanceof Villager villager) || !isInhabitant(villager)) {
+        if (!(entity instanceof Villager villager)) {
             return InteractionResult.PASS;
         }
         if (!(level instanceof ServerLevel server) || !WorldGate.isModuleActive(server, ID)) {
             return InteractionResult.PASS;
         }
-        if (hand == InteractionHand.MAIN_HAND
+        if (isInhabitant(villager)
+                && hand == InteractionHand.MAIN_HAND
                 && player instanceof ServerPlayer serverPlayer
                 && serverPlayer.getMainHandItem().is(Items.CLOCK)) {
             tradeHomes(serverPlayer, server, villager);
             return InteractionResult.SUCCESS;
         }
-        InhabitantData.Home home = InhabitantData.of(server).byLiving(villager.getUUID());
-        if (home == null) {
-            return InteractionResult.PASS;
-        }
-        if (InhabitantRules.WISE_TEACHER.equals(home.specialty())) {
+        InhabitantData.Home home = isInhabitant(villager)
+                ? InhabitantData.of(server).byLiving(villager.getUUID())
+                : null;
+        if (home != null && InhabitantRules.WISE_TEACHER.equals(home.specialty())) {
             if (hand != InteractionHand.MAIN_HAND || !(player instanceof ServerPlayer serverPlayer)) {
                 return InteractionResult.SUCCESS;
             }
             teach(serverPlayer, villager, server, home);
             return InteractionResult.SUCCESS;
         }
-        if (InhabitantRules.OLD_MINER.equals(home.specialty())) {
+        if (home != null && InhabitantRules.OLD_MINER.equals(home.specialty())) {
             if (hand != InteractionHand.MAIN_HAND || !(player instanceof ServerPlayer serverPlayer)) {
                 return InteractionResult.SUCCESS;
             }
             OldMiners.onTalk(serverPlayer, server, home, villager.getUUID());
             return InteractionResult.SUCCESS;
         }
-        if (InhabitantRules.CARTOGRAPHER.equals(home.specialty())) {
+        if (home != null && InhabitantRules.CARTOGRAPHER.equals(home.specialty())) {
             if (hand != InteractionHand.MAIN_HAND || !(player instanceof ServerPlayer serverPlayer)) {
                 return InteractionResult.SUCCESS;
             }
             Cartographers.onTalk(serverPlayer, server, home, villager);
             return InteractionResult.SUCCESS;
         }
+        if (mourningNow(server, villager)) {
+            if (hand == InteractionHand.MAIN_HAND && player instanceof ServerPlayer mourner) {
+                tellMourning(mourner, server, villager);
+            }
+            return InteractionResult.SUCCESS;
+        }
         return InteractionResult.PASS;
+    }
+
+    static boolean mourningNow(ServerLevel level, Villager villager) {
+        long until = villager.getAttachedOrElse(EhmAttachments.EHM_MOURN_UNTIL, -1L);
+        return VillagerMourningRules.mourning(AntiFarming.overworldDay(level), until);
+    }
+
+    static void tellMourning(ServerPlayer player, ServerLevel level, Villager villager) {
+        long until = villager.getAttachedOrElse(EhmAttachments.EHM_MOURN_UNTIL, -1L);
+        int days = VillagerMourningRules.daysLeft(AntiFarming.overworldDay(level), until);
+        if (days == 1) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.villager_mourning_one", VillagerMourningRules.MESSAGE_ONE));
+            return;
+        }
+        player.sendSystemMessage(Component.translatableWithFallback(
+                "tougher.message.villager_mourning",
+                VillagerMourningRules.MESSAGE,
+                Component.literal(Integer.toString(days))));
+    }
+
+    /** Other living villagers already loaded within {@link VillagerMourningRules#RANGE}. */
+    public static void mournNearby(ServerLevel level, Villager dead) {
+        if (level == null || dead == null || !WorldGate.isModuleActive(level, ID)) {
+            return;
+        }
+        long today = AntiFarming.overworldDay(level);
+        AABB box = dead.getBoundingBox().inflate(VillagerMourningRules.RANGE);
+        for (Villager other : level.getEntitiesOfClass(Villager.class, box, Villager::isAlive)) {
+            if (other == dead || !VillagerMourningRules.within(dead.distanceToSqr(other))) {
+                continue;
+            }
+            long current = other.getAttachedOrElse(EhmAttachments.EHM_MOURN_UNTIL, -1L);
+            other.setAttached(EhmAttachments.EHM_MOURN_UNTIL, VillagerMourningRules.mournUntil(today, current));
+        }
     }
 
     static void tradeHomes(ServerPlayer player, ServerLevel level, Villager clicked) {
@@ -294,6 +335,10 @@ public final class Inhabitants implements FeatureModule {
             clicked.setAttached(EhmAttachments.EHM_INHABITANT_HOME, pendingHome.id());
             showNameplate(pendingVillager, pendingHome.name(), pendingHome.specialty());
             showNameplate(clicked, clickedHome.name(), clickedHome.specialty());
+            long today = AntiFarming.overworldDay(level);
+            WorldConfig cfg = ConfigManager.world(level);
+            claimScannedHouse(level, data, pendingHome.id(), cfg, today);
+            claimScannedHouse(level, data, clickedHome.id(), cfg, today);
             player.setAttached(EhmAttachments.EHM_PENDING_MOVE, "");
             player.sendSystemMessage(Component.translatableWithFallback(
                     "tougher.chat.inhabitant_swap",
@@ -756,9 +801,12 @@ public final class Inhabitants implements FeatureModule {
                     level, home.bed(), occupiedBeds(level, home.id()), cfg.inhabitantMinLight(), cfg.inhabitantSpacing());
             boolean ok = result.gates().eligible();
             if (ok) {
+                InhabitantData.Home next = home;
                 if (home.uneasy() || home.leaveAfterDay() >= 0L || home.score() != result.gates().score()) {
-                    data.put(home.withScore(result.gates().score()).withLeave(-1L, false));
+                    next = home.withScore(result.gates().score()).withLeave(-1L, false);
+                    data.put(next);
                 }
+                claimEnclosed(data, next, result, day);
                 continue;
             }
             if (!home.uneasy()) {
@@ -835,7 +883,8 @@ public final class Inhabitants implements FeatureModule {
 
     /**
      * Stamp a newly eligible empty home, or roll once per missed day since the
-     * last stamp, then set the stamp to today.
+     * last stamp, then set the stamp to today. A house that already has a resident
+     * keeps that resident: every bed in it belongs to the same home.
      */
     static void catchUpArrival(
             ServerLevel level,
@@ -847,13 +896,18 @@ public final class Inhabitants implements FeatureModule {
             RandomSource random,
             boolean blight,
             ServerPlayer visitor) {
-        String id = ResidenceScan.homeId(result.bed());
-        InhabitantData.Home existing = data.get(id);
+        String canonicalId = ResidenceScan.homeId(result.bed());
+        List<Long> houseBeds = result.enclosed() ? bedIds(result.beds()) : List.of(result.bed().asLong());
+        InhabitantData.Home owner = houseOwner(data, houseBeds, canonicalId, day);
+        InhabitantData.Home existing = owner != null ? owner : data.get(canonicalId);
         if (existing != null && existing.living().isPresent()) {
+            claimEnclosed(data, existing, result, day);
             return;
         }
         if (existing != null && InhabitantRules.spawnBlocked(day, existing.emptyUntilDay())) {
-            data.put(existing.withLastRoll(day));
+            InhabitantData.Home locked = existing.withLastRoll(day);
+            data.put(locked);
+            claimEnclosed(data, locked, result, day);
             return;
         }
         if (!result.gates().eligible()) {
@@ -862,18 +916,24 @@ public final class Inhabitants implements FeatureModule {
             }
             return;
         }
+        String id = existing != null ? existing.id() : canonicalId;
+        BlockPos homeBed = existing != null ? existing.bed() : result.bed();
         if (existing == null) {
-            data.put(new InhabitantData.Home(
-                    id, result.bed(), result.gates().score(), "", "", Optional.empty(), -1L, -1L, false, -1L, day));
+            InhabitantData.Home created = new InhabitantData.Home(
+                    id, homeBed, result.gates().score(), "", "", Optional.empty(), -1L, -1L, false, -1L, day);
+            data.put(created);
+            claimEnclosed(data, created, result, day);
             awardFirstHomeBiome(level, result.bed(), result.gates().score(), visitor);
             return;
         }
         int missed = InhabitantRules.missedArrivalRolls(existing.lastRollDay(), day);
-        data.put(existing.withScore(result.gates().score()).withLastRoll(day));
+        InhabitantData.Home stamped = existing.withScore(result.gates().score()).withLastRoll(day);
+        data.put(stamped);
+        claimEnclosed(data, stamped, result, day);
         if (missed <= 0) {
             return;
         }
-        if (villagerNearby(level, result.bed())) {
+        if (villagerNearby(level, homeBed)) {
             return;
         }
         int chance = InhabitantRules.spawnChancePercent(
@@ -887,8 +947,8 @@ public final class Inhabitants implements FeatureModule {
             if (!InhabitantRules.spawnRoll(random.nextInt(100), chance)) {
                 continue;
             }
-            spawnResident(level, data, result, random);
-            occupied.add(result.bed());
+            spawnResident(level, data, result, random, id);
+            occupied.add(homeBed);
             return;
         }
     }
@@ -918,8 +978,17 @@ public final class Inhabitants implements FeatureModule {
     }
 
     static void spawnResident(
-            ServerLevel level, InhabitantData data, ResidenceScan.Result result, RandomSource random) {
-        BlockPos spawn = ResidenceScan.standableNear(level, result.bed());
+            ServerLevel level,
+            InhabitantData data,
+            ResidenceScan.Result result,
+            RandomSource random,
+            String homeId) {
+        InhabitantData.Home prior = data.get(homeId);
+        if (prior != null && prior.living().isPresent()) {
+            return;
+        }
+        BlockPos homeBed = prior != null ? prior.bed() : result.bed();
+        BlockPos spawn = ResidenceScan.standableNear(level, homeBed);
         if (spawn == null) {
             return;
         }
@@ -935,7 +1004,7 @@ public final class Inhabitants implements FeatureModule {
                 data.spawnedSpecialties(),
                 data.livingCounts());
         String name = takeResidentName(data, random.nextInt());
-        stamp(villager, ResidenceScan.homeId(result.bed()), specialty, name, random);
+        stamp(villager, homeId, specialty, name, random);
         if (InhabitantRules.WISE_TEACHER.equals(specialty)) {
             villager.setAttached(
                     EhmAttachments.EHM_WISE_ABILITY, InhabitantRules.pickWiseAbility(random.nextInt()));
@@ -951,11 +1020,16 @@ public final class Inhabitants implements FeatureModule {
             villager.discard();
             return;
         }
+        prior = data.get(homeId);
+        if (prior != null && prior.living().isPresent()) {
+            villager.discard();
+            return;
+        }
         data.markSpawned(specialty);
         long today = AntiFarming.overworldDay(level);
-        data.put(new InhabitantData.Home(
-                ResidenceScan.homeId(result.bed()),
-                result.bed(),
+        InhabitantData.Home movedIn = new InhabitantData.Home(
+                homeId,
+                homeBed,
                 result.gates().score(),
                 specialty,
                 name,
@@ -964,7 +1038,9 @@ public final class Inhabitants implements FeatureModule {
                 -1L,
                 false,
                 today,
-                today));
+                today);
+        data.put(movedIn);
+        claimEnclosed(data, movedIn, result, today);
         Component message = Component.translatableWithFallback(
                 "tougher.chat.inhabitant_arrive",
                 "%s the %s has taken up residence.",
@@ -1384,9 +1460,13 @@ public final class Inhabitants implements FeatureModule {
     static void onDeath(LivingEntity entity, DamageSource source) {
         WiseLessons.onMobDeath(entity);
         CouncilMissions.onKill(entity, source);
-        if (!(entity instanceof Villager villager)
-                || !isInhabitant(villager)
-                || !(entity.level() instanceof ServerLevel level)) {
+        if (!(entity instanceof Villager villager) || !(entity.level() instanceof ServerLevel level)) {
+            return;
+        }
+        if (WorldGate.isModuleActive(level, ID)) {
+            mournNearby(level, villager);
+        }
+        if (!isInhabitant(villager)) {
             return;
         }
         InhabitantData data = InhabitantData.of(level);
@@ -1716,6 +1796,123 @@ public final class Inhabitants implements FeatureModule {
             }
         }
         return false;
+    }
+
+    /** Home already stored on one of these beds, preferring whoever still lives there. */
+    static InhabitantData.Home houseOwner(
+            InhabitantData data, List<Long> houseBeds, String canonicalId, long day) {
+        List<InhabitantData.Home> homes = data.homes();
+        List<InhabitantRules.BedHold> holds = new ArrayList<>(homes.size());
+        for (InhabitantData.Home home : homes) {
+            holds.add(new InhabitantRules.BedHold(
+                    home.id(), home.living().isPresent(), home.emptyUntilDay(), bedIds(home)));
+        }
+        int index = InhabitantRules.houseOwnerIndex(holds, houseBeds, canonicalId, day);
+        if (index < 0) {
+            return null;
+        }
+        return homes.get(index);
+    }
+
+    static void claimScannedHouse(
+            ServerLevel level, InhabitantData data, String homeId, WorldConfig cfg, long day) {
+        InhabitantData.Home home = data.get(homeId);
+        if (home == null || home.living().isEmpty()) {
+            return;
+        }
+        ResidenceScan.Result result = ResidenceScan.inspect(
+                level, home.bed(), occupiedBeds(level, home.id()), cfg.inhabitantMinLight(), cfg.inhabitantSpacing());
+        claimEnclosed(data, home, result, day);
+    }
+
+    /** An enclosed house only. A leaked flood must not claim every bed it touches. */
+    static void claimEnclosed(
+            InhabitantData data, InhabitantData.Home home, ResidenceScan.Result result, long day) {
+        if (home == null || result == null || !result.enclosed() || result.beds().isEmpty()) {
+            return;
+        }
+        claimBeds(data, home, result.beds(), day);
+    }
+
+    static void claimBeds(InhabitantData data, InhabitantData.Home home, List<BlockPos> houseBeds, long day) {
+        if (home == null || houseBeds == null || houseBeds.isEmpty()) {
+            return;
+        }
+        List<BlockPos> claimed = positionsOf(InhabitantRules.claimedBedIds(home.bed().asLong(), bedIds(houseBeds)));
+        InhabitantData.Home next = sameClaim(home.claimedBeds(), claimed) ? home : home.withClaimedBeds(claimed);
+        if (next != home) {
+            data.put(next);
+        }
+        List<Long> claimedIds = bedIds(next);
+        for (InhabitantData.Home other : List.copyOf(data.homes())) {
+            if (other.id().equals(next.id())) {
+                continue;
+            }
+            if (InhabitantRules.emptyHomeSuperseded(
+                    other.living().isPresent(), other.emptyUntilDay(), bedIds(other), claimedIds, day)) {
+                data.remove(other.id());
+            }
+        }
+    }
+
+    static boolean sameClaim(List<BlockPos> current, List<BlockPos> next) {
+        if (current == null || next == null || current.size() != next.size()) {
+            return false;
+        }
+        HashSet<Long> have = new HashSet<>();
+        for (BlockPos pos : current) {
+            if (pos != null) {
+                have.add(pos.asLong());
+            }
+        }
+        if (have.size() != next.size()) {
+            return false;
+        }
+        for (BlockPos pos : next) {
+            if (pos == null || !have.contains(pos.asLong())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static List<Long> bedIds(InhabitantData.Home home) {
+        List<Long> ids = new ArrayList<>();
+        if (home.bed() != null) {
+            ids.add(home.bed().asLong());
+        }
+        for (BlockPos claimed : home.claimedBeds()) {
+            if (claimed != null) {
+                ids.add(claimed.asLong());
+            }
+        }
+        return ids;
+    }
+
+    static List<Long> bedIds(List<BlockPos> beds) {
+        List<Long> ids = new ArrayList<>();
+        if (beds == null) {
+            return ids;
+        }
+        for (BlockPos bed : beds) {
+            if (bed != null) {
+                ids.add(bed.asLong());
+            }
+        }
+        return ids;
+    }
+
+    static List<BlockPos> positionsOf(List<Long> ids) {
+        List<BlockPos> beds = new ArrayList<>();
+        if (ids == null) {
+            return beds;
+        }
+        for (Long id : ids) {
+            if (id != null) {
+                beds.add(BlockPos.of(id));
+            }
+        }
+        return beds;
     }
 
     static List<BlockPos> occupiedBeds(ServerLevel level) {

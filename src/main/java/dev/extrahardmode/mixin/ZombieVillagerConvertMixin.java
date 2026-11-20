@@ -3,6 +3,7 @@ package dev.extrahardmode.mixin;
 import dev.extrahardmode.feature.Inhabitants;
 import dev.extrahardmode.feature.ResidentCombatRules;
 import dev.extrahardmode.feature.ResidentDefense;
+import dev.extrahardmode.world.WorldGate;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.entity.npc.villager.Villager;
@@ -22,5 +23,17 @@ public abstract class ZombieVillagerConvertMixin {
         if (!ResidentCombatRules.canZombify(ResidentDefense.healthBeforeHit(villager))) {
             cir.setReturnValue(false);
         }
+    }
+
+    @Inject(method = "convertVillagerToZombieVillager", at = @At("RETURN"))
+    private void tougher$mournConversion(
+            ServerLevel level, Villager villager, CallbackInfoReturnable<Boolean> cir) {
+        if (!WorldGate.isModuleActive(level, Inhabitants.ID)) {
+            return;
+        }
+        if (!Boolean.TRUE.equals(cir.getReturnValue())) {
+            return;
+        }
+        Inhabitants.mournNearby(level, villager);
     }
 }

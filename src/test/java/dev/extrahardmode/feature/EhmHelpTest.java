@@ -160,6 +160,10 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("Bees do not"));
         assertTrue(String.join(" ", lines).contains("8 times as long to restock"));
         assertTrue(String.join(" ", lines).contains("rounded-up eighth"));
+        assertTrue(String.join(" ", lines).contains("turns that villager into a nitwit"));
+        assertTrue(String.join(" ", lines).contains("A nitwit cannot take a job"));
+        assertTrue(String.join(" ", lines).contains("mourn for 3 Minecraft days"));
+        assertTrue(String.join(" ", lines).contains("adds 3 days to the time they have left"));
         assertTrue(String.join(" ", lines).contains("cannot exceed that librarian's rank"));
         assertTrue(String.join(" ", lines).contains("positive is good"));
         assertTrue(String.join(" ", lines).contains("13%"));
@@ -357,6 +361,8 @@ class EhmHelpTest {
         assertTrue(all.contains("twice as many residents"));
         assertTrue(all.contains("past three times that number"));
         assertTrue(all.contains("stay 20 blocks"));
+        assertTrue(all.contains("claims every bed"));
+        assertTrue(all.contains("Another bed does not replace"));
         assertTrue(all.contains("More than 50 blocks"));
         assertTrue(all.contains("More than 100 blocks"));
         assertTrue(all.contains("35 blocks of a villager"));
@@ -371,11 +377,15 @@ class EhmHelpTest {
         assertTrue(all.contains("1 emerald for each 8 house points"));
         assertTrue(all.contains("Hold that many emeralds"));
         assertTrue(all.contains("eight around it"));
+        assertTrue(all.contains("a 5 by 5 of chunks"));
+        assertTrue(all.contains("it is a 7 by 7"));
         assertTrue(all.contains("divided by 5, rounded up"));
         assertTrue(all.contains("next harder ore there"));
         assertTrue(all.contains("only ores found in his chunk"));
         assertTrue(all.contains("Within 3 blocks"));
         assertTrue(all.contains("one miner can lead several players"));
+        assertTrue(all.contains("then 13, then 16"));
+        assertTrue(all.contains("adds no days"));
         assertTrue(all.contains("higher-ranked clothes"));
         assertTrue(all.contains("copper or redstone block"));
         assertTrue(all.contains("A gold block is 6 emeralds and a diamond block is 32"));
@@ -456,6 +466,8 @@ class EhmHelpTest {
         assertTrue(all.contains("loot collector"));
         assertTrue(all.contains("4 spider eyes"));
         assertTrue(all.contains("1 ghast tear"));
+        assertTrue(all.contains("sells one other of those drops"));
+        assertTrue(all.contains("Half what he pays for it, rounded up"));
         assertTrue(all.contains("Windows"));
         assertTrue(all.contains("Kitchen"));
         assertTrue(all.contains("clock"));
@@ -535,7 +547,7 @@ class EhmHelpTest {
         assertTrue(farmText.contains("1d10"));
         assertTrue(farmText.contains("bone meal"));
         assertFalse(farmText.contains("Stone and deepslate"));
-        assertTrue(farming.lines().size() < 40);
+        assertTrue(farming.lines().size() < 42);
         assertTrue(String.join(" ", EhmHelp.resolve("mana").lines()).contains("the way they will look"));
         String combatText = String.join(" ", EhmHelp.resolve("combat").lines());
         assertTrue(combatText.contains("teleports to the nearest open spot"));

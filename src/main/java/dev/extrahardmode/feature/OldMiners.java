@@ -61,7 +61,7 @@ public final class OldMiners {
             }
             boolean here = dimension.equals(lead.dimension());
             if (here && OldMinerRules.arrived(px, py, pz, lead.x(), lead.y(), lead.z())) {
-                board.set(i, lead.completed());
+                board.set(i, lead.completed(today));
                 tellFound(player, lead.ore());
                 changed = true;
                 continue;
@@ -94,7 +94,7 @@ public final class OldMiners {
             boolean here = dimension.equals(lead.dimension());
             if (here && OldMinerRules.arrived(player.getBlockX(), player.getBlockY(), player.getBlockZ(), lead.x(), lead.y(), lead.z())) {
                 tellFound(player, lead.ore());
-                lead = lead.completed();
+                lead = lead.completed(today);
             } else if (lead.expireDay() >= 0L && today >= lead.expireDay()) {
                 lead = lead.expired();
             } else if (!here) {
@@ -118,7 +118,7 @@ public final class OldMiners {
             lead = collect(player, lead, today);
             if (paidAndHere(lead, dimension, player)) {
                 tellFound(player, lead.ore());
-                lead = lead.completed();
+                lead = lead.completed(today);
             }
             put(board, index, lead);
             save(player, board, today);
@@ -142,7 +142,7 @@ public final class OldMiners {
         }
         if (paidAndHere(lead, dimension, player)) {
             tellFound(player, lead.ore());
-            lead = lead.completed();
+            lead = lead.completed(today);
         }
         put(board, index, lead);
         save(player, board, today);
@@ -191,9 +191,10 @@ public final class OldMiners {
         int bedX = bed == null ? player.getBlockX() : bed.getX();
         int bedY = bed == null ? player.getBlockY() : bed.getY();
         int bedZ = bed == null ? player.getBlockZ() : bed.getZ();
-        Map<String, List<OldMinerRules.Spot>> samples = scan(level, bedX, bedZ);
-        List<String> finished = lead.finishedOres();
         int successes = lead.successes();
+        Map<String, List<OldMinerRules.Spot>> samples =
+                scan(level, bedX, bedZ, OldMinerRules.searchRadius(home.score(), successes));
+        List<String> finished = lead.finishedOres();
         Set<String> attempted = new LinkedHashSet<>();
         int guard = OldMinerRules.ORES.size() + 1;
         while (guard-- > 0) {
@@ -224,16 +225,20 @@ public final class OldMiners {
         return lead.waiting(today);
     }
 
-    /** Ore in the miner's chunk and the eight chunks around it, grouped by Detect Ore family. */
-    static Map<String, List<OldMinerRules.Spot>> scan(ServerLevel level, int bedX, int bedZ) {
+    /**
+     * Ore in a square of chunks around the miner, grouped by Detect Ore family.
+     * Radius 1 is his chunk and the eight around it. The square is at most 7 by 7.
+     */
+    static Map<String, List<OldMinerRules.Spot>> scan(ServerLevel level, int bedX, int bedZ, int radius) {
         Map<String, List<OldMinerRules.Spot>> byFamily = new HashMap<>();
         int chunkX = bedX >> 4;
         int chunkZ = bedZ >> 4;
         int minY = level.getMinY();
         int maxY = level.getMaxY();
+        int reach = Math.max(1, Math.min(radius, 3));
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
-        for (int ox = -1; ox <= 1; ox++) {
-            for (int oz = -1; oz <= 1; oz++) {
+        for (int ox = -reach; ox <= reach; ox++) {
+            for (int oz = -reach; oz <= reach; oz++) {
                 int cx = chunkX + ox;
                 int cz = chunkZ + oz;
                 LevelChunk chunk = level.getChunk(cx, cz);

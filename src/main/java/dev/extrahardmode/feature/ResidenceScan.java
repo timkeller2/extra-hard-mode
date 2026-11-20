@@ -3,6 +3,7 @@ package dev.extrahardmode.feature;
 import dev.extrahardmode.tag.EhmTags;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import net.minecraft.core.BlockPos;
@@ -27,7 +28,8 @@ public final class ResidenceScan {
             boolean roofed,
             InhabitantRules.AmenityCounts amenities,
             InhabitantRules.GateResult gates,
-            int rooms) {}
+            int rooms,
+            List<BlockPos> beds) {}
 
     private ResidenceScan() {}
 
@@ -40,7 +42,8 @@ public final class ResidenceScan {
         boolean enclosed = interior.size() > 0 && !house.leaked();
         int volume = interior.size();
         BlockPos anchor = canonicalBed(level, bed, interior);
-        boolean hasBed = countBeds(level, interior) > 0;
+        List<BlockPos> beds = bedBlocks(level, interior);
+        boolean hasBed = !beds.isEmpty();
         boolean doorOutside = hasDoorOutside(level, interior);
         boolean lit = floorsLit(level, interior, minLight);
         boolean roofed = hasRoof(level, interior);
@@ -50,7 +53,7 @@ public final class ResidenceScan {
         InhabitantRules.GateResult gates = InhabitantRules.gates(
                 enclosed, volume, hasBed, doorOutside, lit, roofed, far, amenities, house.rooms(), isolation);
         return new Result(
-                anchor, volume, enclosed, hasBed, doorOutside, lit, roofed, amenities, gates, house.rooms());
+                anchor, volume, enclosed, hasBed, doorOutside, lit, roofed, amenities, gates, house.rooms(), beds);
     }
 
     static boolean fill(ServerLevel level, BlockPos bed, LongOpenHashSet interior) {
@@ -258,20 +261,28 @@ public final class ResidenceScan {
     }
 
     static int countBeds(ServerLevel level, LongOpenHashSet interior) {
-        LongOpenHashSet beds = new LongOpenHashSet();
+        return bedBlocks(level, interior).size();
+    }
+
+    /** Every bed block touching the interior, head and foot included. */
+    static List<BlockPos> bedBlocks(ServerLevel level, LongOpenHashSet interior) {
+        LongOpenHashSet seen = new LongOpenHashSet();
+        List<BlockPos> beds = new ArrayList<>();
         for (long key : interior) {
             BlockPos pos = BlockPos.of(key);
-            if (level.getBlockState(pos).is(BlockTags.BEDS)) {
-                beds.add(pos.asLong());
-            }
+            addBed(level, pos, seen, beds);
             for (Direction dir : Direction.values()) {
-                BlockPos neighbor = pos.relative(dir);
-                if (level.getBlockState(neighbor).is(BlockTags.BEDS)) {
-                    beds.add(neighbor.asLong());
-                }
+                addBed(level, pos.relative(dir), seen, beds);
             }
         }
-        return beds.size();
+        return beds;
+    }
+
+    private static void addBed(ServerLevel level, BlockPos pos, LongOpenHashSet seen, List<BlockPos> beds) {
+        if (!level.getBlockState(pos).is(BlockTags.BEDS) || !seen.add(pos.asLong())) {
+            return;
+        }
+        beds.add(pos.immutable());
     }
 
     static boolean hasDoorOutside(ServerLevel level, LongOpenHashSet interior) {

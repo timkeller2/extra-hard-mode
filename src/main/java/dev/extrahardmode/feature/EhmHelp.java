@@ -336,6 +336,8 @@ public final class EhmHelp {
                         "Animals: They eat short grass, the item shears collect, before their breeding food. If neither is left, a second 33% chance starves them and they drop no meat.",
                         "Animals: Villagers take 8 times as long to restock. Novice fletchers buy 32 flint per emerald. 8 or more villagers in a 3x3x3 take damage. Named villagers and residents are spared.",
                         "Animals: An unemployed villager cannot take a job once that job has the rounded-up eighth of the villagers within 64 blocks.",
+                        "Animals: Breaking or picking up a villager's work block turns that villager into a nitwit. A nitwit cannot take a job.",
+                        "Animals: When a villager dies, loaded villagers within 64 blocks mourn for 3 Minecraft days and will not trade. Another death adds 3 days to the time they have left.",
                         "Animals: A librarian book cannot exceed that librarian's rank. Higher ranks may also sell earlier enchantments, up to that rank."));
     }
 
