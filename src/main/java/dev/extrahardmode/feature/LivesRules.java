@@ -26,6 +26,14 @@ public final class LivesRules {
     public static final String LIFE_REMAINING = "You have 1 life remaining.";
     public static final String HEARTS_DOWN = "You are down %s hearts.";
     public static final String HEART_DOWN = "You are down 1 heart.";
+    public static final String STILL_NEED_ONE = "You still need 1 life to reach full lives.";
+    public static final String STILL_NEED = "You still need %s lives to reach full lives.";
+    public static final String HAVE_ONE = "You have 1 life.";
+    public static final String HAVE_MANY = "You have %s lives.";
+    public static final String NAMED_NEED_ONE = "%s still needs 1 life to reach full lives.";
+    public static final String NAMED_NEED = "%s still needs %s lives to reach full lives.";
+    public static final String NAMED_HAS_ONE = "%s has 1 life.";
+    public static final String NAMED_HAS = "%s has %s lives.";
 
     private LivesRules() {}
 
@@ -118,6 +126,48 @@ public final class LivesRules {
             price = Integer.MAX_VALUE;
         }
         return (int) Math.min(price, totalXp);
+    }
+
+    /** Lives still short of the configured full count. Zero when the count is already there. */
+    public static int stillNeeded(int lives, int configured) {
+        long gap = (long) configured - lives;
+        if (gap <= 0L) {
+            return 0;
+        }
+        return gap > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) gap;
+    }
+
+    /**
+     * After a life comes back. An empty {@code name} speaks to the player who gained it.
+     * A name speaks about that player. The total is included only when it is above 0.
+     */
+    public static String recoveryNotice(int lives, int configured) {
+        return recoveryNotice(lives, configured, null);
+    }
+
+    public static String recoveryNotice(int lives, int configured, String name) {
+        int needed = stillNeeded(lives, configured);
+        boolean named = name != null && !name.isEmpty();
+        String notice;
+        if (!named) {
+            notice = needed == 1 ? STILL_NEED_ONE : STILL_NEED.formatted(needed);
+        } else if (needed == 1) {
+            notice = NAMED_NEED_ONE.formatted(name);
+        } else {
+            notice = NAMED_NEED.formatted(name, needed);
+        }
+        if (lives <= 0) {
+            return notice;
+        }
+        String total;
+        if (!named) {
+            total = lives == 1 ? HAVE_ONE : HAVE_MANY.formatted(lives);
+        } else if (lives == 1) {
+            total = NAMED_HAS_ONE.formatted(name);
+        } else {
+            total = NAMED_HAS.formatted(name, lives);
+        }
+        return notice + " " + total;
     }
 
     /**

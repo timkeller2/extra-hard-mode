@@ -464,9 +464,14 @@ public final class ManaAbilities implements FeatureModule {
             return true;
         }
         spend(player, null, AbilityRules.RESTORE_LIFE);
+        int before = Lives.livesOf(target);
         Lives.grantLife(target);
         castEffect(target, SoundEvents.AMETHYST_BLOCK_CHIME, ParticleTypes.END_ROD, null);
-        tellAbilityUse(player, AbilityRules.RESTORE_LIFE, power);
+        boolean gained = Lives.livesOf(target) > before;
+        tellAbilityUse(player, AbilityRules.RESTORE_LIFE, power, gained ? Lives.recoveryStatus(target, player) : null);
+        if (gained && !player.getUUID().equals(target.getUUID())) {
+            target.sendSystemMessage(Lives.recoveryStatus(target, target));
+        }
         return true;
     }
 
@@ -3144,12 +3149,20 @@ public final class ManaAbilities implements FeatureModule {
     }
 
     static void tellAbilityUse(ServerPlayer player, String ability, double power) {
+        tellAbilityUse(player, ability, power, null);
+    }
+
+    static void tellAbilityUse(ServerPlayer player, String ability, double power, Component extra) {
         payOffhandRedstone(player, ability);
-        player.sendSystemMessage(Component.translatableWithFallback(
+        MutableComponent message = Component.translatableWithFallback(
                 "tougher.message.ability_use",
                 "You are using the %s ability at level %s!",
                 Component.translatableWithFallback(AbilityRules.nameKey(ability), AbilityRules.nameFallback(ability)),
-                Component.literal(AbilityRules.powerLabel(power))));
+                Component.literal(AbilityRules.powerLabel(power)));
+        if (extra != null) {
+            message.append(Component.literal(" ")).append(extra);
+        }
+        player.sendSystemMessage(message);
     }
 
     /**

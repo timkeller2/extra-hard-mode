@@ -133,6 +133,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("twice the crop loss rate"));
         assertTrue(String.join(" ", lines).contains("At 50% loss or higher, none drop"));
         assertTrue(String.join(" ", lines).contains("clock"));
+        assertTrue(String.join(" ", lines).contains("clock in an item frame"));
         assertTrue(String.join(" ", lines).contains("falls 1% per day"));
         assertTrue(String.join(" ", lines).contains("changing seasons off"));
         assertTrue(String.join(" ", lines).contains("base crop loss rate"));
@@ -547,7 +548,7 @@ class EhmHelpTest {
         assertTrue(farmText.contains("1d10"));
         assertTrue(farmText.contains("bone meal"));
         assertFalse(farmText.contains("Stone and deepslate"));
-        assertTrue(farming.lines().size() < 42);
+        assertTrue(farming.lines().size() < 43);
         assertTrue(String.join(" ", EhmHelp.resolve("mana").lines()).contains("the way they will look"));
         String combatText = String.join(" ", EhmHelp.resolve("combat").lines());
         assertTrue(combatText.contains("teleports to the nearest open spot"));

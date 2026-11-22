@@ -5,6 +5,7 @@ import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.world.WorldGate;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -169,18 +170,79 @@ public final class Lives {
         if (gained <= 0) {
             return;
         }
-        if (gained == 1) {
-            player.sendSystemMessage(Component.translatableWithFallback(
-                    "tougher.message.life_from_level",
-                    "You recover a life for %s experience.",
-                    Component.literal(Integer.toString(spent))));
-            return;
+        MutableComponent message = gained == 1
+                ? Component.translatableWithFallback(
+                        "tougher.message.life_from_level",
+                        "You recover a life for %s experience.",
+                        Component.literal(Integer.toString(spent)))
+                : Component.translatableWithFallback(
+                        "tougher.message.lives_from_level",
+                        "You recover %s lives for %s experience.",
+                        Component.literal(Integer.toString(gained)),
+                        Component.literal(Integer.toString(spent)));
+        message.append(Component.literal(" ")).append(recoveryStatus(player, player));
+        player.sendSystemMessage(message);
+    }
+
+    /**
+     * Lives still short of full after a recovery, then the total when it is above 0.
+     * {@code listener} hears "you" when the life is theirs, and the subject's name otherwise.
+     */
+    public static Component recoveryStatus(ServerPlayer subject, ServerPlayer listener) {
+        if (subject == null || listener == null) {
+            return Component.empty();
         }
-        player.sendSystemMessage(Component.translatableWithFallback(
-                "tougher.message.lives_from_level",
-                "You recover %s lives for %s experience.",
-                Component.literal(Integer.toString(gained)),
-                Component.literal(Integer.toString(spent))));
+        Component name = listener.getUUID().equals(subject.getUUID()) ? null : subject.getName();
+        return recoveryStatus(livesOf(subject), configuredLives(subject), name);
+    }
+
+    /** English matches {@link LivesRules#recoveryNotice}. */
+    private static Component recoveryStatus(int lives, int configured, Component name) {
+        int needed = LivesRules.stillNeeded(lives, configured);
+        MutableComponent notice;
+        if (name == null) {
+            notice = needed == 1
+                    ? Component.translatableWithFallback(
+                            "tougher.message.life_still_needed", LivesRules.STILL_NEED_ONE)
+                    : Component.translatableWithFallback(
+                            "tougher.message.lives_still_needed",
+                            LivesRules.STILL_NEED,
+                            Component.literal(Integer.toString(needed)));
+        } else if (needed == 1) {
+            notice = Component.translatableWithFallback(
+                    "tougher.message.named_life_still_needed", LivesRules.NAMED_NEED_ONE, name);
+        } else {
+            notice = Component.translatableWithFallback(
+                    "tougher.message.named_lives_still_needed",
+                    LivesRules.NAMED_NEED,
+                    name,
+                    Component.literal(Integer.toString(needed)));
+        }
+        if (lives <= 0) {
+            return notice;
+        }
+        notice.append(Component.literal(" "));
+        if (name == null) {
+            if (lives == 1) {
+                notice.append(Component.translatableWithFallback(
+                        "tougher.message.life_total", LivesRules.HAVE_ONE));
+            } else {
+                notice.append(Component.translatableWithFallback(
+                        "tougher.message.lives_total",
+                        LivesRules.HAVE_MANY,
+                        Component.literal(Integer.toString(lives))));
+            }
+        } else if (lives == 1) {
+            notice.append(Component.translatableWithFallback(
+                    "tougher.message.named_life_total", LivesRules.NAMED_HAS_ONE, name));
+        } else {
+            notice.append(Component.translatableWithFallback(
+                    "tougher.message.named_lives_total",
+                    LivesRules.NAMED_HAS,
+                    name,
+                    Component.literal(Integer.toString(lives))));
+        }
+        return notice;
     }
 
     private static int currentLives(ServerPlayer player, int configured) {

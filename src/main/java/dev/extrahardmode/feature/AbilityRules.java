@@ -781,7 +781,8 @@ public final class AbilityRules {
                     "Restore Life: It gives one life. The target must have fewer lives than player.death.lives. Lives must be on, and Restore Life Available starts on.",
                     "Restore Life: It costs 4 mana and diamonds in your hotbar or inventory. The count is 17 minus their lives minus your level, rounded down, and at least 3.",
                     "Restore Life: A missing requirement spends nothing and says what is required. Below 1, practice spends the 4 mana and keeps the diamond block and the diamonds.",
-                    "Restore Life: The diamond block stays in your hand, one or more. Two or more add +2. The diamonds that pay for the life are separate.");
+                    "Restore Life: The diamond block stays in your hand, one or more. Two or more add +2. The diamonds that pay for the life are separate.",
+                    "Restore Life: After the life is given, the message says how many lives are still needed for full lives, and the total when it is above 0.");
             default -> null;
         };
     }

@@ -89,5 +89,41 @@ class LivesRulesTest {
         String text = String.join(" ", EhmHelp.resolve("combat").lines());
         assertTrue(text.contains("Past level 32"));
         assertTrue(text.contains("250 experience plus 250 for each life below full"));
+        assertTrue(text.contains("still needed for full lives"));
+        assertTrue(text.contains("the total when it is above 0"));
+    }
+
+    @Test
+    void recoveryNoticeSaysShortfallAndTotalWhenPositive() {
+        assertEquals(2, LivesRules.stillNeeded(3, 5));
+        assertEquals(0, LivesRules.stillNeeded(5, 5));
+        assertEquals(6, LivesRules.stillNeeded(-1, 5));
+        assertEquals(
+                "You still need 2 lives to reach full lives. You have 3 lives.",
+                LivesRules.recoveryNotice(3, 5));
+        assertEquals(
+                "You still need 1 life to reach full lives. You have 4 lives.",
+                LivesRules.recoveryNotice(4, 5));
+        assertEquals(
+                "You still need 4 lives to reach full lives. You have 1 life.",
+                LivesRules.recoveryNotice(1, 5));
+        assertEquals(
+                "You still need 0 lives to reach full lives. You have 5 lives.",
+                LivesRules.recoveryNotice(5, 5));
+        assertEquals("You still need 5 lives to reach full lives.", LivesRules.recoveryNotice(0, 5));
+        assertEquals("You still need 6 lives to reach full lives.", LivesRules.recoveryNotice(-1, 5));
+        assertEquals(
+                "Steve still needs 2 lives to reach full lives. Steve has 3 lives.",
+                LivesRules.recoveryNotice(3, 5, "Steve"));
+        assertEquals(
+                "Steve still needs 1 life to reach full lives. Steve has 4 lives.",
+                LivesRules.recoveryNotice(4, 5, "Steve"));
+        assertEquals(
+                "Steve still needs 4 lives to reach full lives. Steve has 1 life.",
+                LivesRules.recoveryNotice(1, 5, "Steve"));
+        assertEquals("Steve still needs 5 lives to reach full lives.", LivesRules.recoveryNotice(0, 5, "Steve"));
+        assertEquals("Steve still needs 7 lives to reach full lives.", LivesRules.recoveryNotice(-2, 5, "Steve"));
+        assertEquals(LivesRules.recoveryNotice(3, 5), LivesRules.recoveryNotice(3, 5, ""));
+        assertEquals(LivesRules.recoveryNotice(3, 5), LivesRules.recoveryNotice(3, 5, null));
     }
 }

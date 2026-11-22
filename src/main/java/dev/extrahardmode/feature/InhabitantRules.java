@@ -323,6 +323,7 @@ public final class InhabitantRules {
     /**
      * Crops a smaller farm can sell, besides wheat. The usual shop draws {@link #FARM_USUAL_SELLS} of these.
      * Seeds, carrots, berries, pods, and sugar cane are 3 for 1 emerald. A sapling is 1 for 2.
+     * A pumpkin is 3 for 1, and a melon is 2 for 1.
      */
     public static final List<TradeListing> FARM_LOWER_SELLS = List.of(
             sellOf("minecraft:wheat_seeds", 3, 1, FARM_PLANT_USES),
@@ -337,8 +338,8 @@ public final class InhabitantRules {
             sellOf("minecraft:birch_sapling", 1, 2, FARM_PLANT_USES),
             sellOf("minecraft:spruce_sapling", 1, 2, FARM_PLANT_USES),
             sellOf("minecraft:bone_meal", 4, 1, FARM_PLANT_USES),
-            sellOf("minecraft:pumpkin", 1, 1, FARM_PLANT_USES),
-            sellOf("minecraft:melon", 1, 1, FARM_PLANT_USES),
+            sellOf("minecraft:pumpkin", 3, 1, FARM_PLANT_USES),
+            sellOf("minecraft:melon", 2, 1, FARM_PLANT_USES),
             sellOf("minecraft:beetroot", 12, 1, FARM_PLANT_USES));
 
     /** Sales that wait for a larger home. Each is one item for one emerald. */
@@ -809,6 +810,7 @@ public final class InhabitantRules {
     public static List<String> homesIntroLines() {
         return List.of(
                 "Homes: Right-click a bed with a clock to score the room. Type /tougher help homes anytime for this list.",
+                "Homes: Looking at a clock in an item frame shows the crop loss, the room score when that clock is in a house, and the other lines a used clock shows.",
                 "Homes: The clock names one improvement that would still raise the score. It stays for 3 minutes, or changes at once when that improvement no longer adds points.",
                 "Homes: Three new suggestions are named in one Minecraft day, across every home. The one still on the clock can be read again. After three, no more until the next day.",
                 "Homes: An enclosed, well-lit room with a bed, a door, and furnishings may attract one traveler. They dislike crowding.",
@@ -919,7 +921,7 @@ public final class InhabitantRules {
                 "Shops: That total adds items when you buy and subtracts the items required when you sell to the resident. Emerald prices stay the same.",
                 "Shops: A hauler pays 1 emerald for 32 of a block. Each chest, barrel, or shulker box takes 2 off that stack, down to 16.",
                 "Shops: A farm neighbor sells 8 wheat for 1 emerald. Seeds, carrots, berries, pods, and sugar cane are 3 for 1 emerald.",
-                "Shops: A smaller home may sell a sapling for 2 emeralds, 4 bone meal for 1, 1 pumpkin for 1, 1 melon for 1, or 12 beetroot for 1.",
+                "Shops: A smaller home may sell a sapling for 2 emeralds, 4 bone meal for 1, 3 pumpkins for 1, 2 melons for 1, or 12 beetroot for 1.",
                 "Shops: Potatoes, pumpkin seeds, melon seeds, cocoa beans, and nether wart need a larger home. Each is 1 for 1 emerald.",
                 "Shops: A trader also buys each thing he sells. The buy stack is 2 larger and pays the same number of emeralds.",
                 "Shops: Those buys start with no uses. Buying from him adds 1 use to each of them. Selling him anything spends 1 use on each of them.",
@@ -946,7 +948,9 @@ public final class InhabitantRules {
                 "Shops: A loot collector pays 1 emerald for 4 spider eyes, 4 gunpowder, or 8 bones.",
                 "Shops: A larger loot collector also pays 1 emerald for 8 rotten flesh, 8 string, 4 slimeballs, 6 leather, or 12 arrows.",
                 "Shops: That shop also pays 1 emerald for 6 ink sacs, 2 phantom membranes, 2 ender pearls, 2 blaze rods, or 1 ghast tear.",
-                "Shops: He also sells one other of those drops, chosen at random. Half what he pays for it, rounded up, costs 1 emerald.");
+                "Shops: He also sells one other of those drops, chosen at random. Half what he pays for it, rounded up, costs 1 emerald.",
+                "Shops: A council member sells 12 paper or 2 books for 1 emerald, a compass for 3, and a clock for 4.",
+                "Shops: A larger council shop may sell an empty map for 3 emeralds, a book and quill for 4, 4 item frames for 1, or 3 lanterns for 1.");
     }
 
     public static List<String> homesBountyLines() {
@@ -2054,9 +2058,9 @@ public final class InhabitantRules {
             case WISE_TEACHER, OLD_MINER, CARTOGRAPHER -> List.of();
             case COUNCIL -> List.of(
                     sellOf("minecraft:paper", 12, 1, 3),
-                    sellOf("minecraft:book", 1, 3, 3),
-                    sellOf("minecraft:compass", 1, 5, 3),
-                    sellOf("minecraft:clock", 1, 5, 3));
+                    sellOf("minecraft:book", 2, 1, 3),
+                    sellOf("minecraft:compass", 1, 3, 3),
+                    sellOf("minecraft:clock", 1, 4, 3));
             case WEALTHY -> wealthyTradeListings().subList(0, Math.min(WEALTHY_OFFER_COUNT, WEALTHY_POOL.size()));
             case JEWELER -> JEWELER_USUAL_SELLS;
             default -> List.of(
@@ -2114,11 +2118,10 @@ public final class InhabitantRules {
             case WISE_TEACHER, OLD_MINER, CARTOGRAPHER -> List.of();
             case MASTER_ARMORSMITH -> List.of(armorMetalBuy(true));
             case COUNCIL -> List.of(
-                    sellOf("minecraft:map", 1, 4, 3),
-                    sellOf("minecraft:name_tag", 1, 8, 3),
+                    sellOf("minecraft:map", 1, 3, 3),
                     sellOf("minecraft:writable_book", 1, 4, 3),
                     sellOf("minecraft:item_frame", 4, 1, 3),
-                    sellOf("minecraft:lantern", 4, 1, 3));
+                    sellOf("minecraft:lantern", 3, 1, 3));
             case WEALTHY -> List.of();
             case JEWELER -> JEWELER_EXTRA_SELLS;
             default -> List.of(

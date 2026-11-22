@@ -582,6 +582,9 @@ public final class EhmAttachments {
     /** Last look-at torch/campfire remaining-time HUD key, empty when hidden. */
     public static final AttachmentType<String> EHM_LIGHT_LOOK = AttachmentRegistry.create(
             ExtraHardModeMod.id("light_look"), builder -> builder.initializer(() -> ""));
+    /** Item-frame clock last reported, empty when the crosshair has left it. */
+    public static final AttachmentType<String> EHM_CLOCK_FRAME_LOOK = AttachmentRegistry.create(
+            ExtraHardModeMod.id("clock_frame_look"), builder -> builder.initializer(() -> ""));
 
     /** Cooking XP millipoints (1000 = 1 XP) stored on hoppers/chests that received furnace output. */
     public static final AttachmentType<Integer> EHM_COOKING_XP_MILLI = AttachmentRegistry.create(

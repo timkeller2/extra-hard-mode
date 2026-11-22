@@ -318,6 +318,7 @@ public final class EhmHelp {
                         "Crops: Each sapling that would drop has twice the crop loss rate as a percent chance not to. At 50% loss or higher, none drop.",
                         "Crops: Pumpkins and melons fruit at 1/10 vanilla rate. After each fruit the vine may become a weed, starting at 0% and rising 5% per fruit.",
                         "Crops: Broken pumpkin and melon vines drop no seeds. Shearing a full hive gives 1 honeycomb. Right-click a hive or nest with a clock to see that hive's honey production.",
+                        "Crops: Looking at a clock in an item frame shows the loss rate, bees staying in, and a hive's honey when the frame hangs on that hive.",
                         "Crops: A bee fills a hive or nest at farming.beeHoneyPercent, default 20, plus the square root of each flower type within 29 blocks, stored once a day, up to 100. 0 never fills.",
                         "Crops: A ripe cocoa pod drops 1 or 2 beans. One more on a d100 under hoe quality plus the tree: iron 0, diamond 10, gold 20, netherite 30, plus 2 per Efficiency. Other hoes are 0.",
                         "Crops: Each other pod on that tree is -2%. Each jungle log in the tree is +2%, up to +20%."));
@@ -416,6 +417,7 @@ public final class EhmHelp {
                         "Combat: On death, a count above -1 says how many lives remain. Below 0 it says you are down that many hearts.",
                         "Combat: Restore Life Available starts on, as player.death.restoreLifeAvailable. It applies only while lives are on.",
                         "Combat: Past level 32, a missing life returns. It costs 250 experience plus 250 for each life below full, and at most the experience you have.",
+                        "Combat: After that, or after Restore Life, the message says how many lives are still needed for full lives, and the total when it is above 0.",
                         "Combat: While lives are on, you come back at full health, a full hunger bar, and full saturation. The usual limit on those does not apply."));
     }
 

@@ -102,6 +102,7 @@ public final class Inhabitants implements FeatureModule {
     @Override
     public void serverTick(ServerLevel level) {
         for (ServerPlayer player : level.players()) {
+            ClockFrames.tick(player);
             tickWiseShimmer(player, level);
         }
         long now = level.getGameTime();
@@ -686,6 +687,23 @@ public final class Inhabitants implements FeatureModule {
                 level.getRandom(),
                 CropGrowthRules.beesInactive(AntiFarming.currentSeasonalLossRate(level)),
                 player);
+        InhabitantData.Home home = data.get(ResidenceScan.homeId(result.bed()));
+        if (home != null && home.living().isPresent()) {
+            home = ensureMaleName(data, home);
+            releaseIfResidentMissing(level, data, home, day);
+        }
+        tellHouse(player, level, result);
+    }
+
+    /** Score, suggestion, and who lives here. Does not roll a new arrival. */
+    static void tellHouseAt(ServerPlayer player, ServerLevel level, BlockPos bed) {
+        WorldConfig cfg = ConfigManager.world(level);
+        ResidenceScan.Result result = ResidenceScan.inspect(
+                level, bed, occupiedBeds(level), cfg.inhabitantMinLight(), cfg.inhabitantSpacing());
+        tellHouse(player, level, result);
+    }
+
+    static void tellHouse(ServerPlayer player, ServerLevel level, ResidenceScan.Result result) {
         String report = InhabitantRules.inspectFallback(result.gates());
         if (!result.gates().eligible()) {
             String biome = Exploration.biomeId(level.getBiome(result.bed()));
@@ -706,12 +724,10 @@ public final class Inhabitants implements FeatureModule {
             player.sendSystemMessage(Component.translatableWithFallback(
                     "tougher.message.house_suggestion", "Suggestion: %s", Component.literal(suggestion)));
         }
+        InhabitantData data = InhabitantData.of(level);
         InhabitantData.Home home = data.get(ResidenceScan.homeId(result.bed()));
         if (home != null && home.living().isPresent()) {
             home = ensureMaleName(data, home);
-            home = releaseIfResidentMissing(level, data, home, day);
-        }
-        if (home != null && home.living().isPresent()) {
             player.sendSystemMessage(Component.translatableWithFallback(
                     "tougher.message.inhabitant_lives_here",
                     "%s the %s lives here.",

@@ -113,6 +113,7 @@ public final class AntiFarming implements FeatureModule {
     public void serverTick(ServerLevel level) {
         for (ServerPlayer player : level.players()) {
             tickSoilLook(player);
+            ClockFrames.tick(player);
         }
     }
 
@@ -167,6 +168,12 @@ public final class AntiFarming implements FeatureModule {
             return true;
         }
         player.setAttached(EhmAttachments.EHM_ABILITY_HANDLED_TICK, level.getGameTime());
+        tellCropLoss(player, level);
+        return true;
+    }
+
+    /** Crop loss rate, and bees staying in when the loss is high enough. */
+    static void tellCropLoss(ServerPlayer player, ServerLevel level) {
         double loss = currentSeasonalLossRate(level);
         player.sendSystemMessage(Component.translatableWithFallback(
                 "tougher.message.crop_season_loss",
@@ -177,7 +184,6 @@ public final class AntiFarming implements FeatureModule {
                     "tougher.message.crop_season_bees",
                     "Bees are staying in their hives."));
         }
-        return true;
     }
 
     /** Main-hand clock on a hive or nest states that block's honey production. */
@@ -185,7 +191,12 @@ public final class AntiFarming implements FeatureModule {
         if (hand != InteractionHand.MAIN_HAND || !player.getMainHandItem().is(Items.CLOCK)) {
             return;
         }
-        if (!(level.getBlockState(pos).getBlock() instanceof BeehiveBlock)) {
+        tellHiveHoney(player, level, pos);
+    }
+
+    /** Honey percent for a hive or nest. Other blocks say nothing. */
+    static void tellHiveHoney(ServerPlayer player, ServerLevel level, BlockPos pos) {
+        if (pos == null || !(level.getBlockState(pos).getBlock() instanceof BeehiveBlock)) {
             return;
         }
         int percent = BeeHoneyData.of(level)

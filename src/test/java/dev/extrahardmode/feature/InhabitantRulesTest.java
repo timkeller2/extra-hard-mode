@@ -416,6 +416,35 @@ class InhabitantRulesTest {
         assertFalse(InhabitantRules.specialtyAllowed(InhabitantRules.COUNCIL, 12));
         assertTrue(InhabitantRules.specialtyAllowed(InhabitantRules.COUNCIL, 18));
         assertEquals(4, InhabitantRules.defaultTradeTypeCount(InhabitantRules.COUNCIL));
+        Map<String, InhabitantRules.TradeListing> councilSales = new HashMap<>();
+        for (InhabitantRules.TradeListing listing :
+                InhabitantRules.defaultListings(InhabitantRules.COUNCIL, 0, false)) {
+            assertFalse(listing.buy());
+            councilSales.put(listing.itemId(), listing);
+        }
+        assertEquals(2, councilSales.get("minecraft:book").count());
+        assertEquals(1, councilSales.get("minecraft:book").emeralds());
+        assertEquals(1, councilSales.get("minecraft:compass").count());
+        assertEquals(3, councilSales.get("minecraft:compass").emeralds());
+        assertEquals(1, councilSales.get("minecraft:clock").count());
+        assertEquals(4, councilSales.get("minecraft:clock").emeralds());
+        assertEquals(12, councilSales.get("minecraft:paper").count());
+        assertEquals(1, councilSales.get("minecraft:paper").emeralds());
+        Map<String, InhabitantRules.TradeListing> councilExtras = new HashMap<>();
+        for (InhabitantRules.TradeListing listing :
+                InhabitantRules.extraListings(InhabitantRules.COUNCIL, 0, false)) {
+            assertFalse(listing.buy());
+            assertEquals(null, councilExtras.put(listing.itemId(), listing));
+        }
+        assertFalse(councilExtras.containsKey("minecraft:name_tag"));
+        assertEquals(1, councilExtras.get("minecraft:map").count());
+        assertEquals(3, councilExtras.get("minecraft:map").emeralds());
+        assertEquals(1, councilExtras.get("minecraft:writable_book").count());
+        assertEquals(4, councilExtras.get("minecraft:writable_book").emeralds());
+        assertEquals(4, councilExtras.get("minecraft:item_frame").count());
+        assertEquals(1, councilExtras.get("minecraft:item_frame").emeralds());
+        assertEquals(3, councilExtras.get("minecraft:lantern").count());
+        assertEquals(1, councilExtras.get("minecraft:lantern").emeralds());
         boolean sawCookAfterAll = false;
         boolean sawBrewerInKitchen = false;
         for (int roll = 0; roll < 80; roll++) {
@@ -1002,8 +1031,8 @@ class InhabitantRulesTest {
         assertFarmSell(lower, "minecraft:birch_sapling", 1, 2);
         assertFarmSell(lower, "minecraft:spruce_sapling", 1, 2);
         assertFarmSell(lower, "minecraft:bone_meal", 4, 1);
-        assertFarmSell(lower, "minecraft:pumpkin", 1, 1);
-        assertFarmSell(lower, "minecraft:melon", 1, 1);
+        assertFarmSell(lower, "minecraft:pumpkin", 3, 1);
+        assertFarmSell(lower, "minecraft:melon", 2, 1);
         assertFarmSell(lower, "minecraft:beetroot", 12, 1);
         assertFarmSell(higher, "minecraft:cocoa_beans", 1, 1);
         assertFarmSell(higher, "minecraft:pumpkin_seeds", 1, 1);
