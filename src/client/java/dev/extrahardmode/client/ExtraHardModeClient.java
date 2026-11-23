@@ -381,7 +381,13 @@ public class ExtraHardModeClient implements ClientModInitializer {
             lastSync = payload;
             CopperLanterns.setClientActive(payload.worldActive());
             ClientboundSyncPayload.DisplayExtras.SeasonBits season = payload.extras().season();
-            SeasonAtmosphere.syncClient(season.antiFarming(), season.lossRate(), season.changingSeasons());
+            SeasonAtmosphere.syncClient(
+                    season.antiFarming(),
+                    season.lossRate(),
+                    season.changingSeasons(),
+                    payload.extras().legacySeasonCycle(),
+                    payload.extras().minCropLoss(),
+                    payload.extras().maxCropLoss());
         });
         ClientPlayNetworking.registerGlobalReceiver(ClientboundToastPayload.TYPE, ExtraHardModeClient::onToast);
         ClientPlayNetworking.registerGlobalReceiver(

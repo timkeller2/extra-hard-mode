@@ -622,6 +622,14 @@ public final class EhmAttachments {
     public static final AttachmentType<LongOpenHashSet> EHM_OVERGRAZE_CHESTS = AttachmentRegistry.create(
             ExtraHardModeMod.id("overgraze_chests"),
             builder -> builder.persistent(LONG_SET_CODEC).initializer(LongOpenHashSet::new));
+    /** Game time when this cow may be milked again. 0 means ready. */
+    public static final AttachmentType<Long> EHM_MILK_READY_AT = AttachmentRegistry.create(
+            ExtraHardModeMod.id("milk_ready_at"),
+            builder -> builder.persistent(Codec.LONG).initializer(() -> 0L));
+    /** Game time of the extra meal after milking. 0 means none pending. */
+    public static final AttachmentType<Long> EHM_MILK_HUNGER_AT = AttachmentRegistry.create(
+            ExtraHardModeMod.id("milk_hunger_at"),
+            builder -> builder.persistent(Codec.LONG).initializer(() -> 0L));
 
     /** Biome ids this player has already been rewarded for visiting. */
     public static final AttachmentType<List<String>> EHM_VISITED_BIOMES = AttachmentRegistry.create(

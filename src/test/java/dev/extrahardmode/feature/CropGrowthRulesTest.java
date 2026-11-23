@@ -250,39 +250,57 @@ class CropGrowthRulesTest {
     }
 
     @Test
-    void seasonalLossFallsToHalfThenRisesToTriple() {
-        assertEquals(3, CropGrowthRules.SEASON_MAX_MULTIPLIER);
+    void seasonalLossRisesFromTheMinimumToTheMaximum() {
+        assertEquals(25, CropGrowthRules.DEFAULT_MIN_CROP_LOSS);
+        assertEquals(75, CropGrowthRules.DEFAULT_MAX_CROP_LOSS);
+        assertEquals(1.0, CropGrowthRules.SEASON_STEP_PERCENT, 1e-9);
         assertEquals(0L, CropGrowthRules.dayIndex(0));
         assertEquals(0L, CropGrowthRules.dayIndex(23999));
         assertEquals(1L, CropGrowthRules.dayIndex(24000));
         assertEquals(25.0, CropGrowthRules.seasonalLossRate(25, 0), 1e-9);
-        assertEquals(24.0, CropGrowthRules.seasonalLossRate(25, 1), 1e-9);
-        assertEquals(23.0, CropGrowthRules.seasonalLossRate(25, 2), 1e-9);
-        assertEquals(13.0, CropGrowthRules.seasonalLossRate(25, 12), 1e-9);
-        assertEquals(14.0, CropGrowthRules.seasonalLossRate(25, 13), 1e-9);
-        assertEquals(75.0, CropGrowthRules.seasonalLossRate(25, 12 + 62), 1e-9);
-        assertEquals(74.0, CropGrowthRules.seasonalLossRate(25, 12 + 63), 1e-9);
-        assertEquals(13.0, CropGrowthRules.seasonalLossRate(25, 12 + 124), 1e-9);
-        assertEquals(14.0, CropGrowthRules.seasonalLossRate(25, 12 + 125), 1e-9);
-        assertEquals(25.0, CropGrowthRules.seasonalLossRate(25, 12 + 62, false), 1e-9);
+        assertEquals(26.0, CropGrowthRules.seasonalLossRate(25, 1), 1e-9);
+        assertEquals(75.0, CropGrowthRules.seasonalLossRate(25, 50), 1e-9);
+        assertEquals(74.0, CropGrowthRules.seasonalLossRate(25, 51), 1e-9);
+        assertEquals(26.0, CropGrowthRules.seasonalLossRate(25, 99), 1e-9);
+        assertEquals(25.0, CropGrowthRules.seasonalLossRate(25, 100), 1e-9);
+        assertEquals(75.0, CropGrowthRules.seasonalLossRate(40, 50, true), 1e-9);
+        assertEquals(40.0, CropGrowthRules.seasonalLossRate(40, 50, false), 1e-9);
         assertEquals(0.0, CropGrowthRules.seasonalLossRate(0, 40, false), 1e-9);
-        assertEquals(75.0, CropGrowthRules.seasonalLossRate(25, 12 + 62, true), 1e-9);
+        assertEquals(25.0, CropGrowthRules.seasonalLossRate(0, 0, true, 25, 75), 1e-9);
+        assertEquals(10.0, CropGrowthRules.seasonalLossRate(25, 0, true, 10, 40), 1e-9);
+        assertEquals(40.0, CropGrowthRules.seasonalLossRate(25, 30, true, 10, 40), 1e-9);
+        assertEquals(39.0, CropGrowthRules.seasonalLossRate(25, 31, true, 10, 40), 1e-9);
+        assertEquals(10.0, CropGrowthRules.seasonalLossRate(25, 60, true, 10, 40), 1e-9);
+        assertEquals(25.0, CropGrowthRules.seasonalLossRate(25, 0, true, 75, 25), 1e-9);
+        assertEquals(40.0, CropGrowthRules.seasonalLossRate(25, 10, true, 40, 40), 1e-9);
+        assertEquals(0.0, CropGrowthRules.seasonalLossRate(25, 0, true, -10, 250), 1e-9);
+        assertEquals(100.0, CropGrowthRules.seasonalLossRate(25, 100, true, -10, 250), 1e-9);
         assertEquals("26", CropGrowthRules.lossRateLabel(26.0));
         assertEquals("12.5", CropGrowthRules.lossRateLabel(12.5));
         assertEquals(60.0, CropGrowthRules.BEE_INACTIVE_LOSS_RATE, 1e-9);
         assertFalse(CropGrowthRules.beesInactive(60.0));
         assertTrue(CropGrowthRules.beesInactive(61.0));
-        assertFalse(CropGrowthRules.beesInactive(CropGrowthRules.seasonalLossRate(25, 59)));
-        assertTrue(CropGrowthRules.beesInactive(CropGrowthRules.seasonalLossRate(25, 60)));
-        assertTrue(CropGrowthRules.beesInactive(CropGrowthRules.seasonalLossRate(25, 74)));
-        assertTrue(CropGrowthRules.beesInactive(CropGrowthRules.seasonalLossRate(25, 88)));
-        assertFalse(CropGrowthRules.beesInactive(CropGrowthRules.seasonalLossRate(25, 89)));
+        assertFalse(CropGrowthRules.beesInactive(CropGrowthRules.seasonalLossRate(25, 35)));
+        assertTrue(CropGrowthRules.beesInactive(CropGrowthRules.seasonalLossRate(25, 36)));
+        assertTrue(CropGrowthRules.beesInactive(CropGrowthRules.seasonalLossRate(25, 50)));
+        assertTrue(CropGrowthRules.beesInactive(CropGrowthRules.seasonalLossRate(25, 64)));
+        assertFalse(CropGrowthRules.beesInactive(CropGrowthRules.seasonalLossRate(25, 65)));
+    }
+
+    @Test
+    void legacySeasonStillFallsToHalfThenRisesToTriple() {
+        assertEquals(3, CropGrowthRules.SEASON_MAX_MULTIPLIER);
+        assertEquals(25.0, CropGrowthRules.legacySeasonalLossRate(25, 0, true), 1e-9);
+        assertEquals(13.0, CropGrowthRules.legacySeasonalLossRate(25, 12, true), 1e-9);
+        assertEquals(75.0, CropGrowthRules.legacySeasonalLossRate(25, 12 + 62, true), 1e-9);
+        assertEquals(25.0, CropGrowthRules.legacySeasonalLossRate(25, 74, false), 1e-9);
     }
 
     @Test
     void seasonalMeatReduceScalesWithLoss() {
         assertEquals(0, CropGrowthRules.largeAnimalMeatReduce(25.0));
-        assertEquals(1, CropGrowthRules.largeAnimalMeatReduce(26.0));
+        assertEquals(0, CropGrowthRules.largeAnimalMeatReduce(35.0));
+        assertEquals(1, CropGrowthRules.largeAnimalMeatReduce(36.0));
         assertEquals(1, CropGrowthRules.largeAnimalMeatReduce(60.0));
         assertEquals(2, CropGrowthRules.largeAnimalMeatReduce(61.0));
         assertEquals(0, CropGrowthRules.chickenMeatReduce(60.0));
@@ -304,12 +322,11 @@ class CropGrowthRulesTest {
 
     @Test
     void seasonalDurationMatchesLossRatio() {
-        assertEquals(300, CropGrowthRules.seasonalDurationPercent(300, 25, 0));
-        assertEquals(288, CropGrowthRules.seasonalDurationPercent(300, 25, 1));
-        assertEquals(156, CropGrowthRules.seasonalDurationPercent(300, 25, 12));
-        assertEquals(900, CropGrowthRules.seasonalDurationPercent(300, 25, 12 + 62));
-        assertEquals(1000, CropGrowthRules.seasonalDurationPercent(1000, 25, 0));
-        assertEquals(520, CropGrowthRules.seasonalDurationPercent(1000, 25, 12));
+        assertEquals(300, CropGrowthRules.seasonalDurationPercent(300, 25, 0, 25, 75));
+        assertEquals(312, CropGrowthRules.seasonalDurationPercent(300, 25, 1, 25, 75));
+        assertEquals(900, CropGrowthRules.seasonalDurationPercent(300, 25, 50, 25, 75));
+        assertEquals(1000, CropGrowthRules.seasonalDurationPercent(1000, 25, 0, 25, 75));
+        assertEquals(3000, CropGrowthRules.seasonalDurationPercent(1000, 25, 50, 25, 75));
         assertEquals(300, CropGrowthRules.durationPercent(300, 25, 25, 0));
         assertEquals(420, CropGrowthRules.durationPercent(300, 25, 25, 10));
         assertEquals(120, CropGrowthRules.durationPercent(300, 25, 25, -15));

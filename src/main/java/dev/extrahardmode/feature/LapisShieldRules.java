@@ -3,7 +3,8 @@ package dev.extrahardmode.feature;
 /**
  * Amethyst Shield absorb math. Minecraft-free so the cost can be tested without a world.
  * The ability id is still {@code lapis_shield}. Amethyst shards, lapis lazuli, and whole
- * mana pay for blocked damage. How many of those you have sets the rate before any is spent.
+ * minutes left on the shield pay for blocked damage. How many of those you have sets the rate
+ * before any is spent.
  */
 public final class LapisShieldRules {
     /** Float noise below this does not count as a blocked point. */
@@ -12,8 +13,10 @@ public final class LapisShieldRules {
     public static final int ONE_KIND_POINTS = 3;
     /** Two fuel types on hand. */
     public static final int TWO_KIND_POINTS = 5;
-    /** Amethyst, lapis, and at least 1 mana all on hand. */
+    /** Amethyst, lapis, and at least 1 minute of duration all on hand. */
     public static final int THREE_KIND_POINTS = 7;
+    /** One shield minute. Matches a 60-second ability minute at 20 ticks. */
+    public static final int TICKS_PER_MINUTE = 20 * 60;
 
     private LapisShieldRules() {}
 
@@ -58,35 +61,51 @@ public final class LapisShieldRules {
         return (int) Math.ceil((absorbed - COST_EPSILON) / per);
     }
 
-    /** Whole mana that can pay. 0.9 counts as none. 2.7 counts as 2. */
-    public static int manaUnits(double mana) {
-        if (!Double.isFinite(mana) || mana < 1.0) {
+    /** Remaining shield time in minutes. A negative tick count is none. */
+    public static double durationMinutes(int ticks) {
+        if (ticks <= 0) {
+            return 0.0;
+        }
+        return ticks / (double) TICKS_PER_MINUTE;
+    }
+
+    /** Ticks removed when this many whole minutes are spent. */
+    public static long minuteTicks(int minutes) {
+        if (minutes <= 0) {
+            return 0L;
+        }
+        return (long) minutes * TICKS_PER_MINUTE;
+    }
+
+    /** Whole minutes that can pay. 0.9 counts as none. 2.7 counts as 2. */
+    public static int durationUnits(double minutes) {
+        if (!Double.isFinite(minutes) || minutes < 1.0) {
             return 0;
         }
-        return (int) Math.floor(mana);
+        return (int) Math.floor(minutes);
     }
 
     /**
      * What to take for {@code absorbed} damage.
-     * Kinds are amethyst shards, lapis lazuli, and whole mana, each counted only at 1 or more.
+     * Kinds are amethyst shards, lapis lazuli, and whole minutes left, each counted only at 1 or more.
      * The rate is fixed from those kinds before anything is spent.
      * Payment starts with the largest amount and then cycles one unit at a time.
-     * Equal amounts go amethyst, then lapis, then mana. Mana's amount is the current mana, not the floored units.
+     * Equal amounts go amethyst, then lapis, then minutes. The minute amount is the time left, not the floored units.
      * A kind that runs out is skipped. Returns null when the fuels cannot cover the cost, and nothing should be spent.
      */
-    public static Payment plan(float absorbed, int amethyst, int lapis, double mana) {
+    public static Payment plan(float absorbed, int amethyst, int lapis, double minutes) {
         int amy = Math.max(0, amethyst);
         int lap = Math.max(0, lapis);
-        int manaWhole = manaUnits(mana);
-        int kinds = (amy >= 1 ? 1 : 0) + (lap >= 1 ? 1 : 0) + (manaWhole >= 1 ? 1 : 0);
+        int minuteWhole = durationUnits(minutes);
+        int kinds = (amy >= 1 ? 1 : 0) + (lap >= 1 ? 1 : 0) + (minuteWhole >= 1 ? 1 : 0);
         int cost = fuelCost(absorbed, kinds);
         if (cost <= 0) {
             return null;
         }
-        if (amy + lap + manaWhole < cost) {
+        if (amy + lap + minuteWhole < cost) {
             return null;
         }
-        double manaAmount = Double.isFinite(mana) ? mana : 0.0;
+        double minuteAmount = Double.isFinite(minutes) ? minutes : 0.0;
         FuelStock[] stocks = new FuelStock[kinds];
         int n = 0;
         if (amy >= 1) {
@@ -95,8 +114,8 @@ public final class LapisShieldRules {
         if (lap >= 1) {
             stocks[n++] = new FuelStock(1, lap, lap);
         }
-        if (manaWhole >= 1) {
-            stocks[n++] = new FuelStock(2, manaAmount, manaWhole);
+        if (minuteWhole >= 1) {
+            stocks[n++] = new FuelStock(2, minuteAmount, minuteWhole);
         }
         sortByAmount(stocks, n);
         int[] left = new int[n];
@@ -126,16 +145,16 @@ public final class LapisShieldRules {
         return left > 0.0F ? left : 0.0F;
     }
 
-    /** Amethyst shards, lapis lazuli, and whole mana taken for one block. */
-    public record Payment(int amethyst, int lapis, int mana) {
+    /** Amethyst shards, lapis lazuli, and whole minutes taken for one block. */
+    public record Payment(int amethyst, int lapis, int minutes) {
         public int total() {
-            return amethyst + lapis + mana;
+            return amethyst + lapis + minutes;
         }
     }
 
     private record FuelStock(int kind, double amount, int units) {}
 
-    /** Largest amount first. Equal amounts keep amethyst, then lapis, then mana. */
+    /** Largest amount first. Equal amounts keep amethyst, then lapis, then minutes. */
     private static void sortByAmount(FuelStock[] stocks, int n) {
         for (int i = 1; i < n; i++) {
             FuelStock stock = stocks[i];

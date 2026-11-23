@@ -334,8 +334,8 @@ public final class EhmHelp {
                         "Animals: Livestock overgraze by eating grass they can walk to within 6 blocks and turning that block into dirt. Bees do not.",
                         "Animals: About 9 grass blocks keep a cow, pig, sheep, or other large animal fed. About 4 keep a chicken or rabbit fed.",
                         "Animals: Sheep overgraze too, and wait 6 times as long to eat grass and regrow their wool. farming.sheepWoolGrazeMultiplier of 1 is the usual wool wait.",
-                        "Animals: If no grass block is in reach, they have a 33% chance to eat from a chest or barrel within 20 blocks.",
-                        "Animals: They eat short grass, the item shears collect, before their breeding food. If neither is left, a second 33% chance starves them and they drop no meat.",
+                        "Animals: No grass in reach: 33% eat short grass, then breeding food, from a chest or barrel within 20 blocks. If neither is left, a second 33% starves them and they drop no meat.",
+                        "Animals: Milking a cow or mooshroom blocks another milking for 1 Minecraft day. Within a few seconds it eats grass or chest food once. Its usual eat chances stay the same.",
                         "Animals: Villagers take 8 times as long to restock. Novice fletchers buy 32 flint per emerald. 8 or more villagers in a 3x3x3 take damage. Named villagers and residents are spared.",
                         "Animals: An unemployed villager cannot take a job once that job has the rounded-up eighth of the villagers within 64 blocks.",
                         "Animals: Breaking or picking up a villager's work block turns that villager into a nitwit. A nitwit cannot take a job.",
@@ -347,12 +347,12 @@ public final class EhmHelp {
         return Page.of(
                 "tougher.help.seasons.",
                 List.of(
-                        "Seasons: By default crop loss and growth follow a season. Loss falls 1% per day from the normal rate down to half.",
-                        "Seasons: Loss then rises to three times the normal rate, then repeats. Turn changing seasons off to keep the base crop loss rate instead.",
+                        "Seasons: By default crop loss and growth follow a season. Loss rises 1% per day from the minimum to the maximum, then falls back.",
+                        "Seasons: Those bounds are farming.minCropLoss and farming.maxCropLoss, default 25 and 75. Turn changing seasons off to keep the base crop loss rate instead.",
                         "Seasons: Growth speed scales by that seasonal loss plus the soil modifier of the plant's own plot, never faster than vanilla.",
                         "Seasons: Ripe food crops and second-segment sugar cane die at that seasonal loss plus the plot's soil modifier.",
                         "Seasons: For example, 51% loss and −25 soil is 26%. Let it grow never causes that death.",
-                        "Seasons: When the loss rate is above 25%, cows, sheep, and pigs drop 1 less meat. When above 60%, those animals drop 2 less, chickens drop 1 less, and bees stay in their hives.",
+                        "Seasons: When the loss rate is above 35%, cows, sheep, and pigs drop 1 less meat. When above 60%, those animals drop 2 less, chickens drop 1 less, and bees stay in their hives.",
                         "Seasons: Above 60% loss, the air turns blighted."));
     }
 
@@ -388,6 +388,7 @@ public final class EhmHelp {
                 List.of(
                         "Combat: Mobs hit harder. Skeletons ignore arrows.",
                         "Combat: Your first 8 kills from one monster spawner drop loot and experience. Later kills from that spawner drop nothing. Each player has their own 8. monsters.spawnerLootKills.",
+                        "Combat: Trial spawners always drop loot and experience. Monster spawners ignore unnatural floors. Natural mobs on those floors still drop nothing.",
                         "Combat: Skeleton and bogged special shots only happen based on how far they spawned from world spawn: 1% per 10 blocks.",
                         "Combat: Those special shots always happen at 1000 blocks or farther.",
                         "Combat: Zombies vary ±20% in speed (faster hit softer and look smaller, slower hit harder and look larger).",
@@ -489,7 +490,7 @@ public final class EhmHelp {
                         "Abilities: A quartz block double-right-clicked in the air casts Battery. It costs no mana.",
                         "Abilities: Battery lasts 2 minutes per level. Regen is 1 plus the square root of that level. It stops at your mana level. A renew spends 1 block, or 2 from a stack.",
                         "Abilities: An amethyst shard casts Amethyst Shield for 1 mana. It lasts 1 minute per level and absorbs that much damage before armor.",
-                        "Abilities: One fuel kind costs 1 per 3 points blocked, two kinds 1 per 5, and all three 1 per 7, rounded up. Fuels are amethyst, lapis, and whole mana.",
+                        "Abilities: One fuel kind costs 1 per 3 points blocked, two kinds 1 per 5, and all three 1 per 7, rounded up. Fuels are amethyst, lapis, and minutes left.",
                         "Abilities: The cost alternates those fuels, largest amount first. A full block also stops harmful effects from that hit. If you cannot pay, the hit lands and the shield ends.",
                         "Abilities: One shard is consumed to cast. Two in hand consume both and add +2. One lapis in your hotbar or inventory is also consumed and adds another +2.",
                         "Abilities: From level 7, a book writes a Tome of the Wise for 1 mana. Above 30 it banks the excess and leaves you at 30. At 30 or below it banks everything and leaves you at 0.",

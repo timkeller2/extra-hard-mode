@@ -27,6 +27,14 @@ public final class SpawnerLootRules {
         return killsAlready < Math.max(0, allowance);
     }
 
+    /**
+     * An unnatural floor blocks loot for a mob that spawned on its own.
+     * Trial spawners and monster spawners are not that gate.
+     */
+    public static boolean unnaturalFloorBlocksLoot(boolean trialSpawned, boolean spawnerSpawned) {
+        return !trialSpawned && !spawnerSpawned;
+    }
+
     public static String blockKey(String dimensionId, long packedPos) {
         return "block|" + (dimensionId == null ? "" : dimensionId) + "|" + packedPos;
     }

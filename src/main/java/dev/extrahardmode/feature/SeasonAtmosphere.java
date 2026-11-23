@@ -29,19 +29,34 @@ public final class SeasonAtmosphere {
     private static volatile boolean clientFarming;
     private static volatile int clientLossRate = 25;
     private static volatile boolean clientChangingSeasons = true;
+    private static volatile boolean clientLegacyCycle;
+    private static volatile int clientMinCropLoss = CropGrowthRules.DEFAULT_MIN_CROP_LOSS;
+    private static volatile int clientMaxCropLoss = CropGrowthRules.DEFAULT_MAX_CROP_LOSS;
 
     private SeasonAtmosphere() {}
 
-    public static void syncClient(boolean farmingActive, int lossRate, boolean changingSeasons) {
+    public static void syncClient(
+            boolean farmingActive,
+            int lossRate,
+            boolean changingSeasons,
+            boolean legacyCycle,
+            int minCropLoss,
+            int maxCropLoss) {
         clientFarming = farmingActive;
         clientLossRate = Math.max(0, lossRate);
         clientChangingSeasons = changingSeasons;
+        clientLegacyCycle = legacyCycle;
+        clientMinCropLoss = minCropLoss;
+        clientMaxCropLoss = maxCropLoss;
     }
 
     public static void clearClient() {
         clientFarming = false;
         clientLossRate = 25;
         clientChangingSeasons = true;
+        clientLegacyCycle = false;
+        clientMinCropLoss = CropGrowthRules.DEFAULT_MIN_CROP_LOSS;
+        clientMaxCropLoss = CropGrowthRules.DEFAULT_MAX_CROP_LOSS;
     }
 
     public static boolean beesInactive(Level level) {
@@ -62,10 +77,12 @@ public final class SeasonAtmosphere {
         if (!clientFarming) {
             return 0.0;
         }
+        long day = CropGrowthRules.dayIndex(level.getOverworldClockTime());
+        if (clientLegacyCycle) {
+            return CropGrowthRules.legacySeasonalLossRate(clientLossRate, day, clientChangingSeasons);
+        }
         return CropGrowthRules.seasonalLossRate(
-                clientLossRate,
-                CropGrowthRules.dayIndex(level.getOverworldClockTime()),
-                clientChangingSeasons);
+                clientLossRate, day, clientChangingSeasons, clientMinCropLoss, clientMaxCropLoss);
     }
 
     public static void addLayers(EnvironmentAttributeSystem.Builder builder, Level level) {

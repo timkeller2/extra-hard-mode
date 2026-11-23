@@ -118,6 +118,8 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("chicken or rabbit"));
         assertTrue(String.join(" ", lines).contains("short grass"));
         assertTrue(String.join(" ", lines).contains("drop no meat"));
+        assertTrue(String.join(" ", lines).contains("blocks another milking for 1 Minecraft day"));
+        assertTrue(String.join(" ", lines).contains("usual eat chances stay the same"));
         assertTrue(String.join(" ", lines).contains("regrow their wool"));
         assertTrue(String.join(" ", lines).contains("lay eggs 6 times"));
         assertTrue(String.join(" ", lines).contains("Trees take 10 times"));
@@ -136,7 +138,9 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("At 50% loss or higher, none drop"));
         assertTrue(String.join(" ", lines).contains("clock"));
         assertTrue(String.join(" ", lines).contains("clock in an item frame"));
-        assertTrue(String.join(" ", lines).contains("falls 1% per day"));
+        assertTrue(String.join(" ", lines).contains("rises 1% per day"));
+        assertTrue(String.join(" ", lines).contains("farming.minCropLoss"));
+        assertTrue(String.join(" ", lines).contains("default 25 and 75"));
         assertTrue(String.join(" ", lines).contains("changing seasons off"));
         assertTrue(String.join(" ", lines).contains("base crop loss rate"));
         assertTrue(String.join(" ", lines).contains("soil modifier of the plant's own plot"));
@@ -145,6 +149,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("Let it grow never causes that death"));
         assertTrue(String.join(" ", lines).contains("three times"));
         assertTrue(String.join(" ", lines).contains("Heavy swords and axes swing 10% slower"));
+        assertTrue(String.join(" ", lines).contains("above 35%"));
         assertTrue(String.join(" ", lines).contains("above 60%"));
         assertTrue(String.join(" ", lines).contains("bees stay"));
         assertTrue(String.join(" ", lines).contains("1 less meat"));
@@ -563,6 +568,8 @@ class EhmHelpTest {
         assertTrue(combatText.contains("first 8 kills from one monster spawner"));
         assertTrue(combatText.contains("Each player has their own 8"));
         assertTrue(combatText.contains("monsters.spawnerLootKills"));
+        assertTrue(combatText.contains("Trial spawners always drop loot"));
+        assertTrue(combatText.contains("Natural mobs on those floors still drop nothing"));
         assertTrue(combatText.contains("teleports to the nearest open spot"));
         assertTrue(combatText.contains("within 16 blocks"));
         assertTrue(combatText.contains("an enderman"));

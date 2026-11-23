@@ -42,9 +42,17 @@ class LapisShieldRulesTest {
         assertEquals(1, LapisShieldRules.fuelCost(7.0F, 3));
         assertEquals(2, LapisShieldRules.fuelCost(7.1F, 3));
         assertEquals(3, LapisShieldRules.fuelCost(20.0F, 3));
-        assertEquals(0, LapisShieldRules.manaUnits(0.9));
-        assertEquals(2, LapisShieldRules.manaUnits(2.7));
-        assertEquals(10, LapisShieldRules.manaUnits(10.0));
+        assertEquals(0, LapisShieldRules.durationUnits(0.9));
+        assertEquals(2, LapisShieldRules.durationUnits(2.7));
+        assertEquals(10, LapisShieldRules.durationUnits(10.0));
+        assertEquals(0.0, LapisShieldRules.durationMinutes(0), 1.0E-9);
+        assertEquals(0, LapisShieldRules.durationUnits(LapisShieldRules.durationMinutes(1199)));
+        assertEquals(1.0, LapisShieldRules.durationMinutes(LapisShieldRules.TICKS_PER_MINUTE), 1.0E-9);
+        assertEquals(1, LapisShieldRules.durationUnits(LapisShieldRules.durationMinutes(1200)));
+        assertEquals(2.7, LapisShieldRules.durationMinutes(1200 * 2 + 840), 1.0E-9);
+        assertEquals(2, LapisShieldRules.durationUnits(LapisShieldRules.durationMinutes(1200 * 2 + 840)));
+        assertEquals(2400L, LapisShieldRules.minuteTicks(2));
+        assertEquals(0L, LapisShieldRules.minuteTicks(0));
     }
 
     @Test
@@ -52,13 +60,17 @@ class LapisShieldRulesTest {
         assertNull(LapisShieldRules.plan(4.0F, 0, 0, 0.0));
         assertNull(LapisShieldRules.plan(4.0F, 0, 0, 0.9));
         assertNull(LapisShieldRules.plan(0.0F, 10, 10, 10.0));
+        assertNull(LapisShieldRules.plan(3.0F, 0, 0, LapisShieldRules.durationMinutes(1199)));
 
         LapisShieldRules.Payment only = LapisShieldRules.plan(6.0F, 4, 0, 0.0);
         assertEquals(new LapisShieldRules.Payment(2, 0, 0), only);
 
-        LapisShieldRules.Payment manaOnly = LapisShieldRules.plan(3.0F, 0, 0, 2.7);
-        assertEquals(new LapisShieldRules.Payment(0, 0, 1), manaOnly);
+        LapisShieldRules.Payment minutesOnly = LapisShieldRules.plan(3.0F, 0, 0, 2.7);
+        assertEquals(new LapisShieldRules.Payment(0, 0, 1), minutesOnly);
         assertNull(LapisShieldRules.plan(6.1F, 0, 0, 2.7));
+        assertEquals(
+                new LapisShieldRules.Payment(0, 0, 1),
+                LapisShieldRules.plan(3.0F, 0, 0, LapisShieldRules.durationMinutes(1200)));
 
         LapisShieldRules.Payment tie = LapisShieldRules.plan(7.0F, 10, 10, 10.0);
         assertEquals(new LapisShieldRules.Payment(1, 0, 0), tie);
@@ -72,8 +84,8 @@ class LapisShieldRulesTest {
         LapisShieldRules.Payment skip = LapisShieldRules.plan(40.0F, 1, 10, 10.0);
         assertEquals(new LapisShieldRules.Payment(1, 3, 2), skip);
 
-        LapisShieldRules.Payment manaLeads = LapisShieldRules.plan(5.0F, 0, 10, 10.7);
-        assertEquals(new LapisShieldRules.Payment(0, 0, 1), manaLeads);
+        LapisShieldRules.Payment minutesLead = LapisShieldRules.plan(5.0F, 0, 10, 10.7);
+        assertEquals(new LapisShieldRules.Payment(0, 0, 1), minutesLead);
 
         LapisShieldRules.Payment twoKinds = LapisShieldRules.plan(5.1F, 1, 1, 0.4);
         assertEquals(new LapisShieldRules.Payment(1, 1, 0), twoKinds);

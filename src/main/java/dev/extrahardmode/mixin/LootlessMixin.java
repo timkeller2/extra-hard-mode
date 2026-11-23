@@ -28,12 +28,23 @@ public abstract class LootlessMixin {
             return;
         }
         LivingEntity self = (LivingEntity) (Object) this;
+        if (AntiGrinder.isTrialSpawned(self)) {
+            return;
+        }
+        boolean spawner = AntiGrinder.hasSpawnerId(self);
+        boolean unnatural = Boolean.TRUE.equals(self.getAttachedOrElse(EhmAttachments.EHM_UNNATURAL_SPAWN, Boolean.FALSE));
         boolean lootless = Boolean.TRUE.equals(self.getAttachedOrElse(EhmAttachments.EHM_LOOTLESS, Boolean.FALSE));
+        boolean floorMarkedSpawner = spawner && unnatural;
+        if (floorMarkedSpawner) {
+            lootless = false;
+        }
         int gate = AntiGrinder.spawnerGate(self, level);
         if (gate == SpawnerLootRules.GATE_ALLOW && !lootless) {
             AntiGrinder.countSpawnerKill(self);
             gate = AntiGrinder.spawnerGate(self, level);
-            lootless = Boolean.TRUE.equals(self.getAttachedOrElse(EhmAttachments.EHM_LOOTLESS, Boolean.FALSE));
+            if (!floorMarkedSpawner) {
+                lootless = Boolean.TRUE.equals(self.getAttachedOrElse(EhmAttachments.EHM_LOOTLESS, Boolean.FALSE));
+            }
         }
         if (gate == SpawnerLootRules.GATE_BLOCK || lootless) {
             ci.cancel();
@@ -49,9 +60,17 @@ public abstract class LootlessMixin {
         if (!WorldGate.isActive(level)) {
             return;
         }
+        if (AntiGrinder.isTrialSpawned(self)) {
+            return;
+        }
+        boolean spawner = AntiGrinder.hasSpawnerId(self);
+        boolean unnatural = Boolean.TRUE.equals(self.getAttachedOrElse(EhmAttachments.EHM_UNNATURAL_SPAWN, Boolean.FALSE));
+        boolean lootless = Boolean.TRUE.equals(self.getAttachedOrElse(EhmAttachments.EHM_LOOTLESS, Boolean.FALSE));
+        if (spawner && unnatural) {
+            lootless = false;
+        }
         int gate = AntiGrinder.spawnerGate(self, level);
-        if (gate == SpawnerLootRules.GATE_BLOCK
-                || Boolean.TRUE.equals(self.getAttachedOrElse(EhmAttachments.EHM_LOOTLESS, Boolean.FALSE))) {
+        if (gate == SpawnerLootRules.GATE_BLOCK || lootless) {
             cir.setReturnValue(false);
         }
     }

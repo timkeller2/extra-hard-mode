@@ -7,6 +7,7 @@ import dev.extrahardmode.config.GlobalConfig;
 import dev.extrahardmode.config.PlayerSettings;
 import dev.extrahardmode.config.WorldConfig;
 import dev.extrahardmode.feature.AntiFarming;
+import dev.extrahardmode.feature.CropGrowthRules;
 import dev.extrahardmode.feature.Dragon;
 import dev.extrahardmode.feature.Players;
 import dev.extrahardmode.feature.HardenedStone;
@@ -64,7 +65,35 @@ public record ClientboundSyncPayload(
 
     /** False for {@link #inactive()}. That payload is the client stand-in for WorldGate off. */
     public boolean worldActive() {
-        return !equals(inactive());
+        if (equals(inactive())) {
+            return false;
+        }
+        if (!extras.legacySeasonCycle()) {
+            return true;
+        }
+        return !withExtras(extras.withCropBounds(
+                        CropGrowthRules.DEFAULT_MIN_CROP_LOSS, CropGrowthRules.DEFAULT_MAX_CROP_LOSS))
+                .equals(inactive());
+    }
+
+    public ClientboundSyncPayload withExtras(DisplayExtras extras) {
+        return new ClientboundSyncPayload(
+                limitedBuilding,
+                torchSoftDeny,
+                torchNoPlacementUnderY,
+                torchYDeny,
+                torchBurnDays,
+                blockOreNextToStone,
+                playerBypass,
+                horseBlockChest,
+                horseBlockChestBelowY,
+                hardenedBlocks,
+                hardenedPicks,
+                caveInOres,
+                softTorchSurfaces,
+                depthLimitedLights,
+                noEndBuilding,
+                extras);
     }
 
     public static ClientboundSyncPayload inactive() {
@@ -165,7 +194,10 @@ public record ClientboundSyncPayload(
                                 WorldGate.isModuleActive(level, AntiFarming.ID),
                                 config.lossRate(),
                                 config.changingSeasons()),
-                        weightBits(level, config)));
+                        weightBits(level, config),
+                        false,
+                        config.minCropLoss(),
+                        config.maxCropLoss()));
     }
 
     private static DisplayExtras.WeightBits weightBits(ServerLevel level, WorldConfig config) {
@@ -238,7 +270,10 @@ public record ClientboundSyncPayload(
             int tutorialMaxShows,
             boolean f3Enabled,
             SeasonBits season,
-            WeightBits weight) {
+            WeightBits weight,
+            boolean legacySeasonCycle,
+            int minCropLoss,
+            int maxCropLoss) {
         static final DisplayExtras INACTIVE = new DisplayExtras(
                 true,
                 true,
@@ -250,10 +285,14 @@ public record ClientboundSyncPayload(
                 GlobalConfig.DEFAULT_TUTORIAL_MAX_SHOWS,
                 true,
                 SeasonBits.INACTIVE,
-                WeightBits.COMPATIBLE_DEFAULT);
+                WeightBits.COMPATIBLE_DEFAULT,
+                false,
+                CropGrowthRules.DEFAULT_MIN_CROP_LOSS,
+                CropGrowthRules.DEFAULT_MAX_CROP_LOSS);
 
         /**
          * Older servers stop after {@link #season()}. A missing weight tail means the default cap.
+         * A missing crop-loss tail means that server still swings from half the base loss to three times it.
          * {@code worldActive()} still decides whether the inventory label is drawn.
          */
         private static final StreamCodec<ByteBuf, DisplayExtras> BODY = StreamCodec.composite(
@@ -279,17 +318,27 @@ public record ClientboundSyncPayload(
                 DisplayExtras::season,
                 DisplayExtras::withoutWeight);
 
+        static final int CROP_LOSS_BYTES = Integer.BYTES * 2;
+
         static final StreamCodec<ByteBuf, DisplayExtras> STREAM_CODEC = StreamCodec.of(
                 (buf, value) -> {
                     BODY.encode(buf, value);
                     WeightBits.STREAM_CODEC.encode(buf, value.weight());
+                    if (!value.legacySeasonCycle()) {
+                        buf.writeInt(value.minCropLoss());
+                        buf.writeInt(value.maxCropLoss());
+                    }
                 },
                 buf -> {
                     DisplayExtras body = BODY.decode(buf);
                     if (buf.readableBytes() < WeightBits.ENCODED_BYTES) {
                         return body;
                     }
-                    return body.withWeight(WeightBits.STREAM_CODEC.decode(buf));
+                    DisplayExtras weighted = body.withWeight(WeightBits.STREAM_CODEC.decode(buf));
+                    if (buf.readableBytes() < CROP_LOSS_BYTES) {
+                        return weighted;
+                    }
+                    return weighted.withCropBounds(buf.readInt(), buf.readInt());
                 });
 
         private static DisplayExtras withoutWeight(
@@ -314,7 +363,10 @@ public record ClientboundSyncPayload(
                     tutorialMaxShows,
                     f3Enabled,
                     season,
-                    WeightBits.COMPATIBLE_DEFAULT);
+                    WeightBits.COMPATIBLE_DEFAULT,
+                    true,
+                    CropGrowthRules.DEFAULT_MIN_CROP_LOSS,
+                    CropGrowthRules.DEFAULT_MAX_CROP_LOSS);
         }
 
         private DisplayExtras withWeight(WeightBits weight) {
@@ -329,7 +381,28 @@ public record ClientboundSyncPayload(
                     tutorialMaxShows,
                     f3Enabled,
                     season,
-                    weight);
+                    weight,
+                    true,
+                    minCropLoss,
+                    maxCropLoss);
+        }
+
+        public DisplayExtras withCropBounds(int min, int max) {
+            return new DisplayExtras(
+                    checkPermission,
+                    creativeBypasses,
+                    operatorsBypass,
+                    torchFizz,
+                    creeperTntWarning,
+                    enabledByDefault,
+                    debug,
+                    tutorialMaxShows,
+                    f3Enabled,
+                    season,
+                    weight,
+                    false,
+                    min,
+                    max);
         }
 
         public record SeasonBits(boolean antiFarming, int lossRate, boolean changingSeasons) {

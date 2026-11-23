@@ -8,6 +8,7 @@ import dev.extrahardmode.feature.AbilityRules;
 import dev.extrahardmode.feature.AchievementRules;
 import dev.extrahardmode.feature.BeeHoneyRules;
 import dev.extrahardmode.feature.ChunkClearRules;
+import dev.extrahardmode.feature.CropGrowthRules;
 import dev.extrahardmode.feature.GrassSpreadRules;
 import dev.extrahardmode.feature.HardenedBudget;
 import dev.extrahardmode.feature.HungerRules;
@@ -97,6 +98,8 @@ public final class WorldConfig {
     private final PlayerSettings player = new PlayerSettings();
     private boolean weakCrops = true;
     private int lossRate = 25;
+    private int minCropLoss = CropGrowthRules.DEFAULT_MIN_CROP_LOSS;
+    private int maxCropLoss = CropGrowthRules.DEFAULT_MAX_CROP_LOSS;
     private boolean changingSeasons = true;
     private boolean infertileDeserts = true;
     private boolean snowBreaksCrops = true;
@@ -435,6 +438,14 @@ public final class WorldConfig {
 
     public int lossRate() {
         return lossRate;
+    }
+
+    public int minCropLoss() {
+        return minCropLoss;
+    }
+
+    public int maxCropLoss() {
+        return maxCropLoss;
     }
 
     public boolean changingSeasons() {
@@ -1422,6 +1433,8 @@ public final class WorldConfig {
                 player.write(file);
                 file.set("farming.weakCrops", weakCrops);
                 file.set("farming.lossRate", lossRate);
+                file.set("farming.minCropLoss", minCropLoss);
+                file.set("farming.maxCropLoss", maxCropLoss);
                 file.set("farming.changingSeasons", changingSeasons);
                 file.set("farming.infertileDeserts", infertileDeserts);
                 file.set("farming.snowBreaksCrops", snowBreaksCrops);
@@ -1634,6 +1647,8 @@ public final class WorldConfig {
         player.read(file);
         weakCrops = file.getOrElse("farming.weakCrops", true);
         lossRate = file.getOrElse("farming.lossRate", 25);
+        minCropLoss = clampPercent(getInt(file, "farming.minCropLoss", CropGrowthRules.DEFAULT_MIN_CROP_LOSS));
+        maxCropLoss = clampPercent(getInt(file, "farming.maxCropLoss", CropGrowthRules.DEFAULT_MAX_CROP_LOSS));
         changingSeasons = file.getOrElse("farming.changingSeasons", true);
         infertileDeserts = file.getOrElse("farming.infertileDeserts", true);
         snowBreaksCrops = file.getOrElse("farming.snowBreaksCrops", true);
@@ -1770,12 +1785,32 @@ public final class WorldConfig {
                 "farming.weakCrops",
                 "Crops may die at full growth. 25% even when tended; dark always dies; no separate needWater toggle.",
                 true);
-        writeDefaultIfMissing(file, "farming.lossRate", "Base death percent at full growth (original 25).", 25);
+        writeDefaultIfMissing(
+                file,
+                "farming.lossRate",
+                "Death percent when changing seasons is off, and the growth-speed baseline. Default 25.",
+                25);
+        file.setComment(
+                "farming.lossRate",
+                "Death percent when changing seasons is off, and the growth-speed baseline. Default 25.");
+        writeDefaultIfMissing(
+                file,
+                "farming.minCropLoss",
+                "Low end of the seasonal crop-loss cycle, as a percent. Loss rises 1 per day from here to farming.maxCropLoss, then falls back. Default 25.",
+                CropGrowthRules.DEFAULT_MIN_CROP_LOSS);
+        writeDefaultIfMissing(
+                file,
+                "farming.maxCropLoss",
+                "High end of the seasonal crop-loss cycle, as a percent. Default 75.",
+                CropGrowthRules.DEFAULT_MAX_CROP_LOSS);
         writeDefaultIfMissing(
                 file,
                 "farming.changingSeasons",
-                "If true, crop loss and growth swing each day from half the base loss up to three times it. If false, always use farming.lossRate. Default true.",
+                "If true, crop loss swings 1 percent per day from farming.minCropLoss up to farming.maxCropLoss, then back down. If false, always use farming.lossRate. Default true.",
                 true);
+        file.setComment(
+                "farming.changingSeasons",
+                "If true, crop loss swings 1 percent per day from farming.minCropLoss up to farming.maxCropLoss, then back down. If false, always use farming.lossRate. Default true.");
         writeDefaultIfMissing(
                 file, "farming.infertileDeserts", "Desert biomes add +50% crop death; trees/mushrooms will not grow.", true);
         writeDefaultIfMissing(file, "farming.snowBreaksCrops", "Snow-covered crops die on random tick.", true);

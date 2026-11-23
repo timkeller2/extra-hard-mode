@@ -218,7 +218,11 @@ public final class AntiFarming implements FeatureModule {
     public static double currentSeasonalLossRate(ServerLevel level) {
         WorldConfig config = ConfigManager.world(level);
         return CropGrowthRules.seasonalLossRate(
-                config.lossRate(), overworldDay(level), config.changingSeasons());
+                config.lossRate(),
+                overworldDay(level),
+                config.changingSeasons(),
+                config.minCropLoss(),
+                config.maxCropLoss());
     }
 
     public static int currentSeasonalDurationPercent(ServerLevel level, int baseDurationPercent) {

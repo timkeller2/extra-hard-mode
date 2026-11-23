@@ -24,6 +24,14 @@ class SpawnerLootRulesTest {
     }
 
     @Test
+    void unnaturalFloorSkipsTrialAndSpawnerMobs() {
+        assertFalse(SpawnerLootRules.unnaturalFloorBlocksLoot(true, false));
+        assertFalse(SpawnerLootRules.unnaturalFloorBlocksLoot(false, true));
+        assertFalse(SpawnerLootRules.unnaturalFloorBlocksLoot(true, true));
+        assertTrue(SpawnerLootRules.unnaturalFloorBlocksLoot(false, false));
+    }
+
+    @Test
     void eachSpawnerKeepsItsOwnKey() {
         String overworld = SpawnerLootRules.blockKey("minecraft:overworld", 10L);
         String nether = SpawnerLootRules.blockKey("minecraft:the_nether", 10L);

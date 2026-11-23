@@ -5,6 +5,7 @@
   "mixins": [
     "AbstractArrowMixin",
     "AbstractBoatMixin",
+    "AbstractCowMixin",
     "AttachedStemBlockMixin",
     "AbstractHorseMixin",
     "AbstractMountInventoryMenuMixin",
@@ -125,6 +126,7 @@
     "ThrownSplashPotionMixin",
     "TransportItemsBehaviorMixin",
     "TransportItemsMixin",
+    "TrialSpawnerMixin",
     "InhabitantTradeMixin",
     "JobSiteLossMixin",
     "MerchantResultSlotMixin",

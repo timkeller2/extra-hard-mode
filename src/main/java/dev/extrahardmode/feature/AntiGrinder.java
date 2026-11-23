@@ -33,7 +33,8 @@ import net.minecraft.world.level.pathfinder.Path;
 /**
  * Blocks grinder loot/XP: unnatural floors, environmental damage, no path to a
  * player, or standing in water. A monster spawner still drops for each player's
- * first configured kills from that spawner. Trial spawners are never touched.
+ * first configured kills from that spawner, and an unnatural floor does not
+ * veto those kills. Trial spawners are never touched. Natural mobs still are.
  */
 public final class AntiGrinder implements FeatureModule {
     public static final Identifier ID = ExtraHardModeMod.id("anti_grinder");
@@ -115,8 +116,10 @@ public final class AntiGrinder implements FeatureModule {
             if (reason == EntitySpawnReason.NATURAL) {
                 return false;
             }
-            mob.setAttached(EhmAttachments.EHM_UNNATURAL_SPAWN, true);
-            markLootless(mob);
+            if (SpawnerLootRules.unnaturalFloorBlocksLoot(isTrialSpawned(mob), hasSpawnerId(mob))) {
+                mob.setAttached(EhmAttachments.EHM_UNNATURAL_SPAWN, true);
+                markLootless(mob);
+            }
         }
         return true;
     }
@@ -128,10 +131,14 @@ public final class AntiGrinder implements FeatureModule {
         if (isTrialSpawned(entity) || !(entity instanceof Enemy) || isExempt(entity)) {
             return false;
         }
-        if (Boolean.TRUE.equals(entity.getAttachedOrElse(EhmAttachments.EHM_LOOTLESS, Boolean.FALSE))) {
+        boolean spawner = hasSpawnerId(entity);
+        boolean unnatural = Boolean.TRUE.equals(entity.getAttachedOrElse(EhmAttachments.EHM_UNNATURAL_SPAWN, Boolean.FALSE));
+        boolean lootless = Boolean.TRUE.equals(entity.getAttachedOrElse(EhmAttachments.EHM_LOOTLESS, Boolean.FALSE));
+        // The floor mark also sets lootless. A monster spawner's kill cap is the veto instead.
+        if (lootless && !(spawner && unnatural)) {
             return true;
         }
-        if (Boolean.TRUE.equals(entity.getAttachedOrElse(EhmAttachments.EHM_UNNATURAL_SPAWN, Boolean.FALSE))) {
+        if (SpawnerLootRules.unnaturalFloorBlocksLoot(false, spawner) && unnatural) {
             return true;
         }
         int gate = spawnerGate(entity, level);
@@ -294,7 +301,35 @@ public final class AntiGrinder implements FeatureModule {
     }
 
     public static void markTrialSpawned(LivingEntity entity) {
+        if (entity == null) {
+            return;
+        }
         entity.setAttached(EhmAttachments.EHM_TRIAL_SPAWNED, true);
+    }
+
+    /**
+     * Marks a trial-spawner mob and anything riding it.
+     * Cave spiders replace {@code finalizeSpawn} and never call the mob method, so the
+     * spawn-reason stamp there does not reach them.
+     */
+    public static void markTrialGroup(Entity entity) {
+        if (!(entity instanceof LivingEntity living)) {
+            return;
+        }
+        markTrialSpawned(living);
+        for (Entity passenger : entity.getPassengers()) {
+            if (passenger instanceof LivingEntity rider) {
+                markTrialSpawned(rider);
+            }
+        }
+    }
+
+    public static boolean hasSpawnerId(Entity entity) {
+        if (entity == null) {
+            return false;
+        }
+        String id = entity.getAttached(EhmAttachments.EHM_SPAWNER_ID);
+        return id != null && !id.isEmpty();
     }
 
     public static boolean isTrialSpawned(LivingEntity entity) {

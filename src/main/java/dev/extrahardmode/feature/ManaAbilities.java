@@ -1496,7 +1496,7 @@ public final class ManaAbilities implements FeatureModule {
 
     /**
      * Damage left after Amethyst Shield, before helmet, armor, and health.
-     * Amethyst, lapis, and whole mana pay for the points blocked. A short payment
+     * Amethyst, lapis, and whole minutes left pay for the points blocked. A short payment
      * blocks nothing and drops the shield. A paid hit that fits under the level
      * also skips harmful effects that arrive with that hit.
      */
@@ -1549,8 +1549,8 @@ public final class ManaAbilities implements FeatureModule {
                 absorbed,
                 InventorySearch.countMain(caster, Items.AMETHYST_SHARD),
                 InventorySearch.countMain(caster, Items.LAPIS_LAZULI),
-                Achievements.currentMana(caster));
-        if (payment == null || !payAmethystShield(caster, payment)) {
+                LapisShieldRules.durationMinutes(outgoingLapisTicks(caster)));
+        if (payment == null || !payAmethystShield(caster, victim, payment)) {
             releaseAmethystWard(victim);
             endLapisShieldOn(victim, LAPIS_BROKE);
             return damage;
@@ -1582,7 +1582,7 @@ public final class ManaAbilities implements FeatureModule {
     }
 
     /** Spends the planned fuels. Checks every kind before taking the first, so a short kind leaves the rest. */
-    static boolean payAmethystShield(ServerPlayer caster, LapisShieldRules.Payment payment) {
+    static boolean payAmethystShield(ServerPlayer caster, LivingEntity victim, LapisShieldRules.Payment payment) {
         if (caster == null || payment == null || payment.total() <= 0) {
             return false;
         }
@@ -1593,7 +1593,9 @@ public final class ManaAbilities implements FeatureModule {
         if (payment.lapis() > 0 && InventorySearch.countMain(caster, Items.LAPIS_LAZULI) < payment.lapis()) {
             return false;
         }
-        if (payment.mana() > 0 && LapisShieldRules.manaUnits(Achievements.currentMana(caster)) < payment.mana()) {
+        if (payment.minutes() > 0
+                && LapisShieldRules.durationUnits(LapisShieldRules.durationMinutes(outgoingLapisTicks(caster)))
+                        < payment.minutes()) {
             return false;
         }
         if (payment.amethyst() > 0
@@ -1603,11 +1605,38 @@ public final class ManaAbilities implements FeatureModule {
         if (payment.lapis() > 0 && !InventorySearch.consumeMain(caster, Items.LAPIS_LAZULI, payment.lapis())) {
             return false;
         }
-        if (payment.mana() > 0) {
-            caster.setAttached(
-                    EhmAttachments.EHM_MANA_CURRENT,
-                    Math.max(0.0, Achievements.currentMana(caster) - payment.mana()));
-            Achievements.sendMana(caster);
+        if (payment.minutes() > 0 && !shortenLapisShield(caster, victim, payment.minutes())) {
+            return false;
+        }
+        return true;
+    }
+
+    /** Takes whole minutes off the caster and the shielded character. No time left ends the shield. */
+    static boolean shortenLapisShield(ServerPlayer caster, LivingEntity victim, int minutes) {
+        if (caster == null || minutes <= 0) {
+            return false;
+        }
+        Long until = caster.getAttachedOrElse(EhmAttachments.EHM_LAPIS_SHIELD_UNTIL, -1L);
+        if (until == null || until < 0L) {
+            return false;
+        }
+        long next = until - LapisShieldRules.minuteTicks(minutes);
+        long now = abilityNow(caster);
+        if (ticksUntil(next, now) <= 0) {
+            if (victim != null) {
+                endLapisShieldOn(victim, LAPIS_EXPIRE);
+            } else {
+                endOutgoingLapisShield(caster, LAPIS_EXPIRE);
+            }
+            return true;
+        }
+        caster.setAttached(EhmAttachments.EHM_LAPIS_SHIELD_UNTIL, next);
+        if (victim != null) {
+            victim.setAttached(EhmAttachments.EHM_LAPIS_SHIELD_UNTIL, next);
+        }
+        sendAbilityDurations(caster);
+        if (victim instanceof ServerPlayer shielded && shielded != caster) {
+            sendAbilityDurations(shielded);
         }
         return true;
     }
@@ -1725,7 +1754,7 @@ public final class ManaAbilities implements FeatureModule {
         if (kind == LAPIS_BROKE) {
             player.sendSystemMessage(Component.translatableWithFallback(
                     "tougher.message.lapis_shield_broke",
-                    "Amethyst Shield ends. Not enough amethyst, lapis, or mana."));
+                    "Amethyst Shield ends. Not enough amethyst, lapis, or time."));
             return;
         }
         player.sendSystemMessage(Component.translatableWithFallback(

@@ -22,6 +22,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Container;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.gameevent.GameEvent;
@@ -34,6 +35,8 @@ import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.animal.bee.Bee;
 import net.minecraft.world.entity.animal.chicken.Chicken;
+import net.minecraft.world.entity.animal.cow.AbstractCow;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.animal.equine.AbstractHorse;
 import net.minecraft.world.entity.animal.feline.Cat;
 import net.minecraft.world.entity.animal.parrot.Parrot;
@@ -57,7 +60,7 @@ import org.joml.Vector3f;
  * Livestock eat a nearby grass block, turning it to dirt, the way a sheep does.
  * Sheep also keep their own grazing, which regrows wool. An animal that cannot
  * find a grass block may eat short grass from a reachable chest, then breeding
- * food, or starve.
+ * food, or starve. Milking a cow waits one day and adds one extra meal.
  */
 public final class Overgrazing implements FeatureModule {
     public static final Identifier ID = ExtraHardModeMod.id("overgrazing");
@@ -96,6 +99,7 @@ public final class Overgrazing implements FeatureModule {
             enroll(level, schedule, now);
             drain(level, schedule, now, config);
         }
+        drainMilkHunger(level, schedule, now, config);
     }
 
     private static void enroll(ServerLevel level, HerdSchedule schedule, long now) {
@@ -106,6 +110,7 @@ public final class Overgrazing implements FeatureModule {
             if (entity instanceof Animal animal && isLivestock(animal)) {
                 schedule.pending.add(new ScheduledCheck(
                         OvergrazingRules.nextCheckTick(now, animal.getId()), animal.getUUID()));
+                noteMilkHunger(schedule, animal, now);
             }
         }
         schedule.pending.sort(Comparator.comparingLong(ScheduledCheck::runAt));
@@ -127,6 +132,111 @@ public final class Overgrazing implements FeatureModule {
         private long enrolledAt = -1L;
         private final List<ScheduledCheck> pending = new ArrayList<>();
         private int cursor;
+        /** Extra-meal time for each cow milked while this dimension is loaded. */
+        private final Map<UUID, Long> milkHunger = new HashMap<>();
+    }
+
+    /**
+     * True when this bucket use on an adult cow must not give milk. The cooldown
+     * applies to every adult, including a named cow that does not overgraze.
+     */
+    public static boolean denyMilk(ServerLevel level, AbstractCow cow, Player player, InteractionHand hand) {
+        if (!milkRules(level) || cow.isBaby() || !holdingBucket(player, hand)) {
+            return false;
+        }
+        long readyAt = cow.getAttachedOrElse(EhmAttachments.EHM_MILK_READY_AT, 0L);
+        return CowMilkRules.onCooldown(level.getGameTime(), readyAt);
+    }
+
+    /** True when this use is a bucket on an adult cow and the milk may proceed. */
+    public static boolean milkAttempt(ServerLevel level, AbstractCow cow, Player player, InteractionHand hand) {
+        return milkRules(level) && !cow.isBaby() && holdingBucket(player, hand);
+    }
+
+    /**
+     * Starts the one-day cooldown. A cow the graze already feeds also gets one
+     * extra meal a few seconds later. That meal does not move the usual timer.
+     */
+    public static void afterMilk(ServerLevel level, AbstractCow cow) {
+        if (!milkRules(level) || cow.isBaby()) {
+            return;
+        }
+        long now = level.getGameTime();
+        cow.setAttached(EhmAttachments.EHM_MILK_READY_AT, CowMilkRules.nextReady(now));
+        if (!isLivestock(cow)) {
+            return;
+        }
+        long hungerAt = CowMilkRules.hungerAt(now, level.getRandom().nextInt());
+        cow.setAttached(EhmAttachments.EHM_MILK_HUNGER_AT, hungerAt);
+        HerdSchedule schedule = SCHEDULES.computeIfAbsent(level.dimension().identifier(), id -> new HerdSchedule());
+        schedule.milkHunger.put(cow.getUUID(), hungerAt);
+    }
+
+    private static boolean milkRules(ServerLevel level) {
+        return WorldGate.isModuleActive(level, ID) && ConfigManager.world(level).overgrazingEnable();
+    }
+
+    private static boolean holdingBucket(Player player, InteractionHand hand) {
+        return player.getItemInHand(hand).is(Items.BUCKET);
+    }
+
+    private static void noteMilkHunger(HerdSchedule schedule, Animal animal, long now) {
+        long hungerAt = animal.getAttachedOrElse(EhmAttachments.EHM_MILK_HUNGER_AT, 0L);
+        if (hungerAt <= 0L) {
+            return;
+        }
+        if (CowMilkRules.hungerStale(now, hungerAt)) {
+            animal.setAttached(EhmAttachments.EHM_MILK_HUNGER_AT, 0L);
+            schedule.milkHunger.remove(animal.getUUID());
+            return;
+        }
+        schedule.milkHunger.put(animal.getUUID(), hungerAt);
+    }
+
+    /**
+     * Extra meal after milking. It tries grass, then the same chest food, and
+     * stops. It does not roll the usual chest chance or the starve chance, and
+     * it does not write the usual bite time.
+     */
+    private static void drainMilkHunger(ServerLevel level, HerdSchedule schedule, long now, WorldConfig config) {
+        if (schedule.milkHunger.isEmpty()) {
+            return;
+        }
+        List<UUID> due = new ArrayList<>();
+        for (Map.Entry<UUID, Long> entry : schedule.milkHunger.entrySet()) {
+            if (CowMilkRules.hungerDue(now, entry.getValue())) {
+                due.add(entry.getKey());
+            }
+        }
+        for (UUID id : due) {
+            Long scheduled = schedule.milkHunger.get(id);
+            if (scheduled == null) {
+                continue;
+            }
+            if (!(level.getEntity(id) instanceof Animal animal)) {
+                if (CowMilkRules.hungerStale(now, scheduled)) {
+                    schedule.milkHunger.remove(id);
+                }
+                continue;
+            }
+            schedule.milkHunger.remove(id);
+            long stored = animal.getAttachedOrElse(EhmAttachments.EHM_MILK_HUNGER_AT, 0L);
+            animal.setAttached(EhmAttachments.EHM_MILK_HUNGER_AT, 0L);
+            if (stored <= 0L || CowMilkRules.hungerStale(now, stored) || !isLivestock(animal)) {
+                continue;
+            }
+            if (!level.shouldTickBlocksAt(animal.blockPosition())) {
+                continue;
+            }
+            eatBecauseMilked(level, animal, config);
+        }
+    }
+
+    private static void eatBecauseMilked(ServerLevel level, Animal animal, WorldConfig config) {
+        if (tryEatGrass(level, animal)) {
+            return;
+        }
+        tryEatBreedingFood(level, animal, config.overgrazingChestRange());
     }
 
     static void tickAnimal(ServerLevel level, Animal animal, WorldConfig config) {

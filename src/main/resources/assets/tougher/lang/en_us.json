@@ -343,7 +343,7 @@
   "tougher.message.battery_level": "Your mana has reached your level.",
   "tougher.message.lapis_shield_cancel": "You cancel Amethyst Shield.",
   "tougher.message.lapis_shield_end": "Amethyst Shield ends.",
-  "tougher.message.lapis_shield_broke": "Amethyst Shield ends. Not enough amethyst, lapis, or mana.",
+  "tougher.message.lapis_shield_broke": "Amethyst Shield ends. Not enough amethyst, lapis, or time.",
   "tougher.message.lapis_shield_busy": "That character already has an Amethyst Shield.",
   "tougher.message.tome_level": "You must be at least experience level 7.",
   "tougher.message.tome_empty": "That would save no experience.",

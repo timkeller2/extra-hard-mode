@@ -278,14 +278,18 @@ public final class CropGrowthRules {
     }
 
     public static final long TICKS_PER_DAY = 24000L;
-    /** Loss and growth swing 1 percentage point of the configured loss rate per Minecraft day. */
+    /** Loss and growth swing 1 percentage point per Minecraft day. */
     public static final double SEASON_STEP_PERCENT = 1.0;
-    /** Seasonal high end is this many times the configured base loss (25 → 75). */
+    /** Low end of the seasonal crop-loss cycle when the config does not say otherwise. */
+    public static final int DEFAULT_MIN_CROP_LOSS = 25;
+    /** High end of the seasonal crop-loss cycle when the config does not say otherwise. */
+    public static final int DEFAULT_MAX_CROP_LOSS = 75;
+    /** Older servers swing up to this many times the base loss. 25 becomes 75. */
     public static final int SEASON_MAX_MULTIPLIER = 3;
     /** Bees stay in hive while seasonal loss is strictly above this. */
     public static final double BEE_INACTIVE_LOSS_RATE = 60.0;
     /** Cows, sheep, and pigs drop 1 less meat while seasonal loss is strictly above this. */
-    public static final double LARGE_ANIMAL_MEAT_LOSS_RATE = 25.0;
+    public static final double LARGE_ANIMAL_MEAT_LOSS_RATE = 35.0;
     public static final int LARGE_ANIMAL_MEAT_REDUCE_MID = 1;
     public static final int LARGE_ANIMAL_MEAT_REDUCE_HARSH = 2;
     public static final int CHICKEN_MEAT_REDUCE_HARSH = 1;
@@ -299,19 +303,58 @@ public final class CropGrowthRules {
     }
 
     /**
-     * Seasonal crop-death percent. Starts at {@code normalLoss}, falls 1 per day to
-     * ½ normal (easier early game), then rises to {@link #SEASON_MAX_MULTIPLIER}×
-     * normal, then repeats between those bounds.
+     * Seasonal crop-death percent. Starts at {@link #DEFAULT_MIN_CROP_LOSS} and rises
+     * 1 per day to {@link #DEFAULT_MAX_CROP_LOSS}, then falls back, and repeats.
      */
     public static double seasonalLossRate(double normalLoss, long dayIndex) {
         return seasonalLossRate(normalLoss, dayIndex, true);
     }
 
     /**
-     * {@code changingSeasons} false always returns the base rate. True swings
-     * from half to {@link #SEASON_MAX_MULTIPLIER} times that rate.
+     * {@code changingSeasons} false always returns the base rate. True swings between
+     * the default minimum and maximum.
      */
     public static double seasonalLossRate(double normalLoss, long dayIndex, boolean changingSeasons) {
+        return seasonalLossRate(
+                normalLoss, dayIndex, changingSeasons, DEFAULT_MIN_CROP_LOSS, DEFAULT_MAX_CROP_LOSS);
+    }
+
+    /**
+     * {@code changingSeasons} false always returns the base rate. True rises 1 per day
+     * from {@code minCropLoss} to {@code maxCropLoss}, then falls back, and repeats.
+     * Ends outside 0–100 are clamped. A minimum above the maximum swaps the ends.
+     */
+    public static double seasonalLossRate(
+            double normalLoss, long dayIndex, boolean changingSeasons, int minCropLoss, int maxCropLoss) {
+        double normal = Math.max(0.0, normalLoss);
+        if (!changingSeasons) {
+            return Math.min(100.0, normal);
+        }
+        int min = clampLossChance(minCropLoss);
+        int max = clampLossChance(maxCropLoss);
+        if (min > max) {
+            int swap = min;
+            min = max;
+            max = swap;
+        }
+        long day = Math.max(0L, dayIndex);
+        long swing = (long) max - min;
+        if (swing <= 0L) {
+            return min;
+        }
+        long period = swing * 2L;
+        long pos = day % period;
+        if (pos <= swing) {
+            return min + pos;
+        }
+        return max - (pos - swing);
+    }
+
+    /**
+     * Crop-loss cycle used by servers that still derive the ends from the base rate:
+     * start at that rate, fall to half, rise to {@link #SEASON_MAX_MULTIPLIER} times it.
+     */
+    public static double legacySeasonalLossRate(double normalLoss, long dayIndex, boolean changingSeasons) {
         double normal = Math.max(0.0, normalLoss);
         if (!changingSeasons) {
             return Math.min(100.0, normal);
@@ -347,8 +390,13 @@ public final class CropGrowthRules {
      * Crop duration scaled so its ratio to the configured duration matches
      * seasonal loss / normal loss. Higher duration is slower growth.
      */
-    public static int seasonalDurationPercent(int baseDurationPercent, double normalLoss, long dayIndex) {
-        return durationPercent(baseDurationPercent, normalLoss, seasonalLossRate(normalLoss, dayIndex), 0);
+    public static int seasonalDurationPercent(
+            int baseDurationPercent, double normalLoss, long dayIndex, int minCropLoss, int maxCropLoss) {
+        return durationPercent(
+                baseDurationPercent,
+                normalLoss,
+                seasonalLossRate(normalLoss, dayIndex, true, minCropLoss, maxCropLoss),
+                0);
     }
 
     /**
