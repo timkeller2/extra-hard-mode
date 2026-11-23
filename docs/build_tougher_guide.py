@@ -166,6 +166,8 @@ def build():
             "Swimming drains saturation twice as fast, and sprint-swimming four times as fast. Hunger follows once saturation is gone. "
             "A yellow outline on the hunger icons shows your saturation, including the extra icons from Well Fed. "
             "Each point of weight over your limit raises saturation loss by 2%. "
+            "Worn armor is 2 each, a tool is 0.5, and a full stack is 1. "
+            "Heavy weapons and armor weigh 50% more. Leather armor weighs half. Chainmail weighs 75%. "
             "A food you have not eaten in your last 7 meals gives +1 hunger, or +1 saturation if the bar is already full. "
             "Seven different foods in the last 7 meals gives another +1 hunger, +1 saturation, and 3 experience, "
             "and it can happen again on later meals that keep that streak. "
@@ -349,7 +351,7 @@ def build():
         Paragraph(
             "Heavy swords and axes of copper, iron, gold, and diamond use the same recipe as the normal weapon, "
             "with blocks in place of ingots. They last three times as long and deal 2 more damage. "
-            "Heavy swords swing 10% slower than a normal sword. "
+            "Heavy swords and axes swing 10% slower than the normal weapon. "
             "Repair them with those blocks. Smith the heavy diamond sword or axe with a netherite upgrade template "
             "and a netherite ingot. That ingot repairs the netherite weapon. "
             "A heavy golden sword casts Smite Evil, the same as a golden sword. "
@@ -360,7 +362,7 @@ def build():
         Paragraph("Enchanting", s["h"]),
         Paragraph(
             "At an enchantment table, you can only take a requirement level at or below your enchanting skill. "
-            "The skill starts at 3. Taking a requirement within 3 of that skill raises it by 1. "
+            "The skill starts at 3. Taking a requirement within 3 of that skill rolls a d40. A roll lower than your skill does not raise it. "
             "The survival inventory shows that skill above Well Fed, on an enchantment table, in the same small numbers. "
             "modules.tougher.enchanting starts on. /tougher set enchanting false turns off the table limit and that icon. "
             "Anvils and villager books do not use this skill.",
@@ -375,7 +377,7 @@ def build():
             "A quartz block double-right-clicked in the air casts Battery. It costs no mana. "
             "Battery lasts 2 minutes per ability level, at least 2 minutes, and multiplies mana regeneration by 1 plus the square root of its level. It renews until your mana reaches your mana level. "
             "Past your level, regeneration is one-quarter speed. "
-            "Crystals you will gain in about ten minutes show faintly, the same way they will look. That grows when you are well fed or Battery is on, and shrinks once you are past your mana level. "
+            "Crystals fill in eighths. Crystals you will gain in about ten minutes show those eighths faintly. That grows when you are well fed or Battery is on, and shrinks once you are past your mana level. "
             "The old ceiling of 40 mana rises when Well Fed or ready gold pushes your level past 40. "
             "Achievements can raise the permanent mana level. Well Fed adds one level for every three Well Fed levels, and those extra levels leave when Well Fed drops. "
             "Ready gold adds mana levels too, and those leave when the gold comes off.",
@@ -511,7 +513,7 @@ def build():
                 "The bottom row is the wallet. He spends those emeralds from the right. Bought items land on the bottom row first, then on the row above, past the sample. Eight emeralds and then 16 wheat, above that wallet, means he buys 16 wheat for 8 emeralds.",
                 "He keeps buying while the wallet can pay and those rows have room. There is no other limit. A trade from another player's chest gives no experience to you or to the resident.",
                 "A jeweler sells a diamond for 8 emeralds, 4 gold ingots for 4, an iron block for 6, and a copper or redstone block for 2. Larger shops add lapis, amethyst, quartz, gold nuggets, ingots, and blocks of gold, lapis, amethyst, quartz, and diamond. A gold block is 6 emeralds and a diamond block is 32.",
-                "An armorsmith sells one heavy iron piece each restock. Which piece can change. The other sales are enchanted iron armor, each a different slot. A larger shop may buy iron. Heavy iron costs 6, 8, 11, or 12 emeralds for boots, a helmet, leggings, or a chestplate. Heavy diamond costs 24, 30, 42, or 48. Enchanted iron costs 3 emeralds for boots, 4 for a helmet, and 6 for leggings or a chestplate. Enchanted diamond matches heavy iron. A master armorsmith sells diamond the same way, and a larger shop may buy diamonds.",
+                "An armorsmith's usual shop is 2 trades, half of other residents. Heavy iron and enchanted iron are drawn from one list, so a restock may have no heavy piece. A larger shop may add more of those pieces or buy iron. Enchanted iron starts at power 10, plus every item already bought from that armorsmith by anyone. Enchanted diamond starts at 15 plus that count. The next restock uses the new power. Heavy iron costs 6, 8, 11, or 12 emeralds for boots, a helmet, leggings, or a chestplate. Heavy diamond costs 24, 30, 42, or 48. Enchanted iron costs 3 emeralds for boots, 4 for a helmet, and 6 for leggings or a chestplate. Enchanted diamond matches heavy iron. A master armorsmith sells diamond the same way, and a larger shop may buy diamonds.",
                 "Each armor piece also costs half the materials used to craft it, rounded up. Boots take 2, a helmet takes 3, and leggings or a chestplate take 4. Heavy iron and heavy diamond take blocks of that metal. Enchanted iron takes ingots, and enchanted diamond takes diamonds. A heavy diamond boots trade asks for 2 diamond blocks besides the emeralds. A heavy iron helmet asks for 3 iron blocks. An iron helmet asks for 3 iron ingots.",
                 "A brewer sells one level 2 potion each restock. Which potion can change. Up to three other potions cost 1 emerald. A larger shop sells one of each brewing ingredient for 1 emerald, such as nether wart, blaze powder, glowstone, and ghast tears.",
                 "A loot collector pays 1 emerald for 4 spider eyes, 4 gunpowder, or 8 bones. A larger shop also pays 1 emerald for 8 rotten flesh, 8 string, 4 slimeballs, 6 leather, 12 arrows, 6 ink sacs, 2 phantom membranes, 2 ender pearls, 2 blaze rods, or 1 ghast tear. He also sells one other of those drops, chosen at random. Half that stack, rounded up, costs 1 emerald.",

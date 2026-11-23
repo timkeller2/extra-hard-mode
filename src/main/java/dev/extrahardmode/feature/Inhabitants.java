@@ -1172,7 +1172,8 @@ public final class Inhabitants implements FeatureModule {
             double score) {
         MerchantOffers offers = villager.getOffers();
         offers.clear();
-        offers.addAll(offersFor(specialty, amenities, blight, random, score, villager.level().registryAccess()));
+        offers.addAll(offersFor(
+                specialty, amenities, blight, random, score, soldItems(villager), villager.level().registryAccess()));
     }
 
     static List<MerchantOffer> offersFor(
@@ -1181,13 +1182,14 @@ public final class Inhabitants implements FeatureModule {
             boolean blight,
             RandomSource random,
             double score,
+            int itemsSold,
             RegistryAccess registries) {
         int storage = amenities == null ? 0 : amenities.storage();
         RandomSource rng = random == null ? RandomSource.create(0L) : random;
         java.util.Random listingRng = new java.util.Random(rng.nextLong());
         List<MerchantOffer> offers = new ArrayList<>();
-        for (InhabitantRules.TradeListing listing :
-                InhabitantRules.scaledListings(specialty, score, storage, blight, listingRng)) {
+        for (InhabitantRules.TradeListing listing : InhabitantRules.scaledListings(
+                specialty, score, storage, blight, listingRng, itemsSold)) {
             MerchantOffer offer = offerFrom(listing, rng, registries);
             if (offer != null) {
                 offers.add(offer);
@@ -1957,7 +1959,32 @@ public final class Inhabitants implements FeatureModule {
         }
         if (traded != null) {
             adjustTraderBuys(villager, traded);
+            recordSoldItems(villager, traded);
         }
+    }
+
+    /** Armor bought from an armorsmith, by any player. The next restock adds this to enchant power. */
+    static void recordSoldItems(Villager villager, MerchantOffer traded) {
+        if (!(villager.level() instanceof ServerLevel level)) {
+            return;
+        }
+        InhabitantData.Home home = InhabitantData.of(level).byLiving(villager.getUUID());
+        if (home == null) {
+            return;
+        }
+        String specialty = home.specialty();
+        if (!InhabitantRules.ARMORSMITH.equals(specialty) && !InhabitantRules.MASTER_ARMORSMITH.equals(specialty)) {
+            return;
+        }
+        int bought = InhabitantRules.itemsBoughtFromResident(
+                traded.getBaseCostA().is(Items.EMERALD),
+                traded.getResult().is(Items.EMERALD),
+                traded.getResult().getCount());
+        if (bought <= 0) {
+            return;
+        }
+        villager.setAttached(
+                EhmAttachments.EHM_RESIDENT_SOLD_ITEMS, InhabitantRules.addSoldItems(soldItems(villager), bought));
     }
 
     /**
@@ -2040,6 +2067,13 @@ public final class Inhabitants implements FeatureModule {
                 villager.getVillagerXp(),
                 villager.showProgressBar(),
                 villager.canRestock());
+    }
+
+    static int soldItems(Villager villager) {
+        if (villager == null) {
+            return 0;
+        }
+        return Math.max(0, villager.getAttachedOrElse(EhmAttachments.EHM_RESIDENT_SOLD_ITEMS, 0));
     }
 
     static int tradeXp(Villager villager) {

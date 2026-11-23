@@ -144,7 +144,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("51% loss and"));
         assertTrue(String.join(" ", lines).contains("Let it grow never causes that death"));
         assertTrue(String.join(" ", lines).contains("three times"));
-        assertTrue(String.join(" ", lines).contains("Heavy swords swing 10% slower"));
+        assertTrue(String.join(" ", lines).contains("Heavy swords and axes swing 10% slower"));
         assertTrue(String.join(" ", lines).contains("above 60%"));
         assertTrue(String.join(" ", lines).contains("bees stay"));
         assertTrue(String.join(" ", lines).contains("1 less meat"));
@@ -418,6 +418,10 @@ class EhmHelpTest {
         assertTrue(all.contains("An unfinished hunt ends after 14 Minecraft days"));
         assertTrue(all.contains("each player has his own"));
         assertTrue(all.contains("master armorsmith"));
+        assertTrue(all.contains("usual shop is 2 trades"));
+        assertTrue(all.contains("share one list"));
+        assertTrue(all.contains("starts at power 10"));
+        assertTrue(all.contains("starts at 15 plus that count"));
         assertTrue(all.contains("Heavy diamond costs 24, 30, 42, or 48"));
         assertTrue(all.contains("half its crafting materials, rounded up"));
         assertTrue(all.contains("Heavy iron and heavy diamond take blocks"));
@@ -554,7 +558,7 @@ class EhmHelpTest {
         assertTrue(farmText.contains("bone meal"));
         assertFalse(farmText.contains("Stone and deepslate"));
         assertTrue(farming.lines().size() < 44);
-        assertTrue(String.join(" ", EhmHelp.resolve("mana").lines()).contains("the way they will look"));
+        assertTrue(String.join(" ", EhmHelp.resolve("mana").lines()).contains("Crystals fill in eighths"));
         String combatText = String.join(" ", EhmHelp.resolve("combat").lines());
         assertTrue(combatText.contains("first 8 kills from one monster spawner"));
         assertTrue(combatText.contains("Each player has their own 8"));
@@ -576,6 +580,8 @@ class EhmHelpTest {
         assertTrue(enchantText.contains("requirement level at or below your enchanting skill"));
         assertTrue(enchantText.contains("starts at 3"));
         assertTrue(enchantText.contains("within 3 of that skill"));
+        assertTrue(enchantText.contains("rolls a d40"));
+        assertTrue(enchantText.contains("lower than your skill"));
         assertTrue(enchantText.contains("Anvils and villager books do not"));
         assertTrue(enchantText.contains("enchantment table above Well Fed"));
         assertTrue(enchantText.contains("modules.tougher.enchanting starts on"));
@@ -619,6 +625,9 @@ class EhmHelpTest {
         assertTrue(buildingText.contains("5 minutes"));
         assertTrue(buildingText.contains("75 minutes"));
         assertTrue(String.join(" ", EhmHelp.resolve("hunger").lines()).contains("raises saturation loss by 2%"));
+        assertTrue(String.join(" ", EhmHelp.resolve("hunger").lines()).contains("Heavy weapons and armor weigh 50% more"));
+        assertTrue(String.join(" ", EhmHelp.resolve("hunger").lines()).contains("Leather armor weighs half"));
+        assertTrue(String.join(" ", EhmHelp.resolve("hunger").lines()).contains("Chainmail weighs 75%"));
         assertTrue(String.join(" ", EhmHelp.resolve("hunger").lines()).contains("yellow outline"));
         assertTrue(String.join(" ", EhmHelp.resolve("weapons").lines()).contains("fishing rod"));
         String portalText = String.join(" ", EhmHelp.resolve("portals").lines());

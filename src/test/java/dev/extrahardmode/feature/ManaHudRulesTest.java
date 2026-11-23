@@ -52,14 +52,28 @@ class ManaHudRulesTest {
     }
 
     @Test
-    void fillIsFullHalfOrEmptyLikeHearts() {
-        assertEquals(ManaHudRules.Fill.FULL, ManaHudRules.fill(0, 3.2F));
-        assertEquals(ManaHudRules.Fill.HALF, ManaHudRules.fill(1, 3.2F));
-        assertEquals(ManaHudRules.Fill.EMPTY, ManaHudRules.fill(2, 3.2F));
-        assertEquals(ManaHudRules.Fill.EMPTY, ManaHudRules.fill(0, 0.0F));
-        assertEquals(ManaHudRules.Fill.EMPTY, ManaHudRules.fill(0, 0.5F));
-        assertEquals(ManaHudRules.Fill.HALF, ManaHudRules.fill(0, 1.0F));
-        assertEquals(ManaHudRules.Fill.FULL, ManaHudRules.fill(0, 2.0F));
+    void fillIsEightStepsOfAQuarterMana() {
+        assertEquals(8, ManaHudRules.EIGHTHS);
+        assertEquals(8, ManaHudRules.eighths(0, 3.2F));
+        assertEquals(4, ManaHudRules.eighths(1, 3.2F));
+        assertEquals(0, ManaHudRules.eighths(2, 3.2F));
+        assertEquals(0, ManaHudRules.eighths(0, 0.0F));
+        assertEquals(0, ManaHudRules.eighths(0, 0.24F));
+        assertEquals(1, ManaHudRules.eighths(0, 0.25F));
+        assertEquals(2, ManaHudRules.eighths(0, 0.5F));
+        assertEquals(4, ManaHudRules.eighths(0, 1.0F));
+        assertEquals(7, ManaHudRules.eighths(0, 1.75F));
+        assertEquals(8, ManaHudRules.eighths(0, 2.0F));
+        assertEquals(0, ManaHudRules.eighths(-1, 2.0F));
+        assertEquals(0, ManaHudRules.eighthHeight(0));
+        assertEquals(1, ManaHudRules.eighthHeight(1));
+        assertEquals(2, ManaHudRules.eighthHeight(2));
+        assertEquals(3, ManaHudRules.eighthHeight(3));
+        assertEquals(5, ManaHudRules.eighthHeight(4));
+        assertEquals(6, ManaHudRules.eighthHeight(5));
+        assertEquals(7, ManaHudRules.eighthHeight(6));
+        assertEquals(8, ManaHudRules.eighthHeight(7));
+        assertEquals(ManaHudRules.CRYSTAL_SIZE, ManaHudRules.eighthHeight(8));
     }
 
     @Test
@@ -96,19 +110,20 @@ class ManaHudRulesTest {
     }
 
     @Test
-    void previewUsesTheSameHalfAndFullCrystals() {
-        assertEquals(null, ManaHudRules.previewFill(0, 4.0, 4.0));
-        assertEquals(null, ManaHudRules.previewFill(0, 0.4, 0.9));
-        assertEquals(ManaHudRules.Fill.HALF, ManaHudRules.previewFill(0, 0.4, 1.2));
-        assertEquals(ManaHudRules.Fill.FULL, ManaHudRules.previewFill(0, 0.0, 2.0));
-        assertEquals(null, ManaHudRules.previewFill(0, 2.0, 2.4));
-        assertEquals(null, ManaHudRules.previewFill(1, 2.0, 2.4));
-        assertEquals(ManaHudRules.Fill.FULL, ManaHudRules.previewFill(0, 1.2, 3.2));
-        assertEquals(ManaHudRules.Fill.HALF, ManaHudRules.previewFill(1, 1.2, 3.2));
-        assertEquals(null, ManaHudRules.previewFill(0, 3.2, 5.0));
-        assertEquals(ManaHudRules.Fill.FULL, ManaHudRules.previewFill(1, 3.2, 5.0));
-        assertEquals(ManaHudRules.Fill.HALF, ManaHudRules.previewFill(2, 3.2, 5.0));
-        assertEquals(null, ManaHudRules.previewFill(-1, 0.0, 2.0));
+    void previewUsesTheLaterEighth() {
+        assertEquals(null, ManaHudRules.previewEighths(0, 4.0, 4.0));
+        assertEquals(3, ManaHudRules.previewEighths(0, 0.4, 0.9));
+        assertEquals(null, ManaHudRules.previewEighths(0, 0.4, 0.49));
+        assertEquals(4, ManaHudRules.previewEighths(0, 0.4, 1.2));
+        assertEquals(8, ManaHudRules.previewEighths(0, 0.0, 2.0));
+        assertEquals(null, ManaHudRules.previewEighths(0, 2.0, 2.4));
+        assertEquals(1, ManaHudRules.previewEighths(1, 2.0, 2.4));
+        assertEquals(8, ManaHudRules.previewEighths(0, 1.2, 3.2));
+        assertEquals(4, ManaHudRules.previewEighths(1, 1.2, 3.2));
+        assertEquals(null, ManaHudRules.previewEighths(0, 3.2, 5.0));
+        assertEquals(8, ManaHudRules.previewEighths(1, 3.2, 5.0));
+        assertEquals(4, ManaHudRules.previewEighths(2, 3.2, 5.0));
+        assertEquals(null, ManaHudRules.previewEighths(-1, 0.0, 2.0));
         assertEquals(3, ManaHudRules.drawnCrystalCount(4, 4.0, 4.4));
         assertEquals(5, ManaHudRules.drawnCrystalCount(10, 0.0, 0.5));
     }

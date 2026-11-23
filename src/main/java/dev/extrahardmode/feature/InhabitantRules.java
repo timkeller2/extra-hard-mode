@@ -66,6 +66,8 @@ public final class InhabitantRules {
     public static final int DEFAULT_TRADE_USES = 3;
     /** Usual shop size. A longer catalog keeps this many and treats the rest as extras. */
     public static final int USUAL_TRADE_TYPES = 4;
+    /** Usual armorsmith shop. Half of {@link #USUAL_TRADE_TYPES}. Heavy and enchanted pieces share the list. */
+    public static final int ARMOR_USUAL_OFFERS = USUAL_TRADE_TYPES / 2;
     /** Hauler buy stack with no storage. Each storage block takes {@link #HAULER_PER_STORAGE} off, down to {@link #HAULER_STACK_MIN}. */
     public static final int HAULER_STACK = 32;
     public static final int HAULER_STACK_MIN = 16;
@@ -123,10 +125,10 @@ public final class InhabitantRules {
     public static final int ENCHANTED_IRON_HELMET_EMERALDS = 4;
     public static final int ENCHANTED_IRON_LEGGINGS_EMERALDS = 6;
     public static final int ENCHANTED_IRON_CHESTPLATE_EMERALDS = 6;
-    /** Enchanting-table power applied to an armorsmith's iron armor. */
-    public static final int ARMOR_ENCHANT_LEVEL = 20;
-    /** Enchanting-table power applied to a master armorsmith's diamond armor. */
-    public static final int MASTER_ARMOR_ENCHANT_LEVEL = 30;
+    /** Enchanting-table power for an armorsmith before any armor has been bought from him. */
+    public static final int ARMOR_ENCHANT_LEVEL = 10;
+    /** Enchanting-table power for a master armorsmith before any armor has been bought from him. */
+    public static final int MASTER_ARMOR_ENCHANT_LEVEL = 15;
     /** Iron ingots an armorsmith buys for one emerald. */
     public static final int ARMOR_IRON_BUY_COUNT = 4;
     /** Diamonds a master armorsmith buys for one emerald. */
@@ -938,10 +940,11 @@ public final class InhabitantRules {
                 "Shops: A jeweler sells a diamond for 8 emeralds, 4 gold ingots for 4, an iron block for 6, and a copper or redstone block for 2.",
                 "Shops: Larger jewelers also sell lapis, amethyst, quartz, gold nuggets, and blocks of gold, lapis, amethyst, quartz, and diamond.",
                 "Shops: A gold block is 6 emeralds and a diamond block is 32.",
-                "Shops: An armorsmith sells one heavy iron piece each restock, and the piece can change. Other sales are enchanted iron armor, each a different slot.",
-                "Shops: A larger iron shop may buy iron. A master armorsmith sells one heavy diamond piece the same way, plus enchanted diamond armor, and may buy diamonds.",
+                "Shops: An armorsmith's usual shop is 2 trades, half of other residents. Heavy iron and enchanted iron share one list, so a heavy piece may be missing.",
+                "Shops: A larger shop may add more of those pieces or buy iron. A master armorsmith sells heavy and enchanted diamond the same way, and may buy diamonds.",
                 "Shops: Heavy iron costs 6, 8, 11, or 12 emeralds for boots, a helmet, leggings, or a chestplate. Heavy diamond costs 24, 30, 42, or 48.",
                 "Shops: Enchanted iron costs 3 emeralds for boots, 4 for a helmet, and 6 for leggings or a chestplate. Enchanted diamond matches heavy iron.",
+                "Shops: Enchanted iron starts at power 10, plus items already bought from him by anyone. A master armorsmith starts at 15 plus that count. The next restock uses it.",
                 "Shops: Each piece also costs half its crafting materials, rounded up. Boots take 2, a helmet 3, and leggings or a chestplate 4.",
                 "Shops: Heavy iron and heavy diamond take blocks of that metal. Enchanted iron takes ingots, and enchanted diamond takes diamonds.",
                 "Shops: A brewer sells one level 2 potion each restock, and that potion can change. Up to 3 other potions cost 1 emerald.",
@@ -1894,8 +1897,40 @@ public final class InhabitantRules {
         };
     }
 
+    /** Power before any pieces have been bought from this smith. */
     public static int armorEnchantLevel(boolean master) {
-        return master ? MASTER_ARMOR_ENCHANT_LEVEL : ARMOR_ENCHANT_LEVEL;
+        return armorEnchantLevel(master, 0);
+    }
+
+    /**
+     * Armorsmith power is 10 plus items already bought from him. A master armorsmith is 15 plus that count.
+     * Buys of iron or diamonds do not count. The count is shared by every player.
+     */
+    public static int armorEnchantLevel(boolean master, int purchased) {
+        int base = master ? MASTER_ARMOR_ENCHANT_LEVEL : ARMOR_ENCHANT_LEVEL;
+        int sold = Math.max(0, purchased);
+        if (base >= Integer.MAX_VALUE || sold > Integer.MAX_VALUE - base) {
+            return Integer.MAX_VALUE;
+        }
+        return base + sold;
+    }
+
+    /** Items the player receives when this trade is a purchase. A sale to the resident is 0. */
+    public static int itemsBoughtFromResident(boolean paidEmeralds, boolean resultEmeralds, int resultCount) {
+        if (!paidEmeralds || resultEmeralds || resultCount <= 0) {
+            return 0;
+        }
+        return resultCount;
+    }
+
+    /** Running total of items bought from one resident, shared by every player. */
+    public static int addSoldItems(int sold, int bought) {
+        int have = Math.max(0, sold);
+        int add = Math.max(0, bought);
+        if (add > Integer.MAX_VALUE - have) {
+            return Integer.MAX_VALUE;
+        }
+        return have + add;
     }
 
     /** Unique listings from {@link #WEALTHY_POOL}; {@code seed} picks the usual shop. */
@@ -2169,8 +2204,9 @@ public final class InhabitantRules {
      * House-score shop: type count and per-listing uses roll from half the top
      * percent up to that top. The top is 50% at 14 points and 175% at 38.
      * Extra types beyond the usual shop are random leftover listings.
-     * An armorsmith keeps one rolled heavy piece, then enchanted armor of that metal.
-     * A larger roll may add another piece or a buy of iron or diamonds. Generic goods are not added.
+     * An armorsmith draws {@link #ARMOR_USUAL_OFFERS} pieces from heavy and enchanted armor together.
+     * Enchanted pieces use {@link #armorEnchantLevel(boolean, int)} for items already bought from him.
+     * A larger roll may add more of those pieces or a buy of iron or diamonds. Generic goods are not added.
      * A brewer keeps one rolled level 2 potion, then up to three other potions.
      * A larger roll may add brewing ingredients. Generic goods are not added.
      * A loot collector also sells one drop he is not already buying. The stack is half
@@ -2181,6 +2217,14 @@ public final class InhabitantRules {
      */
     public static List<TradeListing> scaledListings(
             String specialty, double score, int storage, boolean blight, Random random) {
+        return scaledListings(specialty, score, storage, blight, random, 0);
+    }
+
+    /**
+     * {@code itemsSold} is the armor already bought from this smith. Other jobs ignore it.
+     */
+    public static List<TradeListing> scaledListings(
+            String specialty, double score, int storage, boolean blight, Random random, int itemsSold) {
         Random rng = random == null ? new Random(0L) : random;
         String type = specialty == null || specialty.isEmpty() ? TRADER : specialty;
         if (WISE_TEACHER.equals(type) || OLD_MINER.equals(type) || CARTOGRAPHER.equals(type)) {
@@ -2208,14 +2252,12 @@ public final class InhabitantRules {
             extras.addAll(farmSideListings(blight));
         } else if (ARMORSMITH.equals(type) || MASTER_ARMORSMITH.equals(type)) {
             boolean master = MASTER_ARMORSMITH.equals(type);
-            List<TradeListing> heavy = new ArrayList<>(armorListings(master));
-            Collections.shuffle(heavy, rng);
-            List<TradeListing> enchanted = new ArrayList<>(enchantedArmorListings(master));
-            Collections.shuffle(enchanted, rng);
-            defaults = new ArrayList<>();
-            defaults.add(heavy.getFirst());
-            defaults.addAll(enchanted);
-            extras = new ArrayList<>(extraListings(type, storage, blight));
+            List<TradeListing> pieces = armorPieceListings(master, itemsSold);
+            Collections.shuffle(pieces, rng);
+            int usual = Math.min(ARMOR_USUAL_OFFERS, pieces.size());
+            defaults = new ArrayList<>(pieces.subList(0, usual));
+            extras = new ArrayList<>(pieces.subList(usual, pieces.size()));
+            extras.addAll(extraListings(type, storage, blight));
             addGeneric = false;
         } else if (BREWER.equals(type)) {
             List<BrewPotion> levelTwo = new ArrayList<>(BREWER_LEVEL_TWO);
@@ -2352,7 +2394,7 @@ public final class InhabitantRules {
 
     /**
      * Keeps the front of {@code defaults}, at most {@link #USUAL_TRADE_TYPES}.
-     * The rest join {@code extras}. A heavy piece or level 2 potion stays when it was placed first.
+     * The rest join {@code extras}. A level 2 potion stays when it was placed first.
      */
     static void retainUsualKinds(List<TradeListing> defaults, List<TradeListing> extras, Random rng) {
         if (defaults.size() <= USUAL_TRADE_TYPES) {
@@ -2395,7 +2437,7 @@ public final class InhabitantRules {
                 buyOf("minecraft:apple", 8, 3));
     }
 
-    /** One heavy piece of each slot. A restock keeps a single rolled piece from this list. */
+    /** One heavy piece of each slot. A restock draws these with the enchanted pieces. */
     static List<TradeListing> armorListings(boolean master) {
         String prefix = master ? "tougher:heavy_diamond_" : "tougher:heavy_iron_";
         List<TradeListing> listings = new ArrayList<>();
@@ -2406,9 +2448,9 @@ public final class InhabitantRules {
     }
 
     /** Enchanted vanilla armor, one listing per slot, of the metal this smith works. */
-    static List<TradeListing> enchantedArmorListings(boolean master) {
+    static List<TradeListing> enchantedArmorListings(boolean master, int purchased) {
         String prefix = master ? "minecraft:diamond_" : "minecraft:iron_";
-        int level = armorEnchantLevel(master);
+        int level = armorEnchantLevel(master, purchased);
         List<TradeListing> listings = new ArrayList<>();
         for (String slot : ARMOR_SLOTS) {
             listings.add(sellEnchantedOf(
@@ -2417,15 +2459,21 @@ public final class InhabitantRules {
         return List.copyOf(listings);
     }
 
+    /** Heavy pieces and enchanted pieces of this metal, in that order. */
+    static List<TradeListing> armorPieceListings(boolean master, int purchased) {
+        List<TradeListing> pieces = new ArrayList<>();
+        pieces.addAll(armorListings(master));
+        pieces.addAll(enchantedArmorListings(master, purchased));
+        return pieces;
+    }
+
     /**
-     * One heavy piece plus enchanted armor of every slot. Boots stand in for the heavy piece.
-     * The live shop keeps {@link #USUAL_TRADE_TYPES}, with that heavy piece first.
+     * First {@link #ARMOR_USUAL_OFFERS} pieces of {@link #armorPieceListings}.
+     * The live shop draws that many at random from the whole list.
      */
     static List<TradeListing> armorUsualListings(boolean master) {
-        List<TradeListing> listings = new ArrayList<>();
-        listings.add(armorListings(master).getFirst());
-        listings.addAll(enchantedArmorListings(master));
-        return List.copyOf(listings);
+        List<TradeListing> pieces = armorPieceListings(master, 0);
+        return List.copyOf(pieces.subList(0, Math.min(ARMOR_USUAL_OFFERS, pieces.size())));
     }
 
     static TradeListing armorMetalBuy(boolean master) {

@@ -25,6 +25,7 @@
   "tougher.command.me.enchanting": "Enchanting skill: %s. The table only takes a requirement at or below this.",
   "tougher.message.enchant_requirement": "That enchantment requires level %s. Your enchanting skill is %s.",
   "tougher.message.enchant_skill": "Your enchanting skill is now %s.",
+  "tougher.message.enchant_skill_stay": "A roll of %s leaves your enchanting skill at %s.",
   "tougher.command.version": "Tougher %s (Minecraft %s, Fabric Loader %s)",
   "tougher.command.enabled.true": "Tougher is on in %s",
   "tougher.command.enabled.false": "Tougher is off in %s",

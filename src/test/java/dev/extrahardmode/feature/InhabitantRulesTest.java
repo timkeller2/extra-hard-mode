@@ -693,8 +693,19 @@ class InhabitantRulesTest {
         assertEquals(8, InhabitantRules.enchantedArmorEmeralds(true, "helmet"));
         assertEquals(11, InhabitantRules.enchantedArmorEmeralds(true, "leggings"));
         assertEquals(12, InhabitantRules.enchantedArmorEmeralds(true, "chestplate"));
-        assertEquals(20, InhabitantRules.armorEnchantLevel(false));
-        assertEquals(30, InhabitantRules.armorEnchantLevel(true));
+        assertEquals(10, InhabitantRules.ARMOR_ENCHANT_LEVEL);
+        assertEquals(15, InhabitantRules.MASTER_ARMOR_ENCHANT_LEVEL);
+        assertEquals(10, InhabitantRules.armorEnchantLevel(false));
+        assertEquals(15, InhabitantRules.armorEnchantLevel(true));
+        assertEquals(14, InhabitantRules.armorEnchantLevel(false, 4));
+        assertEquals(19, InhabitantRules.armorEnchantLevel(true, 4));
+        assertEquals(10, InhabitantRules.armorEnchantLevel(false, -2));
+        assertEquals(0, InhabitantRules.itemsBoughtFromResident(false, false, 1));
+        assertEquals(0, InhabitantRules.itemsBoughtFromResident(true, true, 1));
+        assertEquals(1, InhabitantRules.itemsBoughtFromResident(true, false, 1));
+        assertEquals(2, InhabitantRules.itemsBoughtFromResident(true, false, 2));
+        assertEquals(6, InhabitantRules.addSoldItems(4, 2));
+        assertEquals(4, InhabitantRules.addSoldItems(4, 0));
         List<InhabitantRules.WealthyListing> first = InhabitantRules.pickWealthyListings(1);
         List<InhabitantRules.WealthyListing> same = InhabitantRules.pickWealthyListings(1);
         List<InhabitantRules.WealthyListing> other = InhabitantRules.pickWealthyListings(99);
@@ -748,7 +759,7 @@ class InhabitantRulesTest {
     }
 
     @Test
-    void armorsmithSellsOneHeavyPieceAndEnchantedArmor() {
+    void armorsmithDrawsHeavyAndEnchantedFromOneShortList() {
         assertArmorShop(false);
         assertArmorShop(true);
     }
@@ -760,89 +771,110 @@ class InhabitantRulesTest {
         String metal = master ? "minecraft:diamond" : "minecraft:iron_ingot";
         Set<String> slots = Set.of("boots", "helmet", "leggings", "chestplate");
         Set<String> heavySeen = new HashSet<>();
+        Set<String> enchantedSeen = new HashSet<>();
         boolean sawBuy = false;
-        boolean sawEveryEnchantedSlot = false;
+        boolean sawNoHeavy = false;
+        boolean sawTwoHeavy = false;
         for (int seed = 0; seed < 80; seed++) {
             List<InhabitantRules.TradeListing> modest =
                     InhabitantRules.scaledListings(specialty, 24, 0, false, new Random(seed * 1000003L + 104729L));
-            int heavy = 0;
-            Set<String> enchanted = new HashSet<>();
+            int heavy = countArmorOffers(modest, master, heavyPrefix, plainPrefix, metal, slots, heavySeen, enchantedSeen);
             for (InhabitantRules.TradeListing listing : modest) {
-                if (listing.itemId().startsWith(heavyPrefix)) {
-                    heavy++;
-                    String slot = listing.itemId().substring(heavyPrefix.length());
-                    assertTrue(slots.contains(slot), listing.itemId());
-                    assertFalse(listing.buy());
-                    assertEquals(0, listing.enchantLevel());
+                if (!listing.buy()) {
                     assertEquals(1, listing.count());
                     assertEquals(InhabitantRules.ARMOR_TRADE_USES, listing.maxUses());
-                    assertEquals(InhabitantRules.armorEmeralds(master, slot), listing.emeralds());
-                    assertArmorMaterial(listing.itemId());
-                    heavySeen.add(slot);
-                } else if (listing.itemId().startsWith(plainPrefix)) {
-                    String slot = listing.itemId().substring(plainPrefix.length());
-                    assertTrue(slots.contains(slot), listing.itemId());
-                    assertFalse(listing.buy());
-                    assertEquals(1, listing.count());
-                    assertEquals(InhabitantRules.armorEnchantLevel(master), listing.enchantLevel());
-                    assertEquals(InhabitantRules.enchantedArmorEmeralds(master, slot), listing.emeralds());
-                    assertArmorMaterial(listing.itemId());
-                    assertTrue(enchanted.add(slot), listing.itemId());
-                } else {
-                    fail("unexpected listing " + listing.itemId());
                 }
             }
-            assertEquals(1, heavy);
-            assertTrue(enchanted.size() >= 1);
-            assertTrue(modest.size() <= 4);
+            assertTrue(modest.size() >= 1 && modest.size() <= InhabitantRules.ARMOR_USUAL_OFFERS);
+            assertTrue(modest.stream().noneMatch(InhabitantRules.TradeListing::buy));
+            if (heavy == 0) {
+                sawNoHeavy = true;
+            }
+            if (heavy >= 2) {
+                sawTwoHeavy = true;
+            }
         }
         for (int seed = 0; seed < 120; seed++) {
             List<InhabitantRules.TradeListing> rich =
                     InhabitantRules.scaledListings(specialty, 38, 0, false, new Random(seed * 1000003L + 104729L));
-            int heavy = 0;
-            Set<String> enchanted = new HashSet<>();
-            boolean buy = false;
-            Set<String> ids = new HashSet<>();
-            for (InhabitantRules.TradeListing listing : rich) {
-                assertTrue(ids.add(listing.itemId()), listing.itemId());
-                if (listing.itemId().startsWith(heavyPrefix)) {
-                    heavy++;
-                    String slot = listing.itemId().substring(heavyPrefix.length());
-                    assertTrue(slots.contains(slot), listing.itemId());
-                    assertFalse(listing.buy());
-                    assertEquals(0, listing.enchantLevel());
-                    assertEquals(InhabitantRules.armorEmeralds(master, slot), listing.emeralds());
-                    assertArmorMaterial(listing.itemId());
-                    heavySeen.add(slot);
-                } else if (metal.equals(listing.itemId())) {
-                    assertTrue(listing.buy());
-                    assertEquals(1, listing.emeralds());
-                    assertEquals(0, listing.enchantLevel());
-                    buy = true;
-                } else if (listing.itemId().startsWith(plainPrefix)) {
-                    String slot = listing.itemId().substring(plainPrefix.length());
-                    assertTrue(slots.contains(slot), listing.itemId());
-                    assertFalse(listing.buy());
-                    assertEquals(InhabitantRules.armorEnchantLevel(master), listing.enchantLevel());
-                    assertEquals(InhabitantRules.enchantedArmorEmeralds(master, slot), listing.emeralds());
-                    assertArmorMaterial(listing.itemId());
-                    assertTrue(enchanted.add(slot), listing.itemId());
-                } else {
-                    fail("unexpected listing " + listing.itemId());
-                }
-            }
-            assertEquals(1, heavy);
-            assertTrue(rich.size() <= 6);
-            if (buy) {
+            int heavy = countArmorOffers(rich, master, heavyPrefix, plainPrefix, metal, slots, heavySeen, enchantedSeen);
+            assertTrue(rich.size() >= 2 && rich.size() <= InhabitantRules.ARMOR_USUAL_OFFERS * 2);
+            if (rich.stream().anyMatch(InhabitantRules.TradeListing::buy)) {
                 sawBuy = true;
             }
-            if (enchanted.size() == 4) {
-                sawEveryEnchantedSlot = true;
+            if (heavy == 0) {
+                sawNoHeavy = true;
+            }
+            if (heavy >= 2) {
+                sawTwoHeavy = true;
             }
         }
         assertEquals(slots, heavySeen);
+        assertEquals(slots, enchantedSeen);
         assertTrue(sawBuy);
-        assertTrue(sawEveryEnchantedSlot);
+        assertTrue(sawNoHeavy);
+        assertTrue(sawTwoHeavy);
+        assertSoldArmorUsesPurchasePower(master);
+    }
+
+    private static void assertSoldArmorUsesPurchasePower(boolean master) {
+        String specialty = master ? InhabitantRules.MASTER_ARMORSMITH : InhabitantRules.ARMORSMITH;
+        String plainPrefix = master ? "minecraft:diamond_" : "minecraft:iron_";
+        int purchased = 4;
+        boolean sawEnchanted = false;
+        for (int seed = 0; seed < 40; seed++) {
+            List<InhabitantRules.TradeListing> shop = InhabitantRules.scaledListings(
+                    specialty, 38, 0, false, new Random(seed * 1000003L + 17L), purchased);
+            for (InhabitantRules.TradeListing listing : shop) {
+                if (!listing.itemId().startsWith(plainPrefix) || listing.buy()) {
+                    continue;
+                }
+                assertEquals(InhabitantRules.armorEnchantLevel(master, purchased), listing.enchantLevel());
+                sawEnchanted = true;
+            }
+        }
+        assertTrue(sawEnchanted);
+    }
+
+    private static int countArmorOffers(
+            List<InhabitantRules.TradeListing> shop,
+            boolean master,
+            String heavyPrefix,
+            String plainPrefix,
+            String metal,
+            Set<String> slots,
+            Set<String> heavySeen,
+            Set<String> enchantedSeen) {
+        int heavy = 0;
+        Set<String> ids = new HashSet<>();
+        for (InhabitantRules.TradeListing listing : shop) {
+            assertTrue(ids.add(listing.itemId()), listing.itemId());
+            if (listing.itemId().startsWith(heavyPrefix)) {
+                heavy++;
+                String slot = listing.itemId().substring(heavyPrefix.length());
+                assertTrue(slots.contains(slot), listing.itemId());
+                assertFalse(listing.buy());
+                assertEquals(0, listing.enchantLevel());
+                assertEquals(InhabitantRules.armorEmeralds(master, slot), listing.emeralds());
+                assertArmorMaterial(listing.itemId());
+                heavySeen.add(slot);
+            } else if (metal.equals(listing.itemId())) {
+                assertTrue(listing.buy());
+                assertEquals(1, listing.emeralds());
+                assertEquals(0, listing.enchantLevel());
+            } else if (listing.itemId().startsWith(plainPrefix)) {
+                String slot = listing.itemId().substring(plainPrefix.length());
+                assertTrue(slots.contains(slot), listing.itemId());
+                assertFalse(listing.buy());
+                assertEquals(InhabitantRules.armorEnchantLevel(master), listing.enchantLevel());
+                assertEquals(InhabitantRules.enchantedArmorEmeralds(master, slot), listing.emeralds());
+                assertArmorMaterial(listing.itemId());
+                enchantedSeen.add(slot);
+            } else {
+                fail("unexpected listing " + listing.itemId());
+            }
+        }
+        return heavy;
     }
 
     private static void assertMaterial(String itemId, String paidId, int count) {
@@ -1249,8 +1281,10 @@ class InhabitantRulesTest {
         assertEquals(3, InhabitantRules.defaultTradeTypeCount(InhabitantRules.FARM));
         assertEquals(3, InhabitantRules.defaultTradeTypeCount(InhabitantRules.BOUNTY));
         assertEquals(4, InhabitantRules.defaultTradeTypeCount(InhabitantRules.TRADER));
-        assertEquals(4, InhabitantRules.defaultTradeTypeCount(InhabitantRules.ARMORSMITH));
-        assertEquals(4, InhabitantRules.defaultTradeTypeCount(InhabitantRules.MASTER_ARMORSMITH));
+        assertEquals(2, InhabitantRules.ARMOR_USUAL_OFFERS);
+        assertEquals(InhabitantRules.USUAL_TRADE_TYPES / 2, InhabitantRules.ARMOR_USUAL_OFFERS);
+        assertEquals(2, InhabitantRules.defaultTradeTypeCount(InhabitantRules.ARMORSMITH));
+        assertEquals(2, InhabitantRules.defaultTradeTypeCount(InhabitantRules.MASTER_ARMORSMITH));
         assertEquals(4, InhabitantRules.defaultTradeTypeCount(InhabitantRules.WEALTHY));
         assertEquals(4, InhabitantRules.defaultTradeTypeCount(InhabitantRules.JEWELER));
         assertEquals(4, InhabitantRules.defaultTradeTypeCount(InhabitantRules.BREWER));

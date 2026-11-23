@@ -14,14 +14,13 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 
 /**
- * Heart-style mana crystals: black containers, cyan full/half fill, packed then wrapped.
- * Crystals gained over about ten minutes are drawn faintly, with the same half and full sprites.
+ * Heart-style mana crystals: black containers, cyan fill in eighths, packed then wrapped.
+ * Crystals gained over about ten minutes are drawn faintly, in the same eighths.
  */
 public final class ManaHud {
     public static final Identifier ELEMENT_ID = ExtraHardModeMod.id("mana");
     public static final Identifier CONTAINER = ExtraHardModeMod.id("hud/mana_container");
     public static final Identifier FULL = ExtraHardModeMod.id("hud/mana_full");
-    public static final Identifier HALF = ExtraHardModeMod.id("hud/mana_half");
 
     private ManaHud() {}
 
@@ -89,37 +88,50 @@ public final class ManaHud {
                 graphics.disableScissor();
             }
             if (!extra) {
-                Identifier fill =
-                        switch (ManaHudRules.fill(index, current)) {
-                            case FULL -> FULL;
-                            case HALF -> HALF;
-                            case EMPTY -> null;
-                        };
-                if (fill != null) {
-                    graphics.blitSprite(
-                            RenderPipelines.GUI_TEXTURED,
-                            fill,
-                            x,
-                            y,
-                            ManaHudRules.CRYSTAL_SIZE,
-                            ManaHudRules.CRYSTAL_SIZE);
-                }
+                blitEighths(graphics, x, y, ManaHudRules.eighths(index, current), 1.0F);
             }
             if (level <= 0) {
                 continue;
             }
-            ManaHudRules.Fill ghost = ManaHudRules.previewFill(index, current, preview);
-            if (ghost != ManaHudRules.Fill.HALF && ghost != ManaHudRules.Fill.FULL) {
+            Integer ghost = ManaHudRules.previewEighths(index, current, preview);
+            if (ghost == null) {
                 continue;
             }
+            blitEighths(graphics, x, y, ghost, ManaHudRules.PREVIEW_ALPHA);
+        }
+    }
+
+    /** Bottom slice of the full crystal. Eight eighths is the whole sprite. */
+    private static void blitEighths(GuiGraphicsExtractor graphics, int x, int y, int eighths, float alpha) {
+        int height = ManaHudRules.eighthHeight(eighths);
+        if (height <= 0) {
+            return;
+        }
+        boolean clip = height < ManaHudRules.CRYSTAL_SIZE;
+        if (clip) {
+            int top = y + ManaHudRules.CRYSTAL_SIZE - height;
+            graphics.enableScissor(x, top, x + ManaHudRules.CRYSTAL_SIZE, y + ManaHudRules.CRYSTAL_SIZE);
+        }
+        if (alpha < 1.0F) {
             graphics.blitSprite(
                     RenderPipelines.GUI_TEXTURED,
-                    ghost == ManaHudRules.Fill.FULL ? FULL : HALF,
+                    FULL,
                     x,
                     y,
                     ManaHudRules.CRYSTAL_SIZE,
                     ManaHudRules.CRYSTAL_SIZE,
-                    ManaHudRules.PREVIEW_ALPHA);
+                    alpha);
+        } else {
+            graphics.blitSprite(
+                    RenderPipelines.GUI_TEXTURED,
+                    FULL,
+                    x,
+                    y,
+                    ManaHudRules.CRYSTAL_SIZE,
+                    ManaHudRules.CRYSTAL_SIZE);
+        }
+        if (clip) {
+            graphics.disableScissor();
         }
     }
 

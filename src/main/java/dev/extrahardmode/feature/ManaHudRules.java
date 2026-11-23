@@ -7,6 +7,13 @@ public final class ManaHudRules {
     public static final int CRYSTAL_SIZE = 9;
     /** Left slice of a half-capacity container. The HUD scissors to this width. */
     public static final int HALF_WIDTH = 5;
+    /** One crystal is two mana. The fill and the faint mark use this many steps. */
+    public static final int EIGHTHS = 8;
+    public static final float MANA_PER_CRYSTAL = 2.0F;
+    /**
+     * Bottom pixel rows for 0 through 8 eighths. Four eighths is 5 rows, the old half sprite.
+     */
+    private static final int[] EIGHTH_HEIGHT = {0, 1, 2, 3, 5, 6, 7, 8, 9};
     public static final int PREFERRED_SPACING = 8;
     public static final int MIN_SPACING = 4;
     public static final int ROW_HEIGHT = 10;
@@ -16,12 +23,6 @@ public final class ManaHudRules {
     public static final int PREVIEW_MINUTES = 10;
     /** White-tint alpha for {@code blitSprite}. The cyan sprite stays, drawn faintly. */
     public static final float PREVIEW_ALPHA = 0.4F;
-
-    public enum Fill {
-        EMPTY,
-        HALF,
-        FULL
-    }
 
     public record Layout(int spacing, int perRow, int rows) {
         public int height() {
@@ -95,16 +96,35 @@ public final class ManaHudRules {
         return -(index / layout.perRow()) * ROW_HEIGHT;
     }
 
-    /** Each crystal holds two mana. Half-filled = one mana level of current mana. */
-    public static Fill fill(int crystalIndex, float currentMana) {
-        float amount = currentMana - crystalIndex * 2.0F;
-        if (amount >= 2.0F) {
-            return Fill.FULL;
+    /** Eighths of this crystal that current mana fills, from 0 through 8. Each step is 0.25 mana. */
+    public static int eighths(int crystalIndex, float currentMana) {
+        if (crystalIndex < 0) {
+            return 0;
         }
-        if (amount >= 1.0F) {
-            return Fill.HALF;
+        float amount = currentMana - crystalIndex * MANA_PER_CRYSTAL;
+        if (amount >= MANA_PER_CRYSTAL) {
+            return EIGHTHS;
         }
-        return Fill.EMPTY;
+        if (amount <= 0.0F) {
+            return 0;
+        }
+        double step = MANA_PER_CRYSTAL / EIGHTHS;
+        int filled = (int) Math.floor(amount / step + 1.0e-6);
+        if (filled < 0) {
+            return 0;
+        }
+        return Math.min(EIGHTHS - 1, filled);
+    }
+
+    /** Pixel rows from the bottom of the crystal for this many eighths. */
+    public static int eighthHeight(int eighths) {
+        if (eighths <= 0) {
+            return 0;
+        }
+        if (eighths >= EIGHTHS) {
+            return CRYSTAL_SIZE;
+        }
+        return EIGHTH_HEIGHT[eighths];
     }
 
     /**
@@ -149,10 +169,10 @@ public final class ManaHudRules {
     }
 
     /**
-     * Half or full sprite this crystal will show after the preview, when that is
-     * more filled than it looks now. A gain that stays under one mana stays empty.
+     * Eighths this crystal will show after the preview, when that is more filled than now.
+     * A gain that stays inside the current eighth draws nothing extra.
      */
-    public static Fill previewFill(int crystalIndex, double currentMana, double previewMana) {
+    public static Integer previewEighths(int crystalIndex, double currentMana, double previewMana) {
         if (crystalIndex < 0) {
             return null;
         }
@@ -161,12 +181,9 @@ public final class ManaHudRules {
         if (laterMana <= nowMana) {
             return null;
         }
-        Fill now = fill(crystalIndex, (float) nowMana);
-        Fill later = fill(crystalIndex, (float) laterMana);
-        if (later == Fill.EMPTY || later == now || now == Fill.FULL) {
-            return null;
-        }
-        if (now == Fill.HALF && later != Fill.FULL) {
+        int now = eighths(crystalIndex, (float) nowMana);
+        int later = eighths(crystalIndex, (float) laterMana);
+        if (later <= now) {
             return null;
         }
         return later;

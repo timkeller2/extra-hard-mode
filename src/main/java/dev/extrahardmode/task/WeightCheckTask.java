@@ -7,6 +7,7 @@ import dev.extrahardmode.config.PlayerSettings;
 import dev.extrahardmode.config.WorldConfig;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.player.WeightFormula;
+import dev.extrahardmode.player.WeightItemRules;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -81,34 +82,39 @@ public final class WeightCheckTask {
 
     /** Same count the swim check uses. The client passes the synced piece weights. */
     public static double inventoryWeight(Player player, double armorPiece, double stackWeight, double toolWeight) {
-        int armorPieces = 0;
+        double total = 0.0;
         for (EquipmentSlot slot : ARMOR_SLOTS) {
-            if (!player.getItemBySlot(slot).isEmpty()) {
-                armorPieces++;
-            }
+            total += pieceContribution(player.getItemBySlot(slot), armorPiece);
         }
-        double stackUnits = 0.0;
-        int tools = 0;
         Inventory inventory = player.getInventory();
         for (ItemStack stack : inventory.getNonEquipmentItems()) {
-            if (stack.isEmpty()) {
-                continue;
-            }
-            if (isTool(stack)) {
-                tools++;
-            } else {
-                stackUnits += stack.getCount() / (double) Math.max(1, stack.getMaxStackSize());
-            }
+            total += carriedContribution(stack, stackWeight, toolWeight);
         }
-        ItemStack offhand = player.getOffhandItem();
-        if (!offhand.isEmpty()) {
-            if (isTool(offhand)) {
-                tools++;
-            } else {
-                stackUnits += offhand.getCount() / (double) Math.max(1, offhand.getMaxStackSize());
-            }
+        total += carriedContribution(player.getOffhandItem(), stackWeight, toolWeight);
+        return total;
+    }
+
+    /** A worn piece uses the armor weight, then the item multiplier. */
+    static double pieceContribution(ItemStack stack, double armorPiece) {
+        if (stack == null || stack.isEmpty()) {
+            return 0.0;
         }
-        return WeightFormula.weight(armorPieces, stackUnits, tools, armorPiece, stackWeight, toolWeight);
+        return WeightItemRules.contribution(armorPiece, itemId(stack));
+    }
+
+    /** A tool uses the tool weight. Anything else uses its share of a full stack. */
+    static double carriedContribution(ItemStack stack, double stackWeight, double toolWeight) {
+        if (stack == null || stack.isEmpty()) {
+            return 0.0;
+        }
+        double base = isTool(stack)
+                ? toolWeight
+                : stackWeight * stack.getCount() / (double) Math.max(1, stack.getMaxStackSize());
+        return WeightItemRules.contribution(base, itemId(stack));
+    }
+
+    static String itemId(ItemStack stack) {
+        return BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
     }
 
     static boolean isTool(ItemStack stack) {

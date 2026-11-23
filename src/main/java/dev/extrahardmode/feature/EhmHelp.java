@@ -279,6 +279,7 @@ public final class EhmHelp {
                         "Hunger: Your hunger drops while you move or act, not while AFK.",
                         "Hunger: Swimming drains saturation twice as fast, and sprint-swimming four times as fast. Hunger follows once saturation is gone.",
                         "Hunger: Each point of weight over your limit raises saturation loss by 2%.",
+                        "Hunger: Worn armor is 2 each. A tool is 0.5. A full stack is 1. Heavy weapons and armor weigh 50% more. Leather armor weighs half. Chainmail weighs 75%.",
                         "Hunger: A food not in your last 7 eaten gives +1 hunger, or +1 saturation if you are already full.",
                         "Hunger: Seven different foods in the last 7 meals gives an extra +1 hunger and saturation and 3 experience.",
                         "Hunger: A slice of cake counts as its own food.",
@@ -440,7 +441,7 @@ public final class EhmHelp {
                 "tougher.help.weapons.",
                 List.of(
                         "Weapons: Heavy swords and axes of copper, iron, gold, and diamond use the normal recipe with blocks instead of ingots.",
-                        "Weapons: They last three times as long and deal 2 more damage. Heavy swords swing 10% slower. Repair them with those blocks.",
+                        "Weapons: They last three times as long and deal 2 more damage. Heavy swords and axes swing 10% slower. Repair them with those blocks.",
                         "Weapons: Smith the heavy diamond sword or axe with a netherite upgrade template and a netherite ingot. That ingot repairs it.",
                         "Weapons: A heavy golden sword casts Smite Evil, the same as a golden sword.",
                         "Weapons: A slain biome boss can drop an enchanted heavy sword or axe. The chance starts at 25% and rises as that boss is richer.",
@@ -452,7 +453,8 @@ public final class EhmHelp {
                 "tougher.help.enchanting.",
                 List.of(
                         "Enchanting: At an enchantment table, you can only take a requirement level at or below your enchanting skill. It starts at 3.",
-                        "Enchanting: A requirement within 3 of that skill raises it by 1. An enchantment table above Well Fed shows it. Anvils and villager books do not.",
+                        "Enchanting: A requirement within 3 of that skill rolls a d40. A roll lower than your skill does not raise it.",
+                        "Enchanting: An enchantment table above Well Fed shows it. Anvils and villager books do not.",
                         "Enchanting: modules.tougher.enchanting starts on. /tougher set enchanting false turns off the table limit and the inventory icon."));
     }
 
@@ -465,7 +467,7 @@ public final class EhmHelp {
                         "Mana: Saturation of 18 or more doubles your mana regen. Below 18 that bonus stops.",
                         "Mana: That doubled regen does not consume saturation.",
                         "Mana: Past your level you regen at 1/4 speed. The ceiling of 40 mana rises when Well Fed or ready gold pushes your level past 40. Achievements can raise your mana level.",
-                        "Mana: Crystals gained in about ten minutes show faintly, the way they will look. It grows when you are well fed or Battery is on, and shrinks past your mana level."));
+                        "Mana: Crystals fill in eighths. A faint mark shows the eighths you reach in about ten minutes. It grows when you are well fed or Battery is on, and shrinks past your mana level."));
     }
 
     private static Page abilities() {

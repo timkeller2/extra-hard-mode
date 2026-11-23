@@ -289,7 +289,7 @@ public final class EhmItems {
                 material,
                 false,
                 HeavyWeaponRules.axeAttack(vanillaAttack),
-                speed,
+                HeavyWeaponRules.axeSpeed(speed),
                 repair,
                 rarity,
                 fireResistant);

@@ -248,6 +248,14 @@ public final class EhmAttachments {
             ExtraHardModeMod.id("resident_trade_xp"),
             builder -> builder.persistent(Codec.INT).initializer(() -> 0));
 
+    /**
+     * Items players have bought from this resident. Shared by every player.
+     * An armorsmith's next stock adds this to its enchanting power.
+     */
+    public static final AttachmentType<Integer> EHM_RESIDENT_SOLD_ITEMS = AttachmentRegistry.create(
+            ExtraHardModeMod.id("resident_sold_items"),
+            builder -> builder.persistent(Codec.INT).initializer(() -> 0));
+
     /** Health at the start of the latest hit, so zombie conversion can see if they were already below 5. */
     public static final AttachmentType<Float> EHM_RESIDENT_HEALTH_BEFORE = AttachmentRegistry.create(
             ExtraHardModeMod.id("resident_health_before"),

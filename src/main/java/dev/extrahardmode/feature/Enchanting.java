@@ -91,8 +91,16 @@ public final class Enchanting implements FeatureModule {
             return;
         }
         int skill = ability(player);
-        int next = EnchantingRules.nextAbility(skill, requirement);
+        int roll = player.getRandom().nextInt();
+        int next = EnchantingRules.nextAbility(skill, requirement, roll);
         if (next == skill) {
+            if (EnchantingRules.trains(skill, requirement)) {
+                player.sendSystemMessage(Component.translatableWithFallback(
+                        "tougher.message.enchant_skill_stay",
+                        "A roll of %s leaves your enchanting skill at %s.",
+                        Component.literal(Integer.toString(EnchantingRules.skillDieFace(roll))),
+                        Component.literal(Integer.toString(skill))));
+            }
             return;
         }
         player.setAttached(EhmAttachments.EHM_ENCHANT_ABILITY, next);
