@@ -38,4 +38,21 @@ class CowMilkRulesTest {
         assertFalse(CowMilkRules.hungerStale(1139L, 1040L));
         assertTrue(CowMilkRules.hungerStale(1140L, 1040L));
     }
+
+    @Test
+    void lookLabelRoundsTheWaitUpToTheNextSecond() {
+        assertEquals(0, CowMilkRules.remainingTicks(0L, 0L));
+        assertEquals(0, CowMilkRules.remainingTicks(1000L, 1000L));
+        assertEquals(1, CowMilkRules.remainingTicks(1000L, 1001L));
+        assertEquals(24000, CowMilkRules.remainingTicks(0L, 24000L));
+        assertEquals("20m", CowMilkRules.remainingLabel(24000));
+        assertEquals("20m", CowMilkRules.remainingLabel(23981));
+        assertEquals("19m 59s", CowMilkRules.remainingLabel(23980));
+        assertEquals("1m", CowMilkRules.remainingLabel(1200));
+        assertEquals("1m", CowMilkRules.remainingLabel(1181));
+        assertEquals("59s", CowMilkRules.remainingLabel(1180));
+        assertEquals("1s", CowMilkRules.remainingLabel(1));
+        assertEquals("1s", CowMilkRules.remainingLabel(20));
+        assertEquals("2s", CowMilkRules.remainingLabel(21));
+    }
 }

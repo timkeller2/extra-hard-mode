@@ -478,6 +478,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
         CartographyHud.register();
         SoilLookHud.register();
         GlowBerryLookHud.register();
+        CowMilkLookHud.register();
         LightLookHud.register();
         CopperChestLookHud.register();
         AbilityHelp.register();

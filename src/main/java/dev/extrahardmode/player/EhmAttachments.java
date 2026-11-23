@@ -18,9 +18,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentSyncPredicate;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.fabricmc.fabric.impl.attachment.AttachmentRegistryImpl;
 import net.minecraft.core.UUIDUtil;
+import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 
@@ -622,10 +624,15 @@ public final class EhmAttachments {
     public static final AttachmentType<LongOpenHashSet> EHM_OVERGRAZE_CHESTS = AttachmentRegistry.create(
             ExtraHardModeMod.id("overgraze_chests"),
             builder -> builder.persistent(LONG_SET_CODEC).initializer(LongOpenHashSet::new));
-    /** Game time when this cow may be milked again. 0 means ready. */
+    /**
+     * Game time when this cow may be milked again. 0 means ready. Synced so the
+     * client can refuse the bucket before it turns into milk.
+     */
     public static final AttachmentType<Long> EHM_MILK_READY_AT = AttachmentRegistry.create(
             ExtraHardModeMod.id("milk_ready_at"),
-            builder -> builder.persistent(Codec.LONG).initializer(() -> 0L));
+            builder -> builder.persistent(Codec.LONG)
+                    .initializer(() -> 0L)
+                    .syncWith(ByteBufCodecs.VAR_LONG, AttachmentSyncPredicate.all()));
     /** Game time of the extra meal after milking. 0 means none pending. */
     public static final AttachmentType<Long> EHM_MILK_HUNGER_AT = AttachmentRegistry.create(
             ExtraHardModeMod.id("milk_hunger_at"),

@@ -26,7 +26,16 @@ public abstract class AbstractCowMixin {
     private void tougher$denyMilkedCow(
             Player player, InteractionHand hand, CallbackInfoReturnable<InteractionResult> cir) {
         AbstractCow cow = (AbstractCow) (Object) this;
-        if (!(cow.level() instanceof ServerLevel level) || !WorldGate.isModuleActive(level, Overgrazing.ID)) {
+        if (!(cow.level() instanceof ServerLevel level)) {
+            tougher$milkPending = false;
+            if (Overgrazing.blocksPredictedMilk(cow, player, hand)) {
+                // FAIL falls through to using the bucket, so the client would
+                // still make milk and the server correction would delete it.
+                cir.setReturnValue(InteractionResult.CONSUME);
+            }
+            return;
+        }
+        if (!WorldGate.isModuleActive(level, Overgrazing.ID)) {
             tougher$milkPending = false;
             return;
         }

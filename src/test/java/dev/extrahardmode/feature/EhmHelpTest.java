@@ -119,6 +119,8 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("short grass"));
         assertTrue(String.join(" ", lines).contains("drop no meat"));
         assertTrue(String.join(" ", lines).contains("blocks another milking for 1 Minecraft day"));
+        assertTrue(String.join(" ", lines).contains("Looking shows the time left"));
+        assertTrue(String.join(" ", lines).contains("Bucket is not used"));
         assertTrue(String.join(" ", lines).contains("usual eat chances stay the same"));
         assertTrue(String.join(" ", lines).contains("regrow their wool"));
         assertTrue(String.join(" ", lines).contains("lay eggs 6 times"));

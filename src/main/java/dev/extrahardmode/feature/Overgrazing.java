@@ -137,6 +137,18 @@ public final class Overgrazing implements FeatureModule {
     }
 
     /**
+     * True when the client must not turn this bucket into milk. The ready time is
+     * synced onto the cow. The server still decides whether the milk happens.
+     */
+    public static boolean blocksPredictedMilk(AbstractCow cow, Player player, InteractionHand hand) {
+        if (cow == null || cow.isBaby() || !holdingBucket(player, hand)) {
+            return false;
+        }
+        long readyAt = cow.getAttachedOrElse(EhmAttachments.EHM_MILK_READY_AT, 0L);
+        return CowMilkRules.onCooldown(cow.level().getGameTime(), readyAt);
+    }
+
+    /**
      * True when this bucket use on an adult cow must not give milk. The cooldown
      * applies to every adult, including a named cow that does not overgraze.
      */

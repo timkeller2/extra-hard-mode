@@ -45,4 +45,33 @@ public final class CowMilkRules {
     public static boolean hungerStale(long now, long hungerAt) {
         return hungerDue(now, hungerAt) && now - hungerAt >= HUNGER_STALE_TICKS;
     }
+
+    /** Ticks until the cow can be milked. Zero when it is ready, including a ready time of zero. */
+    public static int remainingTicks(long now, long readyAt) {
+        if (!onCooldown(now, readyAt)) {
+            return 0;
+        }
+        long left = readyAt - now;
+        if (left > Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        }
+        return (int) left;
+    }
+
+    /**
+     * Remaining time rounded up to the next second, such as {@code 20m}, {@code 19m 59s}, or {@code 45s}.
+     * One Minecraft day is 20 minutes.
+     */
+    public static String remainingLabel(int remainingTicks) {
+        int seconds = Math.max(1, (int) Math.ceil(Math.max(0, remainingTicks) / 20.0));
+        int minutes = seconds / 60;
+        int rest = seconds % 60;
+        if (minutes <= 0) {
+            return rest + "s";
+        }
+        if (rest == 0) {
+            return minutes + "m";
+        }
+        return minutes + "m " + rest + "s";
+    }
 }

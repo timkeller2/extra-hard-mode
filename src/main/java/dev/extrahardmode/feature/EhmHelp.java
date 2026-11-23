@@ -335,7 +335,7 @@ public final class EhmHelp {
                         "Animals: About 9 grass blocks keep a cow, pig, sheep, or other large animal fed. About 4 keep a chicken or rabbit fed.",
                         "Animals: Sheep overgraze too, and wait 6 times as long to eat grass and regrow their wool. farming.sheepWoolGrazeMultiplier of 1 is the usual wool wait.",
                         "Animals: No grass in reach: 33% eat short grass, then breeding food, from a chest or barrel within 20 blocks. If neither is left, a second 33% starves them and they drop no meat.",
-                        "Animals: Milking a cow or mooshroom blocks another milking for 1 Minecraft day. Within a few seconds it eats grass or chest food once. Its usual eat chances stay the same.",
+                        "Animals: Milking a cow or mooshroom blocks another milking for 1 Minecraft day. Looking shows the time left. Bucket is not used. It eats once. Its usual eat chances stay the same.",
                         "Animals: Villagers take 8 times as long to restock. Novice fletchers buy 32 flint per emerald. 8 or more villagers in a 3x3x3 take damage. Named villagers and residents are spared.",
                         "Animals: An unemployed villager cannot take a job once that job has the rounded-up eighth of the villagers within 64 blocks.",
                         "Animals: Breaking or picking up a villager's work block turns that villager into a nitwit. A nitwit cannot take a job.",

@@ -251,7 +251,7 @@ def build():
                 "Livestock overgraze by eating grass they can walk to within 6 blocks and turning that block into dirt. Bees do not. About 9 grass blocks keep a large animal fed. About 4 keep a chicken or rabbit fed.",
                 "Sheep overgraze too, and wait 6 times as long to eat grass and regrow their wool. farming.sheepWoolGrazeMultiplier of 1 is the usual wool wait.",
                 "If no grass block is in reach, an animal has a 33% chance to eat from a chest or barrel it can reach within 20 blocks. It eats short grass, the item shears collect, before its breeding food. If neither is left, a second 33% chance starves it and it drops no meat.",
-                "Milking a cow or mooshroom blocks another milking for 1 Minecraft day. Within a few seconds that cow eats grass or chest food once. That extra meal does not change how often it usually eats, or its chance to look in a chest or starve.",
+                "Milking a cow or mooshroom blocks another milking for 1 Minecraft day. Looking at that cow shows the time left, and the bucket is not used. Within a few seconds that cow eats grass or chest food once. That extra meal does not change how often it usually eats, or its chance to look in a chest or starve.",
                 "Crowding damages villagers, not livestock. Eight or more in a 3x3x3 take damage. Residents and named villagers are spared. Set farming.overcrowd.villagersOnly false to crowd animals too.",
                 "Ordinary villagers take 8 times as long to restock. A novice fletcher buys 32 flint for 1 emerald. That is separate from residents.",
                 "An unemployed villager cannot take a job once that job has the rounded-up eighth of the villagers within 64 blocks.",
