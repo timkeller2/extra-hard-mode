@@ -228,7 +228,8 @@ def build():
             "Each Efficiency level adds 0.25 to that target's hoe quality: wood or stone 0, copper 1, iron 2, diamond 3, gold 4, netherite 5. "
             "A worsening step is one-tenth of the gap (at least 1, at most 4). An improving step is 3. "
             "Harvesting without a hoe subtracts 5. Replanting the same crop subtracts 5. "
-            "Let it grow adds 3 under each plant it grows. Bone meal adds 5. Bone meal on a glow berry vine fails to fruit at the current crop loss percent.",
+            "Let it grow adds 3 under each plant it grows. Bone meal adds 5. Bone meal on a glow berry vine fails to fruit at the current crop loss percent. "
+            "Each glow berry vine segment accepts bone meal once every 3 minutes. A segment on cooldown shows the time left, and bone meal is not used.",
             s["body"],
         ),
         Paragraph("Seasons", s["h"]),
@@ -262,6 +263,7 @@ def build():
         bullets(
             [
                 "Mobs hit harder. Skeletons ignore arrows. Zombies vary about 20% in speed: faster ones hit softer and look smaller.",
+                "Your first 8 kills from one monster spawner drop loot and experience. Later kills from that spawner drop nothing. Each player has their own 8 from that spawner. monsters.spawnerLootKills changes that 8. 0 drops nothing.",
                 "Below Y=48, a cave you have walked may spawn an extra hostile. The light may be 11, and every 20 blocks you are below Y=48 adds 1, so Y=28 allows 12 and Y=8 allows 13. The chance falls by 5% times the light of the chosen block.",
                 "After 100 player kills of hostile mobs anywhere in one chunk, hostile spawns at Y=48 and above stop. Neutral and friendly mobs still spawn. Players in or near that chunk are told the area is being cleared for the alliance, and gain 25 experience and an emerald. Once each Minecraft day, entering each full chunk plays a quiet chime. monsters.chunkClearKills of -1 turns it off.",
                 "Below Y=0 in the overworld, normal hostile mobs can spawn in block light of 1 for every 15 blocks down. At Y=-15 that is light 1. At Y=-30 that is light 2.",

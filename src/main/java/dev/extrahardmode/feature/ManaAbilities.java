@@ -3843,10 +3843,27 @@ public final class ManaAbilities implements FeatureModule {
     }
 
     static void tellPractice(ServerPlayer player, String ability) {
+        Component name = abilityName(ability);
+        int left = AbilityRules.practicesUntilUnbuffed(ability, uses(player, ability), levelOffset(player));
+        if (left <= 0) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.ability_practice_ready",
+                    "You practice the %s ability... You can use it with no buffs.",
+                    name));
+            return;
+        }
+        if (left == 1) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.ability_practice_one",
+                    "You practice the %s ability... 1 practice until you can use it with no buffs.",
+                    name));
+            return;
+        }
         player.sendSystemMessage(Component.translatableWithFallback(
                 "tougher.message.ability_practice",
-                "You practice the %s ability...",
-                abilityName(ability)));
+                "You practice the %s ability... %s practices until you can use it with no buffs.",
+                name,
+                Integer.toString(left)));
     }
 
     /** Spends mana and focus, starts the cooldown, and gains one use when the level is too low to take effect. */

@@ -418,6 +418,20 @@ class AbilityRulesTest {
         assertTrue(AbilityRules.writeTomeRefuses(0, 1, 4.0));
         assertTrue(AbilityRules.writeTomeRefuses(40, 0, 4.0));
         assertFalse(AbilityRules.writeTomeRefuses(40, 1, 1.0));
+        assertEquals(9, AbilityRules.practicesUntilUnbuffed(AbilityRules.HEAL, 0, -2));
+        assertEquals(1, AbilityRules.practicesUntilUnbuffed(AbilityRules.HEAL, 8, -2));
+        assertEquals(0, AbilityRules.practicesUntilUnbuffed(AbilityRules.HEAL, 9, -2));
+        assertEquals(16, AbilityRules.practicesUntilUnbuffed(AbilityRules.DIAMOND_SKIN, 0, -2));
+        assertEquals(1, AbilityRules.practicesUntilUnbuffed(AbilityRules.DIAMOND_SKIN, 15, -2));
+        assertEquals(0, AbilityRules.practicesUntilUnbuffed(AbilityRules.DIAMOND_SKIN, 16, -2));
+        assertEquals(1, AbilityRules.practicesUntilUnbuffed(AbilityRules.HEAL, 0, 0));
+        assertEquals(0, AbilityRules.practicesUntilUnbuffed(AbilityRules.HEAL, 1, 0));
+        assertEquals(4, AbilityRules.practicesUntilUnbuffed(AbilityRules.DIAMOND_SKIN, 0, 0));
+        assertEquals(0, AbilityRules.practicesUntilUnbuffed(AbilityRules.DIAMOND_SKIN, 4, 0));
+        assertEquals(4, AbilityRules.practicesUntilUnbuffed(AbilityRules.HEAL, 0, -1));
+        assertEquals(1, AbilityRules.practicesUntilUnbuffed(AbilityRules.HEAL, 3, -1));
+        assertEquals(0, AbilityRules.practicesUntilUnbuffed(AbilityRules.HEAL, 4, -1));
+        assertEquals(0, AbilityRules.practicesUntilUnbuffed(AbilityRules.HEAL, 0, 1));
     }
 
     @Test

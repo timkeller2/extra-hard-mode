@@ -91,6 +91,10 @@ public final class CropGrowthRules {
     /** Hoe look-at HUD: green at or above 0, red below. */
     public static final int SOIL_LOOK_COLOR_GOOD = 0xFF00FF00;
     public static final int SOIL_LOOK_COLOR_BAD = 0xFFFF0000;
+    /** One bone-meal use on a glow berry vine segment, in game ticks. Three minutes. */
+    public static final int GLOW_BERRY_MEAL_COOLDOWN_TICKS = 20 * 60 * 3;
+    /** Crosshair timer while a glow berry segment is waiting for bone meal. */
+    public static final int GLOW_BERRY_MEAL_LOOK_COLOR = 0xFFFFC14A;
 
     private CropGrowthRules() {}
 
@@ -578,6 +582,39 @@ public final class CropGrowthRules {
             return true;
         }
         return Math.floorMod(roll, 100) < chance;
+    }
+
+    /**
+     * Ticks left before this segment accepts bone meal again.
+     * {@code lastUse} below 0 means it has not been used. Time that runs backward is ready.
+     */
+    public static int glowBerryMealRemaining(long now, long lastUse) {
+        if (lastUse < 0L) {
+            return 0;
+        }
+        long elapsed = now - lastUse;
+        if (elapsed < 0L || elapsed >= GLOW_BERRY_MEAL_COOLDOWN_TICKS) {
+            return 0;
+        }
+        long left = GLOW_BERRY_MEAL_COOLDOWN_TICKS - elapsed;
+        if (left > Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        }
+        return (int) left;
+    }
+
+    /** Remaining time rounded up to the next second, such as {@code 3m}, {@code 2m 15s}, or {@code 45s}. */
+    public static String glowBerryMealLabel(int remainingTicks) {
+        int seconds = Math.max(1, (int) Math.ceil(Math.max(0, remainingTicks) / 20.0));
+        int minutes = seconds / 60;
+        int rest = seconds % 60;
+        if (minutes <= 0) {
+            return rest + "s";
+        }
+        if (rest == 0) {
+            return minutes + "m";
+        }
+        return minutes + "m " + rest + "s";
     }
 
     public static boolean rollLoss(int chance, Random random) {

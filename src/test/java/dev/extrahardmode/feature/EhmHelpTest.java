@@ -124,6 +124,8 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("Nether wart grows at 1/20"));
         assertTrue(String.join(" ", lines).contains("Sweet berry bushes grow and fruit at 1/20"));
         assertTrue(String.join(" ", lines).contains("glow berry vine fails to fruit"));
+        assertTrue(String.join(" ", lines).contains("once every 3 minutes"));
+        assertTrue(String.join(" ", lines).contains("bone meal is not used"));
         assertTrue(String.join(" ", lines).contains("1 or 2 beans"));
         assertTrue(String.join(" ", lines).contains("diamond 10, gold 20, netherite 30"));
         assertTrue(String.join(" ", lines).contains("plus the tree"));
@@ -548,9 +550,12 @@ class EhmHelpTest {
         assertTrue(farmText.contains("1d10"));
         assertTrue(farmText.contains("bone meal"));
         assertFalse(farmText.contains("Stone and deepslate"));
-        assertTrue(farming.lines().size() < 43);
+        assertTrue(farming.lines().size() < 44);
         assertTrue(String.join(" ", EhmHelp.resolve("mana").lines()).contains("the way they will look"));
         String combatText = String.join(" ", EhmHelp.resolve("combat").lines());
+        assertTrue(combatText.contains("first 8 kills from one monster spawner"));
+        assertTrue(combatText.contains("Each player has their own 8"));
+        assertTrue(combatText.contains("monsters.spawnerLootKills"));
         assertTrue(combatText.contains("teleports to the nearest open spot"));
         assertTrue(combatText.contains("within 16 blocks"));
         assertTrue(combatText.contains("an enderman"));

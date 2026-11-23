@@ -39,6 +39,8 @@ public final class EhmNetworking {
         PayloadTypeRegistry.clientboundPlay()
                 .register(ClientboundSoilLookPayload.TYPE, ClientboundSoilLookPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay()
+                .register(ClientboundGlowBerryLookPayload.TYPE, ClientboundGlowBerryLookPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay()
                 .register(ClientboundLightLookPayload.TYPE, ClientboundLightLookPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay()
                 .register(ClientboundCopperChestLookPayload.TYPE, ClientboundCopperChestLookPayload.STREAM_CODEC);
@@ -90,6 +92,10 @@ public final class EhmNetworking {
     }
 
     public static void sendSoilLook(ServerPlayer player, ClientboundSoilLookPayload payload) {
+        ServerPlayNetworking.send(player, payload);
+    }
+
+    public static void sendGlowBerryLook(ServerPlayer player, ClientboundGlowBerryLookPayload payload) {
         ServerPlayNetworking.send(player, payload);
     }
 

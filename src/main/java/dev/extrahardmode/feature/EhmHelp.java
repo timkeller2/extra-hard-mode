@@ -369,7 +369,8 @@ public final class EhmHelp {
                         "Soil: If that would make the plot worse, the step is 1/10 of the gap to the target (at least 1, at most 4).",
                         "Soil: If it would improve the plot, the step is 3. Harvesting by any other means subtracts 5. Planting the same crop again on a plot subtracts 5.",
                         "Soil: Harvesting sugar cane updates the soil under the cane the same way.",
-                        "Soil: Let it grow adds 3 to each plant. Bone meal on a plant adds 5. Bone meal on a glow berry vine fails to fruit at the current crop loss percent. A clock shows the loss rate."));
+                        "Soil: Let it grow adds 3 to each plant. Bone meal on a plant adds 5. Bone meal on a glow berry vine fails to fruit at the current crop loss percent. A clock shows the loss rate.",
+                        "Soil: Each glow berry vine segment accepts bone meal once every 3 minutes. A segment on cooldown shows the time left, and bone meal is not used."));
     }
 
     private static Page processing() {
@@ -385,6 +386,7 @@ public final class EhmHelp {
                 "tougher.help.combat.",
                 List.of(
                         "Combat: Mobs hit harder. Skeletons ignore arrows.",
+                        "Combat: Your first 8 kills from one monster spawner drop loot and experience. Later kills from that spawner drop nothing. Each player has their own 8. monsters.spawnerLootKills.",
                         "Combat: Skeleton and bogged special shots only happen based on how far they spawned from world spawn: 1% per 10 blocks.",
                         "Combat: Those special shots always happen at 1000 blocks or farther.",
                         "Combat: Zombies vary ±20% in speed (faster hit softer and look smaller, slower hit harder and look larger).",

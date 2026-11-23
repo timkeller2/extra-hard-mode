@@ -161,8 +161,9 @@ public final class InhabitantRules {
 
     /**
      * The stored resident is gone. A loaded body that is not alive counts immediately.
-     * An unloaded body counts only when the area around the bed is loaded, so a
-     * resident in an unloaded chunk is not erased just because nobody is nearby.
+     * A missing body counts only when every chunk within {@link #SNAP_HOME_RANGE} has
+     * its entities loaded. Block data alone is not enough: on login those chunks load
+     * first, and clearing then deletes the villager when the body arrives a moment later.
      */
     public static boolean residentMissing(boolean found, boolean alive, boolean homeAreaLoaded) {
         if (found) {

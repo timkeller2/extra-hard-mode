@@ -30,6 +30,7 @@ import dev.extrahardmode.network.ClientboundManaLearningPayload;
 import dev.extrahardmode.network.ClientboundManaPayload;
 import dev.extrahardmode.network.ClientboundPowerMinePayload;
 import dev.extrahardmode.network.ClientboundCopperChestLookPayload;
+import dev.extrahardmode.network.ClientboundGlowBerryLookPayload;
 import dev.extrahardmode.network.ClientboundLightLookPayload;
 import dev.extrahardmode.network.ClientboundSoilLookPayload;
 import dev.extrahardmode.network.ClientboundSyncPayload;
@@ -76,6 +77,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
     private static volatile ClientboundAbilityDurationsPayload lastDurations;
     private static volatile ClientboundAbilityReadyPayload lastAbilityReady;
     private static volatile ClientboundSoilLookPayload lastSoilLook;
+    private static volatile ClientboundGlowBerryLookPayload lastGlowBerryLook;
     private static volatile ClientboundLightLookPayload lastLightLook;
     private static volatile ClientboundCopperChestLookPayload lastCopperChestLook;
     private static volatile ClientboundCouncilBountyPayload lastCouncilBounty;
@@ -137,6 +139,10 @@ public class ExtraHardModeClient implements ClientModInitializer {
 
     public static ClientboundSoilLookPayload lastSoilLook() {
         return lastSoilLook;
+    }
+
+    public static ClientboundGlowBerryLookPayload lastGlowBerryLook() {
+        return lastGlowBerryLook;
     }
 
     public static ClientboundLightLookPayload lastLightLook() {
@@ -398,6 +404,8 @@ public class ExtraHardModeClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(
                 ClientboundSoilLookPayload.TYPE, (payload, context) -> lastSoilLook = payload);
         ClientPlayNetworking.registerGlobalReceiver(
+                ClientboundGlowBerryLookPayload.TYPE, (payload, context) -> lastGlowBerryLook = payload);
+        ClientPlayNetworking.registerGlobalReceiver(
                 ClientboundLightLookPayload.TYPE, (payload, context) -> lastLightLook = payload);
         ClientPlayNetworking.registerGlobalReceiver(
                 ClientboundCopperChestLookPayload.TYPE, (payload, context) -> lastCopperChestLook = payload);
@@ -442,6 +450,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
             lastDurations = null;
             lastAbilityReady = null;
             lastSoilLook = null;
+            lastGlowBerryLook = null;
             lastLightLook = null;
             lastCopperChestLook = null;
             lastCouncilBounty = null;
@@ -462,6 +471,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
         MinerLeadHud.register();
         CartographyHud.register();
         SoilLookHud.register();
+        GlowBerryLookHud.register();
         LightLookHud.register();
         CopperChestLookHud.register();
         AbilityHelp.register();

@@ -18,6 +18,7 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ColorParticleOption;
@@ -75,6 +76,12 @@ import org.jspecify.annotations.Nullable;
  */
 public final class Inhabitants implements FeatureModule {
     public static final Identifier ID = ExtraHardModeMod.id("inhabitants");
+    /** Homes this close to a joining or leaving player are written to the server log. */
+    private static final int RESIDENT_LOG_RANGE = 128;
+    private static final int CLEARED_KEEP = 32;
+    /** How long a silent clear waits for entity chunks before the follow-up line. */
+    private static final long CLEARED_WAIT_TICKS = 20L * 30L;
+    private static final List<ClearedResident> CLEARED = new ArrayList<>();
     private static final int SHIMMER_RED = 1;
     private static final int SHIMMER_GREEN = 2;
     private static final DustParticleOptions RED_SHIMMER = new DustParticleOptions(0xE02020, 1.0F);
@@ -97,6 +104,10 @@ public final class Inhabitants implements FeatureModule {
         bus.listen(ServerLivingEntityEvents.AFTER_DEATH, ID, Inhabitants::onDeath);
         bus.listen(ServerLivingEntityEvents.AFTER_DAMAGE, ID, Inhabitants::onDamage);
         bus.listen(PlayerBlockBreakEvents.AFTER, ID, PlayerShops::onBreak);
+        bus.listen(ServerPlayConnectionEvents.JOIN, ID, (handler, sender, server) ->
+                logResidentWatch("join", handler.player));
+        bus.listen(ServerPlayConnectionEvents.DISCONNECT, ID, (handler, server) ->
+                logResidentWatch("leave", handler.player));
     }
 
     @Override
@@ -136,6 +147,7 @@ public final class Inhabitants implements FeatureModule {
         }
         tickHomes(level);
         if (second) {
+            logClearedOnceLoaded(level);
             keepNearHome(level);
             discardOrphanResidents(level);
         }
@@ -690,7 +702,7 @@ public final class Inhabitants implements FeatureModule {
         InhabitantData.Home home = data.get(ResidenceScan.homeId(result.bed()));
         if (home != null && home.living().isPresent()) {
             home = ensureMaleName(data, home);
-            releaseIfResidentMissing(level, data, home, day);
+            releaseIfResidentMissing(level, data, home, day, "clock");
         }
         tellHouse(player, level, result);
     }
@@ -795,7 +807,7 @@ public final class Inhabitants implements FeatureModule {
                 continue;
             }
             home = ensureMaleName(data, home);
-            home = releaseIfResidentMissing(level, data, home, day);
+            home = releaseIfResidentMissing(level, data, home, day, "tick");
             if (home.living().isEmpty()) {
                 continue;
             }
@@ -1373,24 +1385,268 @@ public final class Inhabitants implements FeatureModule {
         return name;
     }
 
-    /** Drop a home's resident record when that villager is dead or no longer loaded near the bed. */
+    /** Drop a home's resident record when that villager is dead, or missing after the bed's entity chunks have loaded. */
     static InhabitantData.Home releaseIfResidentMissing(
-            ServerLevel level, InhabitantData data, InhabitantData.Home home, long day) {
+            ServerLevel level, InhabitantData data, InhabitantData.Home home, long day, String source) {
         if (home.living().isEmpty()) {
             return home;
         }
-        Entity entity = level.getEntityInAnyDimension(home.living().get());
+        UUID id = home.living().get();
+        Entity entity = level.getEntityInAnyDimension(id);
         boolean found = entity != null;
         boolean alive = found && entity.isAlive();
         if (!InhabitantRules.residentMissing(found, alive, homeAreaLoaded(level, home.bed()))) {
             return home;
+        }
+        logResident(true, "clear source=" + source, level, home, id, entity, "");
+        if (!found) {
+            rememberCleared(id, home, level.getGameTime());
         }
         InhabitantData.Home released = home.withLiving(Optional.empty()).withLeave(-1L, false).withLastRoll(day);
         data.put(released);
         return released;
     }
 
-    /** Chunks covering the snap-home radius around the bed. */
+    /** Logout and login snapshot for homes near the player. Quiet when none are nearby. */
+    static void logResidentWatch(String event, ServerPlayer player) {
+        if (player == null || !(player.level() instanceof ServerLevel level)) {
+            return;
+        }
+        if (level.dimension() != Level.OVERWORLD || !WorldGate.isModuleActive(level, ID)) {
+            return;
+        }
+        String where = "event=" + event
+                + " player=" + player.getScoreboardName()
+                + " at=" + player.getBlockX() + "," + player.getBlockY() + "," + player.getBlockZ();
+        InhabitantData data = InhabitantData.of(level);
+        for (InhabitantData.Home home : data.homes()) {
+            if (!worthWatching(home) || !nearPlayer(player, home.bed())) {
+                continue;
+            }
+            Entity entity = home.living().isEmpty() ? null : level.getEntityInAnyDimension(home.living().get());
+            logResident(false, "watch", level, home, home.living().orElse(null), entity, where);
+        }
+    }
+
+    /** One follow-up after a silent clear, once the bed's entity chunks have loaded or the wait ends. */
+    static void logClearedOnceLoaded(ServerLevel level) {
+        if (CLEARED.isEmpty()) {
+            return;
+        }
+        long now = level.getGameTime();
+        InhabitantData data = InhabitantData.of(level);
+        var pending = CLEARED.iterator();
+        while (pending.hasNext()) {
+            ClearedResident cleared = pending.next();
+            InhabitantData.Home home = data.get(cleared.homeId());
+            if (home == null) {
+                ExtraHardModeMod.LOGGER.warn(
+                        "EHM resident after-clear settled=false uuid={} home={} missing=home",
+                        cleared.id(),
+                        cleared.homeId());
+                pending.remove();
+                continue;
+            }
+            boolean ready = homeAreaLoaded(level, home.bed());
+            boolean expired = now - cleared.gameTime() >= CLEARED_WAIT_TICKS;
+            if (!ready && !expired) {
+                continue;
+            }
+            Entity entity = level.getEntityInAnyDimension(cleared.id());
+            logResident(true, "after-clear settled=" + ready, level, home, cleared.id(), entity, "");
+            pending.remove();
+        }
+    }
+
+    private static void rememberCleared(UUID id, InhabitantData.Home home, long gameTime) {
+        for (ClearedResident cleared : CLEARED) {
+            if (id.equals(cleared.id())) {
+                return;
+            }
+        }
+        if (CLEARED.size() >= CLEARED_KEEP) {
+            CLEARED.remove(0);
+        }
+        CLEARED.add(new ClearedResident(id, home.id(), gameTime));
+    }
+
+    private static boolean worthWatching(InhabitantData.Home home) {
+        if (home.living().isPresent()) {
+            return true;
+        }
+        return home.name() != null && !home.name().isEmpty();
+    }
+
+    private static boolean nearPlayer(ServerPlayer player, BlockPos bed) {
+        double dx = player.getX() - (bed.getX() + 0.5);
+        double dy = player.getY() - bed.getY();
+        double dz = player.getZ() - (bed.getZ() + 0.5);
+        double range = RESIDENT_LOG_RANGE;
+        return dx * dx + dy * dy + dz * dz <= range * range;
+    }
+
+    private static void logResident(
+            boolean warn,
+            String kind,
+            ServerLevel level,
+            InhabitantData.Home home,
+            @Nullable UUID id,
+            @Nullable Entity entity,
+            String extra) {
+        BlockPos bed = home.bed();
+        String line = "EHM resident " + kind
+                + " bed=" + bed.getX() + "," + bed.getY() + "," + bed.getZ()
+                + " id=" + home.id()
+                + " name=" + token(home.name())
+                + " specialty=" + token(home.specialty())
+                + " uuid=" + (id == null ? "none" : id)
+                + " score=" + home.score()
+                + " uneasy=" + home.uneasy()
+                + " leave=" + home.leaveAfterDay()
+                + " empty=" + home.emptyUntilDay()
+                + " roll=" + home.lastRollDay()
+                + " day=" + AntiFarming.overworldDay(level)
+                + " time=" + level.getGameTime()
+                + " " + entityState(entity)
+                + " " + chunkGate(level, bed)
+                + " bodies=" + residentBodies(level, bed)
+                + " players=" + playersNear(level, bed)
+                + (extra == null || extra.isEmpty() ? "" : " " + extra);
+        if (warn) {
+            ExtraHardModeMod.LOGGER.warn("{}", line);
+        } else {
+            ExtraHardModeMod.LOGGER.info("{}", line);
+        }
+    }
+
+    private static String entityState(@Nullable Entity entity) {
+        if (entity == null) {
+            return "found=false";
+        }
+        String removal = entity.getRemovalReason() == null ? "none" : entity.getRemovalReason().name();
+        return "found=true alive=" + entity.isAlive()
+                + " removed=" + entity.isRemoved()
+                + " removal=" + removal
+                + " save=" + entity.shouldBeSaved()
+                + " at=" + entity.getBlockX() + "," + entity.getBlockY() + "," + entity.getBlockZ();
+    }
+
+    /** Block chunks and entity chunks inside the snap radius. Gaps name chunks that are not entity-ticking. */
+    private static String chunkGate(ServerLevel level, BlockPos bed) {
+        int radius = InhabitantRules.SNAP_HOME_RANGE;
+        int minCx = (bed.getX() - radius) >> 4;
+        int maxCx = (bed.getX() + radius) >> 4;
+        int minCz = (bed.getZ() - radius) >> 4;
+        int maxCz = (bed.getZ() + radius) >> 4;
+        int total = 0;
+        int blocks = 0;
+        int entities = 0;
+        StringBuilder gaps = new StringBuilder();
+        int hidden = 0;
+        for (int cx = minCx; cx <= maxCx; cx++) {
+            for (int cz = minCz; cz <= maxCz; cz++) {
+                total++;
+                boolean has = level.hasChunk(cx, cz);
+                boolean loaded = has && level.areEntitiesLoaded(ChunkPos.pack(cx, cz));
+                if (has) {
+                    blocks++;
+                }
+                if (loaded) {
+                    entities++;
+                    continue;
+                }
+                if (gaps.length() > 80) {
+                    hidden++;
+                    continue;
+                }
+                if (gaps.length() > 0) {
+                    gaps.append(' ');
+                }
+                gaps.append(cx).append(',').append(cz).append(has ? "=blocks" : "=absent");
+            }
+        }
+        String text = "chunks=" + blocks + "/" + total + " entities=" + entities + "/" + total;
+        if (gaps.length() == 0) {
+            return text;
+        }
+        text = text + " gaps=" + gaps;
+        if (hidden > 0) {
+            text = text + " +" + hidden;
+        }
+        return text;
+    }
+
+    private static String residentBodies(ServerLevel level, BlockPos bed) {
+        if (!level.hasChunk(bed.getX() >> 4, bed.getZ() >> 4)) {
+            return "unloaded";
+        }
+        AABB box = new AABB(bed).inflate(InhabitantRules.SNAP_HOME_RANGE);
+        List<Villager> found = level.getEntities(EntityTypes.VILLAGER, box, Inhabitants::isInhabitant);
+        if (found.isEmpty()) {
+            return "none";
+        }
+        StringBuilder bodies = new StringBuilder();
+        int shown = 0;
+        for (Villager villager : found) {
+            if (shown == 6) {
+                bodies.append(" +more");
+                break;
+            }
+            if (bodies.length() > 0) {
+                bodies.append(';');
+            }
+            Component custom = villager.getCustomName();
+            bodies.append(token(custom == null ? "" : custom.getString()))
+                    .append(':')
+                    .append(villager.getUUID())
+                    .append('@')
+                    .append(villager.getBlockX())
+                    .append(',')
+                    .append(villager.getBlockY())
+                    .append(',')
+                    .append(villager.getBlockZ());
+            shown++;
+        }
+        return bodies.toString();
+    }
+
+    private static String playersNear(ServerLevel level, BlockPos bed) {
+        StringBuilder names = new StringBuilder();
+        for (ServerPlayer player : level.players()) {
+            if (names.length() > 0) {
+                names.append(';');
+            }
+            long dist = Math.round(Math.sqrt(player.distanceToSqr(bed.getX() + 0.5, bed.getY(), bed.getZ() + 0.5)));
+            names.append(player.getScoreboardName())
+                    .append('@')
+                    .append(player.getBlockX())
+                    .append(',')
+                    .append(player.getBlockY())
+                    .append(',')
+                    .append(player.getBlockZ())
+                    .append(" dist=")
+                    .append(dist);
+        }
+        if (names.length() == 0) {
+            return "none";
+        }
+        return names.toString();
+    }
+
+    private static String token(String value) {
+        if (value == null || value.isEmpty()) {
+            return "-";
+        }
+        return value.indexOf(' ') >= 0 ? "'" + value + "'" : value;
+    }
+
+    private record ClearedResident(UUID id, String homeId, long gameTime) {}
+
+    /**
+     * Every chunk covering the snap-home radius is present and has its entities loaded.
+     * {@code hasChunk} alone is true while the bodies are still on disk, which is the
+     * login race that cleared a living resident and then discarded the body as an orphan.
+     */
     static boolean homeAreaLoaded(ServerLevel level, BlockPos bed) {
         int radius = InhabitantRules.SNAP_HOME_RANGE;
         int minCx = (bed.getX() - radius) >> 4;
@@ -1399,7 +1655,7 @@ public final class Inhabitants implements FeatureModule {
         int maxCz = (bed.getZ() + radius) >> 4;
         for (int cx = minCx; cx <= maxCx; cx++) {
             for (int cz = minCz; cz <= maxCz; cz++) {
-                if (!level.hasChunk(cx, cz)) {
+                if (!level.hasChunk(cx, cz) || !level.areEntitiesLoaded(ChunkPos.pack(cx, cz))) {
                     return false;
                 }
             }
@@ -1414,6 +1670,25 @@ public final class Inhabitants implements FeatureModule {
             if (!villager.isAlive() || data.byLiving(villager.getUUID()) != null) {
                 continue;
             }
+            String homeId = villager.getAttachedOrElse(EhmAttachments.EHM_INHABITANT_HOME, "");
+            InhabitantData.Home home = homeId.isEmpty() ? null : data.get(homeId);
+            String record = "record=none";
+            if (home != null) {
+                record = "record=" + (home.living().isEmpty() ? "empty" : home.living().get())
+                        + " recordName=" + token(home.name())
+                        + " recordSpecialty=" + token(home.specialty());
+            }
+            Component custom = villager.getCustomName();
+            ExtraHardModeMod.LOGGER.warn(
+                    "EHM resident orphan name={} uuid={} at={},{},{} save={} home={} {}",
+                    custom == null ? "-" : custom.getString(),
+                    villager.getUUID(),
+                    villager.getBlockX(),
+                    villager.getBlockY(),
+                    villager.getBlockZ(),
+                    villager.shouldBeSaved(),
+                    homeId.isEmpty() ? "-" : homeId,
+                    record);
             villager.discard();
         }
     }
@@ -1467,6 +1742,7 @@ public final class Inhabitants implements FeatureModule {
                 player.sendSystemMessage(message);
             }
         }
+        logResident(true, "moved-out", level, home, home.living().orElse(null), entity, "");
         entity.discard();
         data.put(home.withLiving(Optional.empty())
                 .withLeave(-1L, false)
@@ -1491,7 +1767,9 @@ public final class Inhabitants implements FeatureModule {
             return;
         }
         long day = AntiFarming.overworldDay(level);
-        data.put(home.withEmptyUntil(InhabitantRules.emptyUntilDay(day)).withLastRoll(day));
+        InhabitantData.Home locked = home.withEmptyUntil(InhabitantRules.emptyUntilDay(day)).withLastRoll(day);
+        data.put(locked);
+        logResident(true, "slain", level, locked, villager.getUUID(), villager, "");
         Component message = Component.translatableWithFallback(
                 "tougher.chat.inhabitant_slain",
                 "%s will not be replaced here for a while.",

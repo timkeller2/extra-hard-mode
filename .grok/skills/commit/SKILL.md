@@ -1,15 +1,16 @@
 ---
 name: commit
 description: >
-  Commit the Tougher working tree, push extra-hard-mode to origin/main, and
-  update the Witherfen server when it has no players.
+  Commit the Tougher working tree, push extra-hard-mode to origin/main, copy
+  the jar to S:\Dist\Minecraft Tougher Mod, and update the Witherfen server
+  when it has no players.
   Use when the user says "Commit", "commit and push", or "commit and update
   the servers", or runs /commit.
 ---
 
 # Commit
 
-"Commit" means the whole sequence: commit, push `origin/main`, then update Witherfen. Stop after the push only when the user says to leave the server alone.
+"Commit" means the whole sequence: commit, push `origin/main`, copy the jar to `S:\Dist\Minecraft Tougher Mod`, then update Witherfen. Stop after the push and the distribution copy only when the user says to leave the server alone.
 
 Hosts, `JAVA_HOME`, the no-password rule, eased world settings, and the restart policy live in the tougher skill. Read that skill before the SSH steps. Do not print an RCON password, a management secret, or `server.properties`.
 
@@ -31,9 +32,15 @@ Write the message to a temp file with UTF-8 and no BOM, then `git commit -F` tha
 
 Push with `git push origin HEAD:main`. Do not poll the GitHub release unless the user asks.
 
-If the tree is clean and the branch is already on `origin/main`, skip to Witherfen. If it is clean but ahead, push, then update Witherfen.
+If the tree is clean and the branch is already on `origin/main`, skip to the distribution copy, then Witherfen. If it is clean but ahead, push, then copy the jar and update Witherfen.
 
-## 3. Count players
+## 3. Distribution copy
+
+Copy `build\libs\tougher-0.1.0+26.3.jar` to `S:\Dist\Minecraft Tougher Mod`. Copy only that jar, not the sources jar. Replace older `tougher-*.jar` and `extrahardmode-*.jar` files there. Leave the other jars in that folder.
+
+Do this on every Commit, including when Witherfen is left running.
+
+## 4. Count players
 
 Write the script below to `%TEMP%`, convert it to LF UTF-8 with no BOM, and `scp` it. Run it, then delete it on the host and locally. A count above 0 skips the update. Do not kick.
 
@@ -106,7 +113,7 @@ if not match:
 print(f"PLAYERS {match.group(1)}/{match.group(2)}")
 ```
 
-## 4. Install and boot
+## 5. Install and boot
 
 Allow about 150 seconds for the stop. Witherfen's unit fails RCON auth and then waits out its stop timeout.
 
@@ -140,7 +147,7 @@ Leave Chunky, appleskin, and voicechat on Witherfen. Do not edit world toml. Do 
 
 Start the service, wait about 45 seconds, and read `systemctl show minecraft.service -p ActiveState -p ActiveEnterTimestamp` plus the new boot's `Tougher loaded` line and a later `Done` line. Delete `/tmp/tougher-install.sh` after it runs.
 
-## 5. Record it
+## 6. Record it
 
 Re-read before editing. Update the recent-state sections of `topics/tougher-server.md`, `topics/extra-hard-mode-repo.md`, and `topics/minecraft-client.md` with the commit, jar size, sha256, and the Witherfen boot timestamp. Do not edit `MEMORY.md`.
 

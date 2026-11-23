@@ -14,6 +14,7 @@ import dev.extrahardmode.feature.HungerRules;
 import dev.extrahardmode.feature.OvergrazingRules;
 import dev.extrahardmode.feature.SheepGrazeRules;
 import dev.extrahardmode.feature.SoftenMap;
+import dev.extrahardmode.feature.SpawnerLootRules;
 import dev.extrahardmode.feature.TorchLifetimeRules;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -140,6 +141,7 @@ public final class WorldConfig {
     private int guardianPercent = 20;
     private int vexPercent = 5;
     private boolean inhibitGrinders = true;
+    private int spawnerLootKills = SpawnerLootRules.DEFAULT_LOOT_KILLS;
     private boolean moreMonstersEnable = true;
     private int moreMonstersMaxY = 48;
     private int moreMonstersMultiplier = 3;
@@ -605,6 +607,10 @@ public final class WorldConfig {
 
     public boolean inhibitGrinders() {
         return inhibitGrinders;
+    }
+
+    public int spawnerLootKills() {
+        return spawnerLootKills;
     }
 
     public boolean moreMonstersEnable() {
@@ -1176,8 +1182,13 @@ public final class WorldConfig {
                 writeDefaultIfMissing(
                         file,
                         "monsters.inhibitGrinders",
-                        "No drops/XP for grinders: unnatural floor, too much env damage, no path to player, water.",
+                        "No drops/XP for grinders: unnatural floor, too much env damage, no path to player, water. Monster-spawner drops use monsters.spawnerLootKills.",
                         true);
+                writeDefaultIfMissing(
+                        file,
+                        "monsters.spawnerLootKills",
+                        SpawnerLootRules.CONFIG_COMMENT,
+                        SpawnerLootRules.DEFAULT_LOOT_KILLS);
                 writeDefaultIfMissing(
                         file, "monsters.more.enable", "Pack-size multiplier below maxY. Disable with this boolean, not Y=0.", true);
                 if (!file.contains("monsters.more.maxY")) {
@@ -1486,6 +1497,8 @@ public final class WorldConfig {
                 file.set("replacements.guardianPercent", guardianPercent);
                 file.set("replacements.vexPercent", vexPercent);
                 file.set("monsters.inhibitGrinders", inhibitGrinders);
+                file.set("monsters.spawnerLootKills", spawnerLootKills);
+                file.setComment("monsters.spawnerLootKills", SpawnerLootRules.CONFIG_COMMENT);
                 file.set("monsters.more.enable", moreMonstersEnable);
                 file.set("monsters.more.maxY", moreMonstersMaxY);
                 file.set("monsters.more.multiplier", moreMonstersMultiplier);
@@ -1694,6 +1707,7 @@ public final class WorldConfig {
         guardianPercent = percentOr(file, "replacements.guardianPercent", 20);
         vexPercent = percentOr(file, "replacements.vexPercent", 5);
         inhibitGrinders = file.getOrElse("monsters.inhibitGrinders", true);
+        spawnerLootKills = Math.max(0, getInt(file, "monsters.spawnerLootKills", SpawnerLootRules.DEFAULT_LOOT_KILLS));
         moreMonstersEnable = file.getOrElse("monsters.more.enable", true);
         moreMonstersMaxY = getInt(file, "monsters.more.maxY", 48);
         moreMonstersMultiplier = getInt(file, "monsters.more.multiplier", defaultMoreMonstersMultiplier(dimensionId));

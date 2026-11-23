@@ -1,5 +1,7 @@
 package dev.extrahardmode.mixin;
 
+import dev.extrahardmode.feature.AntiGrinder;
+import dev.extrahardmode.feature.SpawnerLootRules;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.world.WorldGate;
 import net.minecraft.resources.ResourceKey;
@@ -26,7 +28,14 @@ public abstract class LootlessMixin {
             return;
         }
         LivingEntity self = (LivingEntity) (Object) this;
-        if (Boolean.TRUE.equals(self.getAttachedOrElse(EhmAttachments.EHM_LOOTLESS, Boolean.FALSE))) {
+        boolean lootless = Boolean.TRUE.equals(self.getAttachedOrElse(EhmAttachments.EHM_LOOTLESS, Boolean.FALSE));
+        int gate = AntiGrinder.spawnerGate(self, level);
+        if (gate == SpawnerLootRules.GATE_ALLOW && !lootless) {
+            AntiGrinder.countSpawnerKill(self);
+            gate = AntiGrinder.spawnerGate(self, level);
+            lootless = Boolean.TRUE.equals(self.getAttachedOrElse(EhmAttachments.EHM_LOOTLESS, Boolean.FALSE));
+        }
+        if (gate == SpawnerLootRules.GATE_BLOCK || lootless) {
             ci.cancel();
         }
     }
@@ -40,7 +49,9 @@ public abstract class LootlessMixin {
         if (!WorldGate.isActive(level)) {
             return;
         }
-        if (Boolean.TRUE.equals(self.getAttachedOrElse(EhmAttachments.EHM_LOOTLESS, Boolean.FALSE))) {
+        int gate = AntiGrinder.spawnerGate(self, level);
+        if (gate == SpawnerLootRules.GATE_BLOCK
+                || Boolean.TRUE.equals(self.getAttachedOrElse(EhmAttachments.EHM_LOOTLESS, Boolean.FALSE))) {
             cir.setReturnValue(false);
         }
     }

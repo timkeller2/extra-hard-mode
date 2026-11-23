@@ -131,6 +131,20 @@ class CropGrowthRulesTest {
         assertTrue(CropGrowthRules.glowBerryBonemealFails(25, 24));
         assertFalse(CropGrowthRules.glowBerryBonemealFails(25, 25));
         assertFalse(CropGrowthRules.glowBerryBonemealFails(25, 99));
+        assertEquals(20 * 60 * 3, CropGrowthRules.GLOW_BERRY_MEAL_COOLDOWN_TICKS);
+        assertEquals(0, CropGrowthRules.glowBerryMealRemaining(100, -1));
+        assertEquals(3600, CropGrowthRules.glowBerryMealRemaining(0, 0));
+        assertEquals(1, CropGrowthRules.glowBerryMealRemaining(3599, 0));
+        assertEquals(0, CropGrowthRules.glowBerryMealRemaining(3600, 0));
+        assertEquals(0, CropGrowthRules.glowBerryMealRemaining(10, 20));
+        assertEquals("3m", CropGrowthRules.glowBerryMealLabel(3600));
+        assertEquals("3m", CropGrowthRules.glowBerryMealLabel(3581));
+        assertEquals("2m 59s", CropGrowthRules.glowBerryMealLabel(3580));
+        assertEquals("2m 15s", CropGrowthRules.glowBerryMealLabel(20 * 135));
+        assertEquals("45s", CropGrowthRules.glowBerryMealLabel(20 * 45));
+        assertEquals("1s", CropGrowthRules.glowBerryMealLabel(1));
+        assertEquals("1s", CropGrowthRules.glowBerryMealLabel(20));
+        assertEquals("2s", CropGrowthRules.glowBerryMealLabel(21));
     }
 
     @Test

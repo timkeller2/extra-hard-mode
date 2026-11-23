@@ -25,7 +25,9 @@ import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.api.loot.v3.LootTableEvents;
+import dev.extrahardmode.network.ClientboundGlowBerryLookPayload;
 import dev.extrahardmode.network.ClientboundSoilLookPayload;
+import dev.extrahardmode.world.GlowBerryMealData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
@@ -65,6 +67,7 @@ import net.minecraft.world.level.block.AttachedStemBlock;
 import net.minecraft.world.level.block.BeehiveBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.CactusBlock;
+import net.minecraft.world.level.block.CaveVines;
 import net.minecraft.world.level.block.CocoaBlock;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CropBlock;
@@ -113,6 +116,7 @@ public final class AntiFarming implements FeatureModule {
     public void serverTick(ServerLevel level) {
         for (ServerPlayer player : level.players()) {
             tickSoilLook(player);
+            tickGlowBerryLook(player);
             ClockFrames.tick(player);
         }
     }
@@ -668,6 +672,22 @@ public final class AntiFarming implements FeatureModule {
         return Boolean.TRUE.equals(BONE_MEAL_BYPASS.get());
     }
 
+    /** True when this segment is still waiting and this use must not consume bone meal. */
+    public static boolean glowBerryMealCooling(ServerLevel level, BlockPos pos) {
+        if (level == null || pos == null || !WorldGate.isModuleActive(level, ID) || boneMealBypasses()) {
+            return false;
+        }
+        return GlowBerryMealData.of(level).remaining(pos, level.getGameTime()) > 0;
+    }
+
+    /** Starts the three-minute wait. A fruit that fails still counts as a use. */
+    public static void markGlowBerryMeal(ServerLevel level, BlockPos pos) {
+        if (level == null || pos == null || !WorldGate.isModuleActive(level, ID) || boneMealBypasses()) {
+            return;
+        }
+        GlowBerryMealData.of(level).mark(pos, level.getGameTime());
+    }
+
     public static void onBoneMeal(ServerLevel level, BlockPos plant) {
         if (!WorldGate.isModuleActive(level, ID)) {
             return;
@@ -749,6 +769,43 @@ public final class AntiFarming implements FeatureModule {
                 displayed == null
                         ? ClientboundSoilLookPayload.HIDDEN
                         : new ClientboundSoilLookPayload(true, displayed));
+    }
+
+    static void tickGlowBerryLook(ServerPlayer player) {
+        if (!(player.level() instanceof ServerLevel level) || !WorldGate.isModuleActive(level, ID)) {
+            sendGlowBerryLook(player, 0);
+            return;
+        }
+        if (EhmApi.playerBypasses(player)) {
+            sendGlowBerryLook(player, 0);
+            return;
+        }
+        HitResult hit = player.pick(player.blockInteractionRange(), 1.0F, false);
+        if (!(hit instanceof BlockHitResult blockHit) || blockHit.getType() == HitResult.Type.MISS) {
+            sendGlowBerryLook(player, 0);
+            return;
+        }
+        Block looked = level.getBlockState(blockHit.getBlockPos()).getBlock();
+        if (!(looked instanceof CaveVines)) {
+            sendGlowBerryLook(player, 0);
+            return;
+        }
+        int remaining = GlowBerryMealData.of(level).remaining(blockHit.getBlockPos(), level.getGameTime());
+        sendGlowBerryLook(player, remaining);
+    }
+
+    static void sendGlowBerryLook(ServerPlayer player, int remainingTicks) {
+        String key = remainingTicks > 0 ? CropGrowthRules.glowBerryMealLabel(remainingTicks) : "";
+        String last = player.getAttachedOrElse(EhmAttachments.EHM_GLOW_BERRY_LOOK, "");
+        if (key.equals(last)) {
+            return;
+        }
+        player.setAttached(EhmAttachments.EHM_GLOW_BERRY_LOOK, key);
+        EhmNetworking.sendGlowBerryLook(
+                player,
+                remainingTicks > 0
+                        ? new ClientboundGlowBerryLookPayload(true, remainingTicks)
+                        : ClientboundGlowBerryLookPayload.HIDDEN);
     }
 
     static void onCropBroken(

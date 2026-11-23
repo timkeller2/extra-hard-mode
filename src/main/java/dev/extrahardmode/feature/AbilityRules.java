@@ -1290,6 +1290,51 @@ public final class AbilityRules {
     }
 
     /**
+     * Practices still needed after {@code uses} before skill plus the world offset
+     * can cast with no redstone, catalyst, or Empower. Diamond Skin uses its higher line.
+     * Zero means the next cast can succeed with no buffs.
+     */
+    public static int practicesUntilUnbuffed(String ability, int uses, int levelOffset) {
+        int current = Math.max(0, uses);
+        if (!practices(ability, unbuffedPower(ability, current, levelOffset))) {
+            return 0;
+        }
+        double need = DIAMOND_SKIN.equals(ability) ? DIAMOND_SKIN_MIN_LEVEL : PRACTICE_LEVEL;
+        double skillNeed = need - levelOffset;
+        int target = current;
+        if (skillNeed > 0.0) {
+            double squared = skillNeed * skillNeed;
+            if (squared >= Integer.MAX_VALUE) {
+                target = Integer.MAX_VALUE;
+            } else {
+                target = (int) Math.ceil(squared - 1.0e-9);
+            }
+        }
+        if (target < current) {
+            target = current;
+        }
+        while (target < Integer.MAX_VALUE && practices(ability, unbuffedPower(ability, target, levelOffset))) {
+            target++;
+        }
+        while (target > current && !practices(ability, unbuffedPower(ability, target - 1, levelOffset))) {
+            target--;
+        }
+        long left = (long) target - current;
+        if (left <= 0L) {
+            return 0;
+        }
+        if (left > Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        }
+        return (int) left;
+    }
+
+    /** Skill plus the world offset. Redstone, catalysts, and Empower are not included. */
+    private static double unbuffedPower(String ability, int uses, int levelOffset) {
+        return power(ability, uses, 0, levelOffset, 0);
+    }
+
+    /**
      * A write that would store nothing says so, except below the practice line.
      * Practice still spends the mana and the book and gains a use.
      */

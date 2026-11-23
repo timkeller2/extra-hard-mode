@@ -184,6 +184,18 @@ public final class EhmAttachments {
     public static final AttachmentType<Boolean> EHM_LOOTLESS = AttachmentRegistry.create(
             ExtraHardModeMod.id("lootless"),
             builder -> builder.persistent(Codec.BOOL).initializer(() -> Boolean.FALSE));
+    /** Monster spawner or minecart spawner that created this mob. Absent for every other spawn. */
+    public static final AttachmentType<String> EHM_SPAWNER_ID = AttachmentRegistry.create(
+            ExtraHardModeMod.id("spawner_id"), builder -> builder.persistent(Codec.STRING));
+    /** Cached loot decision for one spawner-mob death. Not saved. */
+    public static final AttachmentType<Integer> EHM_SPAWNER_GATE =
+            AttachmentRegistry.create(ExtraHardModeMod.id("spawner_gate"));
+    /** Player kills already taken from each spawner. The key is that spawner's id. */
+    public static final AttachmentType<Map<String, Integer>> EHM_SPAWNER_KILLS = AttachmentRegistry.create(
+            ExtraHardModeMod.id("spawner_kills"),
+            builder -> builder.persistent(Codec.unboundedMap(Codec.STRING, Codec.INT))
+                    .copyOnDeath()
+                    .initializer(HashMap::new));
 
     /** Transient shot tag: snowball / firework / fireball. */
     public static final AttachmentType<String> EHM_SKELETON_SPECIAL =
@@ -579,6 +591,9 @@ public final class EhmAttachments {
     /** Last hoe-look soil HUD key, empty when hidden. */
     public static final AttachmentType<String> EHM_SOIL_LOOK = AttachmentRegistry.create(
             ExtraHardModeMod.id("soil_look"), builder -> builder.initializer(() -> ""));
+    /** Last glow-berry bone-meal timer label, empty when hidden. */
+    public static final AttachmentType<String> EHM_GLOW_BERRY_LOOK = AttachmentRegistry.create(
+            ExtraHardModeMod.id("glow_berry_look"), builder -> builder.initializer(() -> ""));
     /** Last look-at torch/campfire remaining-time HUD key, empty when hidden. */
     public static final AttachmentType<String> EHM_LIGHT_LOOK = AttachmentRegistry.create(
             ExtraHardModeMod.id("light_look"), builder -> builder.initializer(() -> ""));
