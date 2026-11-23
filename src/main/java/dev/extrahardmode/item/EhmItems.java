@@ -270,7 +270,7 @@ public final class EhmItems {
                 material,
                 true,
                 HeavyWeaponRules.swordAttack(),
-                HeavyWeaponRules.SWORD_SPEED,
+                HeavyWeaponRules.swordSpeed(),
                 repair,
                 rarity,
                 fireResistant);

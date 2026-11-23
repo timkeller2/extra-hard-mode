@@ -440,7 +440,7 @@ public final class EhmHelp {
                 "tougher.help.weapons.",
                 List.of(
                         "Weapons: Heavy swords and axes of copper, iron, gold, and diamond use the normal recipe with blocks instead of ingots.",
-                        "Weapons: They last three times as long and deal 2 more damage. Repair them with those blocks.",
+                        "Weapons: They last three times as long and deal 2 more damage. Heavy swords swing 10% slower. Repair them with those blocks.",
                         "Weapons: Smith the heavy diamond sword or axe with a netherite upgrade template and a netherite ingot. That ingot repairs it.",
                         "Weapons: A heavy golden sword casts Smite Evil, the same as a golden sword.",
                         "Weapons: A slain biome boss can drop an enchanted heavy sword or axe. The chance starts at 25% and rises as that boss is richer.",

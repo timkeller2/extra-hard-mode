@@ -1295,7 +1295,7 @@ public final class ManaAbilities implements FeatureModule {
 
     /**
      * Right-click with an amethyst shard. The targeted living character gets the shield.
-     * With none targeted, the caster does. A second click cancels. It does not renew.
+     * With none targeted, the caster does. An active shield keeps running. It does not renew.
      * One lapis lazuli in the hotbar or backpack adds +2 and is spent after the cast succeeds.
      */
     static boolean tryLapisShield(ServerPlayer player, LivingEntity clicked) {
@@ -1306,9 +1306,11 @@ public final class ManaAbilities implements FeatureModule {
             return true;
         }
         if (player.getAttached(EhmAttachments.EHM_LAPIS_SHIELD_TARGET) != null) {
-            endOutgoingLapisShield(player, outgoingLapisTicks(player) > 0 ? LAPIS_CANCEL : LAPIS_SILENT);
-            markHandled(player);
-            return true;
+            if (outgoingLapisTicks(player) > 0) {
+                markHandled(player);
+                return true;
+            }
+            endOutgoingLapisShield(player, LAPIS_SILENT);
         }
         boolean lapisBonus = InventorySearch.hasOneMain(player, Items.LAPIS_LAZULI);
         int bonus = AbilityRules.catalystBonus(player.getMainHandItem().getCount())
@@ -3014,10 +3016,6 @@ public final class ManaAbilities implements FeatureModule {
             return;
         }
         if (held.is(Items.AMETHYST_SHARD) && outgoingLapisTicks(player) > 0) {
-            player.sendOverlayMessage(Component.translatableWithFallback(
-                    "tougher.message.ability_hint_iron_heart_off",
-                    "Double-right-click to cancel %s...",
-                    abilityName(ability)));
             return;
         }
         if (!AbilityRules.hasManaToUse(ability, Achievements.currentMana(player))) {

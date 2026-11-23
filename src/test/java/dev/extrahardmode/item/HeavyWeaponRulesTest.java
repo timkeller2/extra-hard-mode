@@ -17,10 +17,19 @@ class HeavyWeaponRulesTest {
     }
 
     @Test
-    void swordsHitTwoHarderAtTheSameSpeed() {
+    void swordsHitTwoHarderAndSwingTenPercentSlower() {
         assertEquals(2.0F, HeavyWeaponRules.DAMAGE_BONUS, 0.001F);
         assertEquals(5.0F, HeavyWeaponRules.swordAttack(), 0.001F);
         assertEquals(-2.4F, HeavyWeaponRules.SWORD_SPEED, 0.001F);
+        assertEquals(4.0F, HeavyWeaponRules.BASE_ATTACK_SPEED, 0.001F);
+        assertEquals(0.10F, HeavyWeaponRules.SWORD_SLOWDOWN, 0.001F);
+        assertEquals(1.6F, HeavyWeaponRules.vanillaSwordAttacksPerSecond(), 0.001F);
+        assertEquals(1.44F, HeavyWeaponRules.swordAttacksPerSecond(), 0.001F);
+        assertEquals(-2.56F, HeavyWeaponRules.swordSpeed(), 0.001F);
+        assertEquals(
+                HeavyWeaponRules.vanillaSwordAttacksPerSecond() * 0.90F,
+                HeavyWeaponRules.swordAttacksPerSecond(),
+                0.001F);
     }
 
     @Test

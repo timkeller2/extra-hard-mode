@@ -293,6 +293,11 @@ class AbilityRulesTest {
         assertTrue(AbilityRules.helpFallback(AbilityRules.LAPIS_SHIELD).contains("not a bundle"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.LAPIS_SHIELD).contains("harmful effects"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.LAPIS_SHIELD).contains("adds another +2"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.LAPIS_SHIELD).contains("does not cancel"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.LAPIS_SHIELD).contains("runs until it ends"));
+        assertFalse(AbilityRules.helpFallback(AbilityRules.LAPIS_SHIELD).contains("to cancel"));
+        assertTrue(AbilityRules.teacherInstruction(AbilityRules.LAPIS_SHIELD).contains("does not cancel"));
+        assertFalse(AbilityRules.teacherInstruction(AbilityRules.LAPIS_SHIELD).contains("again to cancel"));
         assertEquals(2, AbilityRules.lapisCastBonus(true));
         assertEquals(0, AbilityRules.lapisCastBonus(false));
         assertEquals(1200, AbilityRules.lapisShieldDurationTicks(1));

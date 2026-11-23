@@ -144,6 +144,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("51% loss and"));
         assertTrue(String.join(" ", lines).contains("Let it grow never causes that death"));
         assertTrue(String.join(" ", lines).contains("three times"));
+        assertTrue(String.join(" ", lines).contains("Heavy swords swing 10% slower"));
         assertTrue(String.join(" ", lines).contains("above 60%"));
         assertTrue(String.join(" ", lines).contains("bees stay"));
         assertTrue(String.join(" ", lines).contains("1 less meat"));
@@ -533,6 +534,8 @@ class EhmHelpTest {
         assertTrue(EhmHelp.resolve("empower").lines().stream().anyMatch(line -> line.startsWith("Empower:")));
         assertTrue(EhmHelp.resolve("battery").lines().stream().anyMatch(line -> line.startsWith("Battery:")));
         assertTrue(EhmHelp.resolve("amethyst shield").lines().stream().anyMatch(line -> line.startsWith("Amethyst Shield:")));
+        assertTrue(String.join(" ", EhmHelp.resolve("amethyst shield").lines()).contains("does not cancel"));
+        assertFalse(String.join(" ", EhmHelp.resolve("amethyst shield").lines()).contains("to cancel"));
         assertTrue(EhmHelp.resolve("lapis shield").lines().stream().anyMatch(line -> line.startsWith("Amethyst Shield:")));
         assertTrue(EhmHelp.resolve("write tome").lines().stream().anyMatch(line -> line.startsWith("Write Tome of the Wise:")));
         assertTrue(EhmHelp.resolve("read tome").lines().stream().anyMatch(line -> line.startsWith("Read Tome of the Wise:")));

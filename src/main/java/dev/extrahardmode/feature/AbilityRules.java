@@ -580,7 +580,7 @@ public final class AbilityRules {
             case BATTERY ->
                 "Hold a quartz block and double-right-click in the air. Double-right-click again to cancel. It costs no mana. It renews until mana reaches your level and spends a quartz block.";
             case LAPIS_SHIELD ->
-                "Hold an amethyst shard and double-right-click a creature, or yourself if none is targeted. It costs 1 mana. Double-right-click again to cancel.";
+                "Hold an amethyst shard and double-right-click a creature, or yourself if none is targeted. It costs 1 mana. It runs until it ends. A second click does not cancel it.";
             case WRITE_TOME ->
                 "Hold a book at experience level 7 or higher and double-right-click. It costs 1 mana. Two or more books add +2. Three, four, or five books make 2, 3, or 4 tomes and split the experience. More than five still uses five and makes 4.";
             case READ_TOME ->
@@ -763,7 +763,7 @@ public final class AbilityRules {
                     "Amethyst Shield: Damage up to that level is absorbed before armor or health. A hit within that level also skips harmful effects, such as poison.",
                     "Amethyst Shield: Amethyst shards, lapis lazuli, and whole mana pay for the block. One kind costs 1 per 3 points, two kinds 1 per 5, and all three 1 per 7, rounded up.",
                     "Amethyst Shield: The cost alternates those fuels, largest amount first. Items come from your hotbar or inventory, not a bundle, armor, or the offhand.",
-                    "Amethyst Shield: If you cannot pay, the hit lands and the shield ends. Double-right-click again with an amethyst shard to cancel.",
+                    "Amethyst Shield: If you cannot pay, the hit lands and the shield ends. It runs until it ends. A second click does not cancel it.",
                     "Amethyst Shield: One shard is consumed to cast. Two in hand consume both and add +2. One lapis lazuli in your hotbar or inventory is also consumed and adds another +2.");
             case WRITE_TOME -> List.of(
                     "Write Tome of the Wise: Double-right-click while holding a book at experience level 7 or higher. Costs 1 mana.",
