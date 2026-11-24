@@ -762,6 +762,7 @@ public final class AbilityRules {
                     "Amethyst Shield: It lasts 1 minute times your ability level. A force field stays around that character until it ends.",
                     "Amethyst Shield: Damage up to that level is absorbed before armor or health. A hit within that level also skips harmful effects, such as poison.",
                     "Amethyst Shield: Amethyst, lapis, and minutes left pay for the block. One kind costs 1 per 3 points, two kinds 1 per 5, and all three 1 per 7, rounded up.",
+                    "Amethyst Shield: Each block also shortens the shield by 10 seconds. A minute of duration fuel takes 1 minute 10 seconds.",
                     "Amethyst Shield: The cost alternates those fuels, largest amount first. Items come from your hotbar or inventory, not a bundle, armor, or the offhand.",
                     "Amethyst Shield: If you cannot pay, the hit lands and the shield ends. It runs until it ends. A second click does not cancel it.",
                     "Amethyst Shield: One shard is consumed to cast. Two in hand consume both and add +2. One lapis lazuli in your hotbar or inventory is also consumed and adds another +2.");

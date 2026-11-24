@@ -60,6 +60,8 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("1 minute per level"));
         assertTrue(String.join(" ", lines).contains("before armor"));
         assertTrue(String.join(" ", lines).contains("1 per 3 points blocked"));
+        assertTrue(String.join(" ", lines).contains("shortens the shield by 10 seconds"));
+        assertTrue(String.join(" ", lines).contains("1 minute 10 seconds"));
         assertTrue(String.join(" ", lines).contains("1 per 5"));
         assertTrue(String.join(" ", lines).contains("1 per 7"));
         assertTrue(String.join(" ", lines).contains("rounded up"));

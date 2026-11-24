@@ -53,6 +53,10 @@ class LapisShieldRulesTest {
         assertEquals(2, LapisShieldRules.durationUnits(LapisShieldRules.durationMinutes(1200 * 2 + 840)));
         assertEquals(2400L, LapisShieldRules.minuteTicks(2));
         assertEquals(0L, LapisShieldRules.minuteTicks(0));
+        assertEquals(10, LapisShieldRules.ABSORB_EXTRA_SECONDS);
+        assertEquals(200L, LapisShieldRules.absorbDurationTicks(0));
+        assertEquals(1400L, LapisShieldRules.absorbDurationTicks(1));
+        assertEquals(2600L, LapisShieldRules.absorbDurationTicks(2));
     }
 
     @Test

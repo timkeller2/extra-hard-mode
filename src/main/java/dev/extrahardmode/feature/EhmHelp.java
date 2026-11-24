@@ -491,6 +491,7 @@ public final class EhmHelp {
                         "Abilities: Battery lasts 2 minutes per level. Regen is 1 plus the square root of that level. It stops at your mana level. A renew spends 1 block, or 2 from a stack.",
                         "Abilities: An amethyst shard casts Amethyst Shield for 1 mana. It lasts 1 minute per level and absorbs that much damage before armor.",
                         "Abilities: One fuel kind costs 1 per 3 points blocked, two kinds 1 per 5, and all three 1 per 7, rounded up. Fuels are amethyst, lapis, and minutes left.",
+                        "Abilities: Each block also shortens the shield by 10 seconds. A minute of duration fuel takes 1 minute 10 seconds.",
                         "Abilities: The cost alternates those fuels, largest amount first. A full block also stops harmful effects from that hit. If you cannot pay, the hit lands and the shield ends.",
                         "Abilities: One shard is consumed to cast. Two in hand consume both and add +2. One lapis in your hotbar or inventory is also consumed and adds another +2.",
                         "Abilities: From level 7, a book writes a Tome of the Wise for 1 mana. Above 30 it banks the excess and leaves you at 30. At 30 or below it banks everything and leaves you at 0.",

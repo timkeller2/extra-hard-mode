@@ -1496,9 +1496,10 @@ public final class ManaAbilities implements FeatureModule {
 
     /**
      * Damage left after Amethyst Shield, before helmet, armor, and health.
-     * Amethyst, lapis, and whole minutes left pay for the points blocked. A short payment
-     * blocks nothing and drops the shield. A paid hit that fits under the level
-     * also skips harmful effects that arrive with that hit.
+     * Amethyst, lapis, and whole minutes left pay for the points blocked. A paid block
+     * also shortens the shield by 10 seconds, so a minute of duration fuel takes 1 minute
+     * 10 seconds. A short payment blocks nothing and drops the shield. A paid hit that
+     * fits under the level also skips harmful effects that arrive with that hit.
      */
     public static float absorbLapisShield(LivingEntity victim, ServerLevel level, DamageSource source, float damage) {
         if (victim == null || level == null || damage < 0.0F) {
@@ -1581,7 +1582,10 @@ public final class ManaAbilities implements FeatureModule {
         }
     }
 
-    /** Spends the planned fuels. Checks every kind before taking the first, so a short kind leaves the rest. */
+    /**
+     * Spends the planned fuels, then 10 seconds of shield time. Checks every kind
+     * before taking the first, so a short kind leaves the rest.
+     */
     static boolean payAmethystShield(ServerPlayer caster, LivingEntity victim, LapisShieldRules.Payment payment) {
         if (caster == null || payment == null || payment.total() <= 0) {
             return false;
@@ -1605,22 +1609,25 @@ public final class ManaAbilities implements FeatureModule {
         if (payment.lapis() > 0 && !InventorySearch.consumeMain(caster, Items.LAPIS_LAZULI, payment.lapis())) {
             return false;
         }
-        if (payment.minutes() > 0 && !shortenLapisShield(caster, victim, payment.minutes())) {
+        if (!shortenLapisShield(caster, victim, LapisShieldRules.absorbDurationTicks(payment.minutes()))) {
             return false;
         }
         return true;
     }
 
-    /** Takes whole minutes off the caster and the shielded character. No time left ends the shield. */
-    static boolean shortenLapisShield(ServerPlayer caster, LivingEntity victim, int minutes) {
-        if (caster == null || minutes <= 0) {
+    /**
+     * Takes this many ticks off the caster and the shielded character. The fuel
+     * minutes and the extra 10 seconds are one cut. No time left ends the shield.
+     */
+    static boolean shortenLapisShield(ServerPlayer caster, LivingEntity victim, long ticks) {
+        if (caster == null || ticks <= 0L) {
             return false;
         }
         Long until = caster.getAttachedOrElse(EhmAttachments.EHM_LAPIS_SHIELD_UNTIL, -1L);
         if (until == null || until < 0L) {
             return false;
         }
-        long next = until - LapisShieldRules.minuteTicks(minutes);
+        long next = until - ticks;
         long now = abilityNow(caster);
         if (ticksUntil(next, now) <= 0) {
             if (victim != null) {

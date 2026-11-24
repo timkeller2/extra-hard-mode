@@ -17,6 +17,8 @@ public final class LapisShieldRules {
     public static final int THREE_KIND_POINTS = 7;
     /** One shield minute. Matches a 60-second ability minute at 20 ticks. */
     public static final int TICKS_PER_MINUTE = 20 * 60;
+    /** Taken off the shield on every paid block, on top of any minute fuel. */
+    public static final int ABSORB_EXTRA_SECONDS = 10;
 
     private LapisShieldRules() {}
 
@@ -75,6 +77,14 @@ public final class LapisShieldRules {
             return 0L;
         }
         return (long) minutes * TICKS_PER_MINUTE;
+    }
+
+    /**
+     * Ticks taken for one paid block. Fuel minutes are spent as before, then 10
+     * seconds more. A block paid with items and no minutes still costs those 10 seconds.
+     */
+    public static long absorbDurationTicks(int fuelMinutes) {
+        return minuteTicks(fuelMinutes) + (long) ABSORB_EXTRA_SECONDS * 20L;
     }
 
     /** Whole minutes that can pay. 0.9 counts as none. 2.7 counts as 2. */

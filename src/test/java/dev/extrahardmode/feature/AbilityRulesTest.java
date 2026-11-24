@@ -290,6 +290,8 @@ class AbilityRulesTest {
         assertTrue(AbilityRules.helpFallback(AbilityRules.LAPIS_SHIELD).contains("1 per 5"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.LAPIS_SHIELD).contains("1 per 7"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.LAPIS_SHIELD).contains("rounded up"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.LAPIS_SHIELD).contains("10 seconds"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.LAPIS_SHIELD).contains("1 minute 10 seconds"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.LAPIS_SHIELD).contains("not a bundle"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.LAPIS_SHIELD).contains("harmful effects"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.LAPIS_SHIELD).contains("adds another +2"));
