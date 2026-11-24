@@ -290,6 +290,7 @@ class AbilityRulesTest {
         assertTrue(AbilityRules.helpFallback(AbilityRules.LAPIS_SHIELD).contains("1 per 5"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.LAPIS_SHIELD).contains("1 per 7"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.LAPIS_SHIELD).contains("rounded up"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.LAPIS_SHIELD).contains("30 seconds times your ability level"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.LAPIS_SHIELD).contains("10 seconds"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.LAPIS_SHIELD).contains("1 minute 10 seconds"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.LAPIS_SHIELD).contains("not a bundle"));
@@ -302,9 +303,9 @@ class AbilityRulesTest {
         assertFalse(AbilityRules.teacherInstruction(AbilityRules.LAPIS_SHIELD).contains("again to cancel"));
         assertEquals(2, AbilityRules.lapisCastBonus(true));
         assertEquals(0, AbilityRules.lapisCastBonus(false));
-        assertEquals(1200, AbilityRules.lapisShieldDurationTicks(1));
-        assertEquals(2400, AbilityRules.lapisShieldDurationTicks(2));
-        assertEquals(3000, AbilityRules.lapisShieldDurationTicks(2.5));
+        assertEquals(600, AbilityRules.lapisShieldDurationTicks(1));
+        assertEquals(1200, AbilityRules.lapisShieldDurationTicks(2));
+        assertEquals(1500, AbilityRules.lapisShieldDurationTicks(2.5));
         assertEquals(0, AbilityRules.lapisShieldDurationTicks(0));
         assertEquals(1.0, AbilityRules.manaCost(AbilityRules.LAPIS_SHIELD), 1e-9);
         assertEquals(AbilityRules.WRITE_TOME, AbilityRules.abilityByTopic("write tome"));

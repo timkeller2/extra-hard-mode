@@ -57,6 +57,7 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("stops at your mana level"));
         assertTrue(String.join(" ", lines).contains("spends 1 block, or 2 from a stack"));
         assertTrue(String.join(" ", lines).contains("casts Amethyst Shield"));
+        assertTrue(String.join(" ", lines).contains("30 seconds per level"));
         assertTrue(String.join(" ", lines).contains("1 minute per level"));
         assertTrue(String.join(" ", lines).contains("before armor"));
         assertTrue(String.join(" ", lines).contains("1 per 3 points blocked"));

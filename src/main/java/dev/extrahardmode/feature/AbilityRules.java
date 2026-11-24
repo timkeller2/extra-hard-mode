@@ -137,7 +137,7 @@ public final class AbilityRules {
     public static final String AMETHYST_SHARD_ID = "minecraft:amethyst_shard";
     public static final String BOOK_ID = "minecraft:book";
     /** Amethyst Shield lasts this many seconds per point of effective ability level. */
-    public static final int LAPIS_SHIELD_SECONDS_PER_POWER = 60;
+    public static final int LAPIS_SHIELD_SECONDS_PER_POWER = 30;
     /** Diamond Skin lasts this many seconds per point of effective ability level. */
     public static final int DIAMOND_SKIN_SECONDS_PER_POWER = 30;
     /** Diamond Skin practices below this level. The cast is not raised up to it. */
@@ -759,7 +759,7 @@ public final class AbilityRules {
                     "Battery: Continuing gains skill as if you cast it again.");
             case LAPIS_SHIELD -> List.of(
                     "Amethyst Shield: Double-right-click while holding an amethyst shard. A targeted character gets the shield. Otherwise it shields you. Costs 1 mana.",
-                    "Amethyst Shield: It lasts 1 minute times your ability level. A force field stays around that character until it ends.",
+                    "Amethyst Shield: It lasts 30 seconds times your ability level. A force field stays around that character until it ends.",
                     "Amethyst Shield: Damage up to that level is absorbed before armor or health. A hit within that level also skips harmful effects, such as poison.",
                     "Amethyst Shield: Amethyst, lapis, and minutes left pay for the block. One kind costs 1 per 3 points, two kinds 1 per 5, and all three 1 per 7, rounded up.",
                     "Amethyst Shield: Each block also shortens the shield by 10 seconds. A minute of duration fuel takes 1 minute 10 seconds.",
@@ -1429,7 +1429,7 @@ public final class AbilityRules {
         return Math.max(BATTERY_MIN_SECONDS * 20, ticks);
     }
 
-    /** Duration in ticks: 1 minute per ability level. */
+    /** Duration in ticks: 30 seconds per ability level. */
     public static int lapisShieldDurationTicks(double power) {
         return Math.max(0, (int) Math.round(Math.max(0.0, power) * LAPIS_SHIELD_SECONDS_PER_POWER * 20.0));
     }
