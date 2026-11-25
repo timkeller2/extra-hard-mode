@@ -124,7 +124,7 @@ public final class AbilityReadyHud {
             return new ItemStack(Items.IRON_INGOT);
         }
         if (AbilityRules.MAGIC_ARROW.equals(ability)) {
-            return new ItemStack(Items.ARROW);
+            return new ItemStack(Items.QUARTZ);
         }
         if (AbilityRules.GROW.equals(ability)) {
             return new ItemStack(Items.IRON_HOE);
@@ -147,11 +147,8 @@ public final class AbilityReadyHud {
         if (AbilityRules.MASTER_BUILDER.equals(ability)) {
             return new ItemStack(Items.BRICK);
         }
-        if (AbilityRules.DIAMOND_SKIN.equals(ability)) {
-            return new ItemStack(Items.DIAMOND);
-        }
         if (AbilityRules.RESTORE_LIFE.equals(ability)) {
-            return new ItemStack(Items.DIAMOND_BLOCK);
+            return new ItemStack(Items.DIAMOND);
         }
         if (AbilityRules.EMPOWER.equals(ability)) {
             return new ItemStack(Items.GLOWSTONE_DUST);

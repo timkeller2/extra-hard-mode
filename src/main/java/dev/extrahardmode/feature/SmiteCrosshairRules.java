@@ -1,7 +1,7 @@
 package dev.extrahardmode.feature;
 
 /**
- * When the crosshair turns gold for Smite Evil. The cast itself costs
+ * When the crosshair turns gold for Magic Melee. The cast itself costs
  * {@link AbilityRules#SMITE_EVIL_MANA_COST}; the marker waits for a full mana.
  */
 public final class SmiteCrosshairRules {
@@ -15,8 +15,8 @@ public final class SmiteCrosshairRules {
     private SmiteCrosshairRules() {}
 
     /**
-     * {@code creatureOnCrosshair} is the living thing the look ray hits before a block,
-     * inside the ability's reach. A creature merely near the aim does not count.
+     * {@code creatureOnCrosshair} is a hostile the look ray hits before a block,
+     * inside the ability's reach. A hostile merely near the aim does not count.
      */
     public static boolean highlight(
             boolean holdingGoldenSword, double currentMana, double range, boolean creatureOnCrosshair) {

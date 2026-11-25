@@ -32,8 +32,10 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.particles.ColorParticleOption;
+import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -56,13 +58,9 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
-import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
-import net.minecraft.world.entity.projectile.arrow.Arrow;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Abilities;
-import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -86,7 +84,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
 
-/** Mana abilities: heal, iron heart, missile storm, flight, let it grow, power mining, detect ore, slow, sense evil, smite evil, master builder, diamond skin, empower, battery, amethyst shield, write tome, read tome. */
+/** Mana abilities: heal, iron heart, lightning, flight, let it grow, power mining, detect ore, slow, sense evil, magic melee, master builder, empower, battery, amethyst shield, write tome, read tome, restore life. */
 public final class ManaAbilities implements FeatureModule {
     public static final Identifier ID = ExtraHardModeMod.id("mana_abilities");
     /** Look range for Amethyst Shield when the click itself did not land on a character. */
@@ -164,8 +162,6 @@ public final class ManaAbilities implements FeatureModule {
             tickIronHeart(player);
             tickIronHeartSparkle(player);
             tickMasterBuilder(player);
-            tickDiamondSkin(player);
-            tickDiamondSkinSparkle(player);
             tickSenseSparkle(player);
             tickSenseOutlineHud(player);
             tickCompassGlance(player);
@@ -201,7 +197,7 @@ public final class ManaAbilities implements FeatureModule {
                     return InteractionResult.FAIL;
                 } else if (serverPlayer.getMainHandItem().is(Items.FEATHER) && tryFlight(serverPlayer)) {
                     return InteractionResult.FAIL;
-                } else if (serverPlayer.getMainHandItem().is(Items.ARROW) && tryMagicArrow(serverPlayer, null)) {
+                } else if (serverPlayer.getMainHandItem().is(Items.QUARTZ) && tryMagicArrow(serverPlayer, null)) {
                     return InteractionResult.FAIL;
                 } else if (serverPlayer.getMainHandItem().is(Items.STRING) && trySlow(serverPlayer)) {
                     return InteractionResult.FAIL;
@@ -211,13 +207,11 @@ public final class ManaAbilities implements FeatureModule {
                     return InteractionResult.FAIL;
                 } else if (serverPlayer.getMainHandItem().is(Items.BRICK) && tryMasterBuilder(serverPlayer)) {
                     return InteractionResult.FAIL;
-                } else if (serverPlayer.getMainHandItem().is(Items.DIAMOND) && tryDiamondSkin(serverPlayer)) {
-                    return InteractionResult.FAIL;
                 } else if (serverPlayer.getMainHandItem().is(Items.GLOWSTONE_DUST) && tryEmpower(serverPlayer)) {
                     return InteractionResult.FAIL;
                 } else if (serverPlayer.getMainHandItem().is(Items.QUARTZ_BLOCK) && tryBattery(serverPlayer)) {
                     return InteractionResult.FAIL;
-                } else if (serverPlayer.getMainHandItem().is(Items.DIAMOND_BLOCK) && tryRestoreLife(serverPlayer, null)) {
+                } else if (serverPlayer.getMainHandItem().is(Items.DIAMOND) && tryRestoreLife(serverPlayer, null)) {
                     return InteractionResult.FAIL;
                 } else if (serverPlayer.getMainHandItem().is(Items.AMETHYST_SHARD) && tryLapisShield(serverPlayer, null)) {
                     return InteractionResult.FAIL;
@@ -276,7 +270,7 @@ public final class ManaAbilities implements FeatureModule {
                     return InteractionResult.FAIL;
                 } else if (serverPlayer.getMainHandItem().is(Items.FEATHER) && tryFlight(serverPlayer)) {
                     return InteractionResult.FAIL;
-                } else if (serverPlayer.getMainHandItem().is(Items.ARROW) && tryMagicArrow(serverPlayer, null)) {
+                } else if (serverPlayer.getMainHandItem().is(Items.QUARTZ) && tryMagicArrow(serverPlayer, null)) {
                     return InteractionResult.FAIL;
                 } else if (serverPlayer.getMainHandItem().is(Items.STRING) && trySlow(serverPlayer)) {
                     return InteractionResult.FAIL;
@@ -284,9 +278,9 @@ public final class ManaAbilities implements FeatureModule {
                     return InteractionResult.FAIL;
                 } else if (isSmiteSword(serverPlayer.getMainHandItem()) && trySmiteEvil(serverPlayer, null)) {
                     return InteractionResult.FAIL;
-                } else if (serverPlayer.getMainHandItem().is(Items.DIAMOND) && tryDiamondSkin(serverPlayer)) {
-                    return InteractionResult.FAIL;
                 } else if (serverPlayer.getMainHandItem().is(Items.GLOWSTONE_DUST) && tryEmpower(serverPlayer)) {
+                    return InteractionResult.FAIL;
+                } else if (serverPlayer.getMainHandItem().is(Items.DIAMOND) && tryRestoreLife(serverPlayer, null)) {
                     return InteractionResult.FAIL;
                 } else if (serverPlayer.getMainHandItem().is(Items.AMETHYST_SHARD) && tryLapisShield(serverPlayer, null)) {
                     return InteractionResult.FAIL;
@@ -318,7 +312,7 @@ public final class ManaAbilities implements FeatureModule {
                     && tryHeal(serverPlayer, entity instanceof LivingEntity living ? living : null)) {
                 return InteractionResult.FAIL;
             }
-            if (serverPlayer.getMainHandItem().is(Items.DIAMOND_BLOCK)
+            if (serverPlayer.getMainHandItem().is(Items.DIAMOND)
                     && tryRestoreLife(serverPlayer, entity instanceof LivingEntity living ? living : null)) {
                 return InteractionResult.FAIL;
             }
@@ -327,12 +321,13 @@ public final class ManaAbilities implements FeatureModule {
                     && tryIronHeart(serverPlayer, entity instanceof LivingEntity living ? living : null)) {
                 return InteractionResult.FAIL;
             }
-            if (serverPlayer.getMainHandItem().is(Items.ARROW)
+            if (serverPlayer.getMainHandItem().is(Items.QUARTZ)
                     && tryMagicArrow(serverPlayer, entity instanceof LivingEntity living ? living : null)) {
                 return InteractionResult.FAIL;
             }
             if (isSmiteSword(serverPlayer.getMainHandItem())
-                    && trySmiteEvil(serverPlayer, entity instanceof LivingEntity living ? living : null)) {
+                    && entity instanceof LivingEntity living
+                    && trySmiteEvil(serverPlayer, living)) {
                 return InteractionResult.FAIL;
             }
             if (serverPlayer.getMainHandItem().is(Items.AMETHYST_SHARD)
@@ -429,7 +424,7 @@ public final class ManaAbilities implements FeatureModule {
     }
 
     static boolean tryRestoreLife(ServerPlayer player, LivingEntity clicked) {
-        if (!player.getMainHandItem().is(Items.DIAMOND_BLOCK) || Achievements.skipPlayer(player)) {
+        if (!player.getMainHandItem().is(Items.DIAMOND) || Achievements.skipPlayer(player)) {
             return false;
         }
         if (alreadyHandled(player, (ServerLevel) player.level())) {
@@ -447,7 +442,7 @@ public final class ManaAbilities implements FeatureModule {
         if (restoreLifeBlocked(player, target, power)) {
             return true;
         }
-        // The diamond block stays in hand. Two or more still add +2 through catalystBonus.
+        // The price spends diamonds, including the one in hand. Two or more still add +2.
         if (practiceInstead(player, AbilityRules.RESTORE_LIFE, null, power)) {
             return true;
         }
@@ -1496,9 +1491,9 @@ public final class ManaAbilities implements FeatureModule {
 
     /**
      * Damage left after Amethyst Shield, before helmet, armor, and health.
-     * Amethyst, lapis, and whole minutes left pay for the points blocked. A paid block
-     * also shortens the shield by 10 seconds, so a minute of duration fuel takes 1 minute
-     * 10 seconds. A short payment blocks nothing and drops the shield. A paid hit that
+     * Amethyst, lapis, and each 20 seconds left pay for the points blocked. A paid block
+     * also shortens the shield by 10 seconds, so 20 seconds of duration fuel takes 30
+     * seconds. A short payment blocks nothing and drops the shield. A paid hit that
      * fits under the level also skips harmful effects that arrive with that hit.
      */
     public static float absorbLapisShield(LivingEntity victim, ServerLevel level, DamageSource source, float damage) {
@@ -1617,7 +1612,7 @@ public final class ManaAbilities implements FeatureModule {
 
     /**
      * Takes this many ticks off the caster and the shielded character. The fuel
-     * minutes and the extra 10 seconds are one cut. No time left ends the shield.
+     * duration units and the extra 10 seconds are one cut. No time left ends the shield.
      */
     static boolean shortenLapisShield(ServerPlayer caster, LivingEntity victim, long ticks) {
         if (caster == null || ticks <= 0L) {
@@ -1768,218 +1763,6 @@ public final class ManaAbilities implements FeatureModule {
                 "tougher.message.lapis_shield_end", "Amethyst Shield ends."));
     }
 
-    public static boolean diamondSkinActive(ServerPlayer player) {
-        return remainingDiamondSkin(player) > 0;
-    }
-
-    static int remainingDiamondSkin(ServerPlayer player) {
-        Integer value = player.getAttachedOrElse(EhmAttachments.EHM_DIAMOND_SKIN_REMAINING, 0);
-        return value == null ? 0 : Math.max(0, value);
-    }
-
-    static double diamondSkinPower(ServerPlayer player) {
-        Float value = player.getAttachedOrElse(EhmAttachments.EHM_DIAMOND_SKIN_POWER, 0.0F);
-        return AbilityRules.diamondSkinLevel(value == null ? 0.0 : value);
-    }
-
-    /** Right-click with diamonds. A second click cancels. Renewal spends mana but not another diamond. */
-    static boolean tryDiamondSkin(ServerPlayer player) {
-        if (!player.getMainHandItem().is(Items.DIAMOND) || Achievements.skipPlayer(player)) {
-            return false;
-        }
-        if (alreadyHandled(player, (ServerLevel) player.level())) {
-            return true;
-        }
-        if (diamondSkinActive(player)) {
-            cancelDiamondSkin(player);
-            markHandled(player);
-            return true;
-        }
-        int bonus = AbilityRules.catalystBonus(player.getMainHandItem().getCount());
-        double power = AbilityRules.diamondSkinLevel(abilityPower(player, AbilityRules.DIAMOND_SKIN, bonus));
-        if (blockedByCooldownOrMana(
-                player, AbilityRules.DIAMOND_SKIN, "tougher.ability.diamond_skin", "Diamond Skin")) {
-            return true;
-        }
-        if (practiceInstead(player, AbilityRules.DIAMOND_SKIN, null, power)) {
-            return true;
-        }
-        int duration = AbilityRules.diamondSkinDurationTicks(power);
-        if (duration <= 0) {
-            return false;
-        }
-        spend(player, Items.DIAMOND, AbilityRules.DIAMOND_SKIN);
-        startDiamondSkin(player, power, duration);
-        castDiamondSkin(player);
-        tellAbilityUse(player, AbilityRules.DIAMOND_SKIN, power);
-        return true;
-    }
-
-    static void startDiamondSkin(ServerPlayer player, double power, int duration) {
-        player.setAttached(EhmAttachments.EHM_DIAMOND_SKIN_REMAINING, duration);
-        player.setAttached(EhmAttachments.EHM_DIAMOND_SKIN_BAR_MAX, duration);
-        player.setAttached(EhmAttachments.EHM_DIAMOND_SKIN_POWER, (float) Math.max(0.0, power));
-        sendAbilityDurations(player);
-    }
-
-    static void cancelDiamondSkin(ServerPlayer player) {
-        if (!diamondSkinActive(player)) {
-            return;
-        }
-        clearDiamondSkin(player, false);
-        sendAbilityDurations(player);
-        player.sendSystemMessage(Component.translatableWithFallback(
-                "tougher.message.diamond_skin_cancel", "You cancel Diamond Skin."));
-    }
-
-    static void clearDiamondSkin(ServerPlayer player, boolean message) {
-        boolean had = diamondSkinActive(player);
-        player.setAttached(EhmAttachments.EHM_DIAMOND_SKIN_REMAINING, 0);
-        player.setAttached(EhmAttachments.EHM_DIAMOND_SKIN_BAR_MAX, 0);
-        player.setAttached(EhmAttachments.EHM_DIAMOND_SKIN_POWER, 0.0F);
-        if (message && had) {
-            player.sendSystemMessage(Component.translatableWithFallback(
-                    "tougher.message.diamond_skin_end", "Diamond Skin ends."));
-        }
-    }
-
-    static void tickDiamondSkin(ServerPlayer player) {
-        int remaining = remainingDiamondSkin(player);
-        if (remaining <= 0) {
-            return;
-        }
-        if (Achievements.skipPlayer(player) || !WorldGate.isModuleActive(player.level(), ID)) {
-            clearDiamondSkin(player, false);
-            sendAbilityDurations(player);
-            return;
-        }
-        remaining--;
-        if (remaining > 0) {
-            player.setAttached(EhmAttachments.EHM_DIAMOND_SKIN_REMAINING, remaining);
-            return;
-        }
-        if (tryRenewDiamondSkin(player)) {
-            return;
-        }
-        clearDiamondSkin(player, true);
-        sendAbilityDurations(player);
-    }
-
-    static boolean tryRenewDiamondSkin(ServerPlayer player) {
-        if (player == null || !player.isAlive() || Achievements.skipPlayer(player)) {
-            return false;
-        }
-        int bonus = renewCatalystBonus(player, Items.DIAMOND);
-        double power = AbilityRules.diamondSkinLevel(abilityPower(player, AbilityRules.DIAMOND_SKIN, bonus));
-        int duration = AbilityRules.diamondSkinDurationTicks(power);
-        if (AbilityRules.practices(AbilityRules.DIAMOND_SKIN, power) || duration <= 0) {
-            return false;
-        }
-        if (!AbilityRules.hasManaToUse(AbilityRules.DIAMOND_SKIN, Achievements.currentMana(player))) {
-            return false;
-        }
-        player.setAttached(
-                EhmAttachments.EHM_MANA_CURRENT,
-                Math.max(0.0, Achievements.currentMana(player) - AbilityRules.manaCost(AbilityRules.DIAMOND_SKIN)));
-        Achievements.sendMana(player);
-        recordAbilityUse(player, AbilityRules.DIAMOND_SKIN);
-        consumeRenewCatalyst(player, Items.DIAMOND);
-        startDiamondSkin(player, power, duration);
-        castDiamondSkin(player);
-        tellAbilityUse(player, AbilityRules.DIAMOND_SKIN, power);
-        return true;
-    }
-
-    static void castDiamondSkin(ServerPlayer player) {
-        castEffect(player, SoundEvents.AMETHYST_BLOCK_CHIME, ParticleTypes.END_ROD, null);
-        spawnDiamondSkinSparkle(player, (ServerLevel) player.level());
-    }
-
-    /**
-     * Damage that is about to be subtracted from health, after armor and absorption.
-     * Divided by the ability level stored when Diamond Skin was cast. Poison, drowning,
-     * and suffocation are left alone.
-     */
-    public static float scaleDiamondSkin(
-            ServerPlayer player, DamageSource source, float healthDamage, boolean sparkle) {
-        if (player == null || source == null || healthDamage <= 0.0F || !diamondSkinActive(player)) {
-            return healthDamage;
-        }
-        if (Achievements.skipPlayer(player) || !WorldGate.isModuleActive(player.level(), ID)) {
-            return healthDamage;
-        }
-        boolean bypass = DiamondSkinRules.isPoisonVictim(player)
-                || source.is(DamageTypes.DROWN)
-                || source.is(DamageTypes.IN_WALL);
-        float scaled = DiamondSkinRules.scaleHealthDamage(healthDamage, diamondSkinPower(player), bypass);
-        if (sparkle && DiamondSkinRules.reduced(healthDamage, scaled)) {
-            startDiamondSkinSparkle(player);
-            absorbDiamondSkinDuration(player, healthDamage - scaled);
-        }
-        return scaled;
-    }
-
-    /** Each point of health damage prevented removes 3 seconds. Running out tries to renew. */
-    static void absorbDiamondSkinDuration(ServerPlayer player, float absorbed) {
-        int loss = DiamondSkinRules.durationLossTicks(absorbed);
-        if (loss <= 0 || !diamondSkinActive(player)) {
-            return;
-        }
-        int remaining = DiamondSkinRules.remainingAfterAbsorption(remainingDiamondSkin(player), absorbed);
-        if (remaining > 0) {
-            player.setAttached(EhmAttachments.EHM_DIAMOND_SKIN_REMAINING, remaining);
-            sendAbilityDurations(player);
-            return;
-        }
-        if (tryRenewDiamondSkin(player)) {
-            return;
-        }
-        clearDiamondSkin(player, true);
-        sendAbilityDurations(player);
-    }
-
-    static void startDiamondSkinSparkle(ServerPlayer player) {
-        if (!(player.level() instanceof ServerLevel level)) {
-            return;
-        }
-        long until = level.getGameTime() + AbilityRules.DIAMOND_SKIN_SPARKLE_TICKS;
-        Long current = player.getAttachedOrElse(EhmAttachments.EHM_DIAMOND_SKIN_SPARKLE_UNTIL, -1L);
-        if (current == null || current < until) {
-            player.setAttached(EhmAttachments.EHM_DIAMOND_SKIN_SPARKLE_UNTIL, until);
-        }
-        spawnDiamondSkinSparkle(player, level);
-    }
-
-    static void tickDiamondSkinSparkle(ServerPlayer player) {
-        Long until = player.getAttachedOrElse(EhmAttachments.EHM_DIAMOND_SKIN_SPARKLE_UNTIL, -1L);
-        if (until == null || until < 0L) {
-            return;
-        }
-        ServerLevel level = (ServerLevel) player.level();
-        if (!player.isAlive() || until <= level.getGameTime()) {
-            player.setAttached(EhmAttachments.EHM_DIAMOND_SKIN_SPARKLE_UNTIL, -1L);
-            return;
-        }
-        spawnDiamondSkinSparkle(player, level);
-    }
-
-    static void spawnDiamondSkinSparkle(ServerPlayer target, ServerLevel level) {
-        double x = target.getX();
-        double y = target.getY() + target.getBbHeight() * 0.6;
-        double z = target.getZ();
-        level.sendParticles(ParticleTypes.END_ROD, x, y, z, 2, 0.28, 0.4, 0.28, 0.01);
-        level.sendParticles(
-                ColorParticleOption.create(ParticleTypes.ENTITY_EFFECT, 0.15F, 0.95F, 1.0F),
-                x,
-                y,
-                z,
-                4,
-                0.3,
-                0.4,
-                0.3,
-                0.0);
-    }
-
     static void startIronHeartSparkle(ServerPlayer target) {
         ServerLevel level = (ServerLevel) target.level();
         target.setAttached(
@@ -2020,7 +1803,7 @@ public final class ManaAbilities implements FeatureModule {
     }
 
     static boolean tryMagicArrow(ServerPlayer player, LivingEntity clicked) {
-        if (!player.getMainHandItem().is(Items.ARROW) || Achievements.skipPlayer(player)) {
+        if (!player.getMainHandItem().is(Items.QUARTZ) || Achievements.skipPlayer(player)) {
             return false;
         }
         if (alreadyHandled(player, (ServerLevel) player.level())) {
@@ -2040,7 +1823,7 @@ public final class ManaAbilities implements FeatureModule {
             return false;
         }
         if (blockedByCooldownOrMana(
-                player, AbilityRules.MAGIC_ARROW, "tougher.ability.magic_arrow", "Missile Storm")) {
+                player, AbilityRules.MAGIC_ARROW, "tougher.ability.magic_arrow", "Lightning")) {
             return true;
         }
         if (AbilityRules.practices(AbilityRules.MAGIC_ARROW, power)) {
@@ -2050,7 +1833,15 @@ public final class ManaAbilities implements FeatureModule {
             return true;
         }
         hurlMissileStorm(player, power, hostiles, charcoal);
-        castEffect(player, SoundEvents.ARROW_SHOOT, ParticleTypes.CRIT, ParticleTypes.ENCHANTED_HIT);
+        player.level().playSound(
+                null,
+                player.getX(),
+                player.getY(),
+                player.getZ(),
+                SoundEvents.LIGHTNING_BOLT_THUNDER,
+                SoundSource.WEATHER,
+                4.0F,
+                1.0F);
         consumeMissileArrows(player, base);
         spend(player, null, AbilityRules.MAGIC_ARROW);
         if (charcoal) {
@@ -2069,44 +1860,25 @@ public final class ManaAbilities implements FeatureModule {
         }
         int bonus = 0;
         double power = abilityPower(player, AbilityRules.SMITE_EVIL, bonus);
+        if (AbilityRules.practices(AbilityRules.SMITE_EVIL, power)) {
+            return practiceMagicMelee(player);
+        }
         double range = AbilityRules.smiteRange(power);
         LivingEntity target = fireTarget(player, clicked, range);
         if (target == null) {
             return false;
         }
         if (blockedByCooldownOrMana(
-                player, AbilityRules.SMITE_EVIL, "tougher.ability.smite_evil", "Smite Evil")) {
-            return true;
-        }
-        if (practiceInstead(player, AbilityRules.SMITE_EVIL, null, power)) {
+                player, AbilityRules.SMITE_EVIL, "tougher.ability.smite_evil", "Magic Melee")) {
             return true;
         }
         spend(player, null, AbilityRules.SMITE_EVIL);
+        Vec3 from = player.getEyePosition();
+        Vec3 to = new Vec3(target.getX(), target.getY() + target.getBbHeight() * 0.55, target.getZ());
         player.attack(target);
-        if (target.isAlive() && isUndead(target)) {
-            float extra = AbilityRules.smiteUndeadBonus(power);
-            if (extra > 0.0F) {
-                target.setInvulnerableTime(0);
-                target.hurt(player.damageSources().playerAttack(player), extra);
-            }
-        }
-        spawnSmiteFlash(target, (ServerLevel) player.level());
+        showGoldBeam((ServerLevel) player.level(), from, to);
         tellAbilityUse(player, AbilityRules.SMITE_EVIL, power);
         return true;
-    }
-
-    static boolean isUndead(LivingEntity target) {
-        return target != null && target.is(EntityTypeTags.UNDEAD);
-    }
-
-    static void spawnSmiteFlash(LivingEntity target, ServerLevel level) {
-        double x = target.getX();
-        double y = target.getY() + target.getBbHeight() * 0.6;
-        double z = target.getZ();
-        level.sendParticles(
-                ColorParticleOption.create(ParticleTypes.FLASH, 1.0F, 1.0F, 0.85F), x, y, z, 1, 0.0, 0.0, 0.0, 0.0);
-        level.sendParticles(ParticleTypes.END_ROD, x, y, z, 6, 0.2, 0.35, 0.2, 0.02);
-        level.sendParticles(ParticleTypes.GLOW, x, y, z, 4, 0.25, 0.4, 0.25, 0.0);
     }
 
     static boolean tryGrow(ServerPlayer player) {
@@ -2439,7 +2211,7 @@ public final class ManaAbilities implements FeatureModule {
 
     /**
      * A catalyst that casts from this click. A lodestone compass, a spider eye the player can eat,
-     * and a sneaked tome stay with vanilla. Quartz blocks, bricks, and diamond blocks still place onto blocks.
+     * and a sneaked tome stay with vanilla. Quartz blocks and bricks still place onto blocks.
      */
     static boolean holdsAbilityGesture(ServerPlayer player, boolean block) {
         if (player == null) {
@@ -2455,7 +2227,7 @@ public final class ManaAbilities implements FeatureModule {
         if (player.isSecondaryUseActive() && tomeXp(held) > 0) {
             return false;
         }
-        if (block && (held.is(Items.QUARTZ_BLOCK) || held.is(Items.BRICK) || held.is(Items.DIAMOND_BLOCK))) {
+        if (block && (held.is(Items.QUARTZ_BLOCK) || held.is(Items.BRICK))) {
             return false;
         }
         return held.is(ItemTags.PICKAXES)
@@ -2463,13 +2235,12 @@ public final class ManaAbilities implements FeatureModule {
                 || held.is(Items.PAPER)
                 || held.is(Items.IRON_INGOT)
                 || held.is(Items.FEATHER)
-                || held.is(Items.ARROW)
+                || held.is(Items.QUARTZ)
                 || held.is(Items.STRING)
                 || held.is(Items.SPIDER_EYE)
                 || isSmiteSword(held)
                 || held.is(Items.BRICK)
                 || held.is(Items.DIAMOND)
-                || held.is(Items.DIAMOND_BLOCK)
                 || held.is(Items.GLOWSTONE_DUST)
                 || held.is(Items.QUARTZ_BLOCK)
                 || held.is(Items.AMETHYST_SHARD)
@@ -2487,8 +2258,8 @@ public final class ManaAbilities implements FeatureModule {
             return false;
         }
         if (held.is(Items.PAPER)
-                || held.is(Items.DIAMOND_BLOCK)
-                || held.is(Items.ARROW)
+                || held.is(Items.DIAMOND)
+                || held.is(Items.QUARTZ)
                 || isSmiteSword(held)
                 || held.is(Items.AMETHYST_SHARD)
                 || held.is(Items.BOOK)
@@ -2798,7 +2569,7 @@ public final class ManaAbilities implements FeatureModule {
     public static String meLineValue(ServerPlayer player, AbilityRules.AbilitySkill skill) {
         int bonus = supplyBonus(player, skill.id());
         double effective = abilityPower(player, skill.id(), bonus);
-        if (AbilityRules.MAGIC_ARROW.equals(skill.id()) && player.getMainHandItem().is(Items.ARROW)) {
+        if (AbilityRules.MAGIC_ARROW.equals(skill.id()) && player.getMainHandItem().is(Items.QUARTZ)) {
             effective = AbilityRules.missileStormLevel(effective, player.getMainHandItem().getCount());
         }
         return AbilityRules.powerLabel(skill.skill()) + " (" + AbilityRules.powerLabel(effective) + ")";
@@ -2883,7 +2654,6 @@ public final class ManaAbilities implements FeatureModule {
             player.setAttached(EhmAttachments.EHM_IRON_HEART_LOCK, 0);
             clearIronHeartBuff(player, false);
             clearMasterBuilder(player, false);
-            clearDiamondSkin(player, false);
             clearEmpower(player, false);
             clearBattery(player, false);
             endOutgoingLapisShield(player, LAPIS_SILENT);
@@ -3030,13 +2800,6 @@ public final class ManaAbilities implements FeatureModule {
                     abilityName(ability)));
             return;
         }
-        if (held.is(Items.DIAMOND) && diamondSkinActive(player)) {
-            player.sendOverlayMessage(Component.translatableWithFallback(
-                    "tougher.message.ability_hint_iron_heart_off",
-                    "Double-right-click to cancel %s...",
-                    abilityName(ability)));
-            return;
-        }
         if (held.is(Items.GLOWSTONE_DUST) && empowerActive(player)) {
             player.sendOverlayMessage(Component.translatableWithFallback(
                     "tougher.message.ability_hint_iron_heart_off",
@@ -3068,7 +2831,7 @@ public final class ManaAbilities implements FeatureModule {
         } else if (held.is(Items.COMPASS)) {
             hoeBonus += AbilityRules.detectOreQuartzBonus(
                     InventorySearch.largestMainStack(player, Items.QUARTZ));
-        } else if (held.is(Items.ARROW)) {
+        } else if (held.is(Items.QUARTZ)) {
             boolean charcoal = InventorySearch.hasOneMain(player, Items.CHARCOAL);
             int count = held.getCount();
             if (count > AbilityRules.MISSILE_STORM_HAND) {
@@ -3087,7 +2850,6 @@ public final class ManaAbilities implements FeatureModule {
                 || held.is(Items.IRON_INGOT)
                 || held.is(Items.BRICK)
                 || held.is(Items.DIAMOND)
-                || held.is(Items.DIAMOND_BLOCK)
                 || held.is(Items.GLOWSTONE_DUST)
                 || held.is(Items.QUARTZ_BLOCK)
                 || held.is(Items.PAPER)
@@ -3120,12 +2882,11 @@ public final class ManaAbilities implements FeatureModule {
                 || held.is(Items.PAPER)
                 || held.is(Items.IRON_INGOT)
                 || held.is(Items.FEATHER)
-                || held.is(Items.ARROW)
+                || held.is(Items.QUARTZ)
                 || held.is(Items.STRING)
                 || isSmiteSword(held)
                 || held.is(Items.BRICK)
                 || held.is(Items.DIAMOND)
-                || held.is(Items.DIAMOND_BLOCK)
                 || held.is(Items.GLOWSTONE_DUST)
                 || held.is(Items.QUARTZ_BLOCK)
                 || held.is(Items.AMETHYST_SHARD)
@@ -3293,7 +3054,6 @@ public final class ManaAbilities implements FeatureModule {
         int mine = remainingPowerMine(player);
         int heart = remainingIronHeartBuff(player);
         int builder = remainingMasterBuilder(player);
-        int skin = remainingDiamondSkin(player);
         int empower = remainingEmpower(player);
         int battery = remainingBattery(player);
         int lapis = lapisHudTicks(player);
@@ -3303,7 +3063,6 @@ public final class ManaAbilities implements FeatureModule {
                 || inDurationWindow(mine, warn)
                 || inDurationWindow(heart, warn)
                 || inDurationWindow(builder, warn)
-                || inDurationWindow(skin, warn)
                 || inDurationWindow(empower, warn)
                 || inDurationWindow(battery, warn)
                 || inDurationWindow(lapis, warn)
@@ -3349,14 +3108,6 @@ public final class ManaAbilities implements FeatureModule {
                 AbilityRules.autoRenews(AbilityRules.MASTER_BUILDER)
                         && AbilityRules.hasManaToUse(
                                 AbilityRules.MASTER_BUILDER, Achievements.currentMana(player)));
-        addDuration(
-                effects,
-                AbilityRules.DIAMOND_SKIN,
-                remainingDiamondSkin(player),
-                player.getAttachedOrElse(EhmAttachments.EHM_DIAMOND_SKIN_BAR_MAX, 0),
-                AbilityRules.autoRenews(AbilityRules.DIAMOND_SKIN)
-                        && AbilityRules.hasManaToUse(
-                                AbilityRules.DIAMOND_SKIN, Achievements.currentMana(player)));
         addDuration(
                 effects,
                 AbilityRules.EMPOWER,
@@ -3503,9 +3254,6 @@ public final class ManaAbilities implements FeatureModule {
         }
         if (remainingMasterBuilder(player) > 0) {
             active.add(AbilityRules.MASTER_BUILDER);
-        }
-        if (remainingDiamondSkin(player) > 0) {
-            active.add(AbilityRules.DIAMOND_SKIN);
         }
         if (remainingEmpower(player) > 0) {
             active.add(AbilityRules.EMPOWER);
@@ -3789,7 +3537,7 @@ public final class ManaAbilities implements FeatureModule {
         if (held.is(Items.IRON_INGOT)) {
             return AbilityRules.IRON_HEART;
         }
-        if (held.is(Items.ARROW)) {
+        if (held.is(Items.QUARTZ)) {
             return AbilityRules.MAGIC_ARROW;
         }
         if (held.is(ItemTags.HOES)) {
@@ -3814,9 +3562,6 @@ public final class ManaAbilities implements FeatureModule {
             return AbilityRules.MASTER_BUILDER;
         }
         if (held.is(Items.DIAMOND)) {
-            return AbilityRules.DIAMOND_SKIN;
-        }
-        if (held.is(Items.DIAMOND_BLOCK)) {
             return AbilityRules.RESTORE_LIFE;
         }
         if (held.is(Items.GLOWSTONE_DUST)) {
@@ -3906,14 +3651,49 @@ public final class ManaAbilities implements FeatureModule {
         if (!AbilityRules.practices(ability, power)) {
             return false;
         }
-        spend(player, consumed, ability);
+        spend(player, consumed, ability, AbilityRules.practiceManaCost(ability));
+        tellPractice(player, ability);
+        return true;
+    }
+
+    /**
+     * Below level 1, Magic Melee practices without a target. It spends one mana and
+     * the standard cooldown. A learned cast still costs a quarter mana and has no cooldown.
+     */
+    static boolean practiceMagicMelee(ServerPlayer player) {
+        String ability = AbilityRules.SMITE_EVIL;
+        ServerLevel overworld = player.level().getServer().overworld();
+        long now = overworld.getGameTime();
+        int cooldown = AbilityRules.cooldownTicks(Achievements.manaLevel(player), uses(player, ability));
+        int remaining = AbilityRules.remainingCooldownTicks(now, lastUse(player, ability), cooldown);
+        if (remaining > 0) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.ability_cooldown",
+                    "%s is ready in %s.",
+                    abilityName(ability),
+                    AbilityRules.cooldownLabel(remaining)));
+            markHandled(player);
+            return true;
+        }
+        if (Achievements.currentMana(player) < AbilityRules.practiceManaCost(ability)) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.ability_no_mana", "You need mana to do that."));
+            markHandled(player);
+            return true;
+        }
+        spend(player, null, ability, AbilityRules.practiceManaCost(ability));
         tellPractice(player, ability);
         return true;
     }
 
     static void spend(ServerPlayer player, net.minecraft.world.item.Item consumed, String ability) {
+        spend(player, consumed, ability, AbilityRules.manaCost(ability));
+    }
+
+    static void spend(
+            ServerPlayer player, net.minecraft.world.item.Item consumed, String ability, double cost) {
         tryConsumeHeld(player, consumed);
-        double current = Math.max(0.0, Achievements.currentMana(player) - AbilityRules.manaCost(ability));
+        double current = Math.max(0.0, Achievements.currentMana(player) - cost);
         player.setAttached(EhmAttachments.EHM_MANA_CURRENT, current);
         Achievements.sendMana(player);
         recordAbilityUse(player, ability);
@@ -3927,7 +3707,7 @@ public final class ManaAbilities implements FeatureModule {
 
     static void consumeMissileArrows(ServerPlayer player, double baseLevel) {
         ItemStack held = player.getMainHandItem();
-        if (!held.is(Items.ARROW)) {
+        if (!held.is(Items.QUARTZ)) {
             return;
         }
         int take = AbilityRules.missileStormArrowsToConsume(baseLevel, held.getCount());
@@ -3951,13 +3731,68 @@ public final class ManaAbilities implements FeatureModule {
             aim[i] = aimScore(eye, look, living);
         }
         int[] plan = AbilityRules.assignMissileShots(shots, shots, health, aim);
+        int damage = AbilityRules.projectileDamage(power);
         int burnSeconds = burn ? AbilityRules.projectileBurnSeconds(power) : 0;
-        for (int index : plan) {
+        for (int shot = 0; shot < plan.length; shot++) {
+            int index = plan[shot];
             if (index < 0 || index >= hostiles.size()) {
                 continue;
             }
-            LivingEntity target = hostiles.get(index);
-            hurlMagicArrow(player, power, target, aimAt(player, target), burnSeconds);
+            strikeLightning(player, hostiles.get(index), damage, burnSeconds, shot);
+        }
+    }
+
+    /** Magic damage, then a bolt from the caster to that target. Every player in the level is sent the bolt. */
+    static void strikeLightning(ServerPlayer player, LivingEntity target, int damage, int burnSeconds, int salt) {
+        ServerLevel level = (ServerLevel) player.level();
+        Vec3 from = player.getEyePosition();
+        Vec3 to = new Vec3(target.getX(), target.getY() + target.getBbHeight() * 0.55, target.getZ());
+        showLightning(level, from, to, salt * 31 + target.getId());
+        if (target.isAlive() && damage > 0) {
+            target.setInvulnerableTime(0);
+            target.hurtServer(level, level.damageSources().indirectMagic(player, player), damage);
+        }
+        if (burnSeconds > 0 && target.isAlive()) {
+            target.igniteForSeconds(burnSeconds);
+        }
+        level.playSound(
+                null, to.x, to.y, to.z, SoundEvents.LIGHTNING_BOLT_IMPACT, SoundSource.WEATHER, 1.0F, 1.0F);
+    }
+
+    /** A straight gold beam from the caster to that target. Every player in the level is sent it. */
+    static void showGoldBeam(ServerLevel level, Vec3 from, Vec3 to) {
+        double[][] points = GoldBeamRules.points(from.x, from.y, from.z, to.x, to.y, to.z);
+        DustParticleOptions gold = new DustParticleOptions(GoldBeamRules.COLOR, GoldBeamRules.SCALE);
+        for (int i = 0; i < points.length; i++) {
+            broadcastParticle(level, gold, points[i][0], points[i][1], points[i][2]);
+            if ((i & 1) == 0) {
+                broadcastParticle(level, ParticleTypes.END_ROD, points[i][0], points[i][1], points[i][2]);
+            }
+        }
+        double[] end = points[points.length - 1];
+        broadcastParticle(level, gold, end[0], end[1], end[2]);
+        broadcastParticle(level, ParticleTypes.END_ROD, end[0], end[1], end[2]);
+    }
+
+    static void showLightning(ServerLevel level, Vec3 from, Vec3 to, int salt) {
+        double[][] points = LightningBoltRules.points(from.x, from.y, from.z, to.x, to.y, to.z, salt);
+        for (int i = 0; i < points.length; i++) {
+            broadcastParticle(level, ParticleTypes.ELECTRIC_SPARK, points[i][0], points[i][1], points[i][2]);
+            if ((i & 1) == 0) {
+                broadcastParticle(level, ParticleTypes.END_ROD, points[i][0], points[i][1], points[i][2]);
+            }
+        }
+        double[] end = points[points.length - 1];
+        broadcastParticle(level, ParticleTypes.ELECTRIC_SPARK, end[0], end[1], end[2]);
+        broadcastParticle(level, ParticleTypes.END_ROD, end[0], end[1], end[2]);
+    }
+
+    /** Sends one particle to every player in this level, including players far from the bolt. */
+    static void broadcastParticle(ServerLevel level, ParticleOptions particle, double x, double y, double z) {
+        ClientboundLevelParticlesPacket packet = new ClientboundLevelParticlesPacket(
+                particle, true, true, x, y, z, 0.0F, 0.0F, 0.0F, 0.0F, 1);
+        for (ServerPlayer viewer : level.players()) {
+            viewer.connection.send(packet);
         }
     }
 
@@ -3983,24 +3818,6 @@ public final class ManaAbilities implements FeatureModule {
 
     static boolean isMissileTarget(ServerPlayer caster, LivingEntity target) {
         return target != caster && target.isAlive() && target instanceof Enemy && !(target instanceof Player);
-    }
-
-    static void hurlMagicArrow(
-            ServerPlayer player, double power, LivingEntity target, Vec3 direction, int burnSeconds) {
-        ServerLevel level = (ServerLevel) player.level();
-        Vec3 dir = direction == null || direction.lengthSqr() < 1.0e-6 ? player.getLookAngle() : direction.normalize();
-        Arrow arrow = new Arrow(level, player, new ItemStack(Items.ARROW), null);
-        arrow.setPos(player.getX(), player.getEyeY() - 0.1, player.getZ());
-        arrow.setDeltaMovement(dir.scale(AbilityRules.FIRE_BOLT_SPEED));
-        arrow.setNoGravity(true);
-        arrow.pickup = AbstractArrow.Pickup.DISALLOWED;
-        tagSeeker(arrow, power, target, burnSeconds);
-        level.addFreshEntity(arrow);
-    }
-
-    static Vec3 aimAt(ServerPlayer player, LivingEntity target) {
-        Vec3 aim = target.getEyePosition().subtract(player.getEyePosition());
-        return aim.lengthSqr() < 1.0e-6 ? player.getLookAngle() : aim;
     }
 
     /** Perpendicular distance from the look ray. Creatures behind the caster sort last. */
@@ -4125,42 +3942,22 @@ public final class ManaAbilities implements FeatureModule {
         return friendly(caster, target);
     }
 
+    /**
+     * The hostile actually targeted, when it is in reach. A click that is not that
+     * hostile does not search further. An air cast uses only the look-ray hit.
+     */
     static LivingEntity fireTarget(ServerPlayer caster, LivingEntity clicked, double range) {
-        if (clicked != null && isFireable(caster, clicked) && caster.distanceTo(clicked) <= range) {
-            return clicked;
+        if (clicked != null) {
+            if (isMissileTarget(caster, clicked) && caster.distanceTo(clicked) <= range) {
+                return clicked;
+            }
+            return null;
         }
         EntityHitResult hit = raycast(caster, range);
-        if (hit != null && hit.getEntity() instanceof LivingEntity living && isFireable(caster, living)) {
+        if (hit != null && hit.getEntity() instanceof LivingEntity living && isMissileTarget(caster, living)) {
             return living;
         }
-        return nearestAlongAim(caster, range);
-    }
-
-    static LivingEntity nearestAlongAim(ServerPlayer caster, double range) {
-        ServerLevel level = (ServerLevel) caster.level();
-        Vec3 start = caster.getEyePosition();
-        Vec3 look = caster.getLookAngle();
-        AABB box = caster.getBoundingBox().expandTowards(look.scale(range)).inflate(3.0);
-        List<LivingEntity> found = level.getEntitiesOfClass(
-                LivingEntity.class, box, living -> isFireable(caster, living));
-        if (found.isEmpty()) {
-            return null;
-        }
-        double[] xs = new double[found.size()];
-        double[] ys = new double[found.size()];
-        double[] zs = new double[found.size()];
-        for (int i = 0; i < found.size(); i++) {
-            Vec3 pos = found.get(i).getEyePosition();
-            xs[i] = pos.x;
-            ys[i] = pos.y;
-            zs[i] = pos.z;
-        }
-        int index = AbilityRules.nearestAlongAim(
-                start.x, start.y, start.z, look.x, look.y, look.z, range, xs, ys, zs);
-        if (index < 0) {
-            return null;
-        }
-        return found.get(index);
+        return null;
     }
 
     static boolean isHealable(ServerPlayer caster, ServerPlayer target, double range) {
@@ -4178,10 +3975,6 @@ public final class ManaAbilities implements FeatureModule {
 
     static boolean isSelfHealable(ServerPlayer caster) {
         return caster.isAlive() && caster.getHealth() < caster.getMaxHealth();
-    }
-
-    static boolean isFireable(ServerPlayer caster, LivingEntity target) {
-        return target != caster && target.isAlive();
     }
 
     static boolean friendly(ServerPlayer caster, ServerPlayer target) {
@@ -4255,11 +4048,12 @@ public final class ManaAbilities implements FeatureModule {
         return player.getAttachedOrElse(EhmAttachments.EHM_ABILITY_USES, Map.of());
     }
 
-    /** Moves a saved Fire bolt record onto Magic Arrow and drops Let there be light. */
+    /** Moves a saved Fire bolt record onto Lightning and drops Let there be light and Diamond Skin. */
     static void foldRetiredFireBolt(ServerPlayer player) {
         if (player == null) {
             return;
         }
+        clearRetiredDiamondSkin(player);
         Map<String, Integer> uses = player.getAttachedOrElse(EhmAttachments.EHM_ABILITY_USES, Map.of());
         List<String> learned = player.getAttachedOrElse(EhmAttachments.EHM_ABILITY_LEARNED, List.of());
         List<String> taught = player.getAttachedOrElse(EhmAttachments.EHM_ABILITY_TAUGHT, List.of());
@@ -4272,7 +4066,13 @@ public final class ManaAbilities implements FeatureModule {
         boolean lightLearned = learned != null && learned.contains(AbilityRules.LIGHT);
         boolean lightTaught = taught != null && taught.contains(AbilityRules.LIGHT);
         boolean lightLast = lastUse != null && lastUse.containsKey(AbilityRules.LIGHT);
-        if (!usesHit && !learnedHit && !taughtHit && !lastHit && !lightUses && !lightLearned && !lightTaught && !lightLast) {
+        boolean skinUses = uses != null && uses.containsKey(AbilityRules.DIAMOND_SKIN);
+        boolean skinLearned = learned != null && learned.contains(AbilityRules.DIAMOND_SKIN);
+        boolean skinTaught = taught != null && taught.contains(AbilityRules.DIAMOND_SKIN);
+        boolean skinLast = lastUse != null && lastUse.containsKey(AbilityRules.DIAMOND_SKIN);
+        if (!usesHit && !learnedHit && !taughtHit && !lastHit
+                && !lightUses && !lightLearned && !lightTaught && !lightLast
+                && !skinUses && !skinLearned && !skinTaught && !skinLast) {
             return;
         }
         if (usesHit) {
@@ -4280,33 +4080,68 @@ public final class ManaAbilities implements FeatureModule {
             player.setAttached(EhmAttachments.EHM_ABILITY_USES, uses);
         }
         if (lightUses) {
-            player.setAttached(
-                    EhmAttachments.EHM_ABILITY_USES, AbilityRules.dropAbilityUses(uses, AbilityRules.LIGHT));
+            uses = AbilityRules.dropAbilityUses(uses, AbilityRules.LIGHT);
+            player.setAttached(EhmAttachments.EHM_ABILITY_USES, uses);
+        }
+        if (skinUses) {
+            uses = AbilityRules.dropAbilityUses(uses, AbilityRules.DIAMOND_SKIN);
+            player.setAttached(EhmAttachments.EHM_ABILITY_USES, uses);
         }
         if (learnedHit) {
             learned = AbilityRules.foldFireBoltList(learned);
             player.setAttached(EhmAttachments.EHM_ABILITY_LEARNED, learned);
         }
         if (lightLearned) {
-            player.setAttached(
-                    EhmAttachments.EHM_ABILITY_LEARNED, AbilityRules.dropAbilityList(learned, AbilityRules.LIGHT));
+            learned = AbilityRules.dropAbilityList(learned, AbilityRules.LIGHT);
+            player.setAttached(EhmAttachments.EHM_ABILITY_LEARNED, learned);
+        }
+        if (skinLearned) {
+            learned = AbilityRules.dropAbilityList(learned, AbilityRules.DIAMOND_SKIN);
+            player.setAttached(EhmAttachments.EHM_ABILITY_LEARNED, learned);
         }
         if (taughtHit) {
             taught = AbilityRules.foldFireBoltList(taught);
             player.setAttached(EhmAttachments.EHM_ABILITY_TAUGHT, taught);
         }
         if (lightTaught) {
-            player.setAttached(
-                    EhmAttachments.EHM_ABILITY_TAUGHT, AbilityRules.dropAbilityList(taught, AbilityRules.LIGHT));
+            taught = AbilityRules.dropAbilityList(taught, AbilityRules.LIGHT);
+            player.setAttached(EhmAttachments.EHM_ABILITY_TAUGHT, taught);
+        }
+        if (skinTaught) {
+            taught = AbilityRules.dropAbilityList(taught, AbilityRules.DIAMOND_SKIN);
+            player.setAttached(EhmAttachments.EHM_ABILITY_TAUGHT, taught);
         }
         if (lastHit) {
             lastUse = AbilityRules.foldFireBoltLastUse(lastUse);
             player.setAttached(EhmAttachments.EHM_ABILITY_LAST_USE, lastUse);
         }
         if (lightLast) {
-            player.setAttached(
-                    EhmAttachments.EHM_ABILITY_LAST_USE, AbilityRules.dropAbilityLastUse(lastUse, AbilityRules.LIGHT));
+            lastUse = AbilityRules.dropAbilityLastUse(lastUse, AbilityRules.LIGHT);
+            player.setAttached(EhmAttachments.EHM_ABILITY_LAST_USE, lastUse);
         }
+        if (skinLast) {
+            lastUse = AbilityRules.dropAbilityLastUse(lastUse, AbilityRules.DIAMOND_SKIN);
+            player.setAttached(EhmAttachments.EHM_ABILITY_LAST_USE, lastUse);
+        }
+    }
+
+    /** An active Diamond Skin from an older save ends. The attachments stay registered so that save loads. */
+    static void clearRetiredDiamondSkin(ServerPlayer player) {
+        Integer remaining = player.getAttachedOrElse(EhmAttachments.EHM_DIAMOND_SKIN_REMAINING, 0);
+        Integer bar = player.getAttachedOrElse(EhmAttachments.EHM_DIAMOND_SKIN_BAR_MAX, 0);
+        Float power = player.getAttachedOrElse(EhmAttachments.EHM_DIAMOND_SKIN_POWER, 0.0F);
+        Long sparkle = player.getAttachedOrElse(EhmAttachments.EHM_DIAMOND_SKIN_SPARKLE_UNTIL, -1L);
+        boolean active = (remaining != null && remaining != 0)
+                || (bar != null && bar != 0)
+                || (power != null && power != 0.0F)
+                || (sparkle != null && sparkle >= 0L);
+        if (!active) {
+            return;
+        }
+        player.setAttached(EhmAttachments.EHM_DIAMOND_SKIN_REMAINING, 0);
+        player.setAttached(EhmAttachments.EHM_DIAMOND_SKIN_BAR_MAX, 0);
+        player.setAttached(EhmAttachments.EHM_DIAMOND_SKIN_POWER, 0.0F);
+        player.setAttached(EhmAttachments.EHM_DIAMOND_SKIN_SPARKLE_UNTIL, -1L);
     }
 
     static int levelOffset(ServerPlayer player) {

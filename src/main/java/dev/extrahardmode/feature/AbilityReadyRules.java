@@ -32,7 +32,7 @@ public final class AbilityReadyRules {
     public static boolean countsForAbilitySupply(String itemId, boolean insideBundle) {
         return itemId != null && !itemId.isEmpty() && (insideBundle || !itemId.isEmpty());
     }
-    public static final String QUARTZ_ID = "minecraft:quartz";
+    public static final String QUARTZ_ID = AbilityRules.NETHER_QUARTZ_ID;
 
     private AbilityReadyRules() {}
 
@@ -436,15 +436,15 @@ public final class AbilityReadyRules {
         List<HudIcon> icons = new ArrayList<>();
         for (String ability : AbilityRules.ABILITY_IDS) {
             int useCount = useCounts.getOrDefault(ability, 0);
-            int cooldown = AbilityRules.cooldownTicks(ability, mana, useCount);
-            int remaining = AbilityRules.remainingCooldownTicks(now, usedAt.getOrDefault(ability, -1L), cooldown);
-            int seconds = cooldownSeconds(remaining);
-            boolean running = active != null && active.contains(ability);
-            boolean held = ability.equals(heldAbility);
             int itemBonus = itemBonus(ability, bestCount, quartzStack, honey, bestHoe, bestPick);
             double level = AbilityRules.power(ability, useCount, itemBonus, levelOffset, offhandRedstone);
             level += Math.max(0.0, empowerBonus);
             level = missileStormLevel(ability, level, bestCount);
+            int cooldown = AbilityRules.cooldownTicks(ability, mana, useCount, level);
+            int remaining = AbilityRules.remainingCooldownTicks(now, usedAt.getOrDefault(ability, -1L), cooldown);
+            int seconds = cooldownSeconds(remaining);
+            boolean running = active != null && active.contains(ability);
+            boolean held = ability.equals(heldAbility);
             if (!includeIcon(level, holdingBook, running, seconds > 0, held)) {
                 continue;
             }
@@ -536,13 +536,13 @@ public final class AbilityReadyRules {
         return bonus;
     }
 
-    /** Missile Storm's arrow doubling is applied after skill, items, offset, and Empower. */
+    /** Lightning's quartz doubling is applied after skill, items, offset, and Empower. */
     static double missileStormLevel(String ability, double level, Map<String, Integer> bestCount) {
         if (!AbilityRules.MAGIC_ARROW.equals(ability)) {
             return level;
         }
-        int arrows = bestCount == null ? 0 : bestCount.getOrDefault(AbilityRules.ARROW_ID, 0);
-        return AbilityRules.missileStormLevel(level, arrows);
+        int quartz = bestCount == null ? 0 : bestCount.getOrDefault(AbilityRules.NETHER_QUARTZ_ID, 0);
+        return AbilityRules.missileStormLevel(level, quartz);
     }
 
     static String catalystId(String ability) {
@@ -553,7 +553,7 @@ public final class AbilityReadyRules {
             return AbilityRules.IRON_INGOT_ID;
         }
         if (AbilityRules.MAGIC_ARROW.equals(ability)) {
-            return AbilityRules.ARROW_ID;
+            return AbilityRules.NETHER_QUARTZ_ID;
         }
         if (AbilityRules.FLIGHT.equals(ability)) {
             return AbilityRules.FEATHER_ID;
@@ -573,11 +573,8 @@ public final class AbilityReadyRules {
         if (AbilityRules.MASTER_BUILDER.equals(ability)) {
             return AbilityRules.BRICK_ID;
         }
-        if (AbilityRules.DIAMOND_SKIN.equals(ability)) {
-            return AbilityRules.DIAMOND_ID;
-        }
         if (AbilityRules.RESTORE_LIFE.equals(ability)) {
-            return AbilityRules.DIAMOND_BLOCK_ID;
+            return AbilityRules.DIAMOND_ID;
         }
         if (AbilityRules.EMPOWER.equals(ability)) {
             return AbilityRules.GLOWSTONE_DUST_ID;

@@ -217,7 +217,7 @@ class AbilityReadyRulesTest {
                 uses,
                 learned,
                 0,
-                List.of(new AbilityReadyRules.SupplyStack(AbilityRules.ARROW_ID, 1)),
+                List.of(new AbilityReadyRules.SupplyStack(AbilityRules.NETHER_QUARTZ_ID, 1)),
                 false,
                 0L,
                 Map.of());
@@ -230,7 +230,7 @@ class AbilityReadyRulesTest {
                 learned,
                 0,
                 List.of(
-                        new AbilityReadyRules.SupplyStack(AbilityRules.ARROW_ID, 1),
+                        new AbilityReadyRules.SupplyStack(AbilityRules.NETHER_QUARTZ_ID, 1),
                         new AbilityReadyRules.SupplyStack(AbilityRules.CHARCOAL_ID, 3)),
                 false,
                 0L,
@@ -245,7 +245,7 @@ class AbilityReadyRulesTest {
                 learned,
                 0,
                 List.of(
-                        new AbilityReadyRules.SupplyStack(AbilityRules.ARROW_ID, 2),
+                        new AbilityReadyRules.SupplyStack(AbilityRules.NETHER_QUARTZ_ID, 2),
                         new AbilityReadyRules.SupplyStack(AbilityRules.CHARCOAL_ID, 1)),
                 false,
                 0L,
@@ -258,7 +258,7 @@ class AbilityReadyRulesTest {
                 uses,
                 learned,
                 0,
-                List.of(new AbilityReadyRules.SupplyStack(AbilityRules.ARROW_ID, 4)),
+                List.of(new AbilityReadyRules.SupplyStack(AbilityRules.NETHER_QUARTZ_ID, 4)),
                 false,
                 0L,
                 Map.of());
@@ -271,7 +271,7 @@ class AbilityReadyRulesTest {
                 learned,
                 0,
                 List.of(
-                        new AbilityReadyRules.SupplyStack(AbilityRules.ARROW_ID, 4),
+                        new AbilityReadyRules.SupplyStack(AbilityRules.NETHER_QUARTZ_ID, 4),
                         new AbilityReadyRules.SupplyStack(AbilityRules.CHARCOAL_ID, 1)),
                 false,
                 0L,
@@ -285,7 +285,7 @@ class AbilityReadyRulesTest {
                 higher,
                 learned,
                 0,
-                List.of(new AbilityReadyRules.SupplyStack(AbilityRules.ARROW_ID, 9)),
+                List.of(new AbilityReadyRules.SupplyStack(AbilityRules.NETHER_QUARTZ_ID, 9)),
                 false,
                 0L,
                 Map.of());

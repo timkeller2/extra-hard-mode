@@ -57,12 +57,12 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("stops at your mana level"));
         assertTrue(String.join(" ", lines).contains("spends 1 block, or 2 from a stack"));
         assertTrue(String.join(" ", lines).contains("casts Amethyst Shield"));
-        assertTrue(String.join(" ", lines).contains("30 seconds per level"));
+        assertTrue(String.join(" ", lines).contains("20 seconds per level"));
         assertTrue(String.join(" ", lines).contains("1 minute per level"));
         assertTrue(String.join(" ", lines).contains("before armor"));
         assertTrue(String.join(" ", lines).contains("1 per 3 points blocked"));
         assertTrue(String.join(" ", lines).contains("shortens the shield by 10 seconds"));
-        assertTrue(String.join(" ", lines).contains("1 minute 10 seconds"));
+        assertTrue(String.join(" ", lines).contains("Twenty seconds of duration fuel takes 30 seconds"));
         assertTrue(String.join(" ", lines).contains("1 per 5"));
         assertTrue(String.join(" ", lines).contains("1 per 7"));
         assertTrue(String.join(" ", lines).contains("rounded up"));
@@ -81,11 +81,13 @@ class EhmHelpTest {
         assertFalse(String.join(" ", lines).contains("tuff"));
         assertTrue(String.join(" ", lines).contains("Let it grow"));
         assertFalse(String.join(" ", lines).contains("Let there be light"));
-        assertTrue(String.join(" ", lines).contains("An arrow casts Missile Storm"));
+        assertTrue(String.join(" ", lines).contains("Nether quartz casts Lightning"));
+        assertTrue(String.join(" ", lines).contains("A diamond double-right-click casts Restore Life"));
         assertTrue(String.join(" ", lines).contains("adds +2 and the burn"));
         assertFalse(String.join(" ", lines).contains("Fire bolt"));
         assertTrue(String.join(" ", lines).contains("Iron ingot: Iron Heart"));
-        assertTrue(String.join(" ", lines).contains("Golden sword: Smite Evil"));
+        assertTrue(String.join(" ", lines).contains("Golden sword: Magic Melee"));
+        assertFalse(String.join(" ", lines).contains("Smite Evil"));
         assertTrue(String.join(" ", lines).contains("costs 1/4 mana"));
         assertTrue(String.join(" ", lines).contains("crosshair turns gold"));
         assertTrue(String.join(" ", lines).contains("casts Empower"));
@@ -504,7 +506,7 @@ class EhmHelpTest {
         assertTrue(lines.getFirst().startsWith("Base power:"));
         String index = String.join(" ", lines);
         assertTrue(index.contains("Paper: Healing"));
-        assertTrue(index.contains("Golden sword or heavy golden sword: Smite Evil"));
+        assertTrue(index.contains("Golden sword or heavy golden sword: Magic Melee"));
         assertTrue(index.contains("/tougher ability help <name>"));
         assertTrue(index.contains("half the house points in uses"));
         assertTrue(index.contains("at random for the house points"));
@@ -523,9 +525,10 @@ class EhmHelpTest {
         }
         assertTrue(EhmHelp.resolve("healing").lines().stream().anyMatch(line -> line.startsWith("Healing:")));
         assertTrue(EhmHelp.resolve("iron heart").lines().stream().anyMatch(line -> line.startsWith("Iron Heart:")));
-        assertTrue(EhmHelp.resolve("fire bolt").lines().stream().anyMatch(line -> line.contains("arrows burn")));
+        assertTrue(EhmHelp.resolve("fire bolt").lines().stream().anyMatch(line -> line.contains("the bolt burns")));
         assertTrue(EhmHelp.resolve("magic arrow").lines().stream().anyMatch(line -> line.contains("adds +2")));
-        assertTrue(EhmHelp.resolve("missile storm").lines().stream().anyMatch(line -> line.contains("4 arrows still costs 2")));
+        assertTrue(EhmHelp.resolve("lightning").lines().stream().anyMatch(line -> line.contains("4 quartz still costs 2")));
+        assertTrue(EhmHelp.resolve("missile storm").lines().stream().anyMatch(line -> line.contains("every player can see it")));
         assertTrue(EhmHelp.resolve("missilestorm").lines().stream().anyMatch(line -> line.contains("magic damage")));
         assertTrue(EhmHelp.resolve("flight").lines().stream().anyMatch(line -> line.startsWith("Flight:")));
         assertTrue(String.join(" ", EhmHelp.resolve("flight").lines()).contains("phantom membrane"));
@@ -540,11 +543,14 @@ class EhmHelpTest {
         assertTrue(String.join(" ", EhmHelp.resolve("sense evil").lines()).contains("biome boss can appear here"));
         assertTrue(String.join(" ", EhmHelp.resolve("sense evil").lines()).contains("alliance has cleared the area"));
         assertTrue(String.join(" ", EhmHelp.resolve("abilities").lines()).contains("Hold the click to eat it"));
-        assertTrue(EhmHelp.resolve("smite evil").lines().stream().anyMatch(line -> line.startsWith("Smite Evil:")));
+        assertTrue(EhmHelp.resolve("smite evil").lines().stream().anyMatch(line -> line.startsWith("Magic Melee:")));
+        assertTrue(EhmHelp.resolve("magic melee").lines().stream().anyMatch(line -> line.contains("gold beam")));
+        assertTrue(EhmHelp.resolve("magicmelee").lines().stream().anyMatch(line -> line.contains("does not choose another")));
         assertEquals(null, EhmHelp.resolve("light"));
         assertEquals(null, EhmHelp.resolve("let there be light"));
         assertTrue(EhmHelp.resolve("master builder").lines().stream().anyMatch(line -> line.startsWith("Master Builder:")));
-        assertTrue(EhmHelp.resolve("diamond skin").lines().stream().anyMatch(line -> line.startsWith("Diamond Skin:")));
+        assertEquals(null, EhmHelp.resolve("diamond skin"));
+        assertEquals(null, EhmHelp.resolve("diamondskin"));
         assertTrue(EhmHelp.resolve("empower").lines().stream().anyMatch(line -> line.startsWith("Empower:")));
         assertTrue(EhmHelp.resolve("battery").lines().stream().anyMatch(line -> line.startsWith("Battery:")));
         assertTrue(EhmHelp.resolve("amethyst shield").lines().stream().anyMatch(line -> line.startsWith("Amethyst Shield:")));
@@ -556,7 +562,7 @@ class EhmHelpTest {
         assertTrue(EhmHelp.resolve("restore life").lines().stream().anyMatch(line -> line.startsWith("Restore Life:")));
         assertTrue(String.join(" ", EhmHelp.resolve("abilities").lines()).contains("Tome of the Wise"));
         assertTrue(EhmHelp.resolve("lapus").lines().stream().anyMatch(line -> line.startsWith("Amethyst Shield:")));
-        assertTrue(EhmHelp.resolve("ability fire bolt").lines().stream().anyMatch(line -> line.contains("arrows burn")));
+        assertTrue(EhmHelp.resolve("ability fire bolt").lines().stream().anyMatch(line -> line.contains("the bolt burns")));
     }
 
     @Test
@@ -603,11 +609,18 @@ class EhmHelpTest {
         assertTrue(EhmHelp.resolve("enchant").lines().equals(EhmHelp.resolve("enchanting").lines()));
         assertFalse(combatText.contains("two pigmen"));
         assertTrue(combatText.contains("chunkClearKills"));
+        assertTrue(combatText.contains("20 hostile kills"));
         assertTrue(combatText.contains("Neutral and friendly mobs still spawn"));
         assertTrue(combatText.contains("being cleared for the alliance"));
         assertTrue(combatText.contains("25 experience and an emerald"));
-        assertTrue(combatText.contains("quiet chime"));
-        assertTrue(combatText.contains("each full chunk"));
+        assertTrue(combatText.contains("within 48 blocks of the mob"));
+        assertTrue(combatText.contains("uncleared chunk around it"));
+        assertTrue(combatText.contains("northeast, northwest, southeast, and southwest"));
+        assertTrue(combatText.contains("nine chunks in all"));
+        assertTrue(combatText.contains("within 48 blocks of the killer"));
+        assertTrue(combatText.contains("small diamond in the corner"));
+        assertTrue(combatText.contains("the alliance holds this ground"));
+        assertFalse(combatText.contains("quiet chime"));
         assertTrue(combatText.contains("of -1 is off"));
         assertTrue(combatText.contains("player.death.lives"));
         assertTrue(combatText.contains("starts at -1"));

@@ -6,9 +6,11 @@ import dev.extrahardmode.feature.SmiteCrosshairRules;
 import dev.extrahardmode.network.ClientboundAbilityReadyPayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.monster.Enemy;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.EntityHitResult;
 
-/** Gold crosshair while a golden sword is on a creature Smite Evil can reach. */
+/** Gold crosshair while a golden sword is on a hostile Magic Melee can reach. */
 public final class SmiteCrosshair {
     private SmiteCrosshair() {}
 
@@ -30,8 +32,11 @@ public final class SmiteCrosshair {
             return false;
         }
         EntityHitResult hit = ManaAbilities.raycast(minecraft.player, range);
-        boolean creature = hit != null && hit.getEntity() instanceof LivingEntity;
-        return SmiteCrosshairRules.highlight(true, current, range, creature);
+        boolean hostile = hit != null
+                && hit.getEntity() instanceof LivingEntity living
+                && living instanceof Enemy
+                && !(living instanceof Player);
+        return SmiteCrosshairRules.highlight(true, current, range, hostile);
     }
 
     static double smiteRange(ClientboundAbilityReadyPayload payload) {

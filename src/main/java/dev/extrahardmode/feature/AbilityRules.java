@@ -29,6 +29,7 @@ public final class AbilityRules {
     public static final String SENSE_EVIL = "sense_evil";
     public static final String SMITE_EVIL = "smite_evil";
     public static final String MASTER_BUILDER = "master_builder";
+    /** Retired. Saved lessons and practice are dropped. A diamond casts Restore Life. */
     public static final String DIAMOND_SKIN = "diamond_skin";
     public static final String EMPOWER = "empower";
     public static final String BATTERY = "battery";
@@ -37,7 +38,6 @@ public final class AbilityRules {
     public static final String READ_TOME = "read_tome";
     public static final String RESTORE_LIFE = "restore_life";
     public static final int MANA_COST = 1;
-    public static final int DIAMOND_SKIN_MANA_COST = 2;
     /** Restore Life spends this much mana, and only when the cast can happen. */
     public static final int RESTORE_LIFE_MANA_COST = 4;
     /** Diamond price before the target's lives and the caster's Restore Life level. */
@@ -50,7 +50,7 @@ public final class AbilityRules {
     public static final String RESTORE_LIFE_MANA_NEED = "Restore Life needs 4 mana.";
     public static final String RESTORE_LIFE_DIAMONDS = "Restore Life needs %s diamonds. You have %s.";
     public static final int DETECT_ORE_MANA_COST = 1;
-    /** Smite Evil spends a quarter mana. Four casts spend one. */
+    /** Learned Magic Melee spends a quarter mana. Practice spends {@link #MANA_COST}. */
     public static final double SMITE_EVIL_MANA_COST = 0.25;
     public static final double HEAL_BASE_RANGE = 2.0;
     /** Blue sparkle on the heal recipient. */
@@ -82,16 +82,14 @@ public final class AbilityRules {
     /** 3 seconds, in ticks, removed per point of mana level plus skill. */
     public static final int COOLDOWN_REDUCE_PER_POINT_TICKS = 60;
     public static final int COOLDOWN_MIN_TICKS = 20;
-    /** Missile Storm cooldown starts at this many seconds, then subtracts skill. */
-    public static final int FIRE_BOLT_COOLDOWN_SECONDS = 10;
     /** Extra catalyst in hand when two are consumed. */
     public static final int CATALYST_BONUS = 2;
     /**
-     * More than this many arrows in hand doubles Missile Storm. The levels added are capped at
-     * the square root of that stack, rounded down, and that many arrows are consumed.
+     * More than this many nether quartz in hand doubles Lightning. The levels added are capped at
+     * the square root of that stack, rounded down, and that many quartz are consumed.
      */
     public static final int MISSILE_STORM_HAND = 3;
-    /** Charcoal in the hotbar or backpack adds this to Missile Storm and is spent one at a time. */
+    /** Charcoal in the hotbar or backpack adds this to Lightning and is spent one at a time. */
     public static final int CHARCOAL_ARROW_BONUS = 2;
     /** Phantom membrane in the hotbar or backpack adds this to Flight and is spent one at a time. */
     public static final int FLIGHT_MEMBRANE_BONUS = 3;
@@ -99,12 +97,13 @@ public final class AbilityRules {
     public static final int DEFAULT_LEVEL_OFFSET = -2;
     /** Effective level is never below this. */
     public static final double MIN_POWER = 0.0;
-    /** A cast below this level practices. Diamond Skin uses {@link #DIAMOND_SKIN_MIN_LEVEL}. */
+    /** A cast below this level practices. */
     public static final double PRACTICE_LEVEL = 1.0;
     public static final String PAPER_ID = "minecraft:paper";
     public static final String IRON_INGOT_ID = "minecraft:iron_ingot";
     public static final String FEATHER_ID = "minecraft:feather";
-    public static final String ARROW_ID = "minecraft:arrow";
+    /** Nether quartz item, not the quartz block. The block casts Battery. */
+    public static final String NETHER_QUARTZ_ID = "minecraft:quartz";
     public static final String CHARCOAL_ID = "minecraft:charcoal";
     public static final String PHANTOM_MEMBRANE_ID = "minecraft:phantom_membrane";
     public static final String COMPASS_ID = "minecraft:compass";
@@ -123,8 +122,8 @@ public final class AbilityRules {
     public static final String BRICK_ID = "minecraft:brick";
     /** Master Builder lasts this many seconds per point of effective ability level. */
     public static final int MASTER_BUILDER_SECONDS_PER_POWER = 30;
+    /** Diamond item, not the diamond block. The item casts Restore Life. */
     public static final String DIAMOND_ID = "minecraft:diamond";
-    public static final String DIAMOND_BLOCK_ID = "minecraft:diamond_block";
     public static final String GLOWSTONE_DUST_ID = "minecraft:glowstone_dust";
     /** Empower lasts this many seconds per point of effective ability level, and at least {@link #EMPOWER_MIN_SECONDS}. */
     public static final int EMPOWER_SECONDS_PER_POWER = 30;
@@ -137,13 +136,7 @@ public final class AbilityRules {
     public static final String AMETHYST_SHARD_ID = "minecraft:amethyst_shard";
     public static final String BOOK_ID = "minecraft:book";
     /** Amethyst Shield lasts this many seconds per point of effective ability level. */
-    public static final int LAPIS_SHIELD_SECONDS_PER_POWER = 30;
-    /** Diamond Skin lasts this many seconds per point of effective ability level. */
-    public static final int DIAMOND_SKIN_SECONDS_PER_POWER = 30;
-    /** Diamond Skin practices below this level. The cast is not raised up to it. */
-    public static final double DIAMOND_SKIN_MIN_LEVEL = 2.0;
-    /** Cyan sparkle when Diamond Skin reduces a hit. 0.25 seconds. */
-    public static final int DIAMOND_SKIN_SPARKLE_TICKS = 5;
+    public static final int LAPIS_SHIELD_SECONDS_PER_POWER = 20;
     /** Distance at which Sense Evil reports a rough range: 250 × ability level. */
     public static final double SENSE_EVIL_RANGE_PER_POWER = 250.0;
     public static final int SENSE_EVIL_SPARKLE_TICKS = 120;
@@ -182,7 +175,6 @@ public final class AbilityRules {
                     SENSE_EVIL,
                     SMITE_EVIL,
                     MASTER_BUILDER,
-                    DIAMOND_SKIN,
                     EMPOWER,
                     BATTERY,
                     LAPIS_SHIELD,
@@ -203,7 +195,7 @@ public final class AbilityRules {
         if (FEATHER_ID.equals(itemId)) {
             return FLIGHT;
         }
-        if (ARROW_ID.equals(itemId)) {
+        if (NETHER_QUARTZ_ID.equals(itemId)) {
             return MAGIC_ARROW;
         }
         if (isGrowHoe(itemId)) {
@@ -228,9 +220,6 @@ public final class AbilityRules {
             return MASTER_BUILDER;
         }
         if (DIAMOND_ID.equals(itemId)) {
-            return DIAMOND_SKIN;
-        }
-        if (DIAMOND_BLOCK_ID.equals(itemId)) {
             return RESTORE_LIFE;
         }
         if (GLOWSTONE_DUST_ID.equals(itemId)) {
@@ -248,7 +237,7 @@ public final class AbilityRules {
         return null;
     }
 
-    /** A normal golden sword or a heavy golden sword. Both cast Smite Evil. */
+    /** A normal golden sword or a heavy golden sword. Both cast Magic Melee. */
     public static boolean isSmiteSword(String itemId) {
         return GOLDEN_SWORD_ID.equals(itemId) || HEAVY_GOLDEN_SWORD_ID.equals(itemId);
     }
@@ -501,16 +490,15 @@ public final class AbilityRules {
         return switch (ability) {
             case HEAL -> "Healing";
             case IRON_HEART -> "Iron Heart";
-            case MAGIC_ARROW -> "Missile Storm";
+            case MAGIC_ARROW -> "Lightning";
             case FLIGHT -> "Flight";
             case GROW -> "Let it grow";
             case POWER_MINE -> "Power mining";
             case DETECT_ORE -> "Detect ore";
             case SLOW -> "Slow";
             case SENSE_EVIL -> "Sense Evil";
-            case SMITE_EVIL -> "Smite Evil";
+            case SMITE_EVIL -> "Magic Melee";
             case MASTER_BUILDER -> "Master Builder";
-            case DIAMOND_SKIN -> "Diamond Skin";
             case EMPOWER -> "Empower";
             case BATTERY -> "Battery";
             case LAPIS_SHIELD -> "Amethyst Shield";
@@ -529,7 +517,7 @@ public final class AbilityRules {
         return switch (ability) {
             case HEAL -> "Mercy is a craft. I can put it in your hands.";
             case IRON_HEART -> "There is a second heart, if you ask the iron to remember you.";
-            case MAGIC_ARROW -> "A handful of arrows can be taught to hunt together, and charcoal still remembers the fire.";
+            case MAGIC_ARROW -> "Nether quartz can be taught to call lightning, and charcoal still remembers the fire.";
             case FLIGHT -> "The sky is only heavy if you agree that it is.";
             case GROW -> "Green things listen, if you speak with a hoe.";
             case POWER_MINE -> "Stone yields to a pick that has been properly introduced.";
@@ -538,7 +526,6 @@ public final class AbilityRules {
             case SENSE_EVIL -> "Large hungers leave a smell on the wind.";
             case SMITE_EVIL -> "A golden sword, heavy or not, is a polite way to end a monster.";
             case MASTER_BUILDER -> "Stone will hold for a while, even where the ground does not agree.";
-            case DIAMOND_SKIN -> "A diamond can be asked to stand between you and the blow.";
             case EMPOWER -> "Glowstone will lend its light to the next working.";
             case BATTERY -> "A block of quartz will hold a charge for your mana.";
             case LAPIS_SHIELD -> "Amethyst can stand in the air between a body and the blow.";
@@ -560,7 +547,7 @@ public final class AbilityRules {
             case IRON_HEART ->
                 "Hold an iron ingot and double-right-click. Double-right-click again with an ingot to cancel your own.";
             case MAGIC_ARROW ->
-                "Hold an arrow and double-right-click. One arrow per level seeks a hostile in range, and each deals that much magic damage. More than 3 arrows doubles the level, up to the square root of the arrows in hand. Charcoal in your inventory adds +2 and makes them burn. It costs 1 mana.";
+                "Hold nether quartz and double-right-click. One bolt per level strikes a hostile in range, and each deals that much magic damage. Lightning runs from you to each target. More than 3 quartz doubles the level, up to the square root of the quartz in hand. Charcoal in your inventory adds +2 and makes the strike burn. It costs 1 mana.";
             case FLIGHT -> "Hold a feather and double-right-click. Jump to rise, sneak in the air to descend, and sneak on a block to stop.";
             case GROW -> "Hold any hoe and double-right-click a plant. It costs 1 mana and some hoe durability.";
             case POWER_MINE -> "Hold any pickaxe and double-right-click. Hardened stone stops eating extra durability for a while.";
@@ -570,11 +557,9 @@ public final class AbilityRules {
             case SENSE_EVIL ->
                 "Double-right-click a spider eye. Hold the click to eat it instead. You turn toward a living biome boss, if one is out.";
             case SMITE_EVIL ->
-                "Hold a golden sword or a heavy golden sword and double-right-click. It strikes along your aim. With at least 1 mana the crosshair turns gold on one in reach. It costs 1/4 mana.";
+                "Hold a golden sword or a heavy golden sword and double-right-click a hostile in reach. It costs 1/4 mana. Below 1, practice spends 1 mana and the normal cooldown.";
             case MASTER_BUILDER ->
                 "Hold a clay brick and double-right-click. Double-right-click again to cancel. It costs 1 mana.";
-            case DIAMOND_SKIN ->
-                "Hold diamonds and double-right-click. Double-right-click again to cancel. It costs 2 mana.";
             case EMPOWER ->
                 "Hold glowstone dust and double-right-click. Double-right-click again to cancel. It costs 1 mana.";
             case BATTERY ->
@@ -586,7 +571,7 @@ public final class AbilityRules {
             case READ_TOME ->
                 "Hold a tome that holds experience and double-right-click. It costs 1 mana and returns 80% of what was saved, plus 2% per ability level.";
             case RESTORE_LIFE ->
-                "Hold a diamond block and double-right-click in the air or on a player. Clicking a block still places it. It costs 4 mana and diamonds from your inventory. The block is kept.";
+                "Hold a diamond and double-right-click in the air, on a block, or on a player. It costs 4 mana and diamonds from your inventory. Two or more in hand add +2.";
             default -> "";
         };
     }
@@ -607,16 +592,15 @@ public final class AbilityRules {
         return List.of(
                 "healing",
                 "iron heart",
-                "missile storm",
+                "lightning",
                 "flight",
                 "grow",
                 "power mine",
                 "detect ore",
                 "slow",
                 "sense evil",
-                "smite evil",
+                "magic melee",
                 "master builder",
-                "diamond skin",
                 "empower",
                 "battery",
                 "amethyst shield",
@@ -636,23 +620,23 @@ public final class AbilityRules {
         return switch (key) {
             case "heal", "healing" -> HEAL;
             case "iron heart", "ironheart" -> IRON_HEART;
-            case "fire bolt", "firebolt", "magic arrow", "magicarrow", "missile storm", "missilestorm" -> MAGIC_ARROW;
+            case "fire bolt", "firebolt", "magic arrow", "magicarrow", "missile storm", "missilestorm", "lightning" ->
+                    MAGIC_ARROW;
             case "flight" -> FLIGHT;
             case "grow", "let it grow", "letitgrow" -> GROW;
             case "power mine", "power mining", "powermine" -> POWER_MINE;
             case "detect ore", "detectore" -> DETECT_ORE;
             case "slow" -> SLOW;
             case "sense evil", "senseevil" -> SENSE_EVIL;
-            case "smite", "smite evil", "smiteevil" -> SMITE_EVIL;
+            case "smite", "smite evil", "smiteevil", "magic melee", "magicmelee" -> SMITE_EVIL;
             case "master builder", "masterbuilder" -> MASTER_BUILDER;
-            case "diamond skin", "diamondskin" -> DIAMOND_SKIN;
             case "empower", "glowstone", "glowstone dust" -> EMPOWER;
             case "battery" -> BATTERY;
             case "amethyst shield", "amethystshield", "amethyst", "lapis shield", "lapisshield", "lapus shield",
                     "lapusshield", "lapus" -> LAPIS_SHIELD;
             case "book", "write tome", "write tome of the wise", "writetome" -> WRITE_TOME;
             case "read tome", "read tome of the wise", "readtome", "tome" -> READ_TOME;
-            case "restore life", "restorelife", "restore" -> RESTORE_LIFE;
+            case "restore life", "restorelife", "restore", "diamond" -> RESTORE_LIFE;
             default -> null;
         };
     }
@@ -680,12 +664,13 @@ public final class AbilityRules {
                     "Iron Heart: If it ends and you still have mana, another mana is spent and it continues, and you gain skill as if you cast it again.",
                     "Iron Heart: A renew spends an ingot only when you are holding one, and that one adds +2.");
             case MAGIC_ARROW -> List.of(
-                    "Missile Storm: Double-right-click while holding an arrow. Costs 1 mana. It launches one arrow per level, rounded down, and each deals that much magic damage.",
-                    "Missile Storm: Magic damage ignores armor. Skeletons do not deflect it. Witches resist it. Range scales with level. Cooldown is 10 seconds minus skill.",
-                    "Missile Storm: Arrows seek hostiles in range. One hostile can be hit more than once. They spread so a shot does not overkill while another target can take it.",
-                    "Missile Storm: Charcoal in your hotbar or inventory, not a bundle, adds +2. One charcoal is consumed, and the arrows burn.",
-                    "Missile Storm: One arrow is consumed. Two or three consume two and add +2.",
-                    "Missile Storm: More than 3 arrows doubles your level, adding at most the square root of those arrows, rounded down. You consume that many, so 4 arrows still costs 2.");
+                    "Lightning: Double-right-click while holding nether quartz. Costs 1 mana. One bolt per level, rounded down, and each deals that much magic damage.",
+                    "Lightning: Magic damage ignores armor. Skeletons do not deflect it. Witches resist it. Range scales with level.",
+                    "Lightning: A bolt of lightning runs from you to each hostile it strikes, and every player can see it.",
+                    "Lightning: One hostile can be hit more than once. Bolts spread so a strike does not overkill while another target can take it.",
+                    "Lightning: Charcoal in your hotbar or inventory, not a bundle, adds +2. One charcoal is consumed, and the bolt burns.",
+                    "Lightning: One nether quartz is consumed. Two or three consume two and add +2.",
+                    "Lightning: More than 3 nether quartz doubles your level, adding at most the square root of that quartz, rounded down. You consume that many, so 4 quartz still costs 2.");
             case FLIGHT -> List.of(
                     "Flight: Double-right-click while holding a feather. Costs 1 mana. Jump to rise, sneak in the air to descend, and sneak on a block to stop.",
                     "Flight: Speed scales with ability level and reaches 70% of walking speed at 10.",
@@ -727,25 +712,19 @@ public final class AbilityRules {
                     "Sense Evil: The outline time shows as a spider eye with your other ability durations.",
                     "Sense Evil: It says whether a biome boss can appear here. In a full chunk at Y=48 or above, it also says the alliance has cleared the area.");
             case SMITE_EVIL -> List.of(
-                    "Smite Evil: Double-right-click while holding a golden sword or a heavy golden sword. Costs 1/4 mana.",
-                    "Smite Evil: Strikes a creature along your aim up to your ability level in blocks with a normal melee attack from that sword.",
-                    "Smite Evil: With at least 1 mana, the crosshair turns gold on a creature within that reach.",
-                    "Smite Evil: The strike includes enchantments, durability, and attack cooldown. Undead take extra damage equal to your ability level.",
-                    "Smite Evil: A small flash of light appears on the creature hit.");
+                    "Magic Melee: Double-right-click while holding a golden sword or a heavy golden sword. A real cast costs 1/4 mana and has no cooldown.",
+                    "Magic Melee: Below 1 it is practice. That spends 1 mana, starts the normal cooldown, gains one use, and does not strike.",
+                    "Magic Melee: It strikes a hostile mob you are targeting, up to your ability level in blocks, with a normal melee attack from that sword.",
+                    "Magic Melee: If that mob is not a hostile in reach, it does not choose another target.",
+                    "Magic Melee: The strike includes enchantments, durability, and attack cooldown.",
+                    "Magic Melee: With at least 1 mana, the crosshair turns gold on a hostile mob within that reach.",
+                    "Magic Melee: A gold beam of light runs from you to that mob, and every player can see it.");
             case MASTER_BUILDER -> List.of(
                     "Master Builder: Double-right-click while holding a clay brick. Costs 1 mana. Lasts 30 seconds times your ability level.",
                     "Master Builder: While it lasts, you can place solid blocks in the air, and block reach increases by your ability level. Torch rules still apply.",
                     "Master Builder: Double-right-click again with a clay brick to cancel. If it ends and you still have mana, it spends another and continues.",
                     "Master Builder: One brick is consumed. Two in hand consume both and add +2. Continuing gains skill as if you cast it again.",
                     "Master Builder: A renew spends a brick only when you are holding one, and that one adds +2.");
-            case DIAMOND_SKIN -> List.of(
-                    "Diamond Skin: Double-right-click while holding diamonds. Costs 2 mana. Below 2 it is practice and the diamond is kept. Lasts 30 seconds times its level.",
-                    "Diamond Skin: Damage that would reach your health is divided by your ability level. Armor still takes the hit first.",
-                    "Diamond Skin: Each point of that damage it prevents shortens Diamond Skin by 3 seconds. Poison, drowning, and suffocation are not reduced.",
-                    "Diamond Skin: A cyan sparkle shows for a quarter second when a hit is reduced.",
-                    "Diamond Skin: Double-right-click again with a diamond to cancel. If it ends and you still have 2 mana, it spends that and continues.",
-                    "Diamond Skin: One diamond is consumed. Two in hand consume both and add +2. Continuing gains skill as if you cast it again.",
-                    "Diamond Skin: A renew spends a diamond only when you are holding one, and that one adds +2.");
             case EMPOWER -> List.of(
                     "Empower: Double-right-click while holding glowstone dust. Costs 1 mana. Lasts 30 seconds per ability level, and at least 30 seconds.",
                     "Empower: While it lasts, each later mana ability cast gains extra level equal to the square root of Empower's level.",
@@ -759,10 +738,10 @@ public final class AbilityRules {
                     "Battery: Continuing gains skill as if you cast it again.");
             case LAPIS_SHIELD -> List.of(
                     "Amethyst Shield: Double-right-click while holding an amethyst shard. A targeted character gets the shield. Otherwise it shields you. Costs 1 mana.",
-                    "Amethyst Shield: It lasts 30 seconds times your ability level. A force field stays around that character until it ends.",
+                    "Amethyst Shield: It lasts 20 seconds times your ability level. A force field stays around that character until it ends.",
                     "Amethyst Shield: Damage up to that level is absorbed before armor or health. A hit within that level also skips harmful effects, such as poison.",
-                    "Amethyst Shield: Amethyst, lapis, and minutes left pay for the block. One kind costs 1 per 3 points, two kinds 1 per 5, and all three 1 per 7, rounded up.",
-                    "Amethyst Shield: Each block also shortens the shield by 10 seconds. A minute of duration fuel takes 1 minute 10 seconds.",
+                    "Amethyst Shield: Amethyst, lapis, and each 20 seconds left pay for the block. One kind costs 1 per 3 points, two kinds 1 per 5, and all three 1 per 7, rounded up.",
+                    "Amethyst Shield: Each block also shortens the shield by 10 seconds. Twenty seconds of duration fuel takes 30 seconds.",
                     "Amethyst Shield: The cost alternates those fuels, largest amount first. Items come from your hotbar or inventory, not a bundle, armor, or the offhand.",
                     "Amethyst Shield: If you cannot pay, the hit lands and the shield ends. It runs until it ends. A second click does not cancel it.",
                     "Amethyst Shield: One shard is consumed to cast. Two in hand consume both and add +2. One lapis lazuli in your hotbar or inventory is also consumed and adds another +2.");
@@ -777,12 +756,12 @@ public final class AbilityRules {
                     "Read Tome of the Wise: Double-right-click a tome that holds experience, at any level. Costs 1 mana and the tome. Below 1 the tome is kept.",
                     "Read Tome of the Wise: You gain 80% of the saved experience, plus 2% per ability level, above or below level 30. Sneak and right-click to open it instead.");
             case RESTORE_LIFE -> List.of(
-                    "Restore Life: Double-right-click in the air or on a player while holding a diamond block. Clicking a block with it still places the block.",
+                    "Restore Life: Double-right-click while holding a diamond, in the air, on a block, or on a player.",
                     "Restore Life: It targets a friendly player within 2 plus ability level blocks, the way Healing does, and otherwise you.",
                     "Restore Life: It gives one life. The target must have fewer lives than player.death.lives. Lives must be on, and Restore Life Available starts on.",
                     "Restore Life: It costs 4 mana and diamonds in your hotbar or inventory. The count is 17 minus their lives minus your level, rounded down, and at least 3.",
-                    "Restore Life: A missing requirement spends nothing and says what is required. Below 1, practice spends the 4 mana and keeps the diamond block and the diamonds.",
-                    "Restore Life: The diamond block stays in your hand, one or more. Two or more add +2. The diamonds that pay for the life are separate.",
+                    "Restore Life: A missing requirement spends nothing and says what is required. Below 1, practice spends the 4 mana and keeps the diamonds.",
+                    "Restore Life: Two or more diamonds in hand add +2. The price includes the diamonds in your hand.",
                     "Restore Life: After the life is given, the message says how many lives are still needed for full lives, and the total when it is above 0.");
             default -> null;
         };
@@ -819,7 +798,7 @@ public final class AbilityRules {
                 "A renew spends no catalyst unless you are holding it. Holding it spends one and adds +2.",
                 "Gold armor adds 1 mana level after 90 seconds, then 180, 360, and 720 seconds more. Four pieces put on together reach +4 in 1350 seconds. A piece that comes off loses its bonus.",
                 "A golden item held for 30 seconds, such as a golden hoe, adds 1 more mana level. Gold ingots, nuggets, and blocks do not.",
-                "Below 1 the cast is practice: mana and focus are spent, the cooldown starts, and you gain one use. Diamond Skin practices below 2 and keeps the diamond. Read Tome keeps the tome.",
+                "Below 1 the cast is practice: mana and focus are spent, the cooldown starts, and you gain one use. Read Tome keeps the tome.",
                 "Redstone dust in the offhand adds half your skill, up to the square root of that stack rounded down. Success consumes that bonus, rounded down. Practice keeps the dust.",
                 "Redstone dust in the offhand does not place when you right-click.");
     }
@@ -858,7 +837,6 @@ public final class AbilityRules {
                 "tougher.ability.index.sense_evil",
                 "tougher.ability.index.smite_evil",
                 "tougher.ability.index.master_builder",
-                "tougher.ability.index.diamond_skin",
                 "tougher.ability.index.redstone",
                 "tougher.ability.index.battery",
                 "tougher.ability.index.lapis_shield",
@@ -882,24 +860,23 @@ public final class AbilityRules {
                 "Paper: Healing",
                 "Iron ingot: Iron Heart",
                 "Feather: Flight",
-                "Arrow: Missile Storm",
+                "Nether quartz: Lightning",
                 "Any hoe: Let it grow",
                 "Any pickaxe: Power mining",
                 "Compass: Detect ore",
                 "String: Slow",
                 "Spider eye: Sense Evil",
-                "Golden sword or heavy golden sword: Smite Evil",
+                "Golden sword or heavy golden sword: Magic Melee",
                 "Clay brick: Master Builder",
-                "Diamond: Diamond Skin",
                 "Glowstone dust: Empower",
                 "Quartz block: Battery",
                 "Amethyst shard: Amethyst Shield",
                 "Book: Write Tome of the Wise",
                 "Tome: Read Tome of the Wise",
-                "Diamond block: Restore Life",
+                "Diamond: Restore Life",
                 "Every ability's level is its skill plus item bonuses, minus 2, and at least 0.",
-                "Below 1 the cast is practice: mana and focus are spent, the cooldown starts, and you gain one use. Diamond Skin practices below 2 and keeps the diamond. Read Tome keeps the tome.",
-                "Restore Life: a missing requirement spends nothing. Below 1, practice spends 4 mana and keeps the diamond block and the diamonds.",
+                "Below 1 the cast is practice: mana and focus are spent, the cooldown starts, and you gain one use. Read Tome keeps the tome.",
+                "Restore Life: a missing requirement spends nothing. Below 1, practice spends 4 mana and keeps the diamonds.",
                 "Redstone dust in the offhand adds half your skill, up to the square root of that stack rounded down. Success consumes that bonus, rounded down. Practice keeps the dust.",
                 "Redstone dust in the offhand does not place when you right-click.",
                 "Hold a focus and he teaches that ability for half the house points in uses. At 24 points, 30 emeralds from inventory or either hand; each point above takes 2 off, down to free.",
@@ -973,15 +950,20 @@ public final class AbilityRules {
         return best;
     }
 
+    /** Mana a practice cast spends. Magic Melee practice spends a full point. */
+    public static double practiceManaCost(String ability) {
+        if (SMITE_EVIL.equals(ability)) {
+            return MANA_COST;
+        }
+        return manaCost(ability);
+    }
+
     public static double manaCost(String ability) {
         if (SMITE_EVIL.equals(ability)) {
             return SMITE_EVIL_MANA_COST;
         }
         if (DETECT_ORE.equals(ability)) {
             return DETECT_ORE_MANA_COST;
-        }
-        if (DIAMOND_SKIN.equals(ability)) {
-            return DIAMOND_SKIN_MANA_COST;
         }
         if (RESTORE_LIFE.equals(ability)) {
             return RESTORE_LIFE_MANA_COST;
@@ -1066,7 +1048,7 @@ public final class AbilityRules {
     /**
      * Extra ability level from held supplies: extra catalyst in hand, hoe/pickaxe
      * material, the largest hotbar or backpack nether quartz stack for Detect ore,
-     * charcoal in that same inventory for Missile Storm, and a phantom membrane there for Flight.
+     * charcoal in that same inventory for Lightning, and a phantom membrane there for Flight.
      * {@code quartzStack} is that one stack's count, not a sum and not a bundle.
      */
     public static int supplyBonus(
@@ -1130,11 +1112,6 @@ public final class AbilityRules {
         return Math.max(0.0, basePower(uses)) + Math.max(0, itemBonus);
     }
 
-    /** Missile Storm uses a 10-second cooldown that shrinks with skill. Mana level does not change it or its power. */
-    public static boolean usesShortCooldown(String ability) {
-        return MAGIC_ARROW.equals(ability);
-    }
-
     /** +2 when the hotbar or backpack holds charcoal. Bundles, armor, and the offhand do not count. */
     public static int charcoalArrowBonus(boolean hasCharcoal) {
         return hasCharcoal ? CHARCOAL_ARROW_BONUS : 0;
@@ -1193,12 +1170,12 @@ public final class AbilityRules {
         return next;
     }
 
-    /** A wise teacher who offered Fire bolt now offers Magic Arrow. Let there be light is retired. */
+    /** A wise teacher who offered Fire bolt now offers Lightning. Let there be light and Diamond Skin are retired. */
     public static String storedWiseAbility(String stored) {
         if (FIRE_BOLT.equals(stored)) {
             return MAGIC_ARROW;
         }
-        if (LIGHT.equals(stored)) {
+        if (LIGHT.equals(stored) || DIAMOND_SKIN.equals(stored)) {
             return "";
         }
         return stored;
@@ -1286,13 +1263,12 @@ public final class AbilityRules {
 
     /** True when this level spends the cast and gains a use without taking effect. */
     public static boolean practices(String ability, double level) {
-        double need = DIAMOND_SKIN.equals(ability) ? DIAMOND_SKIN_MIN_LEVEL : PRACTICE_LEVEL;
-        return level < need;
+        return level < PRACTICE_LEVEL;
     }
 
     /**
      * Practices still needed after {@code uses} before skill plus the world offset
-     * can cast with no redstone, catalyst, or Empower. Diamond Skin uses its higher line.
+     * can cast with no redstone, catalyst, or Empower.
      * Zero means the next cast can succeed with no buffs.
      */
     public static int practicesUntilUnbuffed(String ability, int uses, int levelOffset) {
@@ -1300,7 +1276,7 @@ public final class AbilityRules {
         if (!practices(ability, unbuffedPower(ability, current, levelOffset))) {
             return 0;
         }
-        double need = DIAMOND_SKIN.equals(ability) ? DIAMOND_SKIN_MIN_LEVEL : PRACTICE_LEVEL;
+        double need = PRACTICE_LEVEL;
         double skillNeed = need - levelOffset;
         int target = current;
         if (skillNeed > 0.0) {
@@ -1362,7 +1338,6 @@ public final class AbilityRules {
         return FLIGHT.equals(ability)
                 || IRON_HEART.equals(ability)
                 || MASTER_BUILDER.equals(ability)
-                || DIAMOND_SKIN.equals(ability)
                 || BATTERY.equals(ability);
     }
 
@@ -1399,16 +1374,6 @@ public final class AbilityRules {
         return Math.max(0, (int) Math.round(Math.max(0.0, power) * MASTER_BUILDER_SECONDS_PER_POWER * 20.0));
     }
 
-    /** Stored Diamond Skin level. A cast below {@link #DIAMOND_SKIN_MIN_LEVEL} practices instead. */
-    public static double diamondSkinLevel(double power) {
-        return Math.max(0.0, power);
-    }
-
-    /** Duration in ticks: 30 seconds per point of effective ability level. */
-    public static int diamondSkinDurationTicks(double power) {
-        return Math.max(0, (int) Math.round(Math.max(0.0, power) * DIAMOND_SKIN_SECONDS_PER_POWER * 20.0));
-    }
-
     /** Duration in ticks: 30 seconds per ability level, and at least 30 seconds. */
     public static int empowerDurationTicks(double power) {
         int ticks = (int) Math.round(Math.max(0.0, power) * EMPOWER_SECONDS_PER_POWER * 20.0);
@@ -1429,7 +1394,7 @@ public final class AbilityRules {
         return Math.max(BATTERY_MIN_SECONDS * 20, ticks);
     }
 
-    /** Duration in ticks: 30 seconds per ability level. */
+    /** Duration in ticks: 20 seconds per ability level. */
     public static int lapisShieldDurationTicks(double power) {
         return Math.max(0, (int) Math.round(Math.max(0.0, power) * LAPIS_SHIELD_SECONDS_PER_POWER * 20.0));
     }
@@ -1466,9 +1431,9 @@ public final class AbilityRules {
     }
 
     /**
-     * Levels added for a Missile Storm cast when the hand holds more than {@link #MISSILE_STORM_HAND}
-     * arrows. That added amount is the base level, rounded down, and at most the square root of the
-     * stack, rounded down. Two or three arrows keep the ordinary catalyst bonus instead.
+     * Levels added for a Lightning cast when the hand holds more than {@link #MISSILE_STORM_HAND}
+     * nether quartz. That added amount is the base level, rounded down, and at most the square root of the
+     * stack, rounded down. Two or three quartz keep the ordinary catalyst bonus instead.
      */
     public static int missileStormArrowBonus(double baseLevel, int heldArrows) {
         if (heldArrows <= MISSILE_STORM_HAND || !(baseLevel > 0.0)) {
@@ -1482,7 +1447,7 @@ public final class AbilityRules {
         return Math.min(doubling, cap);
     }
 
-    /** Arrows spent by one Missile Storm cast. Four arrows still costs 2 when the bonus is 2. */
+    /** Nether quartz spent by one Lightning cast. Four quartz still costs 2 when the bonus is 2. */
     public static int missileStormArrowsToConsume(double baseLevel, int heldArrows) {
         if (heldArrows <= 0) {
             return 0;
@@ -1494,7 +1459,7 @@ public final class AbilityRules {
         return bonus <= 0 ? 1 : Math.min(heldArrows, bonus);
     }
 
-    /** Effective level after the Missile Storm arrow bonus. Other abilities are unchanged. */
+    /** Effective level after the Lightning quartz bonus. Other abilities are unchanged. */
     public static double missileStormLevel(double baseLevel, int heldArrows) {
         return baseLevel + missileStormArrowBonus(baseLevel, heldArrows);
     }
@@ -1504,7 +1469,7 @@ public final class AbilityRules {
         return Math.max(0, (int) Math.floor(Math.max(0.0, power)));
     }
 
-    /** Seconds a charcoal-fed Missile Storm arrow burns its target. This stays the rounded ability level. */
+    /** Seconds a charcoal-fed Lightning bolt burns its target. This stays the rounded ability level. */
     public static int projectileBurnSeconds(double power) {
         return Math.max(0, (int) Math.round(Math.max(0.0, power)));
     }
@@ -1808,11 +1773,6 @@ public final class AbilityRules {
         return Math.max(0.0, power);
     }
 
-    /** Extra sword damage against undead, equal to ability level. */
-    public static float smiteUndeadBonus(double power) {
-        return (float) Math.max(0.0, power);
-    }
-
     public static boolean senseEvilShowsDistance(double distance, double power) {
         return distance >= 0.0 && distance <= senseEvilRange(power);
     }
@@ -2110,8 +2070,7 @@ public final class AbilityRules {
 
     /**
      * 2 minutes minus 3 seconds per (mana level + skill), minimum 1 second.
-     * Hits the 1-second floor at combined rating 40. Missile Storm uses
-     * {@link #FIRE_BOLT_COOLDOWN_SECONDS} minus skill instead. Mana level does not change that cooldown.
+     * Hits the 1-second floor at combined rating 40.
      */
     public static int cooldownTicks(int manaLevel, int uses) {
         double points = Math.max(0, manaLevel) + skill(uses);
@@ -2119,20 +2078,26 @@ public final class AbilityRules {
         return Math.max(COOLDOWN_MIN_TICKS, ticks);
     }
 
+    /**
+     * Learned Magic Melee has no cooldown. Practice uses {@link #cooldownTicks(int, int)}
+     * when {@code power} is below {@link #PRACTICE_LEVEL}. Every other ability ignores {@code power}.
+     */
+    public static int cooldownTicks(String ability, int manaLevel, int uses, double power) {
+        if (SMITE_EVIL.equals(ability)) {
+            if (practices(ability, power)) {
+                return cooldownTicks(manaLevel, uses);
+            }
+            return 0;
+        }
+        return cooldownTicks(ability, manaLevel, uses);
+    }
+
+    /** Learned Magic Melee has no cooldown. Every other ability uses {@link #cooldownTicks(int, int)}. */
     public static int cooldownTicks(String ability, int manaLevel, int uses) {
         if (SMITE_EVIL.equals(ability)) {
             return 0;
         }
-        if (usesShortCooldown(ability)) {
-            return fireBoltCooldownTicks(manaLevel, uses);
-        }
         return cooldownTicks(manaLevel, uses);
-    }
-
-    /** 10 seconds minus skill, not below 0. {@code manaLevel} does not change this cooldown. */
-    public static int fireBoltCooldownTicks(int manaLevel, int uses) {
-        double seconds = FIRE_BOLT_COOLDOWN_SECONDS - skill(uses);
-        return Math.max(0, (int) Math.round(seconds * 20.0));
     }
 
     public static int remainingCooldownTicks(long now, long lastUseTick, int cooldownTicks) {

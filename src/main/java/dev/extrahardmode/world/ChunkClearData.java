@@ -49,6 +49,23 @@ public final class ChunkClearData extends SavedData {
         return kills.get(ChunkPos.pack(pos));
     }
 
+    public int kills(int chunkX, int chunkZ) {
+        return kills.get(ChunkPos.pack(chunkX, chunkZ));
+    }
+
+    /** Raises a chunk to this count when it is lower. A spread uses the threshold to mark it full. */
+    public void raiseTo(int chunkX, int chunkZ, int count) {
+        if (count <= 0) {
+            return;
+        }
+        long packed = ChunkPos.pack(chunkX, chunkZ);
+        if (kills.get(packed) >= count) {
+            return;
+        }
+        kills.put(packed, count);
+        setDirty();
+    }
+
     /** Adds one kill and returns the count before this one. */
     public int addKill(BlockPos pos) {
         long packed = ChunkPos.pack(pos);

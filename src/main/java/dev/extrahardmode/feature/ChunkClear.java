@@ -4,14 +4,10 @@ import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.world.ChunkClearData;
 import dev.extrahardmode.world.WorldGate;
-import java.util.HashMap;
-import java.util.Map;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Prediction;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
@@ -25,8 +21,9 @@ import net.minecraft.world.level.ChunkPos;
 
 /**
  * Counts hostile kills by players in a chunk. A full chunk refuses hostile
- * spawns at and above Y=48. Neutral and friendly mobs still spawn. Nearby
- * players are told, and the chunk is marked once a day.
+ * spawns at and above Y=48. Neutral and friendly mobs still spawn. Reaching
+ * the count again clears one uncleared chunk around it, up to nine in all. A synced flag tells
+ * the client to show the corner diamond.
  */
 public final class ChunkClear {
     private ChunkClear() {}
@@ -48,11 +45,23 @@ public final class ChunkClear {
         int before = ChunkClearData.of(level).addKill(entity.blockPosition());
         if (ChunkClearRules.justFilled(before, threshold)) {
             rewardNearby(level, entity);
+        } else if (ChunkClearRules.spreads(before, threshold)
+                && clearAdjacent(level, entity.blockPosition(), threshold)) {
+            rewardNearKiller(level, killer);
         }
     }
 
+    /** True when this chunk has reached the kill count, at any height. */
+    public static boolean chunkFull(ServerLevel level, BlockPos pos) {
+        if (level == null || pos == null || !WorldGate.isActive(level)) {
+            return false;
+        }
+        int threshold = ConfigManager.world(level).chunkClearKills();
+        return ChunkClearRules.full(ChunkClearData.of(level).kills(pos), threshold);
+    }
+
     /**
-     * True when this block is in a full chunk at Y=48 or above. The once-a-day chime is separate.
+     * True when this block is in a full chunk at Y=48 or above.
      */
     public static boolean peaceful(ServerLevel level, BlockPos pos) {
         if (level == null || pos == null || pos.getY() < ChunkClearRules.MIN_Y || !WorldGate.isActive(level)) {
@@ -90,40 +99,50 @@ public final class ChunkClear {
     }
 
     public static void tickLevel(ServerLevel level) {
-        if (level == null || level.getGameTime() % 20L != 0L || !WorldGate.isActive(level)) {
+        if (level == null || level.getGameTime() % 20L != 0L) {
             return;
         }
+        boolean active = WorldGate.isActive(level);
         for (ServerPlayer player : level.players()) {
-            tickPeace(player);
+            tickHeld(player, active);
         }
     }
 
-    static void tickPeace(ServerPlayer player) {
-        if (player == null || !player.isAlive() || player.isSpectator()) {
+    static void tickHeld(ServerPlayer player, boolean active) {
+        if (player == null) {
             return;
         }
-        if (player.getBlockY() < ChunkClearRules.MIN_Y) {
-            return;
+        boolean held = false;
+        if (active && player.isAlive() && !player.isSpectator() && player.level() instanceof ServerLevel level) {
+            held = chunkFull(level, player.blockPosition());
         }
-        if (!(player.level() instanceof ServerLevel level) || !WorldGate.isActive(level)) {
-            return;
+        if (player.getAttachedOrElse(EhmAttachments.EHM_CHUNK_HELD, Boolean.FALSE) != held) {
+            player.setAttached(EhmAttachments.EHM_CHUNK_HELD, held);
         }
-        long today = CropGrowthRules.dayIndex(level.getOverworldClockTime());
-        String key = peaceKey(level, player.blockPosition());
-        Map<String, Long> heard = player.getAttachedOrElse(EhmAttachments.EHM_CHUNK_PEACE, Map.of());
-        if (!ChunkClearRules.peaceDue(key, today, heard)) {
-            return;
+    }
+
+    private static boolean clearAdjacent(ServerLevel level, BlockPos pos, int threshold) {
+        int chunkX = pos.getX() >> 4;
+        int chunkZ = pos.getZ() >> 4;
+        ChunkClearData data = ChunkClearData.of(level);
+        boolean[] neighborFull = new boolean[ChunkClearRules.neighborCount()];
+        for (int i = 0; i < neighborFull.length; i++) {
+            neighborFull[i] = ChunkClearRules.full(
+                    data.kills(ChunkClearRules.neighborChunkX(chunkX, i), ChunkClearRules.neighborChunkZ(chunkZ, i)),
+                    threshold);
         }
-        int threshold = ConfigManager.world(level).chunkClearKills();
-        if (!ChunkClearRules.blocksSpawn(player.getBlockY(), ChunkClearData.of(level).kills(player.blockPosition()), threshold)) {
-            return;
+        int index = ChunkClearRules.firstUncleared(neighborFull);
+        if (index < 0) {
+            return false;
         }
-        playPeace(player);
-        remember(player, key, today);
+        data.raiseTo(
+                ChunkClearRules.neighborChunkX(chunkX, index),
+                ChunkClearRules.neighborChunkZ(chunkZ, index),
+                threshold);
+        return true;
     }
 
     private static void rewardNearby(ServerLevel level, LivingEntity slain) {
-        long today = CropGrowthRules.dayIndex(level.getOverworldClockTime());
         long chunk = ChunkPos.pack(slain.blockPosition());
         for (ServerPlayer player : level.players()) {
             if (!player.isAlive() || player.isSpectator()) {
@@ -133,57 +152,28 @@ public final class ChunkClear {
             if (!ChunkClearRules.hearsClearing(same, player.distanceToSqr(slain))) {
                 continue;
             }
-            player.giveExperiencePoints(ChunkClearRules.REWARD_XP);
-            player.getInventory()
-                    .placeItemBackInInventory(
-                            new ItemStack(Items.EMERALD, ChunkClearRules.REWARD_EMERALDS), Prediction.SERVER_ONLY);
-            player.sendSystemMessage(Component.translatableWithFallback(
-                    "tougher.message.chunk_clear", ChunkClearRules.CLEARED_MESSAGE));
-            if (player.getBlockY() >= ChunkClearRules.MIN_Y && same) {
-                remember(player, peaceKey(level, slain.blockPosition()), today);
+            giveReward(player);
+        }
+    }
+
+    private static void rewardNearKiller(ServerLevel level, ServerPlayer killer) {
+        for (ServerPlayer player : level.players()) {
+            if (!player.isAlive() || player.isSpectator()) {
+                continue;
             }
-        }
-    }
-
-    /** Dimension plus packed chunk, so the same column in another world is its own cue. */
-    private static String peaceKey(ServerLevel level, BlockPos pos) {
-        return level.dimension().identifier() + "/" + ChunkPos.pack(pos);
-    }
-
-    private static void remember(ServerPlayer player, String key, long today) {
-        Map<String, Long> heard = player.getAttachedOrElse(EhmAttachments.EHM_CHUNK_PEACE, Map.of());
-        Map<String, Long> next = new HashMap<>();
-        if (heard != null) {
-            for (Map.Entry<String, Long> entry : heard.entrySet()) {
-                if (entry.getKey() == null || entry.getValue() == null || entry.getValue().longValue() != today) {
-                    continue;
-                }
-                next.put(entry.getKey(), today);
+            if (!ChunkClearRules.hearsKiller(player.distanceToSqr(killer))) {
+                continue;
             }
+            giveReward(player);
         }
-        next.put(key, today);
-        player.setAttached(EhmAttachments.EHM_CHUNK_PEACE, next);
     }
 
-    private static void playPeace(ServerPlayer player) {
-        player.sendOverlayMessage(Component.translatableWithFallback(
-                "tougher.message.chunk_peace", ChunkClearRules.PEACE_MESSAGE));
-        player.playSound(SoundEvents.AMETHYST_BLOCK_CHIME, 0.2F, 1.4F);
-        if (!(player.level() instanceof ServerLevel level)) {
-            return;
-        }
-        level.sendParticles(
-                player,
-                ParticleTypes.HAPPY_VILLAGER,
-                false,
-                false,
-                player.getX(),
-                player.getY() + player.getBbHeight() * 0.5,
-                player.getZ(),
-                4,
-                0.35,
-                0.2,
-                0.35,
-                0.0);
+    private static void giveReward(ServerPlayer player) {
+        player.giveExperiencePoints(ChunkClearRules.REWARD_XP);
+        player.getInventory()
+                .placeItemBackInInventory(
+                        new ItemStack(Items.EMERALD, ChunkClearRules.REWARD_EMERALDS), Prediction.SERVER_ONLY);
+        player.sendSystemMessage(Component.translatableWithFallback(
+                "tougher.message.chunk_clear", ChunkClearRules.CLEARED_MESSAGE));
     }
 }

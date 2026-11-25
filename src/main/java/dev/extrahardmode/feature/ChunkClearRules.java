@@ -1,14 +1,14 @@
 package dev.extrahardmode.feature;
 
-import java.util.Map;
-
 /**
  * When a chunk has enough player kills of hostile mobs, ground at and above
  * {@link #MIN_Y} stops receiving hostile spawns. Neutral and friendly mobs still spawn.
+ * Reaching that count again clears one uncleared chunk around it, edges then corners.
+ * That chunk plus the eight around it is nine.
  * Minecraft-free so JUnit can cover the thresholds.
  */
 public final class ChunkClearRules {
-    public static final int DEFAULT_KILLS = 100;
+    public static final int DEFAULT_KILLS = 20;
     /** Hostile spawns at this block Y and above are the ones a full chunk refuses. */
     public static final int MIN_Y = 48;
     public static final int REWARD_XP = 25;
@@ -17,14 +17,21 @@ public final class ChunkClearRules {
     public static final int NEAR_BLOCKS = 48;
 
     public static final String CLEARED_MESSAGE = "This area is being cleared for the alliance!";
+    /** Tooltip on the corner diamond while the player stands in a cleared chunk. */
     public static final String PEACE_MESSAGE = "The alliance holds this ground.";
+    /**
+     * North, east, south, west, then northeast, northwest, southeast, southwest.
+     * The first uncleared one is the next spread. The source chunk plus these eight is nine.
+     */
+    private static final int[] NEIGHBOR_DX = {0, 1, 0, -1, 1, -1, 1, -1};
+    private static final int[] NEIGHBOR_DZ = {-1, 0, 1, 0, -1, -1, 1, 1};
 
     public static final String CONFIG_COMMENT =
-            "Hostile kills by a player in one chunk. At this many, hostile spawns at Y=48 and above stop. Neutral and friendly mobs still spawn. Nearby players gain 25 experience and an emerald. Default 100. -1 turns it off. 0 does too.";
+            "Hostile kills by a player in one chunk. At this many, hostile spawns at Y=48 and above stop. Each time that many more kills land, one uncleared chunk around it is cleared: north, east, south, west, then northeast, northwest, southeast, and southwest. That chunk can clear nine in all. Neutral and friendly mobs still spawn. Nearby players gain 25 experience and an emerald. Default 20. -1 turns it off. 0 does too.";
 
     private ChunkClearRules() {}
 
-    /** -1 turns the count, the spawn block, the reward, and the chime off. 0 does too. */
+    /** -1 turns the count, the spawn block, the spread, the reward, and the diamond off. 0 does too. */
     public static boolean enabled(int threshold) {
         return threshold > 0;
     }
@@ -36,6 +43,47 @@ public final class ChunkClearRules {
     /** True when the kill that moves the count from {@code killsBefore} reaches the threshold. */
     public static boolean justFilled(int killsBefore, int threshold) {
         return enabled(threshold) && killsBefore < threshold && killsBefore + 1 >= threshold;
+    }
+
+    /**
+     * True when this kill reaches the threshold again: twice, three times, and so on.
+     * The first time is {@link #justFilled}, not a spread.
+     */
+    public static boolean spreads(int killsBefore, int threshold) {
+        if (!enabled(threshold) || killsBefore < threshold) {
+            return false;
+        }
+        int after = killsBefore + 1;
+        return after > threshold && after % threshold == 0;
+    }
+
+    public static int neighborCount() {
+        return NEIGHBOR_DX.length;
+    }
+
+    public static int neighborChunkX(int chunkX, int index) {
+        return chunkX + NEIGHBOR_DX[index];
+    }
+
+    public static int neighborChunkZ(int chunkZ, int index) {
+        return chunkZ + NEIGHBOR_DZ[index];
+    }
+
+    /**
+     * First neighbor that is not already full. Order is north, east, south, west, then
+     * northeast, northwest, southeast, southwest. -1 when all eight are full.
+     */
+    public static int firstUncleared(boolean[] neighborFull) {
+        if (neighborFull == null) {
+            return -1;
+        }
+        int count = Math.min(neighborFull.length, NEIGHBOR_DX.length);
+        for (int i = 0; i < count; i++) {
+            if (!neighborFull[i]) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     public static boolean blocksSpawn(int y, int kills, int threshold) {
@@ -56,19 +104,12 @@ public final class ChunkClearRules {
         return distanceSquared <= reach;
     }
 
-    /**
-     * Quiet cue once per player per chunk per Minecraft day.
-     * {@code heard} maps a dimension-and-chunk key to the overworld day it was heard.
-     * A missing chunk is still due. The same chunk is due again on a later day.
-     */
-    public static boolean peaceDue(String chunkKey, long today, Map<String, Long> heard) {
-        if (chunkKey == null || chunkKey.isEmpty()) {
+    /** Spread reward. {@code distanceSquared} is blocks from the killing player. */
+    public static boolean hearsKiller(double distanceSquared) {
+        if (distanceSquared < 0.0) {
             return false;
         }
-        if (heard == null) {
-            return true;
-        }
-        Long heardDay = heard.get(chunkKey);
-        return heardDay == null || heardDay.longValue() != today;
+        double reach = (double) NEAR_BLOCKS * NEAR_BLOCKS;
+        return distanceSquared <= reach;
     }
 }

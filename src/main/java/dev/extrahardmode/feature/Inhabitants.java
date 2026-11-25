@@ -484,14 +484,30 @@ public final class Inhabitants implements FeatureModule {
             }
         }
         String ability = focusAbility(player);
+        String teacher = InhabitantRules.nameplate(home.name(), home.specialty());
         if (ability != null && InhabitantRules.canTeachFocus(offers, emeralds, price)) {
-            teachFocus(player, villager, level, teacherId, ability, price, InhabitantRules.wiseFocusUses(home.score()));
+            teachFocus(
+                    player,
+                    villager,
+                    level,
+                    teacherId,
+                    ability,
+                    price,
+                    InhabitantRules.wiseFocusUses(home.score()),
+                    teacher);
             return;
         }
         if (holdingEmeralds(player) && InhabitantRules.canTeachFocus(offers, emeralds, price)) {
             String rolled = InhabitantRules.pickWiseAbility(level.getRandom().nextInt());
             teachFocus(
-                    player, villager, level, teacherId, rolled, price, InhabitantRules.wiseEmeraldUses(home.score()));
+                    player,
+                    villager,
+                    level,
+                    teacherId,
+                    rolled,
+                    price,
+                    InhabitantRules.wiseEmeraldUses(home.score()),
+                    teacher);
             return;
         }
         explainLesson(
@@ -510,7 +526,8 @@ public final class Inhabitants implements FeatureModule {
             String teacherId,
             String ability,
             int price,
-            int uses) {
+            int uses,
+            String teacherName) {
         if (price > 0 && !InventorySearch.consume(player, Items.EMERALD, price)) {
             return;
         }
@@ -521,7 +538,10 @@ public final class Inhabitants implements FeatureModule {
         Component name = Component.literal(AbilityRules.nameFallback(ability));
         if (knows) {
             player.sendSystemMessage(Component.translatableWithFallback(
-                    "tougher.wise.freed", "You already knew %s.", name));
+                    "tougher.wise.more",
+                    "%s teaches you more about %s...",
+                    Component.literal(teacherName),
+                    name));
         } else {
             player.sendSystemMessage(Component.translatableWithFallback(
                     "tougher.wise.flavor." + ability, AbilityRules.teacherFlavor(ability)));

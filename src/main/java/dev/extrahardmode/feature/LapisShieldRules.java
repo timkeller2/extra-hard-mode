@@ -2,8 +2,8 @@ package dev.extrahardmode.feature;
 
 /**
  * Amethyst Shield absorb math. Minecraft-free so the cost can be tested without a world.
- * The ability id is still {@code lapis_shield}. Amethyst shards, lapis lazuli, and whole
- * minutes left on the shield pay for blocked damage. How many of those you have sets the rate
+ * The ability id is still {@code lapis_shield}. Amethyst shards, lapis lazuli, and each
+ * 20 seconds left on the shield pay for blocked damage. How many of those you have sets the rate
  * before any is spent.
  */
 public final class LapisShieldRules {
@@ -13,11 +13,12 @@ public final class LapisShieldRules {
     public static final int ONE_KIND_POINTS = 3;
     /** Two fuel types on hand. */
     public static final int TWO_KIND_POINTS = 5;
-    /** Amethyst, lapis, and at least 1 minute of duration all on hand. */
+    /** Amethyst, lapis, and at least one 20-second part of duration all on hand. */
     public static final int THREE_KIND_POINTS = 7;
-    /** One shield minute. Matches a 60-second ability minute at 20 ticks. */
-    public static final int TICKS_PER_MINUTE = 20 * 60;
-    /** Taken off the shield on every paid block, on top of any minute fuel. */
+    /** One duration-fuel unit: 20 seconds at 20 ticks. */
+    public static final int DURATION_FUEL_SECONDS = 20;
+    public static final int TICKS_PER_MINUTE = 20 * DURATION_FUEL_SECONDS;
+    /** Taken off the shield on every paid block, on top of any duration fuel. */
     public static final int ABSORB_EXTRA_SECONDS = 10;
 
     private LapisShieldRules() {}
@@ -63,7 +64,7 @@ public final class LapisShieldRules {
         return (int) Math.ceil((absorbed - COST_EPSILON) / per);
     }
 
-    /** Remaining shield time in minutes. A negative tick count is none. */
+    /** Remaining shield time in 20-second fuel units. A negative tick count is none. */
     public static double durationMinutes(int ticks) {
         if (ticks <= 0) {
             return 0.0;
@@ -71,7 +72,7 @@ public final class LapisShieldRules {
         return ticks / (double) TICKS_PER_MINUTE;
     }
 
-    /** Ticks removed when this many whole minutes are spent. */
+    /** Ticks removed when this many 20-second fuel units are spent. */
     public static long minuteTicks(int minutes) {
         if (minutes <= 0) {
             return 0L;
@@ -80,14 +81,14 @@ public final class LapisShieldRules {
     }
 
     /**
-     * Ticks taken for one paid block. Fuel minutes are spent as before, then 10
-     * seconds more. A block paid with items and no minutes still costs those 10 seconds.
+     * Ticks taken for one paid block. Each duration-fuel unit is 20 seconds, then 10
+     * seconds more. A block paid with items and no duration still costs those 10 seconds.
      */
     public static long absorbDurationTicks(int fuelMinutes) {
         return minuteTicks(fuelMinutes) + (long) ABSORB_EXTRA_SECONDS * 20L;
     }
 
-    /** Whole minutes that can pay. 0.9 counts as none. 2.7 counts as 2. */
+    /** Whole 20-second units that can pay. 0.9 counts as none. 2.7 counts as 2. */
     public static int durationUnits(double minutes) {
         if (!Double.isFinite(minutes) || minutes < 1.0) {
             return 0;
@@ -97,10 +98,10 @@ public final class LapisShieldRules {
 
     /**
      * What to take for {@code absorbed} damage.
-     * Kinds are amethyst shards, lapis lazuli, and whole minutes left, each counted only at 1 or more.
+     * Kinds are amethyst shards, lapis lazuli, and whole 20-second units left, each counted only at 1 or more.
      * The rate is fixed from those kinds before anything is spent.
      * Payment starts with the largest amount and then cycles one unit at a time.
-     * Equal amounts go amethyst, then lapis, then minutes. The minute amount is the time left, not the floored units.
+     * Equal amounts go amethyst, then lapis, then duration. The duration amount is the time left, not the floored units.
      * A kind that runs out is skipped. Returns null when the fuels cannot cover the cost, and nothing should be spent.
      */
     public static Payment plan(float absorbed, int amethyst, int lapis, double minutes) {
@@ -155,7 +156,7 @@ public final class LapisShieldRules {
         return left > 0.0F ? left : 0.0F;
     }
 
-    /** Amethyst shards, lapis lazuli, and whole minutes taken for one block. */
+    /** Amethyst shards, lapis lazuli, and 20-second duration units taken for one block. */
     public record Payment(int amethyst, int lapis, int minutes) {
         public int total() {
             return amethyst + lapis + minutes;

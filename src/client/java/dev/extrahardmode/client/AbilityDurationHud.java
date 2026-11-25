@@ -92,9 +92,6 @@ public final class AbilityDurationHud {
         if (AbilityRules.MASTER_BUILDER.equals(ability)) {
             return 0x2A2824;
         }
-        if (AbilityRules.DIAMOND_SKIN.equals(ability)) {
-            return 0x12343A;
-        }
         if (AbilityRules.EMPOWER.equals(ability)) {
             return 0x2A2210;
         }
@@ -120,9 +117,6 @@ public final class AbilityDurationHud {
         if (AbilityRules.MASTER_BUILDER.equals(ability)) {
             return 0xC4B8A0;
         }
-        if (AbilityRules.DIAMOND_SKIN.equals(ability)) {
-            return 0x5CFFF0;
-        }
         if (AbilityRules.EMPOWER.equals(ability)) {
             return 0xF0C14A;
         }
@@ -147,9 +141,6 @@ public final class AbilityDurationHud {
         }
         if (AbilityRules.MASTER_BUILDER.equals(ability)) {
             return new ItemStack(Items.BRICK);
-        }
-        if (AbilityRules.DIAMOND_SKIN.equals(ability)) {
-            return new ItemStack(Items.DIAMOND);
         }
         if (AbilityRules.EMPOWER.equals(ability)) {
             return new ItemStack(Items.GLOWSTONE_DUST);

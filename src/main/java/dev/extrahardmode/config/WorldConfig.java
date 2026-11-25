@@ -30,7 +30,7 @@ import net.minecraft.world.level.storage.LevelResource;
 
 /** Per-dimension TOML, stored under the overworld save and keyed by {@code dimension().identifier()}. */
 public final class WorldConfig {
-    public static final int CONFIG_VERSION = 10;
+    public static final int CONFIG_VERSION = 11;
 
     private final Identifier dimensionId;
     private final Map<Identifier, Boolean> modules = new LinkedHashMap<>();
@@ -2073,6 +2073,8 @@ public final class WorldConfig {
      * Only a stored 25 is rewritten, so a custom value is kept.
      * Schema 10: bee honey default 25 → 20. Flowers add the square root of each
      * type within harvest range, counted once a day. Only a stored 25 is rewritten.
+     * Schema 11: chunk clear default 100 → 20. Only a stored 100 is rewritten,
+     * so a custom value is kept. A later choice of 100 stays once this schema has run.
      */
     private static void migrate(CommentedFileConfig file) {
         int version = getInt(file, "configVersion", 1);
@@ -2117,6 +2119,14 @@ public final class WorldConfig {
             }
             if (file.contains("farming.beeHoneyPercent")) {
                 file.setComment("farming.beeHoneyPercent", BeeHoneyRules.CONFIG_COMMENT);
+            }
+        }
+        if (version < 11) {
+            if (getInt(file, "monsters.chunkClearKills", ChunkClearRules.DEFAULT_KILLS) == 100) {
+                file.set("monsters.chunkClearKills", ChunkClearRules.DEFAULT_KILLS);
+            }
+            if (file.contains("monsters.chunkClearKills")) {
+                file.setComment("monsters.chunkClearKills", ChunkClearRules.CONFIG_COMMENT);
             }
         }
         if (version < 7) {

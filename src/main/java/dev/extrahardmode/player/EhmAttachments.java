@@ -437,7 +437,7 @@ public final class EhmAttachments {
                     .initializer(HashMap::new));
     public static final AttachmentType<Integer> EHM_FIREBOLT_POWER = AttachmentRegistry.create(
             ExtraHardModeMod.id("firebolt_power"), builder -> builder.persistent(Codec.INT).initializer(() -> 0));
-    /** Burn time in seconds for a charcoal-fed Missile Storm arrow. Separate from the damage stored in {@link #EHM_FIREBOLT_POWER}. */
+    /** Burn time in seconds for a charcoal-fed Lightning bolt. Separate from the damage stored in {@link #EHM_FIREBOLT_POWER}. */
     public static final AttachmentType<Integer> EHM_FIREBOLT_BURN = AttachmentRegistry.create(
             ExtraHardModeMod.id("firebolt_burn"), builder -> builder.persistent(Codec.INT).initializer(() -> 0));
     public static final AttachmentType<UUID> EHM_FIREBOLT_TARGET = AttachmentRegistry.create(
@@ -519,6 +519,7 @@ public final class EhmAttachments {
     public static final AttachmentType<Float> EHM_MASTER_BUILDER_POWER = AttachmentRegistry.create(
             ExtraHardModeMod.id("master_builder_power"),
             builder -> builder.persistent(Codec.FLOAT).initializer(() -> 0.0F));
+    /** Kept so a save that stored Diamond Skin still loads. Nothing reads it. */
     public static final AttachmentType<Integer> EHM_DIAMOND_SKIN_REMAINING = AttachmentRegistry.create(
             ExtraHardModeMod.id("diamond_skin_remaining"),
             builder -> builder.persistent(Codec.INT).initializer(() -> 0));
@@ -566,6 +567,7 @@ public final class EhmAttachments {
     public static final AttachmentType<Boolean> EHM_LAPIS_SHIELD_TARGET_PLAYER = AttachmentRegistry.create(
             ExtraHardModeMod.id("lapis_shield_target_player"),
             builder -> builder.persistent(Codec.BOOL).initializer(() -> Boolean.FALSE));
+    /** Kept so a save that stored a Diamond Skin sparkle still loads. Nothing reads it. */
     public static final AttachmentType<Long> EHM_DIAMOND_SKIN_SPARKLE_UNTIL = AttachmentRegistry.create(
             ExtraHardModeMod.id("diamond_skin_sparkle_until"), builder -> builder.initializer(() -> -1L));
     public static final AttachmentType<Long> EHM_SENSE_SPARKLE_UNTIL = AttachmentRegistry.create(
@@ -877,8 +879,17 @@ public final class EhmAttachments {
             builder -> builder.persistent(Codec.LONG).initializer(() -> Long.MAX_VALUE));
 
     /**
-     * Full chunks whose peaceful chime this player already heard.
-     * The key is the dimension id, a slash, and the packed chunk. The value is the overworld day.
+     * True while this player stands in a chunk the alliance has cleared.
+     * Synced so the client can draw the corner diamond.
+     */
+    public static final AttachmentType<Boolean> EHM_CHUNK_HELD = AttachmentRegistry.create(
+            ExtraHardModeMod.id("chunk_held"),
+            builder -> builder.initializer(() -> Boolean.FALSE)
+                    .syncWith(ByteBufCodecs.BOOL, AttachmentSyncPredicate.all()));
+
+    /**
+     * Older daily chime record. Nothing reads it now. It stays so a saved player
+     * still loads the map that was written under this id.
      */
     public static final AttachmentType<Map<String, Long>> EHM_CHUNK_PEACE = AttachmentRegistry.create(
             ExtraHardModeMod.id("chunk_peace"),

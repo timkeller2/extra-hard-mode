@@ -45,18 +45,20 @@ class LapisShieldRulesTest {
         assertEquals(0, LapisShieldRules.durationUnits(0.9));
         assertEquals(2, LapisShieldRules.durationUnits(2.7));
         assertEquals(10, LapisShieldRules.durationUnits(10.0));
+        assertEquals(20, LapisShieldRules.DURATION_FUEL_SECONDS);
+        assertEquals(400, LapisShieldRules.TICKS_PER_MINUTE);
         assertEquals(0.0, LapisShieldRules.durationMinutes(0), 1.0E-9);
-        assertEquals(0, LapisShieldRules.durationUnits(LapisShieldRules.durationMinutes(1199)));
+        assertEquals(0, LapisShieldRules.durationUnits(LapisShieldRules.durationMinutes(399)));
         assertEquals(1.0, LapisShieldRules.durationMinutes(LapisShieldRules.TICKS_PER_MINUTE), 1.0E-9);
-        assertEquals(1, LapisShieldRules.durationUnits(LapisShieldRules.durationMinutes(1200)));
-        assertEquals(2.7, LapisShieldRules.durationMinutes(1200 * 2 + 840), 1.0E-9);
-        assertEquals(2, LapisShieldRules.durationUnits(LapisShieldRules.durationMinutes(1200 * 2 + 840)));
-        assertEquals(2400L, LapisShieldRules.minuteTicks(2));
+        assertEquals(1, LapisShieldRules.durationUnits(LapisShieldRules.durationMinutes(400)));
+        assertEquals(2.7, LapisShieldRules.durationMinutes(400 * 2 + 280), 1.0E-9);
+        assertEquals(2, LapisShieldRules.durationUnits(LapisShieldRules.durationMinutes(400 * 2 + 280)));
+        assertEquals(800L, LapisShieldRules.minuteTicks(2));
         assertEquals(0L, LapisShieldRules.minuteTicks(0));
         assertEquals(10, LapisShieldRules.ABSORB_EXTRA_SECONDS);
         assertEquals(200L, LapisShieldRules.absorbDurationTicks(0));
-        assertEquals(1400L, LapisShieldRules.absorbDurationTicks(1));
-        assertEquals(2600L, LapisShieldRules.absorbDurationTicks(2));
+        assertEquals(600L, LapisShieldRules.absorbDurationTicks(1));
+        assertEquals(1000L, LapisShieldRules.absorbDurationTicks(2));
     }
 
     @Test
@@ -64,7 +66,7 @@ class LapisShieldRulesTest {
         assertNull(LapisShieldRules.plan(4.0F, 0, 0, 0.0));
         assertNull(LapisShieldRules.plan(4.0F, 0, 0, 0.9));
         assertNull(LapisShieldRules.plan(0.0F, 10, 10, 10.0));
-        assertNull(LapisShieldRules.plan(3.0F, 0, 0, LapisShieldRules.durationMinutes(1199)));
+        assertNull(LapisShieldRules.plan(3.0F, 0, 0, LapisShieldRules.durationMinutes(399)));
 
         LapisShieldRules.Payment only = LapisShieldRules.plan(6.0F, 4, 0, 0.0);
         assertEquals(new LapisShieldRules.Payment(2, 0, 0), only);
@@ -74,7 +76,7 @@ class LapisShieldRulesTest {
         assertNull(LapisShieldRules.plan(6.1F, 0, 0, 2.7));
         assertEquals(
                 new LapisShieldRules.Payment(0, 0, 1),
-                LapisShieldRules.plan(3.0F, 0, 0, LapisShieldRules.durationMinutes(1200)));
+                LapisShieldRules.plan(3.0F, 0, 0, LapisShieldRules.durationMinutes(400)));
 
         LapisShieldRules.Payment tie = LapisShieldRules.plan(7.0F, 10, 10, 10.0);
         assertEquals(new LapisShieldRules.Payment(1, 0, 0), tie);
