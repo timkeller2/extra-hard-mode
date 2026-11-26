@@ -84,7 +84,14 @@ class ChunkClearRulesTest {
         assertEquals(4, ChunkClearRules.firstUncleared(new boolean[] {true, true, true, true, false, true, true, true}));
         assertEquals(-1, ChunkClearRules.firstUncleared(new boolean[] {true, true, true, true, true, true, true, true}));
         assertEquals(-1, ChunkClearRules.firstUncleared(null));
-        assertEquals("This area is being cleared for the alliance!", ChunkClearRules.CLEARED_MESSAGE);
+        assertEquals("More area is being cleared by the alliance!", ChunkClearRules.CLEARED_MESSAGE);
+        assertTrue(ChunkClearRules.witnessesClear(4, 7, 4, 7));
+        assertTrue(ChunkClearRules.witnessesClear(5, 8, 4, 7));
+        assertTrue(ChunkClearRules.witnessesClear(3, 6, 4, 7));
+        assertFalse(ChunkClearRules.witnessesClear(6, 7, 4, 7));
+        assertEquals(0.0, ChunkClearRules.riseHeight(0.0F), 1.0e-6);
+        assertEquals(ChunkClearRules.RISE_BLOCKS, ChunkClearRules.riseHeight(ChunkClearRules.RISE_TICKS), 1.0e-6);
+        assertTrue(ChunkClearRules.riseHeight(ChunkClearRules.RISE_TICKS / 2.0F) < ChunkClearRules.RISE_BLOCKS);
         assertEquals("The alliance holds this ground.", ChunkClearRules.PEACE_MESSAGE);
     }
 }

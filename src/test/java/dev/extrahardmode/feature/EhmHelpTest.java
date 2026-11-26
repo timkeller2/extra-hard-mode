@@ -619,7 +619,8 @@ class EhmHelpTest {
         assertTrue(combatText.contains("chunkClearKills"));
         assertTrue(combatText.contains("20 hostile kills"));
         assertTrue(combatText.contains("Neutral and friendly mobs still spawn"));
-        assertTrue(combatText.contains("being cleared for the alliance"));
+        assertTrue(combatText.contains("more area is being cleared by the alliance"));
+        assertTrue(combatText.contains("a large shield rises"));
         assertTrue(combatText.contains("25 experience and an emerald"));
         assertTrue(combatText.contains("within 48 blocks of the mob"));
         assertTrue(combatText.contains("uncleared chunk around it"));

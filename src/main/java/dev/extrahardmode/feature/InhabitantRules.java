@@ -1746,16 +1746,15 @@ public final class InhabitantRules {
     }
 
     /**
-     * Blocks this gift may take. The first gift takes 1, the second up to 4, then 9, 16, and so on.
-     * {@code previousGifts} is how many gifts this teacher has already accepted.
+     * Blocks this gift may take. One more than the gifts this teacher has already accepted.
+     * The first gift takes 1, then 2, then 3. {@code previousGifts} is that count.
      */
     public static int redstoneBlockCap(int previousGifts) {
-        long n = Math.max(0, previousGifts) + 1L;
-        long squared = n * n;
-        if (squared > Integer.MAX_VALUE) {
+        long cap = Math.max(0, previousGifts) + 1L;
+        if (cap > Integer.MAX_VALUE) {
             return Integer.MAX_VALUE;
         }
-        return (int) squared;
+        return (int) cap;
     }
 
     /** Blocks actually taken: the cap, or every block held when that is fewer. None when none are held. */

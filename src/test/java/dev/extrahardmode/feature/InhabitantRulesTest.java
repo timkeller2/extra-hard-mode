@@ -369,7 +369,7 @@ class InhabitantRulesTest {
         assertFalse(InhabitantRules.canTeachFocus(1, 29, 30));
         assertTrue(InhabitantRules.canTeachFocus(1, 0, 0));
         assertEquals(
-                "Hold 8 emeralds, for me to teach you a random ability; an ability focus for that ability (1/2 as effective); or 9 redstone blocks for me to deepen your mana learning capacity.",
+                "Hold 8 emeralds, for me to teach you a random ability; an ability focus for that ability (1/2 as effective); or 3 redstone blocks for me to deepen your mana learning capacity.",
                 InhabitantRules.handRequest(InhabitantRules.wiseAbilityPrice(35), InhabitantRules.redstoneBlockCap(2)));
         assertEquals(
                 "Hold 1 emerald, for me to teach you a random ability; an ability focus for that ability (1/2 as effective); or 1 redstone block for me to deepen your mana learning capacity.",
@@ -387,13 +387,13 @@ class InhabitantRulesTest {
         assertFalse(InhabitantRules.canGiveRedstone(0, 4));
         assertFalse(InhabitantRules.canGiveRedstone(1, 0));
         assertEquals(1, InhabitantRules.redstoneBlockCap(0));
-        assertEquals(4, InhabitantRules.redstoneBlockCap(1));
-        assertEquals(9, InhabitantRules.redstoneBlockCap(2));
-        assertEquals(16, InhabitantRules.redstoneBlockCap(3));
+        assertEquals(2, InhabitantRules.redstoneBlockCap(1));
+        assertEquals(3, InhabitantRules.redstoneBlockCap(2));
+        assertEquals(4, InhabitantRules.redstoneBlockCap(3));
         assertEquals(1, InhabitantRules.redstoneBlockCap(-4));
         assertEquals(1, InhabitantRules.redstoneBlocksTaken(0, 64));
-        assertEquals(4, InhabitantRules.redstoneBlocksTaken(1, 64));
-        assertEquals(3, InhabitantRules.redstoneBlocksTaken(1, 3));
+        assertEquals(2, InhabitantRules.redstoneBlocksTaken(1, 64));
+        assertEquals(2, InhabitantRules.redstoneBlocksTaken(1, 3));
         assertEquals(0, InhabitantRules.redstoneBlocksTaken(2, 0));
         assertEquals(1.0, InhabitantRules.capacityGain(1), 1e-9);
         assertEquals(2.0, InhabitantRules.capacityGain(4), 1e-9);

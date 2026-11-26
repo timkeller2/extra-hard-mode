@@ -465,6 +465,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
             lastWiseLesson = null;
             compassSpawn = null;
             AchievementFloater.clear();
+            ChunkClearShieldRenderer.clear();
             BossRayRenderer.clear();
             AchievementVictoryHud.clear();
             SeasonAtmosphere.clearClient();
@@ -485,6 +486,7 @@ public class ExtraHardModeClient implements ClientModInitializer {
         AbilityHelp.register();
         AutoStackClient.register();
         AutoStackFlyRenderer.register();
+        ChunkClearShieldRenderer.register();
         FoodCravingClient.register();
         AchievementFloater.register();
         BossRayRenderer.register();

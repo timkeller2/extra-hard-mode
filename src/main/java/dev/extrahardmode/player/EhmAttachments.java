@@ -123,7 +123,7 @@ public final class EhmAttachments {
             builder -> builder.persistent(Codec.unboundedMap(Codec.STRING, Codec.INT))
                     .copyOnDeath()
                     .initializer(HashMap::new));
-    /** Completed redstone-block gifts to each wise teacher. The next gift's cap is one more than this, squared. */
+    /** Completed redstone-block gifts to each wise teacher. The next gift's cap is one more than this. */
     public static final AttachmentType<Map<String, Integer>> EHM_WISE_REDSTONE = AttachmentRegistry.create(
             ExtraHardModeMod.id("wise_redstone"),
             builder -> builder.persistent(Codec.unboundedMap(Codec.STRING, Codec.INT))

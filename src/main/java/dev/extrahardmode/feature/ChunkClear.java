@@ -1,15 +1,20 @@
 package dev.extrahardmode.feature;
 
 import dev.extrahardmode.config.ConfigManager;
+import dev.extrahardmode.network.ClientboundChunkClearShieldPayload;
 import dev.extrahardmode.player.EhmAttachments;
 import dev.extrahardmode.world.ChunkClearData;
 import dev.extrahardmode.world.WorldGate;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Prediction;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.NeutralMob;
@@ -18,6 +23,7 @@ import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * Counts hostile kills by players in a chunk. A full chunk refuses hostile
@@ -44,10 +50,12 @@ public final class ChunkClear {
         }
         int before = ChunkClearData.of(level).addKill(entity.blockPosition());
         if (ChunkClearRules.justFilled(before, threshold)) {
-            rewardNearby(level, entity);
-        } else if (ChunkClearRules.spreads(before, threshold)
-                && clearAdjacent(level, entity.blockPosition(), threshold)) {
-            rewardNearKiller(level, killer);
+            celebrate(level, entity.chunkPosition(), entity, true);
+        } else if (ChunkClearRules.spreads(before, threshold)) {
+            ChunkPos cleared = clearAdjacent(level, entity.blockPosition(), threshold);
+            if (cleared != null) {
+                celebrate(level, cleared, killer, false);
+            }
         }
     }
 
@@ -121,7 +129,8 @@ public final class ChunkClear {
         }
     }
 
-    private static boolean clearAdjacent(ServerLevel level, BlockPos pos, int threshold) {
+    /** The neighbor that just became clear, or null when all eight are already full. */
+    private static ChunkPos clearAdjacent(ServerLevel level, BlockPos pos, int threshold) {
         int chunkX = pos.getX() >> 4;
         int chunkZ = pos.getZ() >> 4;
         ChunkClearData data = ChunkClearData.of(level);
@@ -133,47 +142,52 @@ public final class ChunkClear {
         }
         int index = ChunkClearRules.firstUncleared(neighborFull);
         if (index < 0) {
-            return false;
+            return null;
         }
-        data.raiseTo(
-                ChunkClearRules.neighborChunkX(chunkX, index),
-                ChunkClearRules.neighborChunkZ(chunkZ, index),
-                threshold);
-        return true;
+        int clearedX = ChunkClearRules.neighborChunkX(chunkX, index);
+        int clearedZ = ChunkClearRules.neighborChunkZ(chunkZ, index);
+        data.raiseTo(clearedX, clearedZ, threshold);
+        return new ChunkPos(clearedX, clearedZ);
     }
 
-    private static void rewardNearby(ServerLevel level, LivingEntity slain) {
-        long chunk = ChunkPos.pack(slain.blockPosition());
+    /**
+     * The chunk that just filled, or the neighbor a later threshold just filled.
+     * {@code killRange} measures the reward from the slain mob. A spread measures it from the killer.
+     */
+    private static void celebrate(ServerLevel level, ChunkPos cleared, Entity focus, boolean killRange) {
+        BlockPos origin = cleared.getMiddleBlockPosition(focus.getBlockY() + 1);
+        Vec3 at = Vec3.atCenterOf(origin);
+        level.playSound(null, at.x, at.y, at.z, SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 4.0F, 1.15F);
+        level.playSound(null, at.x, at.y, at.z, SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 0.8F, 1.0F);
+        ClientboundChunkClearShieldPayload payload = new ClientboundChunkClearShieldPayload(origin);
+        double see = (double) ChunkClearRules.SEE_BLOCKS * ChunkClearRules.SEE_BLOCKS;
         for (ServerPlayer player : level.players()) {
             if (!player.isAlive() || player.isSpectator()) {
                 continue;
             }
-            boolean same = ChunkPos.pack(player.blockPosition()) == chunk;
-            if (!ChunkClearRules.hearsClearing(same, player.distanceToSqr(slain))) {
-                continue;
+            boolean reward = killRange
+                    ? ChunkClearRules.hearsClearing(
+                            player.chunkPosition().equals(focus.chunkPosition()), player.distanceToSqr(focus))
+                    : ChunkClearRules.hearsKiller(player.distanceToSqr(focus));
+            boolean witness = ChunkClearRules.witnessesClear(
+                    player.chunkPosition().x(), player.chunkPosition().z(), cleared.x(), cleared.z());
+            if (reward) {
+                grant(player);
             }
-            giveReward(player);
+            if (reward || witness) {
+                player.sendSystemMessage(Component.translatableWithFallback(
+                        "tougher.message.chunk_clear", ChunkClearRules.CLEARED_MESSAGE));
+            }
+            if (witness || player.distanceToSqr(at) <= see) {
+                ServerPlayNetworking.send(player, payload);
+            }
         }
     }
 
-    private static void rewardNearKiller(ServerLevel level, ServerPlayer killer) {
-        for (ServerPlayer player : level.players()) {
-            if (!player.isAlive() || player.isSpectator()) {
-                continue;
-            }
-            if (!ChunkClearRules.hearsKiller(player.distanceToSqr(killer))) {
-                continue;
-            }
-            giveReward(player);
-        }
-    }
-
-    private static void giveReward(ServerPlayer player) {
+    private static void grant(ServerPlayer player) {
         player.giveExperiencePoints(ChunkClearRules.REWARD_XP);
         player.getInventory()
                 .placeItemBackInInventory(
                         new ItemStack(Items.EMERALD, ChunkClearRules.REWARD_EMERALDS), Prediction.SERVER_ONLY);
-        player.sendSystemMessage(Component.translatableWithFallback(
-                "tougher.message.chunk_clear", ChunkClearRules.CLEARED_MESSAGE));
     }
 }

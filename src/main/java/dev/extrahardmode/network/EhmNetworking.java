@@ -78,6 +78,8 @@ public final class EhmNetworking {
                 .register(ClientboundAutoStackChestPayload.TYPE, ClientboundAutoStackChestPayload.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay()
                 .register(ClientboundAutoStackFlyPayload.TYPE, ClientboundAutoStackFlyPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay()
+                .register(ClientboundChunkClearShieldPayload.TYPE, ClientboundChunkClearShieldPayload.STREAM_CODEC);
         ServerPlayNetworking.registerGlobalReceiver(ServerboundConfigPayload.TYPE, EhmNetworking::onConfig);
         ServerPlayNetworking.registerGlobalReceiver(
                 ServerboundFoodCravingRequestPayload.TYPE, EhmNetworking::onFoodCravingRequest);

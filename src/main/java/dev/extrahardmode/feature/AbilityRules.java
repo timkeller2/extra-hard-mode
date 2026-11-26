@@ -900,7 +900,7 @@ public final class AbilityRules {
                 "Redstone dust in the offhand does not place when you right-click.",
                 "Hold a focus and he teaches that ability for half the house points in uses. At 24 points, 30 emeralds from inventory or either hand; each point above takes 2 off, down to free.",
                 "Hold emeralds and he picks an ability at random for the house points. A ready hunt offers the lesson, and teaching gives the hunt. He names what to hold only then.",
-                "Hold redstone blocks. The first gift takes 1, then up to 4, 9, and so on. Mana learning grows by the square root of the blocks he takes.",
+                "Hold redstone blocks. The first gift takes 1, then up to 2, 3, and so on. Mana learning grows by the square root of the blocks he takes.",
                 "Type /tougher ability help <name> for one ability.");
     }
 

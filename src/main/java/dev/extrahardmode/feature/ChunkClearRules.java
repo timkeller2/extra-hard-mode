@@ -16,7 +16,12 @@ public final class ChunkClearRules {
     /** Players inside the chunk, or this close to the kill, hear that it filled. */
     public static final int NEAR_BLOCKS = 48;
 
-    public static final String CLEARED_MESSAGE = "This area is being cleared for the alliance!";
+    public static final String CLEARED_MESSAGE = "More area is being cleared by the alliance!";
+    /** How long the shield keeps rising, and how far it climbs. */
+    public static final int RISE_TICKS = 50;
+    public static final double RISE_BLOCKS = 12.0;
+    /** Players this far from the rise still see the shield. */
+    public static final int SEE_BLOCKS = 80;
     /** Tooltip on the corner diamond while the player stands in a cleared chunk. */
     public static final String PEACE_MESSAGE = "The alliance holds this ground.";
     /**
@@ -111,5 +116,28 @@ public final class ChunkClearRules {
         }
         double reach = (double) NEAR_BLOCKS * NEAR_BLOCKS;
         return distanceSquared <= reach;
+    }
+
+    /**
+     * The player stands in the chunk that just became clear, or in one of the eight around it.
+     */
+    public static boolean witnessesClear(int playerChunkX, int playerChunkZ, int clearedChunkX, int clearedChunkZ) {
+        return Math.abs(playerChunkX - clearedChunkX) <= 1 && Math.abs(playerChunkZ - clearedChunkZ) <= 1;
+    }
+
+    /** 0 at the start and 1 once {@link #RISE_TICKS} have passed. Smooth in between. */
+    public static float riseProgress(float ageTicks) {
+        if (ageTicks <= 0.0F || RISE_TICKS <= 0) {
+            return 0.0F;
+        }
+        float t = ageTicks / RISE_TICKS;
+        if (t >= 1.0F) {
+            return 1.0F;
+        }
+        return t * t * (3.0F - 2.0F * t);
+    }
+
+    public static double riseHeight(float ageTicks) {
+        return RISE_BLOCKS * riseProgress(ageTicks);
     }
 }
