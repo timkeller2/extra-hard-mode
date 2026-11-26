@@ -144,16 +144,11 @@ public final class AutoStackClient {
     }
 
     /**
-     * Two-pixel ring on the 18-pixel slot. The inner pixel sits on the item, inside the
-     * transparent center of the hover sprite. The outer pixel is the slot edge.
+     * One-pixel ring on the slot edge. That pixel sits inside the hover sprite, so the
+     * white frame does not cover it. One pixel is the thinnest solid line the GUI draws.
      */
     private static void outline(GuiGraphicsExtractor graphics, Slot slot) {
-        int x = slot.x - 1;
-        int y = slot.y - 1;
-        graphics.fill(x, y, x + 18, y + 2, OUTLINE);
-        graphics.fill(x, y + 16, x + 18, y + 18, OUTLINE);
-        graphics.fill(x, y + 2, x + 2, y + 16, OUTLINE);
-        graphics.fill(x + 16, y + 2, x + 18, y + 16, OUTLINE);
+        graphics.outline(slot.x, slot.y, 16, 16, OUTLINE);
     }
 
     private static void watchChest(Minecraft client) {
