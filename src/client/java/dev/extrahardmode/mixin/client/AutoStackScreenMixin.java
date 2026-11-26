@@ -7,6 +7,7 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
+import org.lwjgl.sdl.SDLMouse;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -28,7 +29,8 @@ public abstract class AutoStackScreenMixin {
     @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
     private void tougher$autoStackExclude(
             MouseButtonEvent event, boolean doubleClick, CallbackInfoReturnable<Boolean> cir) {
-        if (event == null || event.button() != 0 || !altDown(event)) {
+        // 26.3 numbers buttons the SDL way. The left button is 1, so a check for 0 never runs.
+        if (event == null || event.button() != SDLMouse.SDL_BUTTON_LEFT || !altDown(event)) {
             return;
         }
         if (AutoStackClient.tryToggle(this.getHoveredSlot(event.x(), event.y()), doubleClick)) {
