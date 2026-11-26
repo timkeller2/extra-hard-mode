@@ -5,7 +5,8 @@ import java.util.List;
 
 /**
  * Wise-teacher hunts. Minecraft-free so JUnit can cover the math.
- * A pack is offered every 30 Minecraft days. An unfinished hunt ends after 14.
+ * A pack is given when he teaches a mana skill or deepens mana learning, and only once
+ * every 30 Minecraft days. An unfinished hunt ends after 14.
  * Size is a 3–8 base from the home and the resident's trading experience,
  * plus 50% of that base for each hunt finished with him.
  * Distance is the 200–500 roll plus 33% of that roll for each of those hunts.
@@ -294,6 +295,11 @@ public final class WiseLessonRules {
             return true;
         }
         return today >= assignedDay + INTERVAL_DAYS;
+    }
+
+    /** A stored offer, or a hunt that is ready to give, lets him teach on this talk. */
+    public static boolean lessonOpen(int storedOffers, boolean huntReady) {
+        return storedOffers > 0 || huntReady;
     }
 
     /**

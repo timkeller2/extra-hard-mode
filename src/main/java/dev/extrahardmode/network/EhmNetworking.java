@@ -4,6 +4,7 @@ import dev.extrahardmode.command.EhmPermissions;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.config.WorldConfig;
 import dev.extrahardmode.feature.Achievements;
+import dev.extrahardmode.feature.AutoStack;
 import dev.extrahardmode.feature.Cartographers;
 import dev.extrahardmode.feature.Hunger;
 import dev.extrahardmode.feature.CouncilMissions;
@@ -67,9 +68,24 @@ public final class EhmNetworking {
         PayloadTypeRegistry.serverboundPlay().register(ServerboundConfigPayload.TYPE, ServerboundConfigPayload.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay()
                 .register(ServerboundFoodCravingRequestPayload.TYPE, ServerboundFoodCravingRequestPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay()
+                .register(ServerboundAutoStackPayload.TYPE, ServerboundAutoStackPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay()
+                .register(ServerboundAutoStackExcludePayload.TYPE, ServerboundAutoStackExcludePayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay()
+                .register(ServerboundAutoStackChestQueryPayload.TYPE, ServerboundAutoStackChestQueryPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay()
+                .register(ClientboundAutoStackChestPayload.TYPE, ClientboundAutoStackChestPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay()
+                .register(ClientboundAutoStackFlyPayload.TYPE, ClientboundAutoStackFlyPayload.STREAM_CODEC);
         ServerPlayNetworking.registerGlobalReceiver(ServerboundConfigPayload.TYPE, EhmNetworking::onConfig);
         ServerPlayNetworking.registerGlobalReceiver(
                 ServerboundFoodCravingRequestPayload.TYPE, EhmNetworking::onFoodCravingRequest);
+        ServerPlayNetworking.registerGlobalReceiver(ServerboundAutoStackPayload.TYPE, EhmNetworking::onAutoStack);
+        ServerPlayNetworking.registerGlobalReceiver(
+                ServerboundAutoStackExcludePayload.TYPE, EhmNetworking::onAutoStackExclude);
+        ServerPlayNetworking.registerGlobalReceiver(
+                ServerboundAutoStackChestQueryPayload.TYPE, EhmNetworking::onAutoStackChestQuery);
         ServerPlayConnectionEvents.JOIN.register(EhmNetworking::onJoin);
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             ManaAbilities.clearPlayerLight(handler.player);
@@ -149,6 +165,20 @@ public final class EhmNetworking {
     private static void onFoodCravingRequest(
             ServerboundFoodCravingRequestPayload payload, ServerPlayNetworking.Context context) {
         Hunger.resendFoodCraving(context.player());
+    }
+
+    private static void onAutoStack(ServerboundAutoStackPayload payload, ServerPlayNetworking.Context context) {
+        AutoStack.deposit(context.player());
+    }
+
+    private static void onAutoStackExclude(
+            ServerboundAutoStackExcludePayload payload, ServerPlayNetworking.Context context) {
+        AutoStack.toggleExcluded(context.player(), payload.slot(), payload.chest(), payload.whole());
+    }
+
+    private static void onAutoStackChestQuery(
+            ServerboundAutoStackChestQueryPayload payload, ServerPlayNetworking.Context context) {
+        AutoStack.queryChest(context.player());
     }
 
     private static void onConfig(ServerboundConfigPayload payload, ServerPlayNetworking.Context context) {

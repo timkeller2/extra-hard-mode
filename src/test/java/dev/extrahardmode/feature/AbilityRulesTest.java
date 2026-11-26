@@ -348,7 +348,7 @@ class AbilityRulesTest {
         assertTrue(AbilityRules.helpFallback(AbilityRules.READ_TOME).contains("Sneak and right-click"));
         assertEquals(1.0, AbilityRules.manaCost(AbilityRules.WRITE_TOME), 1e-9);
         assertEquals(1.0, AbilityRules.manaCost(AbilityRules.READ_TOME), 1e-9);
-        assertEquals(4.0, AbilityRules.manaCost(AbilityRules.RESTORE_LIFE), 1e-9);
+        assertEquals(1.0, AbilityRules.manaCost(AbilityRules.RESTORE_LIFE), 1e-9);
         assertEquals(AbilityRules.WRITE_TOME, AbilityRules.ABILITY_IDS.get(AbilityRules.ABILITY_IDS.size() - 3));
         assertEquals(AbilityRules.READ_TOME, AbilityRules.ABILITY_IDS.get(AbilityRules.ABILITY_IDS.size() - 2));
         assertEquals(AbilityRules.RESTORE_LIFE, AbilityRules.ABILITY_IDS.getLast());
@@ -364,6 +364,13 @@ class AbilityRulesTest {
                 "Restore Life needs " + AbilityRules.RESTORE_LIFE_MANA_COST + " mana.",
                 AbilityRules.RESTORE_LIFE_MANA_NEED);
         assertEquals(AbilityRules.RESTORE_LIFE, AbilityRules.abilityByTopic("restore life"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.RESTORE_LIFE).contains("square root of its level, rounded down"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.RESTORE_LIFE).contains("1 mana reaches level 3"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.RESTORE_LIFE).contains("2 mana reaches level 8"));
+        assertFalse(AbilityRules.helpFallback(AbilityRules.RESTORE_LIFE).contains("4 mana"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.BATTERY).contains("square root of its level, rounded down"));
+        assertTrue(AbilityRules.helpFallback(AbilityRules.BATTERY).contains("1 mana reaches level 3"));
+        assertFalse(AbilityRules.helpFallback(AbilityRules.BATTERY).contains("no mana"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.RESTORE_LIFE).contains("at least 3"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.RESTORE_LIFE).contains("holding a diamond"));
         assertTrue(AbilityRules.helpFallback(AbilityRules.RESTORE_LIFE).contains("keeps the diamonds"));
@@ -648,7 +655,11 @@ class AbilityRulesTest {
         assertEquals(1.0, AbilityRules.manaCost(AbilityRules.HEAL), 1e-9);
         assertEquals(1.0, AbilityRules.manaCost(AbilityRules.DETECT_ORE), 1e-9);
         assertEquals(1.0, AbilityRules.manaCost(AbilityRules.DIAMOND_SKIN), 1e-9);
-        assertEquals(0.0, AbilityRules.manaCost(AbilityRules.BATTERY), 1e-9);
+        assertEquals(1.0, AbilityRules.manaCost(AbilityRules.BATTERY), 1e-9);
+        assertFalse(AbilityRules.hasManaToUse(AbilityRules.BATTERY, 0.0));
+        assertTrue(AbilityRules.hasManaToUse(AbilityRules.BATTERY, 1.0));
+        assertFalse(AbilityRules.hasManaToUse(AbilityRules.RESTORE_LIFE, 0.9));
+        assertTrue(AbilityRules.hasManaToUse(AbilityRules.RESTORE_LIFE, 1.0));
         assertEquals(0.25, AbilityRules.manaCost(AbilityRules.SMITE_EVIL), 1e-9);
         assertTrue(AbilityRules.hasManaToUse(AbilityRules.SMITE_EVIL, 0.25));
         assertFalse(AbilityRules.hasManaToUse(AbilityRules.SMITE_EVIL, 0.24));
@@ -660,6 +671,41 @@ class AbilityRulesTest {
         assertFalse(AbilityRules.showsAbilityHints(0));
         assertTrue(AbilityRules.showsAbilityHints(1));
         assertTrue(AbilityRules.showsAbilityHints(4));
+        assertEquals(1, AbilityRules.levelCostMultiplier(0.2));
+        assertEquals(1, AbilityRules.levelCostMultiplier(3));
+        assertEquals(1, AbilityRules.levelCostMultiplier(3.9));
+        assertEquals(2, AbilityRules.levelCostMultiplier(4));
+        assertEquals(2, AbilityRules.levelCostMultiplier(8));
+        assertEquals(2, AbilityRules.levelCostMultiplier(8.7));
+        assertEquals(3, AbilityRules.levelCostMultiplier(9));
+        assertEquals(1.0, AbilityRules.scaledManaCost(AbilityRules.RESTORE_LIFE, 3), 1e-9);
+        assertEquals(2.0, AbilityRules.scaledManaCost(AbilityRules.BATTERY, 8), 1e-9);
+        assertEquals(2.0, AbilityRules.scaledManaCost(AbilityRules.BATTERY, 8.7), 1e-9);
+        assertEquals(3.0, AbilityRules.scaledManaCost(AbilityRules.RESTORE_LIFE, 9), 1e-9);
+        assertEquals(3.0, AbilityRules.scaledManaCost(AbilityRules.HEAL, 9), 1e-9);
+        assertEquals(3.0, AbilityRules.scaledManaCost(AbilityRules.FLIGHT, 9), 1e-9);
+        assertEquals(0.25, AbilityRules.scaledManaCost(AbilityRules.SMITE_EVIL, 3), 1e-9);
+        assertEquals(0.5, AbilityRules.scaledManaCost(AbilityRules.SMITE_EVIL, 8), 1e-9);
+        assertEquals(0.75, AbilityRules.scaledManaCost(AbilityRules.SMITE_EVIL, 9), 1e-9);
+        assertEquals(8.7, AbilityRules.castLevel(AbilityRules.BATTERY, 8.7, 2.0), 1e-9);
+        assertEquals(8.0, AbilityRules.castLevel(AbilityRules.BATTERY, 8.0, 2.0), 1e-9);
+        assertEquals(8.0, AbilityRules.castLevel(AbilityRules.BATTERY, 9.0, 2.0), 1e-9);
+        assertEquals(3.0, AbilityRules.castLevel(AbilityRules.RESTORE_LIFE, 9.0, 1.0), 1e-9);
+        assertEquals(3.0, AbilityRules.castLevel(AbilityRules.RESTORE_LIFE, 8.0, 1.0), 1e-9);
+        assertEquals(15.0, AbilityRules.castLevel(AbilityRules.BATTERY, 20.0, 3.0), 1e-9);
+        assertEquals(24.0, AbilityRules.castLevel(AbilityRules.BATTERY, 30.0, 4.0), 1e-9);
+        assertEquals(0.4, AbilityRules.castLevel(AbilityRules.BATTERY, 0.4, 5.0), 1e-9);
+        assertTrue(AbilityRules.castLevel(AbilityRules.RESTORE_LIFE, 8.0, 0.0) < 0.0);
+        assertTrue(AbilityRules.castLevel(AbilityRules.BATTERY, 8.0, 0.9) < 0.0);
+        assertEquals(3.0, AbilityRules.castLevel(AbilityRules.HEAL, 9.0, 1.0), 1e-9);
+        assertEquals(0.4, AbilityRules.castLevel(AbilityRules.HEAL, 0.4, 1.0), 1e-9);
+        assertEquals(3.0, AbilityRules.castLevel(AbilityRules.SMITE_EVIL, 9.0, 0.25), 1e-9);
+        assertEquals(8.0, AbilityRules.castLevel(AbilityRules.SMITE_EVIL, 9.0, 0.5), 1e-9);
+        assertEquals(9.0, AbilityRules.castLevel(AbilityRules.SMITE_EVIL, 9.0, 0.75), 1e-9);
+        assertEquals(24.0, AbilityRules.castLevel(AbilityRules.SMITE_EVIL, 30.0, 1.0), 1e-9);
+        assertTrue(AbilityRules.castLevel(AbilityRules.HEAL, 9.0, 0.0) < 0.0);
+        assertEquals(1.0, AbilityRules.practiceManaCost(AbilityRules.RESTORE_LIFE), 1e-9);
+        assertEquals(1.0, AbilityRules.practiceManaCost(AbilityRules.BATTERY), 1e-9);
     }
 
     @Test

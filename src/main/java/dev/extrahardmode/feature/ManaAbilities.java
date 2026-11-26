@@ -373,15 +373,18 @@ public final class ManaAbilities implements FeatureModule {
         boolean membrane = InventorySearch.hasOneMain(player, Items.PHANTOM_MEMBRANE);
         int bonus = AbilityRules.catalystBonus(player.getMainHandItem().getCount())
                 + AbilityRules.flightMembraneBonus(membrane);
-        double power = abilityPower(player, AbilityRules.FLIGHT, bonus);
-        if (practiceInstead(player, AbilityRules.FLIGHT, Items.FEATHER, power)) {
+        double desired = abilityPower(player, AbilityRules.FLIGHT, bonus);
+        if (practiceInstead(player, AbilityRules.FLIGHT, Items.FEATHER, desired)) {
             return true;
         }
-        consumeManaAndHeld(player, Items.FEATHER);
+        double power = paidLevel(player, AbilityRules.FLIGHT, desired);
+        if (power < AbilityRules.PRACTICE_LEVEL) {
+            return false;
+        }
         if (membrane) {
             InventorySearch.consumeOneMain(player, Items.PHANTOM_MEMBRANE);
         }
-        recordAbilityUse(player, AbilityRules.FLIGHT);
+        spendCast(player, Items.FEATHER, AbilityRules.FLIGHT, power);
         startFlight(player, power);
         castEffect(player, SoundEvents.PHANTOM_FLAP, ParticleTypes.CLOUD, ParticleTypes.END_ROD);
         tellAbilityUse(player, AbilityRules.FLIGHT, power);
@@ -414,12 +417,22 @@ public final class ManaAbilities implements FeatureModule {
         if (practiceInstead(player, AbilityRules.HEAL, Items.PAPER, power)) {
             return true;
         }
+        double manaNow = Achievements.currentMana(player);
+        boolean honeyKeepsLevel = honey && manaNow + 1.0e-9 < AbilityRules.manaCost(AbilityRules.HEAL);
+        double castPower = honeyKeepsLevel ? power : paidLevel(player, AbilityRules.HEAL, power);
+        if (!honeyKeepsLevel && castPower < AbilityRules.PRACTICE_LEVEL) {
+            return false;
+        }
+        ServerPlayer paidTarget = healTarget(player, clicked, AbilityRules.healRange(castPower));
+        if (paidTarget == null) {
+            return false;
+        }
         if (honey) {
             InventorySearch.consumeOneMain(player, Items.HONEY_BOTTLE);
         }
-        spend(player, Items.PAPER, AbilityRules.HEAL);
-        startHealSparkle(target, (float) power);
-        tellAbilityUse(player, AbilityRules.HEAL, power);
+        spendCast(player, Items.PAPER, AbilityRules.HEAL, castPower);
+        startHealSparkle(paidTarget, (float) castPower);
+        tellAbilityUse(player, AbilityRules.HEAL, castPower);
         return true;
     }
 
@@ -431,18 +444,26 @@ public final class ManaAbilities implements FeatureModule {
             return true;
         }
         int bonus = AbilityRules.catalystBonus(player.getMainHandItem().getCount());
-        double power = abilityPower(player, AbilityRules.RESTORE_LIFE, bonus);
-        ServerPlayer target = restoreLifeTarget(player, clicked, AbilityRules.healRange(power));
+        double desired = abilityPower(player, AbilityRules.RESTORE_LIFE, bonus);
+        if (restoreLifeCooling(player)) {
+            return true;
+        }
+        double manaNow = Achievements.currentMana(player);
+        double power = AbilityRules.castLevel(AbilityRules.RESTORE_LIFE, desired, manaNow);
+        double rangeLevel = power < 0.0 ? desired : power;
+        ServerPlayer target = restoreLifeTarget(player, clicked, AbilityRules.healRange(Math.max(0.0, rangeLevel)));
         if (target == null) {
             return false;
         }
-        if (restoreLifeCooling(player)) {
+        if (power < 0.0) {
+            restoreLifeBlocked(player, target, desired);
             return true;
         }
         if (restoreLifeBlocked(player, target, power)) {
             return true;
         }
         // The price spends diamonds, including the one in hand. Two or more still add +2.
+        // Practice keeps those diamonds. A short mana pool already lowered power to what it can pay.
         if (practiceInstead(player, AbilityRules.RESTORE_LIFE, null, power)) {
             return true;
         }
@@ -458,7 +479,11 @@ public final class ManaAbilities implements FeatureModule {
             markHandled(player);
             return true;
         }
-        spend(player, null, AbilityRules.RESTORE_LIFE);
+        spend(
+                player,
+                null,
+                AbilityRules.RESTORE_LIFE,
+                AbilityRules.scaledManaCost(AbilityRules.RESTORE_LIFE, power));
         int before = Lives.livesOf(target);
         Lives.grantLife(target);
         castEffect(target, SoundEvents.AMETHYST_BLOCK_CHIME, ParticleTypes.END_ROD, null);
@@ -563,16 +588,21 @@ public final class ManaAbilities implements FeatureModule {
         if (practiceInstead(player, AbilityRules.IRON_HEART, Items.IRON_INGOT, power)) {
             return true;
         }
-        int duration = AbilityRules.ironHeartDurationTicks(power);
-        float health = AbilityRules.ironHeartHealth(power);
+        double castPower = paidLevel(player, AbilityRules.IRON_HEART, power);
+        if (castPower < AbilityRules.PRACTICE_LEVEL) {
+            return false;
+        }
+        ServerPlayer paidTarget = ironHeartTarget(player, clicked, AbilityRules.ironHeartRange(castPower));
+        int duration = AbilityRules.ironHeartDurationTicks(castPower);
+        float health = AbilityRules.ironHeartHealth(castPower);
         if (duration <= 0 || health <= 0.0F) {
             return false;
         }
-        spend(player, Items.IRON_INGOT, AbilityRules.IRON_HEART);
+        spendCast(player, Items.IRON_INGOT, AbilityRules.IRON_HEART, castPower);
         startIronHeartLock(player, duration);
-        applyIronHeartBuff(player, target, health, duration);
-        startIronHeartSparkle(target);
-        tellAbilityUse(player, AbilityRules.IRON_HEART, power);
+        applyIronHeartBuff(player, paidTarget, health, duration);
+        startIronHeartSparkle(paidTarget);
+        tellAbilityUse(player, AbilityRules.IRON_HEART, castPower);
         return true;
     }
 
@@ -841,19 +871,13 @@ public final class ManaAbilities implements FeatureModule {
             return false;
         }
         int bonus = renewCatalystBonus(caster, Items.IRON_INGOT);
-        double power = abilityPower(caster, AbilityRules.IRON_HEART, bonus);
+        double desired = abilityPower(caster, AbilityRules.IRON_HEART, bonus);
+        double power = payRenew(caster, AbilityRules.IRON_HEART, desired);
         int duration = AbilityRules.ironHeartDurationTicks(power);
         float health = AbilityRules.ironHeartHealth(power);
-        if (AbilityRules.practices(AbilityRules.IRON_HEART, power) || duration <= 0 || health <= 0.0F) {
+        if (power < AbilityRules.PRACTICE_LEVEL || duration <= 0 || health <= 0.0F) {
             return false;
         }
-        if (!AbilityRules.hasManaToUse(AbilityRules.IRON_HEART, Achievements.currentMana(caster))) {
-            return false;
-        }
-        caster.setAttached(
-                EhmAttachments.EHM_MANA_CURRENT,
-                Math.max(0.0, Achievements.currentMana(caster) - AbilityRules.manaCost(AbilityRules.IRON_HEART)));
-        Achievements.sendMana(caster);
         recordAbilityUse(caster, AbilityRules.IRON_HEART);
         consumeRenewCatalyst(caster, Items.IRON_INGOT);
         startIronHeartLock(caster, duration);
@@ -897,14 +921,15 @@ public final class ManaAbilities implements FeatureModule {
         if (practiceInstead(player, AbilityRules.MASTER_BUILDER, Items.BRICK, power)) {
             return true;
         }
-        int duration = AbilityRules.masterBuilderDurationTicks(power);
-        if (duration <= 0) {
+        double castPower = paidLevel(player, AbilityRules.MASTER_BUILDER, power);
+        int duration = AbilityRules.masterBuilderDurationTicks(castPower);
+        if (castPower < AbilityRules.PRACTICE_LEVEL || duration <= 0) {
             return false;
         }
-        spend(player, Items.BRICK, AbilityRules.MASTER_BUILDER);
-        startMasterBuilder(player, duration, power);
+        spendCast(player, Items.BRICK, AbilityRules.MASTER_BUILDER, castPower);
+        startMasterBuilder(player, duration, castPower);
         castMasterBuilder(player);
-        tellAbilityUse(player, AbilityRules.MASTER_BUILDER, power);
+        tellAbilityUse(player, AbilityRules.MASTER_BUILDER, castPower);
         return true;
     }
 
@@ -991,18 +1016,12 @@ public final class ManaAbilities implements FeatureModule {
             return false;
         }
         int bonus = renewCatalystBonus(player, Items.BRICK);
-        double power = abilityPower(player, AbilityRules.MASTER_BUILDER, bonus);
+        double desired = abilityPower(player, AbilityRules.MASTER_BUILDER, bonus);
+        double power = payRenew(player, AbilityRules.MASTER_BUILDER, desired);
         int duration = AbilityRules.masterBuilderDurationTicks(power);
-        if (AbilityRules.practices(AbilityRules.MASTER_BUILDER, power) || duration <= 0) {
+        if (power < AbilityRules.PRACTICE_LEVEL || duration <= 0) {
             return false;
         }
-        if (!AbilityRules.hasManaToUse(AbilityRules.MASTER_BUILDER, Achievements.currentMana(player))) {
-            return false;
-        }
-        player.setAttached(
-                EhmAttachments.EHM_MANA_CURRENT,
-                Math.max(0.0, Achievements.currentMana(player) - AbilityRules.manaCost(AbilityRules.MASTER_BUILDER)));
-        Achievements.sendMana(player);
         recordAbilityUse(player, AbilityRules.MASTER_BUILDER);
         consumeRenewCatalyst(player, Items.BRICK);
         startMasterBuilder(player, duration, power);
@@ -1059,10 +1078,15 @@ public final class ManaAbilities implements FeatureModule {
         if (practiceInstead(player, AbilityRules.EMPOWER, Items.GLOWSTONE_DUST, power)) {
             return true;
         }
-        spend(player, Items.GLOWSTONE_DUST, AbilityRules.EMPOWER);
-        startEmpower(player, power, duration);
+        double castPower = paidLevel(player, AbilityRules.EMPOWER, power);
+        int castDuration = AbilityRules.empowerDurationTicks(castPower);
+        if (castPower < AbilityRules.PRACTICE_LEVEL || castDuration <= 0) {
+            return false;
+        }
+        spendCast(player, Items.GLOWSTONE_DUST, AbilityRules.EMPOWER, castPower);
+        startEmpower(player, castPower, castDuration);
         castEmpower(player);
-        tellAbilityUse(player, AbilityRules.EMPOWER, power);
+        tellAbilityUse(player, AbilityRules.EMPOWER, castPower);
         return true;
     }
 
@@ -1148,8 +1172,9 @@ public final class ManaAbilities implements FeatureModule {
 
     /**
      * Air use of a quartz block. A click that can place the block never reaches this.
-     * A second air click cancels. The cast spends the block and no mana.
-     * While mana is below the player's mana level it renews, and that spends a quartz block.
+     * A second air click cancels. The cast spends the block and mana scaled by the cast level.
+     * A short pool casts the highest level that mana can pay. Below 1 mana, nothing is spent.
+     * While mana is below the player's mana level it renews, and that spends a quartz block and that mana.
      */
     static boolean tryBattery(ServerPlayer player) {
         if (!player.getMainHandItem().is(Items.QUARTZ_BLOCK) || Achievements.skipPlayer(player)) {
@@ -1170,15 +1195,24 @@ public final class ManaAbilities implements FeatureModule {
             return true;
         }
         int bonus = AbilityRules.catalystBonus(player.getMainHandItem().getCount());
-        double power = abilityPower(player, AbilityRules.BATTERY, bonus);
-        int duration = AbilityRules.batteryDurationTicks(power);
+        double desired = abilityPower(player, AbilityRules.BATTERY, bonus);
         if (blockedByCooldownOrMana(player, AbilityRules.BATTERY, "tougher.ability.battery", "Battery")) {
             return true;
         }
-        if (practiceInstead(player, AbilityRules.BATTERY, Items.QUARTZ_BLOCK, power)) {
+        if (practiceInstead(player, AbilityRules.BATTERY, Items.QUARTZ_BLOCK, desired)) {
             return true;
         }
-        spend(player, Items.QUARTZ_BLOCK, AbilityRules.BATTERY);
+        double manaNow = Achievements.currentMana(player);
+        double power = AbilityRules.castLevel(AbilityRules.BATTERY, desired, manaNow);
+        int duration = AbilityRules.batteryDurationTicks(power);
+        if (power < AbilityRules.PRACTICE_LEVEL) {
+            return false;
+        }
+        spend(
+                player,
+                Items.QUARTZ_BLOCK,
+                AbilityRules.BATTERY,
+                AbilityRules.scaledManaCost(AbilityRules.BATTERY, power));
         startBattery(player, power, duration);
         castBattery(player);
         tellAbilityUse(player, AbilityRules.BATTERY, power);
@@ -1245,6 +1279,8 @@ public final class ManaAbilities implements FeatureModule {
     /**
      * Continues Battery when mana is still below the player's level.
      * One quartz block in hand is required. A stack of two or more spends two and adds +2.
+     * The renew spends the same scaled mana as a cast. Below 1 mana the battery ends and nothing is spent.
+     * A short pool renews at the highest level that mana can pay.
      */
     static boolean tryRenewBattery(ServerPlayer player) {
         if (player == null || !player.isAlive() || Achievements.skipPlayer(player) || batteryReachedLevel(player)) {
@@ -1260,11 +1296,16 @@ public final class ManaAbilities implements FeatureModule {
             return false;
         }
         int bonus = AbilityRules.catalystBonus(count);
-        double power = abilityPower(player, AbilityRules.BATTERY, bonus);
+        double desired = abilityPower(player, AbilityRules.BATTERY, bonus);
+        double manaNow = Achievements.currentMana(player);
+        double power = AbilityRules.castLevel(AbilityRules.BATTERY, desired, manaNow);
         int duration = AbilityRules.batteryDurationTicks(power);
-        if (AbilityRules.practices(AbilityRules.BATTERY, power) || duration <= 0) {
+        double cost = AbilityRules.scaledManaCost(AbilityRules.BATTERY, power);
+        if (AbilityRules.practices(AbilityRules.BATTERY, power) || power < 0.0 || manaNow + 1.0e-9 < cost) {
             return false;
         }
+        player.setAttached(EhmAttachments.EHM_MANA_CURRENT, Math.max(0.0, manaNow - cost));
+        Achievements.sendMana(player);
         held.shrink(take);
         recordAbilityUse(player, AbilityRules.BATTERY);
         startBattery(player, power, duration);
@@ -1325,16 +1366,17 @@ public final class ManaAbilities implements FeatureModule {
         if (practiceInstead(player, AbilityRules.LAPIS_SHIELD, Items.AMETHYST_SHARD, power)) {
             return true;
         }
-        int duration = AbilityRules.lapisShieldDurationTicks(power);
-        if (duration <= 0) {
+        double castPower = paidLevel(player, AbilityRules.LAPIS_SHIELD, power);
+        int duration = AbilityRules.lapisShieldDurationTicks(castPower);
+        if (castPower < AbilityRules.PRACTICE_LEVEL || duration <= 0) {
             return false;
         }
-        spend(player, Items.AMETHYST_SHARD, AbilityRules.LAPIS_SHIELD);
+        spendCast(player, Items.AMETHYST_SHARD, AbilityRules.LAPIS_SHIELD, castPower);
         if (lapisBonus) {
             InventorySearch.consumeOneMain(player, Items.LAPIS_LAZULI);
         }
-        startLapisShield(player, target, power, duration);
-        tellAbilityUse(player, AbilityRules.LAPIS_SHIELD, power);
+        startLapisShield(player, target, castPower, duration);
+        tellAbilityUse(player, AbilityRules.LAPIS_SHIELD, castPower);
         return true;
     }
 
@@ -1832,7 +1874,15 @@ public final class ManaAbilities implements FeatureModule {
             tellPractice(player, AbilityRules.MAGIC_ARROW);
             return true;
         }
-        hurlMissileStorm(player, power, hostiles, charcoal);
+        double castPower = paidLevel(player, AbilityRules.MAGIC_ARROW, power);
+        if (castPower < AbilityRules.PRACTICE_LEVEL) {
+            return false;
+        }
+        List<LivingEntity> paidHostiles = missileTargets(player, clicked, AbilityRules.fireRange(castPower));
+        if (paidHostiles.isEmpty()) {
+            return false;
+        }
+        hurlMissileStorm(player, castPower, paidHostiles, charcoal);
         player.level().playSound(
                 null,
                 player.getX(),
@@ -1843,11 +1893,11 @@ public final class ManaAbilities implements FeatureModule {
                 4.0F,
                 1.0F);
         consumeMissileArrows(player, base);
-        spend(player, null, AbilityRules.MAGIC_ARROW);
+        spendCast(player, null, AbilityRules.MAGIC_ARROW, castPower);
         if (charcoal) {
             InventorySearch.consumeOneMain(player, Items.CHARCOAL);
         }
-        tellAbilityUse(player, AbilityRules.MAGIC_ARROW, power);
+        tellAbilityUse(player, AbilityRules.MAGIC_ARROW, castPower);
         return true;
     }
 
@@ -1863,21 +1913,27 @@ public final class ManaAbilities implements FeatureModule {
         if (AbilityRules.practices(AbilityRules.SMITE_EVIL, power)) {
             return practiceMagicMelee(player);
         }
-        double range = AbilityRules.smiteRange(power);
-        LivingEntity target = fireTarget(player, clicked, range);
-        if (target == null) {
+        if (fireTarget(player, clicked, AbilityRules.smiteRange(power)) == null) {
             return false;
         }
         if (blockedByCooldownOrMana(
                 player, AbilityRules.SMITE_EVIL, "tougher.ability.smite_evil", "Magic Melee")) {
             return true;
         }
-        spend(player, null, AbilityRules.SMITE_EVIL);
+        double castPower = paidLevel(player, AbilityRules.SMITE_EVIL, power);
+        if (castPower < AbilityRules.PRACTICE_LEVEL) {
+            return false;
+        }
+        LivingEntity target = fireTarget(player, clicked, AbilityRules.smiteRange(castPower));
+        if (target == null) {
+            return false;
+        }
+        spendCast(player, null, AbilityRules.SMITE_EVIL, castPower);
         Vec3 from = player.getEyePosition();
         Vec3 to = new Vec3(target.getX(), target.getY() + target.getBbHeight() * 0.55, target.getZ());
         player.attack(target);
         showGoldBeam((ServerLevel) player.level(), from, to);
-        tellAbilityUse(player, AbilityRules.SMITE_EVIL, power);
+        tellAbilityUse(player, AbilityRules.SMITE_EVIL, castPower);
         return true;
     }
 
@@ -1899,11 +1955,15 @@ public final class ManaAbilities implements FeatureModule {
         if (practiceInstead(player, AbilityRules.GROW, null, power)) {
             return true;
         }
-        int times = Math.max(1, (int) Math.round(power));
+        double castPower = paidLevel(player, AbilityRules.GROW, power);
+        if (castPower < AbilityRules.PRACTICE_LEVEL) {
+            return false;
+        }
+        int times = Math.max(1, (int) Math.round(castPower));
         if (GrowPlants.apply(level, origin, AbilityRules.GROW_RANGE, times) <= 0) {
             return false;
         }
-        return finishGrow(player, power);
+        return finishGrow(player, castPower);
     }
 
     /**
@@ -1932,18 +1992,22 @@ public final class ManaAbilities implements FeatureModule {
         if (practiceInstead(player, AbilityRules.GROW, null, power)) {
             return true;
         }
-        int times = Math.max(1, (int) Math.round(power));
+        double castPower = paidLevel(player, AbilityRules.GROW, power);
+        if (castPower < AbilityRules.PRACTICE_LEVEL) {
+            return false;
+        }
+        int times = Math.max(1, (int) Math.round(castPower));
         Set<BlockPos> focused = new HashSet<>();
         int grown = GrowPlants.applyFocused(level, target, AbilityRules.GROW_RANGE, times, focused);
         grown += GrowPlants.apply(level, origin, AbilityRules.GROW_RANGE, times, focused);
         if (grown <= 0) {
             return false;
         }
-        return finishGrow(player, power);
+        return finishGrow(player, castPower);
     }
 
     static boolean finishGrow(ServerPlayer player, double power) {
-        spend(player, null, AbilityRules.GROW);
+        spendCast(player, null, AbilityRules.GROW, power);
         castEffect(player, SoundEvents.BONE_MEAL_USE, ParticleTypes.HAPPY_VILLAGER, ParticleTypes.COMPOSTER);
         ItemStack hoe = player.getMainHandItem();
         if (hoe.is(ItemTags.HOES) && hoe.isDamageableItem()) {
@@ -2004,15 +2068,19 @@ public final class ManaAbilities implements FeatureModule {
         if (practiceInstead(player, AbilityRules.POWER_MINE, null, power)) {
             return true;
         }
-        int duration = AbilityRules.powerMineDurationTicks(power);
-        spend(player, null, AbilityRules.POWER_MINE);
+        double castPower = paidLevel(player, AbilityRules.POWER_MINE, power);
+        if (castPower < AbilityRules.PRACTICE_LEVEL) {
+            return false;
+        }
+        int duration = AbilityRules.powerMineDurationTicks(castPower);
+        spendCast(player, null, AbilityRules.POWER_MINE, castPower);
         player.setAttached(EhmAttachments.EHM_POWER_MINE_REMAINING, duration);
         player.setAttached(EhmAttachments.EHM_POWER_MINE_BAR_MAX, duration);
         player.setAttached(EhmAttachments.EHM_POWER_MINE_ITEM, heldItemId(held));
         sendPowerMine(player);
         sendAbilityDurations(player);
         castEffect(player, SoundEvents.AMETHYST_BLOCK_CHIME, ParticleTypes.CRIT, ParticleTypes.ELECTRIC_SPARK);
-        tellAbilityUse(player, AbilityRules.POWER_MINE, power);
+        tellAbilityUse(player, AbilityRules.POWER_MINE, castPower);
         return true;
     }
 
@@ -2069,13 +2137,17 @@ public final class ManaAbilities implements FeatureModule {
         if (practiceInstead(player, AbilityRules.DETECT_ORE, null, power)) {
             return true;
         }
-        int range = AbilityRules.detectOreScanRange(power);
-        AbilityRules.OreDeposit best = DetectOre.findBest(player, range, power);
+        double castPower = paidLevel(player, AbilityRules.DETECT_ORE, power);
+        if (castPower < AbilityRules.PRACTICE_LEVEL) {
+            return false;
+        }
+        int range = AbilityRules.detectOreScanRange(castPower);
+        AbilityRules.OreDeposit best = DetectOre.findBest(player, range, castPower);
         InventorySearch.consumeLargestMainStack(
                 player, Items.QUARTZ, AbilityRules.detectOreQuartzConsumeCount(quartzStack));
-        spend(player, null, AbilityRules.DETECT_ORE);
+        spendCast(player, null, AbilityRules.DETECT_ORE, castPower);
         castEffect(player, SoundEvents.AMETHYST_BLOCK_RESONATE, ParticleTypes.ENCHANT, ParticleTypes.END_ROD);
-        tellAbilityUse(player, AbilityRules.DETECT_ORE, power);
+        tellAbilityUse(player, AbilityRules.DETECT_ORE, castPower);
         if (best == null) {
             player.sendSystemMessage(Component.translatableWithFallback(
                     "tougher.message.detect_ore_none", "The compass finds no ore nearby."));
@@ -2107,10 +2179,14 @@ public final class ManaAbilities implements FeatureModule {
         if (practiceInstead(player, AbilityRules.SLOW, Items.STRING, power)) {
             return true;
         }
-        spend(player, Items.STRING, AbilityRules.SLOW);
-        SlowWeb.launch(player, power);
+        double castPower = paidLevel(player, AbilityRules.SLOW, power);
+        if (castPower < AbilityRules.PRACTICE_LEVEL) {
+            return false;
+        }
+        spendCast(player, Items.STRING, AbilityRules.SLOW, castPower);
+        SlowWeb.launch(player, castPower);
         castEffect(player, SoundEvents.COBWEB_PLACE, ParticleTypes.ITEM_COBWEB, ParticleTypes.WHITE_ASH);
-        tellAbilityUse(player, AbilityRules.SLOW, power);
+        tellAbilityUse(player, AbilityRules.SLOW, castPower);
         return true;
     }
 
@@ -2297,12 +2373,16 @@ public final class ManaAbilities implements FeatureModule {
         if (practiceInstead(player, AbilityRules.SENSE_EVIL, Items.SPIDER_EYE, power)) {
             return true;
         }
-        spend(player, Items.SPIDER_EYE, AbilityRules.SENSE_EVIL);
-        tellAbilityUse(player, AbilityRules.SENSE_EVIL, power);
+        double castPower = paidLevel(player, AbilityRules.SENSE_EVIL, power);
+        if (castPower < AbilityRules.PRACTICE_LEVEL) {
+            return false;
+        }
+        spendCast(player, Items.SPIDER_EYE, AbilityRules.SENSE_EVIL, castPower);
+        tellAbilityUse(player, AbilityRules.SENSE_EVIL, castPower);
         player.setAttached(
                 EhmAttachments.EHM_MARK_OUTLINE_UNTIL,
-                abilityNow(player) + AbilityRules.senseMarkOutlineTicks(power));
-        player.setAttached(EhmAttachments.EHM_SENSE_OUTLINE_POWER, power);
+                abilityNow(player) + AbilityRules.senseMarkOutlineTicks(castPower));
+        player.setAttached(EhmAttachments.EHM_SENSE_OUTLINE_POWER, castPower);
         SENSE_OUTLINE_VISIBLE.add(player.getUUID());
         sendAbilityDurations(player);
         WiseLessons.refreshMist(player);
@@ -2319,7 +2399,7 @@ public final class ManaAbilities implements FeatureModule {
         if (nearest != null && nearest.level() == player.level()) {
             lookAt(player, nearest.getX(), nearest.getY() + nearest.getBbHeight() * 0.5, nearest.getZ());
             double distance = Math.sqrt(player.distanceToSqr(nearest));
-            if (AbilityRules.senseEvilShowsDistance(distance, power)) {
+            if (AbilityRules.senseEvilShowsDistance(distance, castPower)) {
                 player.sendSystemMessage(Component.translatableWithFallback(
                         "tougher.message.sense_evil_found_near",
                         AbilityRules.senseEvilFoundNearFallback(AbilityRules.roughBlocks(distance)),
@@ -2690,11 +2770,12 @@ public final class ManaAbilities implements FeatureModule {
             }
             return;
         }
-        if (Achievements.currentMana(player) >= AbilityRules.MANA_COST) {
+        if (Achievements.currentMana(player) + 1.0e-9 >= AbilityRules.manaCost(AbilityRules.FLIGHT)) {
             boolean membrane = InventorySearch.hasOneMain(player, Items.PHANTOM_MEMBRANE);
             int bonus = renewCatalystBonus(player, Items.FEATHER) + AbilityRules.flightMembraneBonus(membrane);
-            double power = abilityPower(player, AbilityRules.FLIGHT, bonus);
-            if (AbilityRules.practices(AbilityRules.FLIGHT, power)) {
+            double desired = abilityPower(player, AbilityRules.FLIGHT, bonus);
+            double power = payRenew(player, AbilityRules.FLIGHT, desired);
+            if (power < AbilityRules.PRACTICE_LEVEL) {
                 stopFlight(player, false);
                 return;
             }
@@ -2702,7 +2783,6 @@ public final class ManaAbilities implements FeatureModule {
             if (membrane) {
                 InventorySearch.consumeOneMain(player, Items.PHANTOM_MEMBRANE);
             }
-            consumeManaAndHeld(player, null);
             recordAbilityUse(player, AbilityRules.FLIGHT);
             int extra = AbilityRules.flightDurationTicks(power);
             float speed = AbilityRules.flightSpeed(power);
@@ -3384,11 +3464,23 @@ public final class ManaAbilities implements FeatureModule {
             tellPractice(player, AbilityRules.WRITE_TOME);
             return true;
         }
+        double castPower = paidLevel(player, AbilityRules.WRITE_TOME, power);
+        int castSaved = TomeRules.share(TomeRules.bankedXp(player.experienceLevel, visible), castPower);
+        int[] castParts = TomeRules.split(castSaved, TomeRules.tomeCount(heldCount));
+        if (castPower < AbilityRules.PRACTICE_LEVEL) {
+            return false;
+        }
+        if (AbilityRules.writeTomeRefuses(castSaved, castParts.length, castPower)) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.tome_empty", "That would save no experience."));
+            markHandled(player);
+            return true;
+        }
         String author = player.getScoreboardName();
         held.shrink(TomeRules.booksConsumed(heldCount));
-        spend(player, null, AbilityRules.WRITE_TOME);
+        spendCast(player, null, AbilityRules.WRITE_TOME, castPower);
         int written = 0;
-        for (int part : parts) {
+        for (int part : castParts) {
             if (part <= 0) {
                 continue;
             }
@@ -3397,24 +3489,25 @@ public final class ManaAbilities implements FeatureModule {
         }
         dropToKeptLevel(player, keptLevel);
         castTome(player);
-        tellAbilityUse(player, AbilityRules.WRITE_TOME, power);
+        tellAbilityUse(player, AbilityRules.WRITE_TOME, castPower);
         if (written <= 1) {
             player.sendSystemMessage(Component.translatableWithFallback(
                     "tougher.message.tome_write",
                     "The tome holds %s experience.",
-                    Component.literal(Integer.toString(saved))));
+                    Component.literal(Integer.toString(castSaved))));
         } else {
             player.sendSystemMessage(Component.translatableWithFallback(
                     "tougher.message.tome_write_many",
                     "The tomes hold %s experience.",
-                    Component.literal(TomeRules.amountList(parts))));
+                    Component.literal(TomeRules.amountList(castParts))));
         }
         return true;
     }
 
     /**
-     * A written book that stores experience. Costs 1 mana and that book, and grants
-     * 80% of the stored experience, plus 2% per ability level. Sneak opens the book instead.
+     * A written book that stores experience. A real read spends the tome and mana scaled
+     * by the level cast, and grants 80% of the stored experience, plus 2% per ability level.
+     * Sneak opens the book instead.
      */
     static boolean tryReadTome(ServerPlayer player) {
         ItemStack held = player.getMainHandItem();
@@ -3443,15 +3536,27 @@ public final class ManaAbilities implements FeatureModule {
             tellPractice(player, AbilityRules.READ_TOME);
             return true;
         }
+        double castPower = paidLevel(player, AbilityRules.READ_TOME, power);
+        int castGrant = TomeRules.share(saved, castPower);
+        if (castPower < AbilityRules.PRACTICE_LEVEL) {
+            return false;
+        }
+        if (castGrant <= 0) {
+            player.sendSystemMessage(Component.translatableWithFallback(
+                    "tougher.message.tome_small",
+                    "That tome's experience is too small to read at this level."));
+            markHandled(player);
+            return true;
+        }
         held.shrink(1);
-        spend(player, null, AbilityRules.READ_TOME);
-        player.giveExperiencePoints(grant);
+        spendCast(player, null, AbilityRules.READ_TOME, castPower);
+        player.giveExperiencePoints(castGrant);
         castTome(player);
-        tellAbilityUse(player, AbilityRules.READ_TOME, power);
+        tellAbilityUse(player, AbilityRules.READ_TOME, castPower);
         player.sendSystemMessage(Component.translatableWithFallback(
                 "tougher.message.tome_read",
                 "The tome grants %s experience.",
-                Component.literal(Integer.toString(grant))));
+                Component.literal(Integer.toString(castGrant))));
         return true;
     }
 
@@ -3684,6 +3789,41 @@ public final class ManaAbilities implements FeatureModule {
         spend(player, null, ability, AbilityRules.practiceManaCost(ability));
         tellPractice(player, ability);
         return true;
+    }
+
+    /** Real-cast level after the mana multiplier. A practice level is left unchanged. */
+    static double paidLevel(ServerPlayer player, String ability, double desired) {
+        if (player == null || AbilityRules.practices(ability, desired)) {
+            return desired;
+        }
+        return AbilityRules.castLevel(ability, desired, Achievements.currentMana(player));
+    }
+
+    /** Spends the scaled mana for {@code level}, records the use, and starts the cooldown. */
+    static void spendCast(ServerPlayer player, net.minecraft.world.item.Item consumed, String ability, double level) {
+        spend(player, consumed, ability, AbilityRules.scaledManaCost(ability, level));
+    }
+
+    /**
+     * Pays a renewal at the level mana can buy and returns that level.
+     * Negative when the renewal should end. Practice does not renew.
+     */
+    static double payRenew(ServerPlayer player, String ability, double desired) {
+        if (player == null || AbilityRules.practices(ability, desired)) {
+            return -1.0;
+        }
+        double mana = Achievements.currentMana(player);
+        double power = AbilityRules.castLevel(ability, desired, mana);
+        if (power < AbilityRules.PRACTICE_LEVEL) {
+            return -1.0;
+        }
+        double cost = AbilityRules.scaledManaCost(ability, power);
+        if (mana + 1.0e-9 < cost) {
+            return -1.0;
+        }
+        player.setAttached(EhmAttachments.EHM_MANA_CURRENT, Math.max(0.0, mana - cost));
+        Achievements.sendMana(player);
+        return power;
     }
 
     static void spend(ServerPlayer player, net.minecraft.world.item.Item consumed, String ability) {

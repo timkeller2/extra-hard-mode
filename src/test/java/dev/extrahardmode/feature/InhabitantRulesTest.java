@@ -409,42 +409,17 @@ class InhabitantRulesTest {
                 .isEmpty());
         assertTrue(InhabitantRules.scaledListings(InhabitantRules.CARTOGRAPHER, 30, 0, false, new java.util.Random(1))
                 .isEmpty());
+        assertTrue(InhabitantRules.scaledListings(InhabitantRules.COUNCIL, 38, 0, false, new java.util.Random(1))
+                .isEmpty());
         for (String ability : AbilityRules.ABILITY_IDS) {
             assertFalse(AbilityRules.teacherFlavor(ability).isEmpty());
             assertFalse(AbilityRules.teacherInstruction(ability).isEmpty());
         }
         assertFalse(InhabitantRules.specialtyAllowed(InhabitantRules.COUNCIL, 12));
         assertTrue(InhabitantRules.specialtyAllowed(InhabitantRules.COUNCIL, 18));
-        assertEquals(4, InhabitantRules.defaultTradeTypeCount(InhabitantRules.COUNCIL));
-        Map<String, InhabitantRules.TradeListing> councilSales = new HashMap<>();
-        for (InhabitantRules.TradeListing listing :
-                InhabitantRules.defaultListings(InhabitantRules.COUNCIL, 0, false)) {
-            assertFalse(listing.buy());
-            councilSales.put(listing.itemId(), listing);
-        }
-        assertEquals(2, councilSales.get("minecraft:book").count());
-        assertEquals(1, councilSales.get("minecraft:book").emeralds());
-        assertEquals(1, councilSales.get("minecraft:compass").count());
-        assertEquals(3, councilSales.get("minecraft:compass").emeralds());
-        assertEquals(1, councilSales.get("minecraft:clock").count());
-        assertEquals(4, councilSales.get("minecraft:clock").emeralds());
-        assertEquals(12, councilSales.get("minecraft:paper").count());
-        assertEquals(1, councilSales.get("minecraft:paper").emeralds());
-        Map<String, InhabitantRules.TradeListing> councilExtras = new HashMap<>();
-        for (InhabitantRules.TradeListing listing :
-                InhabitantRules.extraListings(InhabitantRules.COUNCIL, 0, false)) {
-            assertFalse(listing.buy());
-            assertEquals(null, councilExtras.put(listing.itemId(), listing));
-        }
-        assertFalse(councilExtras.containsKey("minecraft:name_tag"));
-        assertEquals(1, councilExtras.get("minecraft:map").count());
-        assertEquals(3, councilExtras.get("minecraft:map").emeralds());
-        assertEquals(1, councilExtras.get("minecraft:writable_book").count());
-        assertEquals(4, councilExtras.get("minecraft:writable_book").emeralds());
-        assertEquals(4, councilExtras.get("minecraft:item_frame").count());
-        assertEquals(1, councilExtras.get("minecraft:item_frame").emeralds());
-        assertEquals(3, councilExtras.get("minecraft:lantern").count());
-        assertEquals(1, councilExtras.get("minecraft:lantern").emeralds());
+        assertEquals(0, InhabitantRules.defaultTradeTypeCount(InhabitantRules.COUNCIL));
+        assertTrue(InhabitantRules.defaultListings(InhabitantRules.COUNCIL, 0, false).isEmpty());
+        assertTrue(InhabitantRules.extraListings(InhabitantRules.COUNCIL, 0, false).isEmpty());
         boolean sawCookAfterAll = false;
         boolean sawBrewerInKitchen = false;
         for (int roll = 0; roll < 80; roll++) {
@@ -651,15 +626,40 @@ class InhabitantRulesTest {
         assertEquals(30, InhabitantRules.armorEmeralds(true, "helmet"));
         assertEquals(42, InhabitantRules.armorEmeralds(true, "leggings"));
         assertEquals(48, InhabitantRules.armorEmeralds(true, "chestplate"));
+        assertEquals(6, InhabitantRules.armorEmeralds(false, "sword"));
+        assertEquals(8, InhabitantRules.armorEmeralds(false, "axe"));
+        assertEquals(24, InhabitantRules.armorEmeralds(true, "sword"));
+        assertEquals(30, InhabitantRules.armorEmeralds(true, "axe"));
         assertEquals(2, InhabitantRules.armorMaterialCount("boots"));
         assertEquals(3, InhabitantRules.armorMaterialCount("helmet"));
         assertEquals(4, InhabitantRules.armorMaterialCount("leggings"));
         assertEquals(4, InhabitantRules.armorMaterialCount("chestplate"));
-        assertMaterial("tougher:heavy_diamond_boots", "minecraft:diamond_block", 2);
+        assertEquals(0, InhabitantRules.heavyBlockCount(false, "sword"));
+        assertEquals(1, InhabitantRules.heavyBlockCount(false, "axe"));
+        assertEquals(2, InhabitantRules.heavyBlockCount(false, "boots"));
+        assertEquals(3, InhabitantRules.heavyBlockCount(false, "helmet"));
+        assertEquals(5, InhabitantRules.heavyBlockCount(false, "leggings"));
+        assertEquals(6, InhabitantRules.heavyBlockCount(false, "chestplate"));
+        assertEquals(1, InhabitantRules.heavyBlockCount(true, "sword"));
+        assertEquals(2, InhabitantRules.heavyBlockCount(true, "axe"));
+        assertEquals(3, InhabitantRules.heavyBlockCount(true, "boots"));
+        assertEquals(4, InhabitantRules.heavyBlockCount(true, "helmet"));
+        assertEquals(6, InhabitantRules.heavyBlockCount(true, "leggings"));
+        assertEquals(7, InhabitantRules.heavyBlockCount(true, "chestplate"));
+        assertMaterial("tougher:heavy_diamond_boots", "minecraft:diamond_block", 3);
+        assertMaterial("tougher:heavy_diamond_helmet", "minecraft:diamond_block", 4);
+        assertMaterial("tougher:heavy_diamond_leggings", "minecraft:diamond_block", 6);
+        assertMaterial("tougher:heavy_diamond_chestplate", "minecraft:diamond_block", 7);
+        assertMaterial("tougher:heavy_diamond_sword", "minecraft:diamond_block", 1);
+        assertMaterial("tougher:heavy_diamond_axe", "minecraft:diamond_block", 2);
+        assertMaterial("tougher:heavy_iron_boots", "minecraft:iron_block", 2);
         assertMaterial("tougher:heavy_iron_helmet", "minecraft:iron_block", 3);
+        assertMaterial("tougher:heavy_iron_leggings", "minecraft:iron_block", 5);
+        assertMaterial("tougher:heavy_iron_chestplate", "minecraft:iron_block", 6);
+        assertMaterial("tougher:heavy_iron_axe", "minecraft:iron_block", 1);
+        assertFalse(InhabitantRules.armorMaterial("tougher:heavy_iron_sword").present());
         assertMaterial("minecraft:iron_helmet", "minecraft:iron_ingot", 3);
         assertMaterial("minecraft:diamond_chestplate", "minecraft:diamond", 4);
-        assertMaterial("tougher:heavy_iron_leggings", "minecraft:iron_block", 4);
         assertFalse(InhabitantRules.armorMaterial("minecraft:iron_ingot").present());
         assertFalse(InhabitantRules.armorMaterial("minecraft:diamond").present());
         assertEquals(1, InhabitantRules.ARMOR_TRADE_USES);
@@ -759,7 +759,7 @@ class InhabitantRulesTest {
     }
 
     @Test
-    void armorsmithDrawsHeavyAndEnchantedFromOneShortList() {
+    void armorsmithListsAtMostOneHeavyItem() {
         assertArmorShop(false);
         assertArmorShop(true);
     }
@@ -770,50 +770,55 @@ class InhabitantRulesTest {
         String plainPrefix = master ? "minecraft:diamond_" : "minecraft:iron_";
         String metal = master ? "minecraft:diamond" : "minecraft:iron_ingot";
         Set<String> slots = Set.of("boots", "helmet", "leggings", "chestplate");
+        Set<String> heavySlots = Set.of("boots", "helmet", "leggings", "chestplate", "sword", "axe");
         Set<String> heavySeen = new HashSet<>();
         Set<String> enchantedSeen = new HashSet<>();
         boolean sawBuy = false;
         boolean sawNoHeavy = false;
-        boolean sawTwoHeavy = false;
+        boolean sawHeavy = false;
         for (int seed = 0; seed < 80; seed++) {
             List<InhabitantRules.TradeListing> modest =
                     InhabitantRules.scaledListings(specialty, 24, 0, false, new Random(seed * 1000003L + 104729L));
-            int heavy = countArmorOffers(modest, master, heavyPrefix, plainPrefix, metal, slots, heavySeen, enchantedSeen);
+            int heavy = countArmorOffers(
+                    modest, master, heavyPrefix, plainPrefix, metal, slots, heavySlots, heavySeen, enchantedSeen);
             for (InhabitantRules.TradeListing listing : modest) {
                 if (!listing.buy()) {
                     assertEquals(1, listing.count());
                     assertEquals(InhabitantRules.ARMOR_TRADE_USES, listing.maxUses());
                 }
             }
-            assertTrue(modest.size() >= 1 && modest.size() <= InhabitantRules.ARMOR_USUAL_OFFERS);
+            assertTrue(modest.size() >= 1 && modest.size() <= InhabitantRules.ARMOR_USUAL_OFFERS + 1);
             assertTrue(modest.stream().noneMatch(InhabitantRules.TradeListing::buy));
+            assertTrue(heavy <= 1, "heavy listings " + heavy);
             if (heavy == 0) {
                 sawNoHeavy = true;
             }
-            if (heavy >= 2) {
-                sawTwoHeavy = true;
+            if (heavy == 1) {
+                sawHeavy = true;
             }
         }
         for (int seed = 0; seed < 120; seed++) {
             List<InhabitantRules.TradeListing> rich =
                     InhabitantRules.scaledListings(specialty, 38, 0, false, new Random(seed * 1000003L + 104729L));
-            int heavy = countArmorOffers(rich, master, heavyPrefix, plainPrefix, metal, slots, heavySeen, enchantedSeen);
-            assertTrue(rich.size() >= 2 && rich.size() <= InhabitantRules.ARMOR_USUAL_OFFERS * 2);
+            int heavy = countArmorOffers(
+                    rich, master, heavyPrefix, plainPrefix, metal, slots, heavySlots, heavySeen, enchantedSeen);
+            assertTrue(rich.size() >= 2 && rich.size() <= InhabitantRules.ARMOR_USUAL_OFFERS * 2 + 1);
+            assertTrue(heavy <= 1, "heavy listings " + heavy);
             if (rich.stream().anyMatch(InhabitantRules.TradeListing::buy)) {
                 sawBuy = true;
             }
             if (heavy == 0) {
                 sawNoHeavy = true;
             }
-            if (heavy >= 2) {
-                sawTwoHeavy = true;
+            if (heavy == 1) {
+                sawHeavy = true;
             }
         }
-        assertEquals(slots, heavySeen);
+        assertEquals(heavySlots, heavySeen);
         assertEquals(slots, enchantedSeen);
         assertTrue(sawBuy);
         assertTrue(sawNoHeavy);
-        assertTrue(sawTwoHeavy);
+        assertTrue(sawHeavy);
         assertSoldArmorUsesPurchasePower(master);
     }
 
@@ -843,6 +848,7 @@ class InhabitantRulesTest {
             String plainPrefix,
             String metal,
             Set<String> slots,
+            Set<String> heavySlots,
             Set<String> heavySeen,
             Set<String> enchantedSeen) {
         int heavy = 0;
@@ -852,11 +858,16 @@ class InhabitantRulesTest {
             if (listing.itemId().startsWith(heavyPrefix)) {
                 heavy++;
                 String slot = listing.itemId().substring(heavyPrefix.length());
-                assertTrue(slots.contains(slot), listing.itemId());
+                assertTrue(heavySlots.contains(slot), listing.itemId());
                 assertFalse(listing.buy());
+                assertEquals(1, listing.count());
                 assertEquals(0, listing.enchantLevel());
                 assertEquals(InhabitantRules.armorEmeralds(master, slot), listing.emeralds());
-                assertArmorMaterial(listing.itemId());
+                if ("sword".equals(slot) && !master) {
+                    assertFalse(InhabitantRules.armorMaterial(listing.itemId()).present(), listing.itemId());
+                } else {
+                    assertArmorMaterial(listing.itemId());
+                }
                 heavySeen.add(slot);
             } else if (metal.equals(listing.itemId())) {
                 assertTrue(listing.buy());

@@ -36,7 +36,7 @@ If the tree is clean and the branch is already on `origin/main`, skip to the dis
 
 ## 3. Distribution copy
 
-Copy `build\libs\tougher-0.1.0+26.3.jar` to `S:\Dist\Minecraft Tougher Mod`. Copy only that jar, not the sources jar. Replace older `tougher-*.jar` and `extrahardmode-*.jar` files there. Leave the other jars in that folder.
+Copy `build\libs\tougher-0.1.0+26.3.jar` to `S:\Dist\Minecraft Tougher Mod`. Copy only that jar, not the sources jar. Replace older `tougher-*.jar` and `extrahardmode-*.jar` files there. Leave the other jars in that folder. `assemble` also copies the jar there.
 
 Do this on every Commit, including when Witherfen is left running.
 

@@ -483,6 +483,8 @@ public class ExtraHardModeClient implements ClientModInitializer {
         LightLookHud.register();
         CopperChestLookHud.register();
         AbilityHelp.register();
+        AutoStackClient.register();
+        AutoStackFlyRenderer.register();
         FoodCravingClient.register();
         AchievementFloater.register();
         BossRayRenderer.register();

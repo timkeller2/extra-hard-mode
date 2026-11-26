@@ -209,6 +209,14 @@ public final class Inhabitants implements FeatureModule {
             Cartographers.onTalk(serverPlayer, server, home, villager);
             return InteractionResult.SUCCESS;
         }
+        if (home != null && InhabitantRules.COUNCIL.equals(home.specialty())) {
+            if (hand != InteractionHand.MAIN_HAND || !(player instanceof ServerPlayer serverPlayer)) {
+                return InteractionResult.SUCCESS;
+            }
+            villager.getOffers().clear();
+            CouncilMissions.onTalk(serverPlayer, server, home);
+            return InteractionResult.SUCCESS;
+        }
         if (mourningNow(server, villager)) {
             if (hand == InteractionHand.MAIN_HAND && player instanceof ServerPlayer mourner) {
                 tellMourning(mourner, server, villager);
@@ -459,34 +467,34 @@ public final class Inhabitants implements FeatureModule {
     }
 
     static void teach(ServerPlayer player, Villager villager, ServerLevel level, InhabitantData.Home home) {
+        boolean taught = false;
         try {
-            if (WiseLessons.willStartHunt(player, villager, level)) {
-                WiseLessons.grantTeachingOffer(player, villager.getStringUUID());
-            }
-            teachServices(player, villager, level, home);
+            taught = teachServices(player, villager, level, home);
         } finally {
-            WiseLessons.onTalk(player, villager, level, home);
+            WiseLessons.onTalk(player, villager, level, home, taught);
         }
     }
 
-    private static void teachServices(ServerPlayer player, Villager villager, ServerLevel level, InhabitantData.Home home) {
+    private static boolean teachServices(
+            ServerPlayer player, Villager villager, ServerLevel level, InhabitantData.Home home) {
         ensureWiseAbility(villager, level);
         String teacherId = villager.getStringUUID();
-        int offers = WiseLessons.teachingOffers(player, teacherId);
+        int stored = WiseLessons.teachingOffers(player, teacherId);
+        boolean huntReady = WiseLessons.willStartHunt(player, villager, level);
+        int offers = WiseLessonRules.lessonOpen(stored, huntReady) ? Math.max(stored, 1) : 0;
         int price = InhabitantRules.wiseAbilityPrice(home.score());
         // Hotbar, backpack, and offhand, including bundles. The main hand is the selected hotbar slot, so it counts once.
         int emeralds = InventorySearch.count(player, Items.EMERALD);
         if (holdingRedstoneBlock(player)) {
             int blocks = InventorySearch.count(player, Items.REDSTONE_BLOCK);
             if (InhabitantRules.canGiveRedstone(offers, blocks)) {
-                giveRedstone(player, villager, level, teacherId, blocks);
-                return;
+                return giveRedstone(player, villager, level, teacherId, blocks);
             }
         }
         String ability = focusAbility(player);
         String teacher = InhabitantRules.nameplate(home.name(), home.specialty());
         if (ability != null && InhabitantRules.canTeachFocus(offers, emeralds, price)) {
-            teachFocus(
+            return teachFocus(
                     player,
                     villager,
                     level,
@@ -495,11 +503,10 @@ public final class Inhabitants implements FeatureModule {
                     price,
                     InhabitantRules.wiseFocusUses(home.score()),
                     teacher);
-            return;
         }
         if (holdingEmeralds(player) && InhabitantRules.canTeachFocus(offers, emeralds, price)) {
             String rolled = InhabitantRules.pickWiseAbility(level.getRandom().nextInt());
-            teachFocus(
+            return teachFocus(
                     player,
                     villager,
                     level,
@@ -508,7 +515,6 @@ public final class Inhabitants implements FeatureModule {
                     price,
                     InhabitantRules.wiseEmeraldUses(home.score()),
                     teacher);
-            return;
         }
         explainLesson(
                 player,
@@ -517,9 +523,10 @@ public final class Inhabitants implements FeatureModule {
                 price,
                 InhabitantRules.redstoneBlockCap(WiseLessons.redstoneGifts(player, teacherId)),
                 WiseLessons.huntCooldownLabel(player, teacherId, level));
+        return false;
     }
 
-    private static void teachFocus(
+    private static boolean teachFocus(
             ServerPlayer player,
             Villager villager,
             ServerLevel level,
@@ -529,12 +536,14 @@ public final class Inhabitants implements FeatureModule {
             int uses,
             String teacherName) {
         if (price > 0 && !InventorySearch.consume(player, Items.EMERALD, price)) {
-            return;
+            return false;
         }
         boolean knows = ManaAbilities.knowsAbility(player, ability);
         ManaAbilities.grantWiseUses(player, ability, uses);
         WiseLessons.recordLesson(player, teacherId);
-        WiseLessons.spendTeachingOffer(player, teacherId);
+        if (WiseLessons.teachingOffers(player, teacherId) > 0) {
+            WiseLessons.spendTeachingOffer(player, teacherId);
+        }
         Component name = Component.literal(AbilityRules.nameFallback(ability));
         if (knows) {
             player.sendSystemMessage(Component.translatableWithFallback(
@@ -554,21 +563,24 @@ public final class Inhabitants implements FeatureModule {
         }
         startWiseShimmer(player, SHIMMER_GREEN, InhabitantRules.lessonShimmerTicks(uses));
         level.playSound(null, villager.blockPosition(), SoundEvents.VILLAGER_YES, SoundSource.NEUTRAL, 1.0F, 1.0F);
+        return true;
     }
 
-    private static void giveRedstone(
+    private static boolean giveRedstone(
             ServerPlayer player, Villager villager, ServerLevel level, String teacherId, int blocks) {
         int gifts = WiseLessons.redstoneGifts(player, teacherId);
         int take = InhabitantRules.redstoneBlocksTaken(gifts, blocks);
         if (take <= 0 || !InventorySearch.consume(player, Items.REDSTONE_BLOCK, take)) {
-            return;
+            return false;
         }
         double gain = InhabitantRules.capacityGain(take);
         double earned = WiseLessons.addLearningCapacity(player, gain);
         int base = ConfigManager.world(level).manaLearningCapacity();
         double effective = Math.max(0, base) + earned;
         WiseLessons.addRedstoneGift(player, teacherId);
-        WiseLessons.spendTeachingOffer(player, teacherId);
+        if (WiseLessons.teachingOffers(player, teacherId) > 0) {
+            WiseLessons.spendTeachingOffer(player, teacherId);
+        }
         String taken = take == 1 ? "1 redstone block" : take + " redstone blocks";
         player.sendSystemMessage(Component.translatableWithFallback(
                 "tougher.wise.redstone",
@@ -580,6 +592,7 @@ public final class Inhabitants implements FeatureModule {
         level.playSound(
                 null, villager.blockPosition(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.NEUTRAL, 1.0F, 1.0F);
         Achievements.sendMana(player);
+        return true;
     }
 
     /** A new shimmer replaces one already playing. Zero ticks leaves the current one alone. */
@@ -1311,7 +1324,8 @@ public final class Inhabitants implements FeatureModule {
     }
 
     /**
-     * Emeralds in the first slot. Armor also asks for half its crafting materials.
+     * Emeralds in the first slot. Enchanted armor also asks for half its crafting materials.
+     * Heavy iron asks for 2 fewer blocks than the recipe, and heavy diamond asks for 1 fewer.
      * A price above 64 emeralds uses the second slot only when there is no material.
      */
     static MerchantOffer sell(ItemStack result, int emeralds, int maxUses, String soldItemId) {
@@ -1933,10 +1947,6 @@ public final class Inhabitants implements FeatureModule {
         }
         if (InhabitantRules.TRADER.equals(home.specialty()) || InhabitantRules.WEALTHY.equals(home.specialty())) {
             PlayerShops.refresh(villager, serverPlayer);
-        }
-        if (InhabitantRules.COUNCIL.equals(home.specialty())) {
-            CouncilMissions.onTalk(serverPlayer, level, home);
-            return;
         }
         if (!InhabitantRules.BOUNTY.equals(home.specialty())) {
             return;

@@ -4,6 +4,7 @@ import dev.extrahardmode.command.EhmCommands;
 import dev.extrahardmode.command.EhmPermissions;
 import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.feature.Achievements;
+import dev.extrahardmode.feature.AutoStack;
 import dev.extrahardmode.feature.AnimalCrowdControl;
 import dev.extrahardmode.feature.Overgrazing;
 import dev.extrahardmode.feature.AntiFarming;
@@ -87,6 +88,7 @@ public class ExtraHardModeMod implements ModInitializer {
         EhmPermissions.register();
         WorldGate.register();
         EhmNetworking.register();
+        AutoStack.register();
         EhmCommands.register();
         FEATURES.register(new HardenedStone());
         FEATURES.register(new Torches());

@@ -66,7 +66,7 @@ public final class InhabitantRules {
     public static final int DEFAULT_TRADE_USES = 3;
     /** Usual shop size. A longer catalog keeps this many and treats the rest as extras. */
     public static final int USUAL_TRADE_TYPES = 4;
-    /** Usual armorsmith shop. Half of {@link #USUAL_TRADE_TYPES}. Heavy and enchanted pieces share the list. */
+    /** Usual armorsmith shop. Half of {@link #USUAL_TRADE_TYPES}. A heavy item is a separate listing. */
     public static final int ARMOR_USUAL_OFFERS = USUAL_TRADE_TYPES / 2;
     /** Hauler buy stack with no storage. Each storage block takes {@link #HAULER_PER_STORAGE} off, down to {@link #HAULER_STACK_MIN}. */
     public static final int HAULER_STACK = 32;
@@ -106,20 +106,29 @@ public final class InhabitantRules {
     public static final int FARM_WHEAT_COUNT = 8;
     /**
      * Heavy iron emeralds. Half of the old 12, 15, 21, and 24, with the halves rounded up.
-     * The second cost is half the iron blocks in the recipe, also rounded up.
+     * A sword uses the boots price. An axe uses the helmet price.
      */
     public static final int IRON_BOOTS_EMERALDS = 6;
     public static final int IRON_HELMET_EMERALDS = 8;
     public static final int IRON_LEGGINGS_EMERALDS = 11;
     public static final int IRON_CHESTPLATE_EMERALDS = 12;
+    public static final int IRON_SWORD_EMERALDS = IRON_BOOTS_EMERALDS;
+    public static final int IRON_AXE_EMERALDS = IRON_HELMET_EMERALDS;
     /**
      * Heavy diamond emeralds. Half of the old four-times prices 48, 60, 84, and 96.
      * Halving the new iron price and then multiplying by four would miss 30 and 42.
+     * A sword uses the boots price. An axe uses the helmet price.
      */
     public static final int DIAMOND_BOOTS_EMERALDS = 24;
     public static final int DIAMOND_HELMET_EMERALDS = 30;
     public static final int DIAMOND_LEGGINGS_EMERALDS = 42;
     public static final int DIAMOND_CHESTPLATE_EMERALDS = 48;
+    public static final int DIAMOND_SWORD_EMERALDS = DIAMOND_BOOTS_EMERALDS;
+    public static final int DIAMOND_AXE_EMERALDS = DIAMOND_HELMET_EMERALDS;
+    /** Iron blocks subtracted from the full recipe on a heavy iron piece. A sword lands at zero. */
+    public static final int HEAVY_IRON_BLOCK_DISCOUNT = 2;
+    /** Diamond blocks subtracted from the full recipe on a heavy diamond piece. */
+    public static final int HEAVY_DIAMOND_BLOCK_DISCOUNT = 1;
     /** Enchanted iron. Half of the old 6, 8, 11, and 12, with the halves rounded up. */
     public static final int ENCHANTED_IRON_BOOTS_EMERALDS = 3;
     public static final int ENCHANTED_IRON_HELMET_EMERALDS = 4;
@@ -153,6 +162,7 @@ public final class InhabitantRules {
     /** Wise teachers and council members use this higher multiple before they are skipped. */
     public static final int RARE_CROWD_MULTIPLE = 3;
     private static final List<String> ARMOR_SLOTS = List.of("boots", "helmet", "leggings", "chestplate");
+    private static final List<String> HEAVY_WEAPON_SLOTS = List.of("sword", "axe");
     public static final int WANDER_RANGE = 16;
     public static final int SNAP_HOME_RANGE = 32;
     /**
@@ -891,7 +901,7 @@ public final class InhabitantRules {
                 "Residents: After a mob hits them, they shoot mobs within 12 blocks that are after them. The bow hits 3 harder than a normal arrow.",
                 "Residents: A close attack makes them switch to an iron sword. A zombie cannot turn them unless they are already below 5 health.",
                 "Residents: A home stops listing someone who has died or is no longer around the bed.",
-                "Lessons: Speak to a wise teacher and he tells of a hunt every 30 Minecraft days.",
+                "Lessons: He gives a hunt when he teaches a mana skill or deepens your mana learning, once every 30 Minecraft days.",
                 "Lessons: While he waits to give another hunt, he names up to 3 explored biomes that can still spawn a boss. If more than 3 can, he picks 3 and keeps them until that wait ends.",
                 "Lessons: While the next hunt is not ready, his message ends with the time left, like (3d) or (5h).",
                 "Lessons: The pack is a 3 to 8 base from the home and his experience, plus 50% of that base for each hunt you have finished with him, rounded.",
@@ -940,26 +950,28 @@ public final class InhabitantRules {
                 "Shops: A jeweler sells a diamond for 8 emeralds, 4 gold ingots for 4, an iron block for 6, and a copper or redstone block for 2.",
                 "Shops: Larger jewelers also sell lapis, amethyst, quartz, gold nuggets, and blocks of gold, lapis, amethyst, quartz, and diamond.",
                 "Shops: A gold block is 6 emeralds and a diamond block is 32.",
-                "Shops: An armorsmith's usual shop is 2 trades, half of other residents. Heavy iron and enchanted iron share one list, so a heavy piece may be missing.",
-                "Shops: A larger shop may add more of those pieces or buy iron. A master armorsmith sells heavy and enchanted diamond the same way, and may buy diamonds.",
+                "Shops: An armorsmith's usual shop is 2 trades, half of other residents. Half the time he also lists one heavy iron armor piece or weapon.",
+                "Shops: A larger shop may add more enchanted pieces or buy iron. It still lists at most one heavy item, and that stack stays 1.",
+                "Shops: A master armorsmith sells diamond the same way, and may buy diamonds.",
                 "Shops: Heavy iron costs 6, 8, 11, or 12 emeralds for boots, a helmet, leggings, or a chestplate. Heavy diamond costs 24, 30, 42, or 48.",
+                "Shops: A heavy iron sword costs 6 emeralds and an axe costs 8. A heavy diamond sword costs 24 and an axe costs 30.",
                 "Shops: Enchanted iron costs 3 emeralds for boots, 4 for a helmet, and 6 for leggings or a chestplate. Enchanted diamond matches heavy iron.",
                 "Shops: Enchanted iron starts at power 10, plus items already bought from him by anyone. A master armorsmith starts at 15 plus that count. The next restock uses it.",
-                "Shops: Each piece also costs half its crafting materials, rounded up. Boots take 2, a helmet 3, and leggings or a chestplate 4.",
-                "Shops: Heavy iron and heavy diamond take blocks of that metal. Enchanted iron takes ingots, and enchanted diamond takes diamonds.",
+                "Shops: Each enchanted piece also costs half its crafting materials, rounded up. Boots take 2, a helmet 3, and leggings or a chestplate 4.",
+                "Shops: Heavy iron and heavy diamond take blocks of that metal. Iron is 2 blocks under the recipe. Diamond is 1 block under it.",
+                "Shops: Heavy iron boots take 2 iron blocks, a helmet 3, leggings 5, and a chestplate 6. An axe takes 1 and a sword takes none.",
+                "Shops: Heavy diamond boots take 3 diamond blocks, a helmet 4, leggings 6, and a chestplate 7. A sword takes 1 and an axe takes 2.",
                 "Shops: A brewer sells one level 2 potion each restock, and that potion can change. Up to 3 other potions cost 1 emerald.",
                 "Shops: A larger brewer sells one of each brewing ingredient for 1 emerald, such as nether wart, blaze powder, glowstone, and ghast tears.",
                 "Shops: A loot collector pays 1 emerald for 4 spider eyes, 4 gunpowder, or 8 bones.",
                 "Shops: A larger loot collector also pays 1 emerald for 8 rotten flesh, 8 string, 4 slimeballs, 6 leather, or 12 arrows.",
                 "Shops: That shop also pays 1 emerald for 6 ink sacs, 2 phantom membranes, 2 ender pearls, 2 blaze rods, or 1 ghast tear.",
-                "Shops: He also sells one other of those drops, chosen at random. Half what he pays for it, rounded up, costs 1 emerald.",
-                "Shops: A council member sells 12 paper or 2 books for 1 emerald, a compass for 3, and a clock for 4.",
-                "Shops: A larger council shop may sell an empty map for 3 emeralds, a book and quill for 4, 4 item frames for 1, or 3 lanterns for 1.");
+                "Shops: He also sells one other of those drops, chosen at random. Half what he pays for it, rounded up, costs 1 emerald.");
     }
 
     public static List<String> homesBountyLines() {
         return List.of(
-                "Bounties: A council member names a kill bounty when you check in. Hold 5 emeralds in your hand to take it. Those 5 emeralds are spent.",
+                "Bounties: A council member does not keep a shop. He names a kill bounty when you check in. Hold 5 emeralds in your hand to take it. Those 5 emeralds are spent.",
                 "Bounties: The first hunt from a resident is 6-18 common mobs. Each success with that resident makes the next 20% larger. Every 4 successes, their next hunt is rarer.",
                 "Bounties: A mob with more than 20 health is fewer creatures, in proportion to that health.",
                 "Bounties: The resident only sends mobs from the dimension where they live. Guardians are left out.",
@@ -1810,6 +1822,8 @@ public final class InhabitantRules {
                 case "helmet" -> DIAMOND_HELMET_EMERALDS;
                 case "leggings" -> DIAMOND_LEGGINGS_EMERALDS;
                 case "chestplate" -> DIAMOND_CHESTPLATE_EMERALDS;
+                case "sword" -> DIAMOND_SWORD_EMERALDS;
+                case "axe" -> DIAMOND_AXE_EMERALDS;
                 default -> 0;
             };
         }
@@ -1818,6 +1832,8 @@ public final class InhabitantRules {
             case "helmet" -> IRON_HELMET_EMERALDS;
             case "leggings" -> IRON_LEGGINGS_EMERALDS;
             case "chestplate" -> IRON_CHESTPLATE_EMERALDS;
+            case "sword" -> IRON_SWORD_EMERALDS;
+            case "axe" -> IRON_AXE_EMERALDS;
             default -> 0;
         };
     }
@@ -1842,15 +1858,42 @@ public final class InhabitantRules {
         };
     }
 
-    /** Half the recipe, rounded up. A helmet is 3. Boots are 2. */
+    /** Half the armor recipe, rounded up. A helmet is 3. Boots are 2. Enchanted sales use this. */
     public static int armorMaterialCount(String slot) {
         int pieces = armorRecipePieces(slot);
         return pieces <= 0 ? 0 : (pieces + 1) / 2;
     }
 
+    /** Shaped-recipe pieces of this metal. Armor uses {@link #armorRecipePieces}. A sword is 2 and an axe is 3. */
+    public static int craftedPieceCount(String slot) {
+        int armor = armorRecipePieces(slot);
+        if (armor > 0) {
+            return armor;
+        }
+        return switch (slot == null ? "" : slot) {
+            case "sword" -> 2;
+            case "axe" -> 3;
+            default -> 0;
+        };
+    }
+
     /**
-     * Half the materials used to craft this piece, rounded up.
-     * Heavy armor pays in blocks. Enchanted armor pays in ingots or diamonds.
+     * Blocks a heavy piece asks for. Iron is {@link #HEAVY_IRON_BLOCK_DISCOUNT} under the recipe.
+     * Diamond is {@link #HEAVY_DIAMOND_BLOCK_DISCOUNT} under it. Zero means emeralds only.
+     */
+    public static int heavyBlockCount(boolean diamond, String slot) {
+        int pieces = craftedPieceCount(slot);
+        if (pieces <= 0) {
+            return 0;
+        }
+        int discount = diamond ? HEAVY_DIAMOND_BLOCK_DISCOUNT : HEAVY_IRON_BLOCK_DISCOUNT;
+        return Math.max(0, pieces - discount);
+    }
+
+    /**
+     * Materials this sale asks for besides emeralds.
+     * Enchanted armor pays half the recipe, rounded up, in ingots or diamonds.
+     * Heavy pieces pay {@link #heavyBlockCount(boolean, String)} in blocks.
      */
     public static MaterialCost armorMaterial(String itemId) {
         if (itemId == null || itemId.isEmpty()) {
@@ -1865,21 +1908,19 @@ public final class InhabitantRules {
         if (heavy) {
             path = path.substring("heavy_".length());
         }
-        String metal;
-        String slot;
-        if (path.startsWith("iron_")) {
-            metal = heavy ? "minecraft:iron_block" : "minecraft:iron_ingot";
-            slot = path.substring("iron_".length());
-        } else if (path.startsWith("diamond_")) {
-            metal = heavy ? "minecraft:diamond_block" : "minecraft:diamond";
-            slot = path.substring("diamond_".length());
-        } else {
+        boolean diamond = path.startsWith("diamond_");
+        boolean iron = path.startsWith("iron_");
+        if (!diamond && !iron) {
             return MaterialCost.NONE;
         }
-        int count = armorMaterialCount(slot);
+        String slot = path.substring(diamond ? "diamond_".length() : "iron_".length());
+        int count = heavy ? heavyBlockCount(diamond, slot) : armorMaterialCount(slot);
         if (count <= 0) {
             return MaterialCost.NONE;
         }
+        String metal = heavy
+                ? (diamond ? "minecraft:diamond_block" : "minecraft:iron_block")
+                : (diamond ? "minecraft:diamond" : "minecraft:iron_ingot");
         return new MaterialCost(metal, count);
     }
 
@@ -2091,12 +2132,7 @@ public final class InhabitantRules {
                     buyOf("minecraft:bone", 8, 3));
             case ARMORSMITH -> armorUsualListings(false);
             case MASTER_ARMORSMITH -> armorUsualListings(true);
-            case WISE_TEACHER, OLD_MINER, CARTOGRAPHER -> List.of();
-            case COUNCIL -> List.of(
-                    sellOf("minecraft:paper", 12, 1, 3),
-                    sellOf("minecraft:book", 2, 1, 3),
-                    sellOf("minecraft:compass", 1, 3, 3),
-                    sellOf("minecraft:clock", 1, 4, 3));
+            case WISE_TEACHER, OLD_MINER, CARTOGRAPHER, COUNCIL -> List.of();
             case WEALTHY -> wealthyTradeListings().subList(0, Math.min(WEALTHY_OFFER_COUNT, WEALTHY_POOL.size()));
             case JEWELER -> JEWELER_USUAL_SELLS;
             default -> List.of(
@@ -2151,13 +2187,8 @@ public final class InhabitantRules {
                     buyOf("minecraft:blaze_rod", 2, 3),
                     buyOf("minecraft:ghast_tear", 1, 3));
             case ARMORSMITH -> List.of(armorMetalBuy(false));
-            case WISE_TEACHER, OLD_MINER, CARTOGRAPHER -> List.of();
+            case WISE_TEACHER, OLD_MINER, CARTOGRAPHER, COUNCIL -> List.of();
             case MASTER_ARMORSMITH -> List.of(armorMetalBuy(true));
-            case COUNCIL -> List.of(
-                    sellOf("minecraft:map", 1, 3, 3),
-                    sellOf("minecraft:writable_book", 1, 4, 3),
-                    sellOf("minecraft:item_frame", 4, 1, 3),
-                    sellOf("minecraft:lantern", 3, 1, 3));
             case WEALTHY -> List.of();
             case JEWELER -> JEWELER_EXTRA_SELLS;
             default -> List.of(
@@ -2204,9 +2235,10 @@ public final class InhabitantRules {
      * House-score shop: type count and per-listing uses roll from half the top
      * percent up to that top. The top is 50% at 14 points and 175% at 38.
      * Extra types beyond the usual shop are random leftover listings.
-     * An armorsmith draws {@link #ARMOR_USUAL_OFFERS} pieces from heavy and enchanted armor together.
+     * An armorsmith draws {@link #ARMOR_USUAL_OFFERS} enchanted pieces.
      * Enchanted pieces use {@link #armorEnchantLevel(boolean, int)} for items already bought from him.
-     * A larger roll may add more of those pieces or a buy of iron or diamonds. Generic goods are not added.
+     * Half the time the shop also lists one heavy armor piece or heavy weapon, and that stack stays at one.
+     * A larger roll may add more enchanted pieces or a buy of iron or diamonds. Generic goods are not added.
      * A brewer keeps one rolled level 2 potion, then up to three other potions.
      * A larger roll may add brewing ingredients. Generic goods are not added.
      * A loot collector also sells one drop he is not already buying. The stack is half
@@ -2227,7 +2259,7 @@ public final class InhabitantRules {
             String specialty, double score, int storage, boolean blight, Random random, int itemsSold) {
         Random rng = random == null ? new Random(0L) : random;
         String type = specialty == null || specialty.isEmpty() ? TRADER : specialty;
-        if (WISE_TEACHER.equals(type) || OLD_MINER.equals(type) || CARTOGRAPHER.equals(type)) {
+        if (WISE_TEACHER.equals(type) || OLD_MINER.equals(type) || CARTOGRAPHER.equals(type) || COUNCIL.equals(type)) {
             return List.of();
         }
         List<TradeListing> defaults;
@@ -2252,7 +2284,7 @@ public final class InhabitantRules {
             extras.addAll(farmSideListings(blight));
         } else if (ARMORSMITH.equals(type) || MASTER_ARMORSMITH.equals(type)) {
             boolean master = MASTER_ARMORSMITH.equals(type);
-            List<TradeListing> pieces = armorPieceListings(master, itemsSold);
+            List<TradeListing> pieces = new ArrayList<>(enchantedArmorListings(master, itemsSold));
             Collections.shuffle(pieces, rng);
             int usual = Math.min(ARMOR_USUAL_OFFERS, pieces.size());
             defaults = new ArrayList<>(pieces.subList(0, usual));
@@ -2307,11 +2339,17 @@ public final class InhabitantRules {
                 chosen.add(listing);
             }
         }
+        if (ARMORSMITH.equals(type) || MASTER_ARMORSMITH.equals(type)) {
+            addOneHeavyOffer(MASTER_ARMORSMITH.equals(type), chosen, used, rng);
+        }
         int quantityPercent = quantityDealPercent(rollQuantitySwing(rng.nextInt()), quantityModifier(score));
         List<TradeListing> scaled = new ArrayList<>(chosen.size());
         for (TradeListing listing : chosen) {
             int usePercent = rollTradePercent(minPercent, maxPercent, rng.nextInt());
             int count = adjustedQuantity(listing.count(), quantityPercent, listing.buy());
+            if (!listing.buy() && isHeavyTrade(listing.itemId())) {
+                count = 1;
+            }
             scaled.add(listing.withCount(count).withUses(scaledAmount(listing.maxUses(), usePercent)));
         }
         if (BOUNTY.equals(type)) {
@@ -2437,7 +2475,7 @@ public final class InhabitantRules {
                 buyOf("minecraft:apple", 8, 3));
     }
 
-    /** One heavy piece of each slot. A restock draws these with the enchanted pieces. */
+    /** One heavy armor piece of each slot. */
     static List<TradeListing> armorListings(boolean master) {
         String prefix = master ? "tougher:heavy_diamond_" : "tougher:heavy_iron_";
         List<TradeListing> listings = new ArrayList<>();
@@ -2445,6 +2483,39 @@ public final class InhabitantRules {
             listings.add(sellOf(prefix + slot, 1, armorEmeralds(master, slot), ARMOR_TRADE_USES));
         }
         return List.copyOf(listings);
+    }
+
+    /** Heavy armor plus this metal's heavy sword and axe. A restock lists at most one of these. */
+    static List<TradeListing> heavyOfferListings(boolean master) {
+        String prefix = master ? "tougher:heavy_diamond_" : "tougher:heavy_iron_";
+        List<TradeListing> listings = new ArrayList<>(armorListings(master));
+        for (String slot : HEAVY_WEAPON_SLOTS) {
+            listings.add(sellOf(prefix + slot, 1, armorEmeralds(master, slot), ARMOR_TRADE_USES));
+        }
+        return List.copyOf(listings);
+    }
+
+    /**
+     * Half of restocks append one heavy offer. The same {@link Random} that built the shop decides it.
+     * A shop that already holds every heavy offer adds nothing.
+     */
+    static void addOneHeavyOffer(boolean master, List<TradeListing> chosen, Set<String> used, Random rng) {
+        if (rng.nextInt(2) != 0) {
+            return;
+        }
+        List<TradeListing> heavy = new ArrayList<>(heavyOfferListings(master));
+        Collections.shuffle(heavy, rng);
+        for (TradeListing listing : heavy) {
+            if (used.add(listing.tradeKey())) {
+                chosen.add(listing);
+                return;
+            }
+        }
+    }
+
+    static boolean isHeavyTrade(String itemId) {
+        return itemId != null
+                && (itemId.startsWith("tougher:heavy_iron_") || itemId.startsWith("tougher:heavy_diamond_"));
     }
 
     /** Enchanted vanilla armor, one listing per slot, of the metal this smith works. */
@@ -2459,20 +2530,12 @@ public final class InhabitantRules {
         return List.copyOf(listings);
     }
 
-    /** Heavy pieces and enchanted pieces of this metal, in that order. */
-    static List<TradeListing> armorPieceListings(boolean master, int purchased) {
-        List<TradeListing> pieces = new ArrayList<>();
-        pieces.addAll(armorListings(master));
-        pieces.addAll(enchantedArmorListings(master, purchased));
-        return pieces;
-    }
-
     /**
-     * First {@link #ARMOR_USUAL_OFFERS} pieces of {@link #armorPieceListings}.
-     * The live shop draws that many at random from the whole list.
+     * First {@link #ARMOR_USUAL_OFFERS} enchanted pieces.
+     * The live shop draws that many at random. A heavy item is a separate one-in-two listing.
      */
     static List<TradeListing> armorUsualListings(boolean master) {
-        List<TradeListing> pieces = armorPieceListings(master, 0);
+        List<TradeListing> pieces = enchantedArmorListings(master, 0);
         return List.copyOf(pieces.subList(0, Math.min(ARMOR_USUAL_OFFERS, pieces.size())));
     }
 

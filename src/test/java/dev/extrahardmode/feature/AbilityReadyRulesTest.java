@@ -143,10 +143,10 @@ class AbilityReadyRulesTest {
     }
 
     @Test
-    void batteryCastsWithNoManaWhenItsLevelIsAboveTwo() {
+    void batteryCastLevelFollowsTheManaOnHand() {
         List<AbilityReadyRules.SupplyStack> block =
                 List.of(new AbilityReadyRules.SupplyStack(AbilityRules.QUARTZ_BLOCK_ID, 1));
-        List<AbilityReadyRules.StrongCast> casts = AbilityReadyRules.strongCasts(
+        assertTrue(AbilityReadyRules.strongCasts(
                 0,
                 0.0,
                 Map.of(AbilityRules.BATTERY, 25),
@@ -155,9 +155,52 @@ class AbilityReadyRulesTest {
                 block,
                 false,
                 0L,
+                Map.of()).isEmpty());
+        List<AbilityReadyRules.StrongCast> levelThree = AbilityReadyRules.strongCasts(
+                0,
+                1.0,
+                Map.of(AbilityRules.BATTERY, 25),
+                Set.of(AbilityRules.BATTERY),
+                0,
+                block,
+                false,
+                0L,
                 Map.of());
-        assertEquals(List.of(AbilityRules.BATTERY), casts.stream().map(AbilityReadyRules.StrongCast::ability).toList());
-        assertEquals(3.0, casts.get(0).level(), 1e-9);
+        assertEquals(List.of(AbilityRules.BATTERY), levelThree.stream().map(AbilityReadyRules.StrongCast::ability).toList());
+        assertEquals(3.0, levelThree.get(0).level(), 1e-9);
+        List<AbilityReadyRules.StrongCast> oneMana = AbilityReadyRules.strongCasts(
+                0,
+                1.0,
+                Map.of(AbilityRules.BATTERY, 121),
+                Set.of(AbilityRules.BATTERY),
+                0,
+                block,
+                false,
+                0L,
+                Map.of());
+        assertEquals(3.0, oneMana.get(0).level(), 1e-9);
+        List<AbilityReadyRules.StrongCast> twoMana = AbilityReadyRules.strongCasts(
+                0,
+                2.0,
+                Map.of(AbilityRules.BATTERY, 121),
+                Set.of(AbilityRules.BATTERY),
+                0,
+                block,
+                false,
+                0L,
+                Map.of());
+        assertEquals(8.0, twoMana.get(0).level(), 1e-9);
+        List<AbilityReadyRules.StrongCast> full = AbilityReadyRules.strongCasts(
+                0,
+                3.0,
+                Map.of(AbilityRules.BATTERY, 121),
+                Set.of(AbilityRules.BATTERY),
+                0,
+                block,
+                false,
+                0L,
+                Map.of());
+        assertEquals(9.0, full.get(0).level(), 1e-9);
     }
 
     @Test

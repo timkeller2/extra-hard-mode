@@ -201,6 +201,7 @@ public final class AbilityReadyRules {
      * a honey bottle for Healing, and Empower's bonus.
      * Mana level is not added.
      * Cooldown or missing mana leaves the ability off the list. Healing with honey does not need mana.
+     * Each ability lists the level that mana can pay. Honey with less than 1 mana keeps Healing's full level.
      */
     public static List<StrongCast> strongCasts(
             int manaLevel,
@@ -296,6 +297,12 @@ public final class AbilityReadyRules {
             double level = AbilityRules.power(ability, useCount, itemBonus, levelOffset);
             level += Math.max(0.0, empowerBonus);
             level = missileStormLevel(ability, level, bestCount);
+            boolean honeyKeepsLevel = AbilityRules.HEAL.equals(ability)
+                    && honey
+                    && currentMana + 1.0e-9 < AbilityRules.manaCost(ability);
+            if (!honeyKeepsLevel) {
+                level = AbilityRules.castLevel(ability, level, currentMana);
+            }
             if (level > MIN_LEVEL) {
                 ready.add(new StrongCast(ability, level));
             }

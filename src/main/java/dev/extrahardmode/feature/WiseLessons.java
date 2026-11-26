@@ -93,7 +93,7 @@ public final class WiseLessons {
                 && Boolean.TRUE.equals(entity.getAttachedOrElse(EhmAttachments.EHM_WISE_LESSON_FINAL, Boolean.FALSE));
     }
 
-    /** True when this conversation will replace the wait with a new hunt. */
+    /** True when teaching a mana skill or mana learning on this talk should give a hunt. */
     public static boolean willStartHunt(ServerPlayer player, Villager villager, ServerLevel level) {
         if (player == null || villager == null || level == null) {
             return false;
@@ -210,7 +210,12 @@ public final class WiseLessons {
         return next;
     }
 
-    public static void onTalk(ServerPlayer player, Villager villager, ServerLevel level, InhabitantData.Home home) {
+    /**
+     * Reports the current hunt. A new hunt is given only when {@code taught} is true and the
+     * 30-day wait is over: this talk taught a mana skill or deepened mana learning.
+     */
+    public static void onTalk(
+            ServerPlayer player, Villager villager, ServerLevel level, InhabitantData.Home home, boolean taught) {
         if (player == null || villager == null || level == null || home == null) {
             return;
         }
@@ -219,21 +224,24 @@ public final class WiseLessons {
         List<WiseLessonRules.Lesson> board = boardOf(player);
         WiseLessonRules.Lesson existing = find(board, teacherId);
         WiseLessonRules.Lesson ended = WiseLessonRules.endIfExpired(existing, today);
-        if (ended != existing && !WiseLessonRules.offerDue(ended.assignedDay(), today)) {
+        if (ended != existing) {
             List<WiseLessonRules.Lesson> quiet = new ArrayList<>();
             for (WiseLessonRules.Lesson prior : board) {
                 quiet.add(teacherId.equals(prior.teacherId()) ? ended : prior);
             }
             player.setAttached(EhmAttachments.EHM_WISE_LESSONS, quiet);
             publish(player, quiet);
-            mentionBossBiomes(player, level, teacherId, ended.assignedDay());
-            return;
+            board = quiet;
+            existing = ended;
         }
         if (existing != null && !WiseLessonRules.offerDue(existing.assignedDay(), today)) {
             if (existing.active()) {
                 player.sendSystemMessage(Component.literal(lineFor(player, existing)));
             }
             mentionBossBiomes(player, level, teacherId, existing.assignedDay());
+            return;
+        }
+        if (!taught) {
             return;
         }
         rememberFinishedHunt(player, teacherId);

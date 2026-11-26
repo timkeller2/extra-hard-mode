@@ -83,7 +83,8 @@ public final class EhmHelp {
                 "residents",
                 "shops",
                 "bounties",
-                "portals"));
+                "portals",
+                "inventory"));
         topics.addAll(AbilityRules.abilityTopics());
         return List.copyOf(topics);
     }
@@ -94,7 +95,7 @@ public final class EhmHelp {
                 "tougher.help.overview.",
                 List.of(
                         "Tougher — harder survival. Type /tougher help <topic>, or /tougher ability help.",
-                        "Topics: mining, building, torches, hunger, farming, combat, armor, weapons, enchanting, mana, abilities, achievements, homes, portals.",
+                        "Topics: mining, building, torches, hunger, farming, combat, armor, weapons, enchanting, mana, abilities, achievements, homes, portals, inventory.",
                         "Farming subjects: crops, animals, seasons, soil, processing.",
                         "Home subjects: rooms, furnishings, residents, shops, bounties. Checklist: /tougher help homes.",
                         "Mana abilities: /tougher ability help, or /tougher ability help <name>. /tougher me lists your skills.",
@@ -166,6 +167,7 @@ public final class EhmHelp {
                 overview(),
                 mining(),
                 building(),
+                inventory(),
                 torches(),
                 hunger(),
                 crops(),
@@ -188,6 +190,7 @@ public final class EhmHelp {
         return switch (key) {
             case "mining" -> mining();
             case "building", "build" -> building();
+            case "inventory", "stacking", "auto-stack", "autostack" -> inventory();
             case "torches", "torch", "campfire", "campfires" -> torches();
             case "hunger", "food" -> hunger();
             case "crops", "crop", "plants", "trees" -> crops();
@@ -253,6 +256,18 @@ public final class EhmHelp {
                         "Building: A hopper you own can pull from and put items into a container you own, or one nobody owns. Another player's locked chest or hopper stays closed to it.",
                         "Building: A redstone block on a lodestone is used up, by hand or from a dispenser. That chunk and the 8 around it stay active for 1 real hour, up to 24. Off or paused, time stops.",
                         "Building: The lodestone must be in a valid residence of at least 12 points. Each point over 12 adds 5 minutes. 15 points lasts 75 minutes, and 22 lasts 110."));
+    }
+
+    private static Page inventory() {
+        return Page.of(
+                "tougher.help.inventory.",
+                List.of(
+                        "Inventory: Press G, or the Auto-stack key in Controls, to put main-inventory stacks into chests within 12 blocks that already hold that item and still have room.",
+                        "Inventory: Each stack you move flies from you to that chest.",
+                        "Inventory: Chests, trapped chests, and copper chests you can open are used. A double chest counts as one chest.",
+                        "Inventory: Alt-click a slot in your main inventory or in a chest to leave that slot out. A yellow outline marks it.",
+                        "Inventory: Alt-double-click a main-inventory slot or a chest slot to toggle every slot in that inventory. The hotbar, offhand, and equipment stay put.",
+                        "Inventory: A chest keeps those left-out slots for everyone who opens it. Breaking the chest clears them. Your own left-out slots stay with you after you die."));
     }
 
     private static Page torches() {
@@ -479,24 +494,27 @@ public final class EhmHelp {
                 List.of(
                         "Abilities: Hold the catalyst and double-right-click within half a second. Let it grow on a plant.",
                         "Abilities: Nether quartz casts Lightning. Charcoal in your inventory adds +2 and the burn, and one is consumed. Iron ingot: Iron Heart. Golden sword: Magic Melee.",
-                        "Abilities: A heavy golden sword also casts Magic Melee. It costs 1/4 mana. Below 1, practice spends 1 mana and the normal cooldown.",
+                        "Abilities: A heavy golden sword also casts Magic Melee. It costs 1/4 mana times the square root of its level, rounded down. Below 1, practice spends 1 mana and the normal cooldown.",
                         "Abilities: With at least 1 mana, the Magic Melee crosshair turns gold on a hostile in reach.",
                         "Abilities: Double-right-click a spider eye for Sense Evil. Hold the click to eat it. Hostiles within 8 blocks per level are outlined through solid blocks for 1 minute per level.",
                         "Abilities: A clay brick casts Master Builder. It renews like Iron Heart until you run out of mana.",
-                        "Abilities: A diamond double-right-click casts Restore Life. Two in hand add +2. The diamond price comes from your hotbar or inventory, and practice keeps those diamonds.",
+                        "Abilities: A diamond double-right-click casts Restore Life. It costs 1 mana times the square root of its level, rounded down. Two in hand add +2. Practice keeps the diamonds.",
                         "Abilities: A cast consumes one catalyst. Two in hand consume both and add +2. Swords, hoes, and pickaxes are not consumed.",
                         "Abilities: A renew spends no catalyst unless you are holding it. Holding it spends one and adds +2.",
                         "Abilities: A phantom membrane in the hotbar or inventory, not a bundle, adds +3 to Flight. One is consumed, and each renew consumes another to keep that +3.",
                         "Abilities: Glowstone dust double-right-clicked casts Empower. It does not renew on its own.",
                         "Abilities: Empower lasts 30 seconds per ability level, at least 30 seconds. Later casts gain the square root of that level.",
-                        "Abilities: A quartz block double-right-clicked in the air casts Battery. It costs no mana.",
-                        "Abilities: Battery lasts 2 minutes per level. Regen is 1 plus the square root of that level. It stops at your mana level. A renew spends 1 block, or 2 from a stack.",
-                        "Abilities: An amethyst shard casts Amethyst Shield for 1 mana. It lasts 20 seconds per level and absorbs that much damage before armor.",
+                        "Abilities: A quartz block double-right-clicked in the air casts Battery. It costs 1 mana times the square root of its level, rounded down.",
+                        "Abilities: With at least 1 mana, a short pool casts the highest level that mana can pay. 1 mana reaches level 3, and 2 mana reaches level 8.",
+                        "Abilities: Battery lasts 2 minutes per level. Regen is 1 plus the square root of that level. It stops at your mana level. A renew spends mana and spends 1 block, or 2 from a stack.",
+                        "Abilities: An amethyst shard casts Amethyst Shield. It lasts 20 seconds per level and absorbs that much damage before armor.",
+                        "Abilities: It costs 1 mana times the square root of its level, rounded down.",
                         "Abilities: One fuel kind costs 1 per 3 points blocked, two kinds 1 per 5, and all three 1 per 7, rounded up. Fuels are amethyst, lapis, and each 20 seconds left.",
                         "Abilities: Each block also shortens the shield by 10 seconds. Twenty seconds of duration fuel takes 30 seconds.",
                         "Abilities: The cost alternates those fuels, largest amount first. A full block also stops harmful effects from that hit. If you cannot pay, the hit lands and the shield ends.",
                         "Abilities: One shard is consumed to cast. Two in hand consume both and add +2. One lapis in your hotbar or inventory is also consumed and adds another +2.",
-                        "Abilities: From level 7, a book writes a Tome of the Wise for 1 mana. Above 30 it banks the excess and leaves you at 30. At 30 or below it banks everything and leaves you at 0.",
+                        "Abilities: From level 7, a book writes a Tome of the Wise. Above 30 it banks the excess and leaves you at 30. At 30 or below it banks everything and leaves you at 0.",
+                        "Abilities: Writing costs 1 mana times the square root of its level, rounded down. Reading costs that mana and the tome.",
                         "Abilities: Writing and reading each apply 80% plus 2% per ability level, above or below 30. Below 10 some is lost and above 10 some is gained.",
                         "Abilities: One book makes one tome. Two or more add +2. Three, four, or five books make 2, 3, or 4 tomes and split the experience. More than five still uses five and makes 4.",
                         "Abilities: Every ability's level is its skill plus item bonuses, minus 2, and at least 0.",
@@ -507,7 +525,8 @@ public final class EhmHelp {
                         "Abilities: Hold a focus and a wise teacher teaches that ability for 30 emeralds from your inventory or either hand.",
                         "Abilities: Each house point above 24 lowers that price by 2 emeralds, down to free. He names that count, a focus, or the next redstone gift when a lesson is offered.",
                         "Abilities: A focus gives half the house points in uses, rounded down. Hold emeralds and he picks an ability for the house points.",
-                        "Abilities: He offers a lesson when a new hunt begins, and again when you kill more than half the marks before they vanish.",
+                        "Abilities: He offers a lesson when the next hunt is ready, and again when you kill more than half the marks before they vanish.",
+                        "Abilities: Teaching a mana skill or deepening your mana learning gives you the hunt, once every 30 Minecraft days.",
                         "Abilities: Hold redstone blocks instead. The first gift takes 1, then up to 4, 9, and so on. Mana learning grows by the square root of the blocks he takes.",
                         "Abilities: Redstone blocks he takes shimmer red on you, one second for each block.",
                         "Abilities: A lesson he teaches shimmers green for half a second per use.",

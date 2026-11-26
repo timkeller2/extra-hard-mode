@@ -38,8 +38,11 @@ public final class AbilityRules {
     public static final String READ_TOME = "read_tome";
     public static final String RESTORE_LIFE = "restore_life";
     public static final int MANA_COST = 1;
-    /** Restore Life spends this much mana, and only when the cast can happen. */
-    public static final int RESTORE_LIFE_MANA_COST = 4;
+    /**
+     * Unit mana for Restore Life. A cast multiplies this by the floored square root of the level.
+     * Battery uses {@link #MANA_COST} the same way.
+     */
+    public static final int RESTORE_LIFE_MANA_COST = 1;
     /** Diamond price before the target's lives and the caster's Restore Life level. */
     public static final int RESTORE_LIFE_DIAMOND_BASE = 17;
     /** Lowest diamond price for Restore Life. */
@@ -47,7 +50,7 @@ public final class AbilityRules {
     public static final String RESTORE_LIFE_NO_LIVES = "This world has no lives to restore.";
     public static final String RESTORE_LIFE_UNAVAILABLE = "Restore Life is not available.";
     public static final String RESTORE_LIFE_AT_CAP = "%s has %s lives. Restore Life needs fewer than %s.";
-    public static final String RESTORE_LIFE_MANA_NEED = "Restore Life needs 4 mana.";
+    public static final String RESTORE_LIFE_MANA_NEED = "Restore Life needs 1 mana.";
     public static final String RESTORE_LIFE_DIAMONDS = "Restore Life needs %s diamonds. You have %s.";
     public static final int DETECT_ORE_MANA_COST = 1;
     /** Learned Magic Melee spends a quarter mana. Practice spends {@link #MANA_COST}. */
@@ -543,13 +546,13 @@ public final class AbilityRules {
         }
         return switch (ability) {
             case HEAL ->
-                "Hold paper and double-right-click an injured person, or yourself if you are hurt. It costs 1 mana.";
+                "Hold paper and double-right-click an injured person, or yourself if you are hurt. It costs 1 mana times the square root of its level, rounded down.";
             case IRON_HEART ->
                 "Hold an iron ingot and double-right-click. Double-right-click again with an ingot to cancel your own.";
             case MAGIC_ARROW ->
-                "Hold nether quartz and double-right-click. One bolt per level strikes a hostile in range, and each deals that much magic damage. Lightning runs from you to each target. More than 3 quartz doubles the level, up to the square root of the quartz in hand. Charcoal in your inventory adds +2 and makes the strike burn. It costs 1 mana.";
+                "Hold nether quartz and double-right-click. One bolt per level strikes a hostile in range, and each deals that much magic damage. Lightning runs from you to each target. More than 3 quartz doubles the level, up to the square root of the quartz in hand. Charcoal in your inventory adds +2 and makes the strike burn. It costs 1 mana times the square root of its level, rounded down.";
             case FLIGHT -> "Hold a feather and double-right-click. Jump to rise, sneak in the air to descend, and sneak on a block to stop.";
-            case GROW -> "Hold any hoe and double-right-click a plant. It costs 1 mana and some hoe durability.";
+            case GROW -> "Hold any hoe and double-right-click a plant. It costs 1 mana times the square root of its level, rounded down, and some hoe durability.";
             case POWER_MINE -> "Hold any pickaxe and double-right-click. Hardened stone stops eating extra durability for a while.";
             case DETECT_ORE ->
                 "Hold a compass and double-right-click. You turn toward the best ore you are skilled enough to sense, preferring ore within 2 blocks of your height.";
@@ -557,21 +560,21 @@ public final class AbilityRules {
             case SENSE_EVIL ->
                 "Double-right-click a spider eye. Hold the click to eat it instead. You turn toward a living biome boss, if one is out.";
             case SMITE_EVIL ->
-                "Hold a golden sword or a heavy golden sword and double-right-click a hostile in reach. It costs 1/4 mana. Below 1, practice spends 1 mana and the normal cooldown.";
+                "Hold a golden sword or a heavy golden sword and double-right-click a hostile in reach. It costs 1/4 mana times the square root of its level, rounded down. Below 1, practice spends 1 mana and the normal cooldown.";
             case MASTER_BUILDER ->
-                "Hold a clay brick and double-right-click. Double-right-click again to cancel. It costs 1 mana.";
+                "Hold a clay brick and double-right-click. Double-right-click again to cancel. It costs 1 mana times the square root of its level, rounded down.";
             case EMPOWER ->
-                "Hold glowstone dust and double-right-click. Double-right-click again to cancel. It costs 1 mana.";
+                "Hold glowstone dust and double-right-click. Double-right-click again to cancel. It costs 1 mana times the square root of its level, rounded down.";
             case BATTERY ->
-                "Hold a quartz block and double-right-click in the air. Double-right-click again to cancel. It costs no mana. It renews until mana reaches your level and spends a quartz block.";
+                "Hold a quartz block and double-right-click in the air. Double-right-click again to cancel. It costs 1 mana times the square root of its level, rounded down. With at least 1 mana, a short pool casts the highest level that mana can pay. It renews until mana reaches your level and spends a quartz block and that mana.";
             case LAPIS_SHIELD ->
-                "Hold an amethyst shard and double-right-click a creature, or yourself if none is targeted. It costs 1 mana. It runs until it ends. A second click does not cancel it.";
+                "Hold an amethyst shard and double-right-click a creature, or yourself if none is targeted. It costs 1 mana times the square root of its level, rounded down. It runs until it ends. A second click does not cancel it.";
             case WRITE_TOME ->
-                "Hold a book at experience level 7 or higher and double-right-click. It costs 1 mana. Two or more books add +2. Three, four, or five books make 2, 3, or 4 tomes and split the experience. More than five still uses five and makes 4.";
+                "Hold a book at experience level 7 or higher and double-right-click. It costs 1 mana times the square root of its level, rounded down. Two or more books add +2. Three, four, or five books make 2, 3, or 4 tomes and split the experience. More than five still uses five and makes 4.";
             case READ_TOME ->
-                "Hold a tome that holds experience and double-right-click. It costs 1 mana and returns 80% of what was saved, plus 2% per ability level.";
+                "Hold a tome that holds experience and double-right-click. It costs 1 mana times the square root of its level, rounded down, and returns 80% of what was saved, plus 2% per ability level.";
             case RESTORE_LIFE ->
-                "Hold a diamond and double-right-click in the air, on a block, or on a player. It costs 4 mana and diamonds from your inventory. Two or more in hand add +2.";
+                "Hold a diamond and double-right-click in the air, on a block, or on a player. It costs 1 mana times the square root of its level, rounded down, and diamonds from your inventory. With at least 1 mana, a short pool casts the highest level that mana can pay. Two or more in hand add +2.";
             default -> "";
         };
     }
@@ -653,18 +656,21 @@ public final class AbilityRules {
             case HEAL -> List.of(
                     "Healing: Double-right-click an injured teammate within 2 + ability level blocks while holding paper.",
                     "Healing: If no teammate is targeted and you are injured, you heal yourself instead.",
-                    "Healing: Costs 1 mana. A honey bottle in your main inventory (not a bundle) is consumed for +4, bottle included, with or without mana.",
+                    "Healing: Costs 1 mana times the square root of its level, rounded down.",
+                    "Healing: A honey bottle in your main inventory (not a bundle) is consumed for +4, bottle included, with or without mana.",
                     "Healing: If you have no mana, a honey bottle still lets you heal, even with no mana levels.",
                     "Healing: The recipient sparkles blue for 6 seconds, and the healing is spread across that sparkle. One paper is consumed. Two in hand consume both and add +2.");
             case IRON_HEART -> List.of(
-                    "Iron Heart: Double-right-click while holding an iron ingot. Costs 1 mana. Raises maximum health by ability level for ability level minutes.",
+                    "Iron Heart: Double-right-click while holding an iron ingot. Raises maximum health by ability level for ability level minutes.",
+                    "Iron Heart: Costs 1 mana times the square root of its level, rounded down.",
                     "Iron Heart: If another player is targeted within 2 + ability level blocks, they receive the buff instead.",
                     "Iron Heart: Double-right-click again with an iron ingot to cancel your own; you cannot cancel another player's Iron Heart.",
                     "Iron Heart: The recipient sparkles silver for 3 seconds. One ingot is consumed. Two in hand consume both and add +2.",
-                    "Iron Heart: If it ends and you still have mana, another mana is spent and it continues, and you gain skill as if you cast it again.",
+                    "Iron Heart: If it ends and you still have mana, the scaled cost is spent and it continues, and you gain skill as if you cast it again.",
                     "Iron Heart: A renew spends an ingot only when you are holding one, and that one adds +2.");
             case MAGIC_ARROW -> List.of(
-                    "Lightning: Double-right-click while holding nether quartz. Costs 1 mana. One bolt per level, rounded down, and each deals that much magic damage.",
+                    "Lightning: Double-right-click while holding nether quartz. One bolt per level, rounded down, and each deals that much magic damage.",
+                    "Lightning: Costs 1 mana times the square root of its level, rounded down.",
                     "Lightning: Magic damage ignores armor. Skeletons do not deflect it. Witches resist it. Range scales with level.",
                     "Lightning: A bolt of lightning runs from you to each hostile it strikes, and every player can see it.",
                     "Lightning: One hostile can be hit more than once. Bolts spread so a strike does not overkill while another target can take it.",
@@ -672,38 +678,40 @@ public final class AbilityRules {
                     "Lightning: One nether quartz is consumed. Two or three consume two and add +2.",
                     "Lightning: More than 3 nether quartz doubles your level, adding at most the square root of that quartz, rounded down. You consume that many, so 4 quartz still costs 2.");
             case FLIGHT -> List.of(
-                    "Flight: Double-right-click while holding a feather. Costs 1 mana. Jump to rise, sneak in the air to descend, and sneak on a block to stop.",
+                    "Flight: Double-right-click while holding a feather. Jump to rise, sneak in the air to descend, and sneak on a block to stop.",
+                    "Flight: Costs 1 mana times the square root of its level, rounded down.",
                     "Flight: Speed scales with ability level and reaches 70% of walking speed at 10.",
                     "Flight: One feather is consumed. Two in hand consume both and add +2.",
-                    "Flight: If it ends and you still have mana, another mana is spent and it continues, and you gain skill as if you cast it again.",
+                    "Flight: If it ends and you still have mana, the scaled cost is spent and it continues, and you gain skill as if you cast it again.",
                     "Flight: A renew spends a feather only when you are holding one, and that one adds +2.",
                     "Flight: A phantom membrane in your hotbar or inventory, not a bundle, adds +3. One is consumed, and each renew consumes another to keep that +3.");
             case GROW -> List.of(
                     "Let it grow: Double-right-click a plant while holding any hoe to grow it by your ability level in stages.",
                     "Let it grow: Leftover stages go to the nearest plant within 2 blocks. Double-right-click also still grows random plants around you.",
-                    "Let it grow: Costs 1 mana and 3 durability. Unbreaking can skip that wear with the same chance as tilling. Does not replace tilling.",
+                    "Let it grow: Costs 1 mana times the square root of its level, rounded down, and 3 durability.",
+                    "Let it grow: Unbreaking can skip that wear with the same chance as tilling. Does not replace tilling.",
                     "Let it grow: Each plant grown improves that soil's shown crop-loss modifier by 3.",
                     "Let it grow: Random growth is one plant within 2 blocks by 1 stage, repeated (ability level + hoe bonus) times.",
                     "Let it grow: Hoe bonus: wood/stone 0, copper +1, iron +2, diamond +3, gold +4, netherite +5.");
             case POWER_MINE -> List.of(
-                    "Power mining: Double-right-click while holding any pickaxe. Costs 1 mana.",
+                    "Power mining: Double-right-click while holding any pickaxe. Costs 1 mana times the square root of its level, rounded down.",
                     "Power mining: For (ability level × 12) seconds, Tougher extra pickaxe wear on hardened stone is suspended. Ends when the timer expires.",
                     "Power mining: Pickaxe bonus: wood/stone 0, copper +1, iron +2, diamond +3, gold +4, netherite +5.");
             case DETECT_ORE -> List.of(
-                    "Detect ore: Double-right-click while holding a compass. The compass is kept. Costs 1 mana. Nether quartz is not required.",
+                    "Detect ore: Double-right-click while holding a compass. The compass is kept. Costs 1 mana times the square root of its level, rounded down. Nether quartz is not required.",
                     "Detect ore: One right-click says the biome you are in and the direction you face.",
                     "Detect ore: The largest nether quartz stack in your hotbar or inventory, not a bundle, adds the square root of its count, rounded. That many quartz are consumed from that stack.",
                     "Detect ore: Ores within 2 blocks of your height come first, then farther up or down, out to your rounded ability level minus the ore difficulty, through walls.",
                     "Detect ore: It tells you the ore and approximate distance. You only sense ores at or below your ability level.",
                     "Detect ore: coal 1, quartz 2, copper 3, iron 4, redstone 6, lapis 7, gold 8, emerald 9, diamond 11, ancient debris 13.");
             case SLOW -> List.of(
-                    "Slow: Double-right-click while holding string. Costs 1 mana. Throws a web up to (ability level × 2 + 4) blocks.",
+                    "Slow: Double-right-click while holding string. Costs 1 mana times the square root of its level, rounded down. Throws a web up to (ability level × 2 + 4) blocks.",
                     "Slow: It bursts on a creature or a solid block and slows creatures within (ability level) blocks of the landing.",
                     "Slow: The slow is 20% + 5% per ability level (max 80%) for (ability level × 6) seconds.",
                     "Slow: Above 100 health, both the slow and the duration are multiplied by 100 divided by that health.",
                     "Slow: It does not affect you, or any player closer to you than the hit. One string is consumed. Two in hand consume both and add +2.");
             case SENSE_EVIL -> List.of(
-                    "Sense Evil: Double-right-click a spider eye to cast. Hold the click to eat it instead. Costs 1 mana.",
+                    "Sense Evil: Double-right-click a spider eye to cast. Hold the click to eat it instead. Costs 1 mana times the square root of its level, rounded down.",
                     "Sense Evil: If a biome boss is spawned, you turn toward the nearest one and sparkle with a creepy aura for 6 seconds.",
                     "Sense Evil: If it is within 250 × ability level blocks, you also learn the rough distance.",
                     "Sense Evil: If none are spawned, you sparkle as with Healing. One spider eye is consumed. Two in hand consume both and add +2.",
@@ -712,7 +720,9 @@ public final class AbilityRules {
                     "Sense Evil: The outline time shows as a spider eye with your other ability durations.",
                     "Sense Evil: It says whether a biome boss can appear here. In a full chunk at Y=48 or above, it also says the alliance has cleared the area.");
             case SMITE_EVIL -> List.of(
-                    "Magic Melee: Double-right-click while holding a golden sword or a heavy golden sword. A real cast costs 1/4 mana and has no cooldown.",
+                    "Magic Melee: Double-right-click while holding a golden sword or a heavy golden sword.",
+                    "Magic Melee: A real cast costs 1/4 mana times the square root of its level, rounded down, and has no cooldown.",
+                    "Magic Melee: Each step of that multiplier costs 1/4 mana, so 1/4 mana reaches level 3 and 1/2 mana reaches level 8.",
                     "Magic Melee: Below 1 it is practice. That spends 1 mana, starts the normal cooldown, gains one use, and does not strike.",
                     "Magic Melee: It strikes a hostile mob you are targeting, up to your ability level in blocks, with a normal melee attack from that sword.",
                     "Magic Melee: If that mob is not a hostile in reach, it does not choose another target.",
@@ -720,24 +730,28 @@ public final class AbilityRules {
                     "Magic Melee: With at least 1 mana, the crosshair turns gold on a hostile mob within that reach.",
                     "Magic Melee: A gold beam of light runs from you to that mob, and every player can see it.");
             case MASTER_BUILDER -> List.of(
-                    "Master Builder: Double-right-click while holding a clay brick. Costs 1 mana. Lasts 30 seconds times your ability level.",
+                    "Master Builder: Double-right-click while holding a clay brick. Costs 1 mana times the square root of its level, rounded down. Lasts 30 seconds times your ability level.",
                     "Master Builder: While it lasts, you can place solid blocks in the air, and block reach increases by your ability level. Torch rules still apply.",
-                    "Master Builder: Double-right-click again with a clay brick to cancel. If it ends and you still have mana, it spends another and continues.",
+                    "Master Builder: Double-right-click again with a clay brick to cancel. If it ends and you still have mana, it spends the scaled mana and continues.",
                     "Master Builder: One brick is consumed. Two in hand consume both and add +2. Continuing gains skill as if you cast it again.",
                     "Master Builder: A renew spends a brick only when you are holding one, and that one adds +2.");
             case EMPOWER -> List.of(
-                    "Empower: Double-right-click while holding glowstone dust. Costs 1 mana. Lasts 30 seconds per ability level, and at least 30 seconds.",
+                    "Empower: Double-right-click while holding glowstone dust. Lasts 30 seconds per ability level, and at least 30 seconds.",
+                    "Empower: Costs 1 mana times the square root of its level, rounded down.",
                     "Empower: While it lasts, each later mana ability cast gains extra level equal to the square root of Empower's level.",
                     "Empower: Double-right-click again with glowstone dust to cancel.",
                     "Empower: One dust is consumed. Two in hand consume both and add +2.");
             case BATTERY -> List.of(
-                    "Battery: Double-right-click in the air while holding a quartz block. Costs no mana. Lasts 2 minutes per ability level, and at least 2 minutes.",
+                    "Battery: Double-right-click in the air while holding a quartz block. Costs 1 mana times the square root of its level, rounded down.",
+                    "Battery: With at least 1 mana, a short pool casts the highest level that mana can pay. 1 mana reaches level 3, and 2 mana reaches level 8.",
+                    "Battery: Lasts 2 minutes per ability level, and at least 2 minutes.",
                     "Battery: While it lasts, mana regeneration is multiplied by 1 plus the square root of your ability level.",
                     "Battery: Double-right-click in the air again with a quartz block to cancel. It ends when your mana reaches your mana level.",
-                    "Battery: It continues only while mana is below your level and a quartz block is in hand. One block is consumed. Two in hand consume both and add +2.",
+                    "Battery: It continues only while mana is below your level, you can pay that mana, and a quartz block is in hand. One block is consumed. Two in hand consume both and add +2.",
                     "Battery: Continuing gains skill as if you cast it again.");
             case LAPIS_SHIELD -> List.of(
-                    "Amethyst Shield: Double-right-click while holding an amethyst shard. A targeted character gets the shield. Otherwise it shields you. Costs 1 mana.",
+                    "Amethyst Shield: Double-right-click while holding an amethyst shard. A targeted character gets the shield. Otherwise it shields you.",
+                    "Amethyst Shield: Costs 1 mana times the square root of its level, rounded down.",
                     "Amethyst Shield: It lasts 20 seconds times your ability level. A force field stays around that character until it ends.",
                     "Amethyst Shield: Damage up to that level is absorbed before armor or health. A hit within that level also skips harmful effects, such as poison.",
                     "Amethyst Shield: Amethyst, lapis, and each 20 seconds left pay for the block. One kind costs 1 per 3 points, two kinds 1 per 5, and all three 1 per 7, rounded up.",
@@ -746,21 +760,24 @@ public final class AbilityRules {
                     "Amethyst Shield: If you cannot pay, the hit lands and the shield ends. It runs until it ends. A second click does not cancel it.",
                     "Amethyst Shield: One shard is consumed to cast. Two in hand consume both and add +2. One lapis lazuli in your hotbar or inventory is also consumed and adds another +2.");
             case WRITE_TOME -> List.of(
-                    "Write Tome of the Wise: Double-right-click while holding a book at experience level 7 or higher. Costs 1 mana.",
+                    "Write Tome of the Wise: Double-right-click while holding a book at experience level 7 or higher. Costs 1 mana times the square root of its level, rounded down.",
                     "Write Tome of the Wise: Above level 30 and at 30 or below, it saves 80% plus 2% per ability level. Below 10 some is lost, and above 10 some is gained.",
                     "Write Tome of the Wise: Above level 30 only the excess is saved, and you return to exactly level 30. At level 30 or below, all experience is saved and you return to level 0.",
                     "Write Tome of the Wise: The tome names you and the experience it holds. That amount is stored on the book.",
                     "Write Tome of the Wise: One book makes one tome. Two or more add +2. Three, four, or five books make 2, 3, or 4 tomes and split the saved experience.",
                     "Write Tome of the Wise: More than five books still uses five, adds +2, and makes 4 tomes. One of those books is the +2 bonus.");
             case READ_TOME -> List.of(
-                    "Read Tome of the Wise: Double-right-click a tome that holds experience, at any level. Costs 1 mana and the tome. Below 1 the tome is kept.",
+                    "Read Tome of the Wise: Double-right-click a tome that holds experience, at any level. Below 1 the tome is kept.",
+                    "Read Tome of the Wise: Costs 1 mana times the square root of its level, rounded down, and the tome.",
                     "Read Tome of the Wise: You gain 80% of the saved experience, plus 2% per ability level, above or below level 30. Sneak and right-click to open it instead.");
             case RESTORE_LIFE -> List.of(
                     "Restore Life: Double-right-click while holding a diamond, in the air, on a block, or on a player.",
                     "Restore Life: It targets a friendly player within 2 plus ability level blocks, the way Healing does, and otherwise you.",
                     "Restore Life: It gives one life. The target must have fewer lives than player.death.lives. Lives must be on, and Restore Life Available starts on.",
-                    "Restore Life: It costs 4 mana and diamonds in your hotbar or inventory. The count is 17 minus their lives minus your level, rounded down, and at least 3.",
-                    "Restore Life: A missing requirement spends nothing and says what is required. Below 1, practice spends the 4 mana and keeps the diamonds.",
+                    "Restore Life: It costs 1 mana times the square root of its level, rounded down.",
+                    "Restore Life: With at least 1 mana, a short pool casts the highest level that mana can pay. 1 mana reaches level 3, and 2 mana reaches level 8.",
+                    "Restore Life: Diamonds in your hotbar or inventory cost 17 minus their lives minus the level you cast, rounded down, and at least 3.",
+                    "Restore Life: A missing requirement spends nothing and says what is required. Below 1, practice spends the 1 mana and keeps the diamonds.",
                     "Restore Life: Two or more diamonds in hand add +2. The price includes the diamonds in your hand.",
                     "Restore Life: After the life is given, the message says how many lives are still needed for full lives, and the total when it is above 0.");
             default -> null;
@@ -800,7 +817,8 @@ public final class AbilityRules {
                 "A golden item held for 30 seconds, such as a golden hoe, adds 1 more mana level. Gold ingots, nuggets, and blocks do not.",
                 "Below 1 the cast is practice: mana and focus are spent, the cooldown starts, and you gain one use. Read Tome keeps the tome.",
                 "Redstone dust in the offhand adds half your skill, up to the square root of that stack rounded down. Success consumes that bonus, rounded down. Practice keeps the dust.",
-                "Redstone dust in the offhand does not place when you right-click.");
+                "Redstone dust in the offhand does not place when you right-click.",
+                "Each cast costs its mana times the square root of its level, rounded down. 1 mana reaches level 3, and 2 mana reaches level 8.");
     }
 
     public static List<String> powerHelpKeys() {
@@ -812,7 +830,8 @@ public final class AbilityRules {
                 "tougher.ability.power.help.5",
                 "tougher.ability.power.help.6",
                 "tougher.ability.power.help.7",
-                "tougher.ability.power.help.8");
+                "tougher.ability.power.help.8",
+                "tougher.ability.power.help.9");
     }
 
     public static String powerHelpFallback() {
@@ -876,11 +895,11 @@ public final class AbilityRules {
                 "Diamond: Restore Life",
                 "Every ability's level is its skill plus item bonuses, minus 2, and at least 0.",
                 "Below 1 the cast is practice: mana and focus are spent, the cooldown starts, and you gain one use. Read Tome keeps the tome.",
-                "Restore Life: a missing requirement spends nothing. Below 1, practice spends 4 mana and keeps the diamonds.",
+                "Restore Life: a missing requirement spends nothing. Below 1, practice spends 1 mana and keeps the diamonds.",
                 "Redstone dust in the offhand adds half your skill, up to the square root of that stack rounded down. Success consumes that bonus, rounded down. Practice keeps the dust.",
                 "Redstone dust in the offhand does not place when you right-click.",
                 "Hold a focus and he teaches that ability for half the house points in uses. At 24 points, 30 emeralds from inventory or either hand; each point above takes 2 off, down to free.",
-                "Hold emeralds and he picks an ability at random for the house points. A new hunt, or killing more than half the marks, offers the lesson. He names what to hold only then.",
+                "Hold emeralds and he picks an ability at random for the house points. A ready hunt offers the lesson, and teaching gives the hunt. He names what to hold only then.",
                 "Hold redstone blocks. The first gift takes 1, then up to 4, 9, and so on. Mana learning grows by the square root of the blocks he takes.",
                 "Type /tougher ability help <name> for one ability.");
     }
@@ -968,10 +987,92 @@ public final class AbilityRules {
         if (RESTORE_LIFE.equals(ability)) {
             return RESTORE_LIFE_MANA_COST;
         }
-        if (BATTERY.equals(ability)) {
-            return 0;
-        }
         return MANA_COST;
+    }
+
+    /** Every mana ability multiplies {@link #manaCost} by the floored square root of the cast level. */
+    public static boolean manaScalesWithLevel(String ability) {
+        return ability != null && !ability.isEmpty();
+    }
+
+    /**
+     * Mana multiplier for a scaled cast: the square root of the level, rounded down, and at least 1.
+     * Level 3 costs 1. Level 8 costs 2. A level below 1 still costs 1, so practice is not free.
+     */
+    public static int levelCostMultiplier(double level) {
+        if (Double.isNaN(level) || level <= 0.0) {
+            return 1;
+        }
+        return Math.max(1, (int) Math.floor(Math.sqrt(level)));
+    }
+
+    /** Unit mana times {@link #levelCostMultiplier}. */
+    public static double castManaCost(double unit, double level) {
+        if (Double.isNaN(unit) || unit <= 0.0) {
+            return 0.0;
+        }
+        return unit * levelCostMultiplier(level);
+    }
+
+    /**
+     * Mana a real cast spends: the ability's mana times the floored square root of the level cast.
+     * Magic Melee's mana is 1/4, so each step of that multiplier costs 1/4. Practice uses {@link #practiceManaCost}.
+     */
+    public static double scaledManaCost(String ability, double level) {
+        if (!manaScalesWithLevel(ability)) {
+            return manaCost(ability);
+        }
+        return castManaCost(manaCost(ability), level);
+    }
+
+    /**
+     * Level a mana ability actually casts. The full level when mana pays {@link #scaledManaCost}.
+     * Otherwise the highest whole level that mana can pay: one unit of mana reaches 3, and two reach 8.
+     * A level below 1 stays practice and is not raised. Below one unit of mana, the result is negative.
+     */
+    public static double castLevel(String ability, double desired, double mana) {
+        if (!manaScalesWithLevel(ability)) {
+            return desired;
+        }
+        return affordableCastLevel(manaCost(ability), desired, mana);
+    }
+
+    /**
+     * Highest cast level {@code mana} can pay at {@code unit} mana per floored square root.
+     * A level below {@link #PRACTICE_LEVEL} is unchanged when mana covers one unit.
+     */
+    public static double affordableCastLevel(double unit, double desired, double mana) {
+        if (Double.isNaN(unit) || unit <= 0.0) {
+            return desired;
+        }
+        if (Double.isNaN(desired) || Double.isNaN(mana)) {
+            return -1.0;
+        }
+        if (desired < PRACTICE_LEVEL) {
+            return mana + 1.0e-9 >= unit ? desired : -1.0;
+        }
+        if (mana + 1.0e-9 >= castManaCost(unit, desired)) {
+            return desired;
+        }
+        if (mana + 1.0e-9 < unit) {
+            return -1.0;
+        }
+        double paidExact = Math.floor(mana / unit + 1.0e-9);
+        if (paidExact < 1.0) {
+            return -1.0;
+        }
+        if (paidExact > 1_000_000.0) {
+            return desired;
+        }
+        int paid = (int) paidExact;
+        long cap = (long) (paid + 1) * (paid + 1) - 1L;
+        if (cap < 1L) {
+            return -1.0;
+        }
+        if (cap >= desired) {
+            return desired;
+        }
+        return cap;
     }
 
     public static boolean hasManaToUse(double currentMana) {

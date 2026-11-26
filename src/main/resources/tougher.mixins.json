@@ -158,6 +158,7 @@
     "client.GuiMixin",
     "client.HudMixin",
     "client.InventoryScreenMixin",
+    "client.AutoStackScreenMixin",
     "client.MinecraftMixin",
     "client.KeyboardHandlerMixin",
     "client.SoundEngineMixin"

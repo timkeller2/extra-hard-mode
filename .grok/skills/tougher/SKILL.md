@@ -22,7 +22,7 @@ Local jar copy is in `Agents.md`. This skill is the rest of the standing setup.
 
 ## Where the jar goes
 
-- `assemble` runs `deployJar`, which copies only `build/libs/tougher-*.jar` (never the sources jar) into the two local mods folders named in `Agents.md`, replacing older `tougher-*.jar` and `extrahardmode-*.jar` files.
+- `assemble` runs `deployJar`, which copies only `build/libs/tougher-*.jar` (never the sources jar) into the folders named in `Agents.md`, replacing older `tougher-*.jar` and `extrahardmode-*.jar` files.
 - Leave the local dedicated server stopped. Do not start it.
 - The supported live server is Witherfen. Hostinger was shut down on 2026-11-20. Witherfen uses systemd unit `minecraft.service`, files in `/opt/minecraft/server`, mods in `/opt/minecraft/server/mods`, and jar owner `minecraft:minecraft` mode `644`. Restart it only when nobody has joined since the current boot.
 - Witherfen SSH: `ssh -o BatchMode=yes -o ConnectTimeout=20 -p 28920 -i $env:USERPROFILE\.ssh\id_rsa root@partycentral.tplinkdns.com`. Hostname `mc-witherfen`. Game port on the box is 25565. Public SSH is 28920; do not assume 25565 is forwarded. Leave `Chunky-Fabric-*.jar` in `mods/`. RCON is `127.0.0.1:25575`. The unit reads `/etc/minecraft.env` and `${RCON_PASSWORD}`, and that file is missing. The file on disk is `/opt/minecraft/minecraft.env` with `MCRCON_PASS`. Do not print it. Source that file and call `mcrcon` yourself. `systemctl stop` will not authenticate, then SIGINT after 90s.

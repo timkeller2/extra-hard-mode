@@ -106,11 +106,12 @@ tasks.jar {
 val deployDirs = listOf(
 	file("C:/Client/minecraftserver/mods"),
 	file("${System.getProperty("user.home")}/AppData/Roaming/.minecraft/mods"),
+	file("S:/Dist/Minecraft Tougher Mod"),
 )
 
 tasks.register("deployJar") {
 	group = "distribution"
-	description = "Copy the remapped Tougher jar to the local server and client mods folders."
+	description = "Copy the remapped Tougher jar to the local server, the client mods folder, and S:/Dist/Minecraft Tougher Mod."
 	dependsOn("assemble")
 	doLast {
 		val src = layout.buildDirectory

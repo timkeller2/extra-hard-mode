@@ -919,6 +919,17 @@ public final class EhmAttachments {
             ExtraHardModeMod.id("nether_portal_told"),
             builder -> builder.initializer(() -> 0L));
 
+    /**
+     * Main-inventory slots left out of auto-stack. Bit 0 is slot 9 and bit 26 is slot 35.
+     * Synced so the client can draw the yellow outline.
+     */
+    public static final AttachmentType<Integer> EHM_AUTO_STACK_EXCLUDED = AttachmentRegistry.create(
+            ExtraHardModeMod.id("auto_stack_excluded"),
+            builder -> builder.persistent(Codec.INT)
+                    .copyOnDeath()
+                    .initializer(() -> 0)
+                    .syncWith(ByteBufCodecs.VAR_INT, AttachmentSyncPredicate.targetOnly()));
+
     /** Namespace used before the mod id became tougher. Saved animals still carry it. */
     static final String LEGACY_NAMESPACE = "extrahardmode";
 

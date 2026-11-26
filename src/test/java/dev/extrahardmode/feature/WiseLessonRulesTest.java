@@ -124,6 +124,9 @@ class WiseLessonRulesTest {
 
     @Test
     void offerWaitsThirtyDaysAndNightIsTheDarkWindow() {
+        assertFalse(WiseLessonRules.lessonOpen(0, false));
+        assertTrue(WiseLessonRules.lessonOpen(0, true));
+        assertTrue(WiseLessonRules.lessonOpen(1, false));
         assertTrue(WiseLessonRules.offerDue(-1, 0));
         assertFalse(WiseLessonRules.offerDue(10, 39));
         assertTrue(WiseLessonRules.offerDue(10, 40));
