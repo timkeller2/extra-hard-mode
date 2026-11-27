@@ -6,11 +6,18 @@ import dev.extrahardmode.module.EntityHelper;
  * How much honey a returning bee adds. Minecraft-free so JUnit can cover the roll.
  *
  * <p>The configured percent is the base. Each flower type near the hive adds the
- * square root of its count, summed and rounded once. 100 always fills. 0 never fills.
+ * square root of its count, summed and rounded once. Each other hive or nest within
+ * {@link #HIVE_CROWD_BLOCKS} then subtracts {@link #HIVE_CROWD_PENALTY}. That result
+ * stays at {@link #HIVE_CROWD_FLOOR} when the rate started higher. 0 never fills.
  * A rare double fill stays inside that same roll.
  */
 public final class BeeHoneyRules {
     public static final int DEFAULT_PERCENT = 20;
+    /** Each other hive or nest inside this sphere lowers the fill percent. */
+    public static final int HIVE_CROWD_BLOCKS = 30;
+    public static final int HIVE_CROWD_PENALTY = 10;
+    /** A higher rate is not lowered past this by nearby hives. */
+    public static final int HIVE_CROWD_FLOOR = 4;
 
     /** Vanilla bees with a hive turn back once they are this far from it (48 − 24). */
     public static final int HIVE_STAY_BLOCKS = 24;
@@ -22,7 +29,7 @@ public final class BeeHoneyRules {
     public static final int HARVEST_RANGE = HIVE_STAY_BLOCKS + FLOWER_SEARCH_BLOCKS;
 
     public static final String CONFIG_COMMENT =
-            "Base percent of the usual honey a bee adds when it returns. Each flower type within 29 blocks adds the square root of its count, rounded once, up to 100. Counted once a Minecraft day. 20 is the default. 100 always fills. 0 never fills. Shearing amount is hiveHoneycombCount.";
+            "Base percent of the usual honey a bee adds when it returns. Each flower type within 29 blocks adds the square root of its count, rounded once, up to 100. Each other hive or nest within 30 blocks subtracts 10, and a higher rate stays at least 4. Counted once a Minecraft day. 20 is the default. 0 never fills. Shearing amount is hiveHoneycombCount.";
 
     private BeeHoneyRules() {}
 
@@ -94,5 +101,28 @@ public final class BeeHoneyRules {
             return 0;
         }
         return EntityHelper.percent(roll, percent) ? vanillaIncrement : 0;
+    }
+
+    /**
+     * Nearby hives lower a fill percent. {@code otherHives} is the count of other
+     * hives and nests within {@link #HIVE_CROWD_BLOCKS}. A percent already at or below
+     * {@link #HIVE_CROWD_FLOOR} stays there. No other hive leaves the percent unchanged.
+     */
+    public static int crowdedPercent(int percent, int otherHives) {
+        if (percent <= HIVE_CROWD_FLOOR || otherHives <= 0) {
+            return percent;
+        }
+        long reduced = (long) percent - (long) HIVE_CROWD_PENALTY * otherHives;
+        if (reduced < HIVE_CROWD_FLOOR) {
+            return HIVE_CROWD_FLOOR;
+        }
+        return (int) reduced;
+    }
+
+    /** True when a block this many steps away is inside the hive-crowd sphere, including the edge. */
+    public static boolean withinHiveCrowd(int dx, int dy, int dz) {
+        long reach = (long) HIVE_CROWD_BLOCKS * HIVE_CROWD_BLOCKS;
+        long distance = (long) dx * dx + (long) dy * dy + (long) dz * dz;
+        return distance <= reach;
     }
 }

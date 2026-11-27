@@ -174,6 +174,9 @@ class EhmHelpTest {
         assertTrue(String.join(" ", lines).contains("29 blocks"));
         assertTrue(String.join(" ", lines).contains("stored once a day"));
         assertTrue(String.join(" ", lines).contains("0 never fills"));
+        assertTrue(String.join(" ", lines).contains("within 30 blocks"));
+        assertTrue(String.join(" ", lines).contains("subtracts 10"));
+        assertTrue(String.join(" ", lines).contains("at least 4"));
         assertTrue(String.join(" ", lines).contains("that hive's honey production"));
         assertTrue(String.join(" ", lines).contains("second segment"));
         assertTrue(String.join(" ", lines).contains("Bees do not"));
@@ -581,7 +584,7 @@ class EhmHelpTest {
         assertTrue(farmText.contains("1d10"));
         assertTrue(farmText.contains("bone meal"));
         assertFalse(farmText.contains("Stone and deepslate"));
-        assertTrue(farming.lines().size() < 44);
+        assertTrue(farming.lines().size() < 45);
         assertTrue(String.join(" ", EhmHelp.resolve("mana").lines()).contains("Crystals fill in eighths"));
         String combatText = String.join(" ", EhmHelp.resolve("combat").lines());
         assertTrue(combatText.contains("first 8 kills from one monster spawner"));
@@ -620,7 +623,11 @@ class EhmHelpTest {
         assertTrue(combatText.contains("20 hostile kills"));
         assertTrue(combatText.contains("Neutral and friendly mobs still spawn"));
         assertTrue(combatText.contains("more area is being cleared by the alliance"));
+        assertTrue(combatText.contains("how many areas have been cleared"));
         assertTrue(combatText.contains("a large shield rises"));
+        assertTrue(combatText.contains("monsters.chunkClearGoal"));
+        assertTrue(combatText.contains("You Won!"));
+        assertTrue(combatText.contains("/tougher areas"));
         assertTrue(combatText.contains("25 experience and an emerald"));
         assertTrue(combatText.contains("within 48 blocks of the mob"));
         assertTrue(combatText.contains("uncleared chunk around it"));

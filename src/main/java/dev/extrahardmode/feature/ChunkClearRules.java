@@ -17,6 +17,22 @@ public final class ChunkClearRules {
     public static final int NEAR_BLOCKS = 48;
 
     public static final String CLEARED_MESSAGE = "More area is being cleared by the alliance!";
+    /** Shown when monsters.chunkClearGoal is off. The number is the total cleared areas. */
+    public static final String COUNT_MESSAGE = "More area is being cleared by the alliance! %s areas have been cleared.";
+    /** Shown when a win goal is set. The numbers are cleared areas, then the goal. */
+    public static final String GOAL_MESSAGE = "%s out of %s areas have been cleared for the alliance!";
+    public static final String WON_MESSAGE = "You Won!";
+    public static final String WON_SUBTITLE = "You may keep playing.";
+    /** Cleared areas that win. 0 is off. */
+    public static final int DEFAULT_GOAL = 0;
+    /** Ticks after You Won! before the credits scroll. Five seconds. */
+    public static final int CREDITS_DELAY_TICKS = 100;
+    public static final int VICTORY_FIREWORKS = 4;
+    public static final int TITLE_FADE_IN = 10;
+    public static final int TITLE_STAY = 60;
+    public static final int TITLE_FADE_OUT = 20;
+    public static final String GOAL_CONFIG_COMMENT =
+            "Cleared areas that win the game. 0 is off. The overworld file is the one that counts. Every dimension's cleared chunks add to the total. The clear that reaches the goal says You Won!, plays fireworks, and rolls the credits a few seconds later. Players keep playing. /tougher areas sets this.";
     /** How long the shield keeps rising, and how far it climbs. */
     public static final int RISE_TICKS = 50;
     public static final double RISE_BLOCKS = 12.0;
@@ -139,5 +155,29 @@ public final class ChunkClearRules {
 
     public static double riseHeight(float ageTicks) {
         return RISE_BLOCKS * riseProgress(ageTicks);
+    }
+
+    public static boolean victoryEnabled(int goal) {
+        return goal > 0;
+    }
+
+    /** True when this clear is the one that first reaches the goal. */
+    public static boolean crossesGoal(int clearedBefore, int cleared, int goal) {
+        return victoryEnabled(goal) && clearedBefore < goal && cleared >= goal;
+    }
+
+    public static String countMessage(int cleared) {
+        return CLEARED_MESSAGE + " " + Math.max(0, cleared) + " areas have been cleared.";
+    }
+
+    public static String goalMessage(int cleared, int goal) {
+        return Math.max(0, cleared) + " out of " + Math.max(0, goal) + " areas have been cleared for the alliance!";
+    }
+
+    public static String progress(int cleared, int goal) {
+        if (victoryEnabled(goal)) {
+            return goalMessage(cleared, goal);
+        }
+        return countMessage(cleared);
     }
 }

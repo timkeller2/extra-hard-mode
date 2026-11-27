@@ -3,6 +3,7 @@ package dev.extrahardmode.command;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.BoolArgumentType;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -12,6 +13,8 @@ import dev.extrahardmode.config.ConfigManager;
 import dev.extrahardmode.config.WorldConfig;
 import dev.extrahardmode.feature.AbilityRules;
 import dev.extrahardmode.feature.Achievements;
+import dev.extrahardmode.feature.ChunkClear;
+import dev.extrahardmode.feature.ChunkClearRules;
 import dev.extrahardmode.feature.EhmHelp;
 import dev.extrahardmode.feature.ManaAbilities;
 import dev.extrahardmode.module.PhysicsQueue;
@@ -138,7 +141,11 @@ public final class EhmCommands {
                 .then(Commands.literal("set-world")
                         .then(Commands.argument("value", BoolArgumentType.bool()).executes(EhmCommands::setWorld)))
                 .then(Commands.literal("enable").executes(context -> setWorldEnabled(context, true)))
-                .then(Commands.literal("disable").executes(context -> setWorldEnabled(context, false)));
+                .then(Commands.literal("disable").executes(context -> setWorldEnabled(context, false)))
+                .then(Commands.literal("areas")
+                        .executes(EhmCommands::areasStatus)
+                        .then(Commands.argument("count", IntegerArgumentType.integer(0))
+                                .executes(EhmCommands::setAreas)));
         var node = dispatcher.register(root);
         dispatcher.register(Commands.literal("ehm").redirect(node));
     }
@@ -271,6 +278,57 @@ public final class EhmCommands {
                         level.dimension().identifier().toString()),
                 false);
         return enabled ? Command.SINGLE_SUCCESS : 0;
+    }
+
+    private static int areasStatus(CommandContext<CommandSourceStack> context) {
+        MinecraftServer server = context.getSource().getServer();
+        int areas = ChunkClear.clearedAreas(server);
+        int goal = ChunkClear.victoryGoal(server);
+        context.getSource()
+                .sendSuccess(
+                        () -> goal > 0
+                                ? Component.translatableWithFallback(
+                                        "tougher.message.chunk_clear_goal",
+                                        ChunkClearRules.GOAL_MESSAGE,
+                                        Component.literal(Integer.toString(areas)),
+                                        Component.literal(Integer.toString(goal)))
+                                : Component.translatableWithFallback(
+                                        "tougher.command.areas.off",
+                                        "Alliance victory is off. %s areas have been cleared.",
+                                        Component.literal(Integer.toString(areas))),
+                        false);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int setAreas(CommandContext<CommandSourceStack> context) {
+        if (!canStaff(context.getSource())) {
+            return denyStaff(context.getSource());
+        }
+        int goal = IntegerArgumentType.getInteger(context, "count");
+        MinecraftServer server = context.getSource().getServer();
+        ServerLevel overworld = server.overworld();
+        ConfigManager.world(overworld).setChunkClearGoal(goal);
+        ConfigManager.save(overworld);
+        int areas = ChunkClear.clearedAreas(server);
+        if (goal <= 0) {
+            context.getSource()
+                    .sendSuccess(
+                            () -> Component.translatableWithFallback(
+                                    "tougher.command.areas.off",
+                                    "Alliance victory is off. %s areas have been cleared.",
+                                    Component.literal(Integer.toString(areas))),
+                            true);
+            return Command.SINGLE_SUCCESS;
+        }
+        context.getSource()
+                .sendSuccess(
+                        () -> Component.translatableWithFallback(
+                                "tougher.command.areas.set",
+                                "The alliance wins when %s areas are cleared. %s are cleared now.",
+                                Component.literal(Integer.toString(goal)),
+                                Component.literal(Integer.toString(areas))),
+                        true);
+        return Command.SINGLE_SUCCESS;
     }
 
     private static int reload(CommandContext<CommandSourceStack> context) {

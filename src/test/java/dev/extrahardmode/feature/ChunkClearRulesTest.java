@@ -85,6 +85,16 @@ class ChunkClearRulesTest {
         assertEquals(-1, ChunkClearRules.firstUncleared(new boolean[] {true, true, true, true, true, true, true, true}));
         assertEquals(-1, ChunkClearRules.firstUncleared(null));
         assertEquals("More area is being cleared by the alliance!", ChunkClearRules.CLEARED_MESSAGE);
+        assertEquals(
+                "More area is being cleared by the alliance! 3 areas have been cleared.",
+                ChunkClearRules.progress(3, 0));
+        assertEquals(
+                "12 out of 40 areas have been cleared for the alliance!",
+                ChunkClearRules.progress(12, 40));
+        assertTrue(ChunkClearRules.crossesGoal(39, 40, 40));
+        assertFalse(ChunkClearRules.crossesGoal(40, 41, 40));
+        assertFalse(ChunkClearRules.crossesGoal(0, 1, 0));
+        assertEquals(100, ChunkClearRules.CREDITS_DELAY_TICKS);
         assertTrue(ChunkClearRules.witnessesClear(4, 7, 4, 7));
         assertTrue(ChunkClearRules.witnessesClear(5, 8, 4, 7));
         assertTrue(ChunkClearRules.witnessesClear(3, 6, 4, 7));

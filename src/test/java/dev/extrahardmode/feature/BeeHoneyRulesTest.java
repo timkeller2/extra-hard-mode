@@ -73,6 +73,26 @@ class BeeHoneyRulesTest {
     }
 
     @Test
+    void nearbyHivesSubtractTenDownToFour() {
+        assertEquals(30, BeeHoneyRules.HIVE_CROWD_BLOCKS);
+        assertEquals(10, BeeHoneyRules.HIVE_CROWD_PENALTY);
+        assertEquals(4, BeeHoneyRules.HIVE_CROWD_FLOOR);
+        assertEquals(20, BeeHoneyRules.crowdedPercent(20, 0));
+        assertEquals(20, BeeHoneyRules.crowdedPercent(20, -3));
+        assertEquals(10, BeeHoneyRules.crowdedPercent(20, 1));
+        assertEquals(4, BeeHoneyRules.crowdedPercent(20, 2));
+        assertEquals(4, BeeHoneyRules.crowdedPercent(100, 10));
+        assertEquals(10, BeeHoneyRules.crowdedPercent(100, 9));
+        assertEquals(4, BeeHoneyRules.crowdedPercent(4, 6));
+        assertEquals(3, BeeHoneyRules.crowdedPercent(3, 6));
+        assertEquals(0, BeeHoneyRules.crowdedPercent(0, 6));
+        assertTrue(BeeHoneyRules.withinHiveCrowd(30, 0, 0));
+        assertTrue(BeeHoneyRules.withinHiveCrowd(0, 0, 0));
+        assertFalse(BeeHoneyRules.withinHiveCrowd(31, 0, 0));
+        assertFalse(BeeHoneyRules.withinHiveCrowd(18, 18, 18));
+    }
+
+    @Test
     void fullRateKeepsTheUsualGainAndZeroKeepsNone() {
         assertEquals(1, BeeHoneyRules.honeyIncrement(1, 100, 99));
         assertEquals(2, BeeHoneyRules.honeyIncrement(2, 100, 0));

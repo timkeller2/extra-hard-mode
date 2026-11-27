@@ -30,7 +30,7 @@ import net.minecraft.world.level.storage.LevelResource;
 
 /** Per-dimension TOML, stored under the overworld save and keyed by {@code dimension().identifier()}. */
 public final class WorldConfig {
-    public static final int CONFIG_VERSION = 11;
+    public static final int CONFIG_VERSION = 12;
 
     private final Identifier dimensionId;
     private final Map<Identifier, Boolean> modules = new LinkedHashMap<>();
@@ -153,6 +153,8 @@ public final class WorldConfig {
     private int spawnInLightMaxLight = 11;
     private int spawnInLightPercent = 100;
     private int chunkClearKills = ChunkClearRules.DEFAULT_KILLS;
+    /** Cleared areas that win the game. 0 is off. The overworld file is the one that counts. */
+    private int chunkClearGoal = ChunkClearRules.DEFAULT_GOAL;
     private final ExplosionConfig explosions = new ExplosionConfig();
     private final MonsterConfig monsters = new MonsterConfig();
     private boolean blazeNearBedrockEnable = true;
@@ -664,6 +666,14 @@ public final class WorldConfig {
 
     public int chunkClearKills() {
         return chunkClearKills;
+    }
+
+    public int chunkClearGoal() {
+        return chunkClearGoal;
+    }
+
+    public void setChunkClearGoal(int chunkClearGoal) {
+        this.chunkClearGoal = Math.max(0, chunkClearGoal);
     }
 
     public boolean blazeNearBedrockEnable() {
@@ -1236,6 +1246,11 @@ public final class WorldConfig {
                         "monsters.chunkClearKills",
                         ChunkClearRules.CONFIG_COMMENT,
                         ChunkClearRules.DEFAULT_KILLS);
+                writeDefaultIfMissing(
+                        file,
+                        "monsters.chunkClearGoal",
+                        ChunkClearRules.GOAL_CONFIG_COMMENT,
+                        ChunkClearRules.DEFAULT_GOAL);
                 config.explosions.writeDefaults(file);
                 config.monsters.writeDefaults(file);
                 writeDefaultIfMissing(
@@ -1527,6 +1542,8 @@ public final class WorldConfig {
                         "Base chance per attempt. Each light level of the chosen block subtracts 5. Default 100.");
                 file.set("monsters.chunkClearKills", chunkClearKills);
                 file.setComment("monsters.chunkClearKills", ChunkClearRules.CONFIG_COMMENT);
+                file.set("monsters.chunkClearGoal", chunkClearGoal);
+                file.setComment("monsters.chunkClearGoal", ChunkClearRules.GOAL_CONFIG_COMMENT);
                 file.set("sounds.creeperTntWarning", creeperTntWarning);
                 file.set("villagerNerf.blockDiamondGearTrades", villagerNerfBlockDiamondGear);
                 file.set("villagerNerf.nerfNoviceMending", villagerNerfNoviceMending);
@@ -1734,6 +1751,7 @@ public final class WorldConfig {
         if (chunkClearKills < -1) {
             chunkClearKills = -1;
         }
+        chunkClearGoal = Math.max(0, getInt(file, "monsters.chunkClearGoal", ChunkClearRules.DEFAULT_GOAL));
         creeperTntWarning = file.getOrElse("sounds.creeperTntWarning", true);
         villagerNerfBlockDiamondGear = file.getOrElse("villagerNerf.blockDiamondGearTrades", true);
         villagerNerfNoviceMending = file.getOrElse("villagerNerf.nerfNoviceMending", true);
@@ -2075,6 +2093,8 @@ public final class WorldConfig {
      * type within harvest range, counted once a day. Only a stored 25 is rewritten.
      * Schema 11: chunk clear default 100 → 20. Only a stored 100 is rewritten,
      * so a custom value is kept. A later choice of 100 stays once this schema has run.
+     * Schema 12: refreshes the bee honey comment. Nearby hives subtract 10, down to 4.
+     * The stored percent is left as it is.
      */
     private static void migrate(CommentedFileConfig file) {
         int version = getInt(file, "configVersion", 1);
@@ -2128,6 +2148,9 @@ public final class WorldConfig {
             if (file.contains("monsters.chunkClearKills")) {
                 file.setComment("monsters.chunkClearKills", ChunkClearRules.CONFIG_COMMENT);
             }
+        }
+        if (version < 12 && file.contains("farming.beeHoneyPercent")) {
+            file.setComment("farming.beeHoneyPercent", BeeHoneyRules.CONFIG_COMMENT);
         }
         if (version < 7) {
             file.remove("farming.overgrazing.intervalTicks");

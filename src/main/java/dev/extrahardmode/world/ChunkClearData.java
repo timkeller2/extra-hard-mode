@@ -3,6 +3,7 @@ package dev.extrahardmode.world;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.extrahardmode.ExtraHardModeMod;
+import dev.extrahardmode.feature.ChunkClearRules;
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import java.util.ArrayList;
 import java.util.List;
@@ -64,6 +65,20 @@ public final class ChunkClearData extends SavedData {
         }
         kills.put(packed, count);
         setDirty();
+    }
+
+    /** Chunks whose kill count has reached the threshold. */
+    public int clearedCount(int threshold) {
+        if (!ChunkClearRules.enabled(threshold)) {
+            return 0;
+        }
+        int cleared = 0;
+        for (var entry : kills.long2IntEntrySet()) {
+            if (entry.getIntValue() >= threshold) {
+                cleared++;
+            }
+        }
+        return cleared;
     }
 
     /** Adds one kill and returns the count before this one. */

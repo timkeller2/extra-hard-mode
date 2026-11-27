@@ -18,7 +18,7 @@ public final class EhmHelp {
     public static final String HOMES_HELP_PREFIX = "tougher.help.homes.";
     public static final String COMMANDS_KEY = "tougher.command.help";
     public static final String COMMANDS_FALLBACK =
-            "Staff (operator): /tougher version|enabled [world]|reload|debug|bypass|set <module> <bool>|enable|disable (/ehm still works)";
+            "Staff (operator): /tougher version|enabled [world]|reload|debug|bypass|set <module> <bool>|areas <count>|enable|disable (/ehm still works)";
     public static final String UNKNOWN_TOPIC_KEY = "tougher.help.unknown";
     public static final String UNKNOWN_TOPIC_FALLBACK =
             "Unknown help topic '%s'. Type /tougher help for the topic list.";
@@ -336,6 +336,7 @@ public final class EhmHelp {
                         "Crops: Broken pumpkin and melon vines drop no seeds. Shearing a full hive gives 1 honeycomb. Right-click a hive or nest with a clock to see that hive's honey production.",
                         "Crops: Looking at a clock in an item frame shows the loss rate, bees staying in, and a hive's honey when the frame hangs on that hive.",
                         "Crops: A bee fills a hive or nest at farming.beeHoneyPercent, default 20, plus the square root of each flower type within 29 blocks, stored once a day, up to 100. 0 never fills.",
+                        "Crops: Each other hive or nest within 30 blocks subtracts 10 from that rate, and it stays at least 4.",
                         "Crops: A ripe cocoa pod drops 1 or 2 beans. One more on a d100 under hoe quality plus the tree: iron 0, diamond 10, gold 20, netherite 30, plus 2 per Efficiency. Other hoes are 0.",
                         "Crops: Each other pod on that tree is -2%. Each jungle log in the tree is +2%, up to +20%."));
     }
@@ -430,7 +431,11 @@ public final class EhmHelp {
                         "Combat: Players in that chunk, or within 48 blocks of the mob, gain 25 experience and an emerald.",
                         "Combat: Each time that many kills land again, one uncleared chunk around it is cleared: north, east, south, west, then northeast, northwest, southeast, and southwest.",
                         "Combat: Continuing in that chunk can clear nine chunks in all. Players within 48 blocks of the killer gain the same reward.",
-                        "Combat: When that chunk or an adjacent chunk is first cleared, a large shield rises there, a sound plays, and the message says more area is being cleared by the alliance.",
+                        "Combat: When that chunk or an adjacent chunk is first cleared, a large shield rises there and a sound plays.",
+                        "Combat: The message says more area is being cleared by the alliance and how many areas have been cleared.",
+                        "Combat: monsters.chunkClearGoal starts at 0, which leaves the win off. Above 0, the message says that many out of the goal. The total counts every dimension.",
+                        "Combat: The last area says You Won! Fireworks play, the credits scroll a few seconds later, and you can keep playing.",
+                        "Combat: An operator sets that goal with /tougher areas. 0 turns that win off.",
                         "Combat: A small diamond in the corner shows while you are in a cleared chunk. Its tooltip says the alliance holds this ground.",
                         "Combat: Below Y=0 in the overworld, hostile mobs can spawn in block light of 1 per 15 blocks down. Y=-15 allows 1. Y=-30 allows 2.",
                         "Combat: Within 64 blocks, a biome boss shows a health bar with its name.",

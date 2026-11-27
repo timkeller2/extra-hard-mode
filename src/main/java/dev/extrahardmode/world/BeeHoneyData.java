@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.entity.animal.bee.Bee;
 import net.minecraft.world.level.block.Block;
@@ -74,9 +75,6 @@ public final class BeeHoneyData extends SavedData {
         if (basePercent <= 0) {
             return 0;
         }
-        if (basePercent >= 100) {
-            return 100;
-        }
         long day = CropGrowthRules.dayIndex(level.getOverworldClockTime());
         long packed = pos.asLong();
         if (days.get(packed) == day) {
@@ -85,28 +83,34 @@ public final class BeeHoneyData extends SavedData {
                 return stored;
             }
         }
-        int percent = BeeHoneyRules.fillPercent(basePercent, flowerCounts(level, pos));
+        int percent = freshPercent(level, pos, basePercent);
         remember(packed, day, percent);
         return percent;
     }
 
     /**
      * Fill percent a clock shows for this hive. A rate already stored today is reused.
-     * Otherwise the flowers are counted and nothing is stored.
+     * Otherwise the flowers and nearby hives are counted and nothing is stored.
      */
     public int reportedRate(ServerLevel level, BlockPos pos, int basePercent) {
-        if (basePercent <= 0 || basePercent >= 100) {
-            return BeeHoneyRules.reportedPercent(basePercent, false, 0, null);
+        if (basePercent <= 0) {
+            return 0;
         }
         long day = CropGrowthRules.dayIndex(level.getOverworldClockTime());
         long packed = pos.asLong();
         if (days.get(packed) == day) {
             int stored = percents.get(packed);
             if (stored > 0) {
-                return BeeHoneyRules.reportedPercent(basePercent, true, stored, null);
+                return Math.min(100, stored);
             }
         }
-        return BeeHoneyRules.reportedPercent(basePercent, false, 0, flowerCounts(level, pos));
+        return freshPercent(level, pos, basePercent);
+    }
+
+    /** Today's fill percent from the base, nearby flowers, and other hives. */
+    private static int freshPercent(ServerLevel level, BlockPos pos, int basePercent) {
+        int percent = basePercent >= 100 ? 100 : BeeHoneyRules.fillPercent(basePercent, flowerCounts(level, pos));
+        return BeeHoneyRules.crowdedPercent(percent, otherHives(level, pos));
     }
 
     private void remember(long packed, long day, int percent) {
@@ -125,6 +129,57 @@ public final class BeeHoneyData extends SavedData {
             percents.remove(key);
         }
         setDirty();
+    }
+
+    /**
+     * Other beehives and bee nests inside the 30-block sphere. The hive at {@code origin}
+     * is skipped. Unloaded chunks are skipped and not loaded.
+     */
+    private static int otherHives(ServerLevel level, BlockPos origin) {
+        int radius = BeeHoneyRules.HIVE_CROWD_BLOCKS;
+        long reach = (long) radius * radius;
+        int minY = level.getMinY();
+        int maxY = level.getMaxY() - 1;
+        int originX = origin.getX();
+        int originY = origin.getY();
+        int originZ = origin.getZ();
+        int found = 0;
+        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+        int loadedChunkX = Integer.MIN_VALUE;
+        int loadedChunkZ = Integer.MIN_VALUE;
+        boolean chunkLoaded = false;
+        for (int dx = -radius; dx <= radius; dx++) {
+            int x = originX + dx;
+            int chunkX = x >> 4;
+            for (int dz = -radius; dz <= radius; dz++) {
+                long horizontal = (long) dx * dx + (long) dz * dz;
+                if (horizontal > reach) {
+                    continue;
+                }
+                int z = originZ + dz;
+                int chunkZ = z >> 4;
+                if (chunkX != loadedChunkX || chunkZ != loadedChunkZ) {
+                    loadedChunkX = chunkX;
+                    loadedChunkZ = chunkZ;
+                    chunkLoaded = level.hasChunk(chunkX, chunkZ);
+                }
+                if (!chunkLoaded) {
+                    continue;
+                }
+                int yReach = (int) Math.sqrt(reach - horizontal);
+                int y0 = Math.max(minY, originY - yReach);
+                int y1 = Math.min(maxY, originY + yReach);
+                for (int y = y0; y <= y1; y++) {
+                    if (x == originX && y == originY && z == originZ) {
+                        continue;
+                    }
+                    if (level.getBlockState(cursor.set(x, y, z)).is(BlockTags.BEEHIVES)) {
+                        found++;
+                    }
+                }
+            }
+        }
+        return found;
     }
 
     /** Flower counts inside harvest range. Unloaded chunks are skipped and not loaded. */
